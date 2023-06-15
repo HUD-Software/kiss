@@ -2,5 +2,5 @@
 # Ce fichier .gitignore a été automatiquement créé par Microsoft(R) Visual Studio.
 ################################################################################
 
-/.vs/Kiss
-/Cli/obj
+.vs
+*/obj

@@ -1,5 +1,4 @@
-﻿using Kiss.Manifest.Json;
-using Kiss.Project;
+﻿using Kiss.Project;
 
 namespace Kiss.Generator
 {

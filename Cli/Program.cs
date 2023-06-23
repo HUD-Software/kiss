@@ -50,14 +50,18 @@ using Kiss.Creator;
 using Kiss.Builder;
 using System.CommandLine;
 using Kiss.Generator;
-using Command;
+using Cli.Command.Generate;
+using Cli.Command.Generate.Options;
+using Cli.Command.Build;
+using Cli.Command.New;
 
 var rootCommand = new RootCommand("Kiss is used to create, run C/C++ project");
 
-rootCommand.AddCommand(New.Create((command) =>
+// Create "new" command
+var newCommand = new NewCommand((command) =>
 {
     var ProjectPath = Directory.GetCurrentDirectory();
-    var ProjectName = command.Name;
+    var ProjectName = command.ProjectName;
     var IsCoverageEnabled = command.EnableCoverage;
     var IsSanitizerEnabled = command.EnableSanitizer;
 
@@ -70,52 +74,57 @@ rootCommand.AddCommand(New.Create((command) =>
     };
 
     var project = creator.CreateIfNotExist(true);
-    if(project == null)
+    if (project == null)
     {
-        Kiss.Logs.PrintErrorLine($"Failed to create the project {command.Name}");
+        Kiss.Logs.PrintErrorLine($"Failed to create the project {command.ProjectName}");
         return -1;
     }
     return 0;
-}));
+});
 
-rootCommand.AddCommand(Generate.Create((command) =>
+// Create "generate" command
+var generateCommand = new GenerateCommand((options) =>
 {
-    if(command is CMakeGenerate cmakeGenerator)
+    if (options is CMakeGenerateOptions cmakeOptions)
     {
         var ProjectPath = Directory.GetCurrentDirectory();
-        var ProjectName = cmakeGenerator.Name;
-        var IsCoverageEnabled = cmakeGenerator.EnableCoverage;
-        var IsSanitizerEnabled = cmakeGenerator.EnableSanitizer;
+        var ProjectName = cmakeOptions.ProjectName;
+        var IsCoverageEnabled = cmakeOptions.EnableCoverage;
+        var IsSanitizerEnabled = cmakeOptions.EnableSanitizer;
 
-        var generator = new CMakeGenerator(ProjectPath, ProjectName, cmakeGenerator.Type, IsCoverageEnabled, IsSanitizerEnabled);
+        var generator = new CMakeGenerator(ProjectPath, ProjectName, cmakeOptions.Type, IsCoverageEnabled, IsSanitizerEnabled);
 
         var result = generator.Generate();
         if (!result)
         {
-            Kiss.Logs.PrintErrorLine($"Failed to generate CMake scripts for {command.Name} project");
+            Kiss.Logs.PrintErrorLine($"Failed to generate CMake scripts for {cmakeOptions.ProjectName} project");
             return -1;
         }
     }
     return 0;
-}));
+});
 
-rootCommand.AddCommand(Build.Create((command) =>
+// Create "build" command
+var buildCommand = new BuildCommand((options) =>
 {
     var ProjectPath = Directory.GetCurrentDirectory();
-    var ProjectName = command.Name;
-    var IsCoverageEnabled = command.EnableCoverage;
-    var IsSanitizerEnabled = command.EnableSanitizer;
+    var ProjectName = options.ProjectName;
+    var IsCoverageEnabled = options.EnableCoverage;
+    var IsSanitizerEnabled = options.EnableSanitizer;
 
     Builder builder = new CMakeBuilder(ProjectPath, ProjectName, IsCoverageEnabled, IsSanitizerEnabled);
 
     var result = builder.Build();
     if (!result)
     {
-        Kiss.Logs.PrintErrorLine($"Error while building the project {command.Name}");
+        Kiss.Logs.PrintErrorLine($"Error while building the project {options.ProjectName}");
         return -1;
     }
     return 0;
-}));
+});
 
+rootCommand.AddCommand(newCommand);
+rootCommand.AddCommand(generateCommand);
+rootCommand.AddCommand(buildCommand);
 
 return await rootCommand.InvokeAsync(args);

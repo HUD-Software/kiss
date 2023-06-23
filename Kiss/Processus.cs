@@ -28,7 +28,7 @@ namespace Kiss
                     {
                         if (outLine.Data is not null)
                         {
-                            Logs.PrintSuccessLine(outLine.Data);
+                            Logs.PrintLine(outLine.Data);
                         }
                     });
                 proc.ErrorDataReceived += new DataReceivedEventHandler(
@@ -40,9 +40,34 @@ namespace Kiss
                         }
                     });
                 proc.Start();
-                proc.BeginOutputReadLine();
-                proc.BeginErrorReadLine();
-                proc.WaitForExit();
+
+                // proc.BeginOutputReadLine();
+                // proc.BeginErrorReadLine();
+                // proc.WaitForExit();
+                while (!proc.HasExited)
+                {
+                    string? outputLine;
+                    do
+                    {
+                        outputLine = proc.StandardOutput.ReadLine();
+                        if (!String.IsNullOrEmpty(outputLine))
+                        {
+                            Logs.PrintLine(outputLine);
+                        }
+                    }
+                    while (!String.IsNullOrEmpty(outputLine));
+
+                    string errorLine;
+                    do
+                    {
+                        errorLine = proc.StandardError.ReadToEnd();
+                        if (!String.IsNullOrEmpty(errorLine))
+                        {
+                            Logs.PrintError(errorLine);
+                        }
+                    } while (!String.IsNullOrEmpty(errorLine));
+                }
+
                 return proc.ExitCode;
             }   
         }

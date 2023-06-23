@@ -2,6 +2,8 @@
 {
     public class Logs
     {
+        private static readonly object ConsoleWriterLock = new object();
+
         public static void Print(string content)
         {
             Print(content, ConsoleColor.White);
@@ -40,18 +42,24 @@
 
         private static void Print(string content, ConsoleColor color)
         {
-            var temp = Console.ForegroundColor;
-            Console.ForegroundColor = color;
-            Console.Write(content);
-            Console.ForegroundColor = temp;
+            lock (ConsoleWriterLock)
+            {
+                var temp = Console.ForegroundColor;
+                Console.ForegroundColor = color;
+                Console.Write(content);
+                Console.ForegroundColor = temp;
+            }
         }
 
         private static void PrintLine(string content, ConsoleColor color)
         {
-            var temp = Console.ForegroundColor;
-            Console.ForegroundColor = color;
-            Console.WriteLine(content);
-            Console.ForegroundColor = temp;
+            lock (ConsoleWriterLock)
+            {
+                var temp = Console.ForegroundColor;
+                Console.ForegroundColor = color;
+                Console.WriteLine(content);
+                Console.ForegroundColor = temp;
+            }
         }
     }
 }

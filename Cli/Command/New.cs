@@ -6,7 +6,7 @@ namespace Command
 {
     public record New(ProjectType Type, string Name, bool EnableCoverage, bool EnableSanitizer)
     {
-        public static System.CommandLine.Command Create(Action<New> action)
+        public static System.CommandLine.Command Create(Func<New, int> action)
         {
             var newTypeArgument = new Argument<string>(
                 name: "type",
@@ -37,7 +37,8 @@ namespace Command
 
             command.SetHandler((type, name, enableCoverage, enableSanitizer) =>
             {
-                action.Invoke(new New(ProjectTypeExtensions.FromString(type), name, enableCoverage, enableSanitizer));
+                int returnCode = action.Invoke(new New(ProjectTypeExtensions.FromString(type), name, enableCoverage, enableSanitizer));
+                return Task.FromResult(returnCode);
             }, newTypeArgument, newProjectNameArgument, enableCoverage, enableSanitizer);
 
             return command;

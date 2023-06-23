@@ -72,8 +72,10 @@ rootCommand.AddCommand(New.Create((command) =>
     var project = creator.CreateIfNotExist(true);
     if(project == null)
     {
-        Console.Error.WriteLine($"Failed to create the project {command.Name}");
+        Kiss.Logs.PrintErrorLine($"Failed to create the project {command.Name}");
+        return -1;
     }
+    return 0;
 }));
 
 rootCommand.AddCommand(Generate.Create((command) =>
@@ -90,10 +92,11 @@ rootCommand.AddCommand(Generate.Create((command) =>
         var result = generator.Generate();
         if (!result)
         {
-            Console.Error.WriteLine($"Error while generating the project scripts {command.Name}");
+            Kiss.Logs.PrintErrorLine($"Failed to generate CMake scripts for {command.Name} project");
+            return -1;
         }
     }
-
+    return 0;
 }));
 
 rootCommand.AddCommand(Build.Create((command) =>
@@ -108,8 +111,10 @@ rootCommand.AddCommand(Build.Create((command) =>
     var result = builder.Build();
     if (!result)
     {
-        Console.Error.WriteLine($"Error while building the project {command.Name}");
+        Kiss.Logs.PrintErrorLine($"Error while building the project {command.Name}");
+        return -1;
     }
+    return 0;
 }));
 
 

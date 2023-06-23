@@ -1,13 +1,14 @@
 ﻿using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
+using Kiss.Manifest.File.Json;
 
-namespace Kiss.Manifest.Json.Converters
+namespace Kiss.Manifest.File.Json.Converters
 {
     public class ProfilesConverter : JsonConverter
     {
         public override bool CanConvert(Type objectType)
         {
-            return objectType == typeof(Profiles);
+            return objectType == typeof(ManifestProfiles);
         }
 
         public override object? ReadJson(JsonReader reader, Type objectType, object? existingValue, JsonSerializer serializer)
@@ -18,7 +19,7 @@ namespace Kiss.Manifest.Json.Converters
 
                 bool? DefaultSanitizerEnabled = null;
                 bool? DefaultCoverageEnabled = null;
-                var profiles = new Dictionary<string, Profile>();
+                var profiles = new Dictionary<string, ManifestProfile>();
 
                 foreach (var child in jo.Children())
                 {
@@ -39,7 +40,7 @@ namespace Kiss.Manifest.Json.Converters
                                     }
                                     else
                                     {
-                                        var profile = property.Value.ToObject<Profile>(serializer);
+                                        var profile = property.Value.ToObject<ManifestProfile>(serializer);
                                         if (profile is not null)
                                         {
                                             profiles.Add(property.Name, profile);
@@ -52,38 +53,33 @@ namespace Kiss.Manifest.Json.Converters
                                 }
                                 catch (Exception e)
                                 {
-                                    Console.Error.WriteLine(e.Message);
+                                    Logs.PrintError(e.Message);
                                 }
                             }
                             break;
                     }
                 }
-                return new Profiles
+                return new ManifestProfiles
                 {
-                    Default = new Profile
-                    {
-                        SanitizerEnabled = DefaultSanitizerEnabled,
-                        CoverageEnabled = DefaultCoverageEnabled
-                    },
                     AllProfiles = profiles,
                 };
             }
             catch (JsonReaderException e)
             {
-                Console.Error.Write(e.Message);
+                Logs.PrintError(e.Message);
                 return null;
             }
         }
 
         public override void WriteJson(JsonWriter writer, object? value, JsonSerializer serializer)
         {
-            if (value is Profiles profiles)
+            if (value is ManifestProfiles profiles)
             {
                 writer.WriteStartObject();
-                writer.WritePropertyName("sanitizer");
-                serializer.Serialize(writer, profiles.Default.SanitizerEnabled);
-                writer.WritePropertyName("coverage");
-                serializer.Serialize(writer, profiles.Default.CoverageEnabled);
+                //writer.WritePropertyName("sanitizer");
+                //serializer.Serialize(writer, profiles.Default.SanitizerEnabled);
+                //writer.WritePropertyName("coverage");
+                //serializer.Serialize(writer, profiles.Default.CoverageEnabled);
                 foreach (var profile in profiles.AllProfiles)
                 {
                     writer.WritePropertyName(profile.Key);

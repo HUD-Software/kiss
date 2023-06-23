@@ -1,54 +1,24 @@
-﻿using Kiss.Manifest.Json;
+﻿using Kiss.Manifest.File;
 
 namespace Kiss.Manifest
 {
-    public enum FileType
-    {
-        Json
-    }
-
     public class Manifest
     {
-        public required string Filepath { get; init; }
-        public Package Package => ManifestFile.Package;
-        public Profiles? Profiles => ManifestFile.Profiles;
-        public required ManifestFile ManifestFile { get; init; }
+        public ManifestPackage Package { get; init; }
+        public ManifestProfiles Profiles { get; init; }
+        public ManifestFile? ManifestFile { get; init; }
 
-        public void SaveToFile() => ManifestFile.SaveToFile(Filepath);
-
-        public static Manifest Default(string projectRootPath, string projectName, FileType type)
+        public Manifest(ManifestFile manifestFile)
         {
-            (ManifestFile file, string filename) manifest = type switch
-            {
-                FileType.Json => (JsonManifest.Default(projectName),JsonManifest.FILENAME),
-                _ => throw new ArgumentException("Invalid manifest file type"),
-            };
-            return new Manifest
-            {
-                Filepath = Path.Combine(projectRootPath, manifest.filename),
-                ManifestFile = manifest.file
-            };
-        }
+            ManifestFile = manifestFile;
+            Package = ManifestPackage.Default(manifestFile.Package.Name);
+            Profiles = (ManifestProfiles)ManifestProfiles.BUILT_IN.Clone();
 
-        public static Manifest? Load(string projectRootPath, FileType type)
-        {
-            (ManifestFile? file, string filename) manifest = type switch
+            // Sync the manifest file with build-in profiles
+            if(manifestFile.Profiles is not null)
             {
-                FileType.Json => (JsonManifest.Load(projectRootPath), JsonManifest.FILENAME),
-                _ => throw new ArgumentException("Invalid manifest file type"),
-            };
-            if (manifest.file is null)
-            {
-                Console.Error.Write($"The manifest file {JsonManifest.FILENAME} not found in directory {projectRootPath}");
-                return null;
+                Profiles.Sync(manifestFile.Profiles);
             }
-
-            return new Manifest
-            {
-                Filepath = Path.Combine(projectRootPath, manifest.filename),
-                ManifestFile = manifest.file
-            };
         }
-
     }
 }

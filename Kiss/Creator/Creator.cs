@@ -15,7 +15,7 @@ namespace Kiss.Creator
                 return projectDescriptor;
             }
             
-            Console.Error.WriteLine("Directory already exists and is not empty.");
+            Logs.PrintErrorLine("Directory already exists and is not empty.");
             return null;
         }
 

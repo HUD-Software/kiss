@@ -15,7 +15,7 @@
  *   -> kiss.toml
  */
 using Kiss.Project;
-using Kiss.Manifest;
+using Kiss.Manifest.File.Json;
 
 namespace Kiss.Creator
 {
@@ -26,10 +26,12 @@ namespace Kiss.Creator
         {
             try
             {
-                var defaultManifest = Manifest.Manifest.Default(projectRootPath, ProjectName, Manifest.FileType.Json);
-                defaultManifest.SaveToFile();
+                var manifestFile = JsonManifest.Default(ProjectName);
+                manifestFile.SaveToFile(projectRootPath);
 
-                ProjectDescriptor projectDescriptor = new ProjectDescriptor(projectRootPath, ProjectName, defaultManifest);
+                Manifest.Manifest manifest = new(manifestFile);
+
+                ProjectDescriptor projectDescriptor = new ProjectDescriptor(projectRootPath, ProjectName, manifest);
                 Directory.CreateDirectory(projectDescriptor.Interface.Path);
                 Directory.CreateDirectory(projectDescriptor.Source.Path);
                 Directory.CreateDirectory(projectDescriptor.Test.Path);
@@ -37,7 +39,7 @@ namespace Kiss.Creator
             }
             catch (Exception)
             {
-                Console.Error.WriteLine("Error creating Json Manifest");
+                Logs.PrintErrorLine("Error creating Json Manifest");
                 throw;
             }            
         }
@@ -51,7 +53,7 @@ namespace Kiss.Creator
             }
             foreach (var file in projectDescriptor.Interface.Files)
             {
-                Console.WriteLine(file);
+                Logs.PrintErrorLine(file);
             }
             // Add the source implementation of the lib
             using (StreamWriter writer = new StreamWriter(projectDescriptor.Source.AddNewFile("fibonacci.cpp")))
@@ -82,6 +84,14 @@ namespace Kiss.Creator
     return RUN_ALL_TESTS();
 }");
             }
+
+            // Add the precomplied header
+            using (StreamWriter writer = new StreamWriter(projectDescriptor.Test.AddNewFile("precompiled.h")))
+            {
+                writer.WriteLine("#include <gtest/gtest.h>");
+            }
+
+            // Add the fibonnaci test code
             using (StreamWriter writer = new StreamWriter(projectDescriptor.Test.AddNewFile("test_fibonacci.cpp")))
             {
                 writer.WriteLine($"#include <{projectDescriptor.ProjectName}/fibonacci.h>");

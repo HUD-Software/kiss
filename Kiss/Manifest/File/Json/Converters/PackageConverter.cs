@@ -2,13 +2,13 @@
 using Newtonsoft.Json.Linq;
 using NuGet.Versioning;
 
-namespace Kiss.Manifest.Json.Converters
+namespace Kiss.Manifest.File.Json.Converters
 {
     public class PackageConverter : JsonConverter
     {
         public override bool CanConvert(Type objectType)
         {
-            return objectType == typeof(Package);
+            return objectType == typeof(ManifestPackage);
         }
 
         public override object? ReadJson(JsonReader reader, Type objectType, object? existingValue, JsonSerializer serializer)
@@ -19,7 +19,7 @@ namespace Kiss.Manifest.Json.Converters
                 var packageName = (jo["name"]?.ToString()) ?? throw new ArgumentException("Missing package.name");
                 var authors = (jo["authors"]?.ToObject<string[]>()) ?? throw new ArgumentException("Missing package.authors");
                 var version = (jo["version"]?.ToObject<SemanticVersion>()) ?? throw new ArgumentException("Missing package.version");
-                return new Package
+                return new ManifestPackage
                 {
                     Name = packageName,
                     Authors = authors,
@@ -28,14 +28,14 @@ namespace Kiss.Manifest.Json.Converters
             }
             catch (JsonReaderException e)
             {
-                Console.Error.Write(e.Message);
+                Logs.PrintError(e.Message);
                 return null;
             }
         }
 
         public override void WriteJson(JsonWriter writer, object? value, JsonSerializer serializer)
         {
-            if (value is Package package)
+            if (value is ManifestPackage package)
             {
                 writer.WriteStartObject();
                 writer.WritePropertyName("name");

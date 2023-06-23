@@ -9,5 +9,13 @@ namespace Kiss.Project
         }
 
         public string Path { get; init; }
+
+        public void CreateIfNotExist()
+        {
+            if (!Directory.Exists(Path))
+            {
+                Directory.CreateDirectory(Path);
+            }
+        }
     }
 }

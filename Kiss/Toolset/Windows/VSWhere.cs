@@ -1,26 +1,13 @@
+ï»¿using Kiss.Generator;
 using Microsoft.VisualStudio.Setup.Configuration;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 
-// From https://github.com/microsoft/vs-setup-samples
-
-// Il faut que le Workload suivant soit présent:
-// Visual studio :  Microsoft.VisualStudio.Workload.NativeDesktop
-// Build Tools : Microsoft.VisualStudio.Workload.VCTools
-
-// Si Microsoft.VCToolsVersion.default.txt n'est pas présent, il manque l'installation du Build Tool C++
-namespace Kiss.Toolset
+namespace Kiss.Toolset.Windows
 {
-    // MSVC Community 2022 ou BuildTool 2022
-    /// <summary>
-    /// Visual Studio installation informations
-    /// </summary>
-    /// <param name="InstallationPath">The installation path</param>
-    /// <param name="Product">The product ID</param>
-    /// <param name="IsCPPBuildToolInstalled">true if C++ Build Tools is installed, false otherwise</param>
-    /// <param name="ProductLineVersion">Product line version (2022,...)</param>
-    /// <param name="ProductName">Product Name (Visual Studio,...) </param>
-    public record VisualStudioInfo(string InstallationPath, string Product, bool IsCPPBuildToolInstalled, string ProductLineVersion, string ProductName);
+    // From https://github.com/microsoft/vs-setup-samples
 
+    [SupportedOSPlatform("windows")]
     public class VSWhere
     {
         private const int REGDB_E_CLASSNOTREG = unchecked((int)0x80040154);
@@ -29,9 +16,9 @@ namespace Kiss.Toolset
         /// Enumerate all VisualStudio instances installed
         /// </summary>
         /// <returns>Enumeration of all VisualStudio instances installed</returns>
-        public static IEnumerable<VisualStudioInfo> LoadVisualStudioInstallationInfo()
+        public static IEnumerable<VisualStudio> LoadVisualStudioInstallationInfo()
         {
-            var vctoolList = new List<VisualStudioInfo>();
+            var vctoolList = new List<VisualStudio>();
             try
             {
                 // Gets information about product instances installed on the machine.
@@ -82,30 +69,68 @@ namespace Kiss.Toolset
                         ISetupPropertyStore store = catalog.GetCatalogInfo();
 
                         // Get the productLineVersion
-                        var productLineVersion = from property in store.GetNames()
-                                                 where string.Equals(property, "productLineVersion", StringComparison.OrdinalIgnoreCase)
-                                                 select new { Name = property, Value = store.GetValue(property) };
-                        if (!productLineVersion.Any()) continue;
+                        var productLineVersionEnumerable = from property in store.GetNames()
+                                                           where string.Equals(property, "productLineVersion", StringComparison.OrdinalIgnoreCase)
+                                                           select new { Name = property, Value = store.GetValue(property) };
+                        if (!productLineVersionEnumerable.Any()) continue;
+                        var productLineVersion = productLineVersionEnumerable.First().Value;
 
                         // Get the productName
-                        var productName = from property in store.GetNames()
-                                          where string.Equals(property, "productName", StringComparison.OrdinalIgnoreCase)
-                                          select new { Name = property, Value = store.GetValue(property) };
-                        if (!productName.Any()) continue;
+                        var productNameEnumerable = from property in store.GetNames()
+                                                    where string.Equals(property, "productName", StringComparison.OrdinalIgnoreCase)
+                                                    select new { Name = property, Value = store.GetValue(property) };
+                        if (!productNameEnumerable.Any()) continue;
+                        var productName = productNameEnumerable.First().Value;
 
-                        vctoolList.Add(new VisualStudioInfo(installationPath, product, isCPPBuildToolInstalled, productLineVersion.First().Value, productName.First().Value));
+                        // Get product display version
+                        var installationVersion = instance.GetInstallationVersion();
+                        var majorVersion = installationVersion.Split(".")[0];
 
+                        GeneratorType type;
+                        if (productLineVersion.Equals("2022"))
+                        { 
+                            switch (product!)
+                            {
+                                case "Microsoft.VisualStudio.Product.BuildTools":
+                                    type = GeneratorType.VISUAL_STUDIO_2022_BUILDTOOLS;
+                                    break;
+                                case "Microsoft.VisualStudio.Product.Community":
+                                    type = GeneratorType.VISUAL_STUDIO_2022_COMMUNITY;
+                                    break;
+                                default:
+                                    continue;
+                            }
+                        }
+                        else
+                        {
+                            continue;
+                        }
+
+                        // Read the default version
+                        string? defaultVersion = GetVCToolsDefaultVersion(instance2);
+
+                        vctoolList.Add(new VisualStudio
+                        {
+                            InstallationPath = installationPath,
+                            Product = product,
+                            IsVCBuildToolInstalled = isCPPBuildToolInstalled,
+                            ProductLineVersion = productLineVersion,
+                            MajorVersion = majorVersion,
+                            ProductName = productName,
+                            GeneratorType = type,
+                            DefaultVCToolVersion = defaultVersion
+                        });
                     }
                 }
                 while (fetched > 0);
             }
             catch (COMException ex) when (ex.HResult == REGDB_E_CLASSNOTREG)
             {
-                Console.WriteLine("The query API is not registered. Assuming no instances are installed.");
+                Logs.PrintError("The query API is not registered. Assuming no instances are installed.");
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"Error 0x{ex.HResult:x8}: {ex.Message}");
+                Logs.PrintError($"Error 0x{ex.HResult:x8}: {ex.Message}");
             }
             return vctoolList;
         }
@@ -139,6 +164,27 @@ namespace Kiss.Toolset
             // From https://github.com/microsoft/vswhere/wiki/Find-VC
             var defaultVersion = Path.Join(instance2.GetInstallationPath(), "VC\\Auxiliary\\Build\\Microsoft.VCToolsVersion.default.txt");
             return File.Exists(defaultVersion);
+        }
+
+        private static string? GetVCToolsDefaultVersion(ISetupInstance2 instance2)
+        {
+            var defaultVersionFilePath = Path.Join(instance2.GetInstallationPath(), "VC\\Auxiliary\\Build\\Microsoft.VCToolsVersion.default.txt");
+            if (File.Exists(defaultVersionFilePath))
+            {
+                try
+                {
+                    using (StreamReader reader = new StreamReader(defaultVersionFilePath))
+                    {
+                        string? line = reader.ReadLine();
+                        return line?.Trim() ?? null;
+                    }
+                }
+                catch (Exception e)
+                {
+                    Logs.PrintError(e.Message);
+                }
+            }
+            return null;
         }
     }
 }

@@ -1,8 +1,8 @@
-﻿using Kiss.Manifest.Json.Converters;
+﻿using Kiss.Manifest.File.Json.Converters;
 using Newtonsoft.Json;
 using NuGet.Versioning;
 
-namespace Kiss.Manifest.Json
+namespace Kiss.Manifest.File.Json
 {
     public class JsonManifest : ManifestFile
     {
@@ -27,7 +27,7 @@ namespace Kiss.Manifest.Json
         {
             return new JsonManifest
             {
-                Package = new Package
+                Package = new ManifestPackage
                 {
                     Authors = new string[] { "me", "I", "myself" },
                     Name = projectName,
@@ -37,11 +37,16 @@ namespace Kiss.Manifest.Json
             };
         }
 
-        public override void SaveToFile(string Filepath)
+        public override void SaveToFile(string projectRootPath)
         {
-            using StreamWriter sw = new(Filepath);
+            using StreamWriter sw = new(Filepath(projectRootPath));
             string json = JsonConvert.SerializeObject(this, JSON_SETTINGS);
             sw.Write(json);
+        }
+
+        public override string Filepath(string projectRootPath)
+        {
+            return Path.Combine(projectRootPath, FILENAME);
         }
     }
 }

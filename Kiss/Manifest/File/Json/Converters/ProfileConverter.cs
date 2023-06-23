@@ -1,13 +1,14 @@
 ﻿using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
+using Kiss.Manifest.File.Json;
 
-namespace Kiss.Manifest.Json.Converters
+namespace Kiss.Manifest.File.Json.Converters
 {
     public class ProfileConverter : JsonConverter
     {
         public override bool CanConvert(Type objectType)
         {
-            return objectType == typeof(Profile);
+            return objectType == typeof(ManifestProfile);
         }
 
         public override object? ReadJson(JsonReader reader, Type objectType, object? existingValue, JsonSerializer serializer)
@@ -42,13 +43,13 @@ namespace Kiss.Manifest.Json.Converters
                                 }
                                 catch (Exception e)
                                 {
-                                    Console.Error.WriteLine(e.Message);
+                                    Logs.PrintError(e.Message);
                                 }
                             }
                             break;
                     }
                 }
-                return new Profile
+                return new ManifestProfile
                 {
                     SanitizerEnabled = SanitizerEnabled,
                     CoverageEnabled = CoverageEnabled
@@ -56,14 +57,14 @@ namespace Kiss.Manifest.Json.Converters
             }
             catch (JsonReaderException e)
             {
-                Console.Error.Write(e.Message);
+                Logs.PrintError(e.Message);
                 return null;
             }
         }
 
         public override void WriteJson(JsonWriter writer, object? value, JsonSerializer serializer)
         {
-            if (value is Profile profile)
+            if (value is ManifestProfile profile)
             {
                 writer.WriteStartObject();
                 writer.WritePropertyName("sanitizer");

@@ -4,7 +4,7 @@ namespace Command
 {
     public record Build(string Name, bool EnableCoverage, bool EnableSanitizer)
     {
-        public static System.CommandLine.Command Create(Action<Build> action)
+        public static System.CommandLine.Command Create(Func<Build, int> action)
         {
             var newProjectNameArgument = new Argument<string>(
                 name: "name",
@@ -26,7 +26,8 @@ namespace Command
             var command = new System.CommandLine.Command("build", "build a project");
             command.SetHandler((name, enableCoverage, enableSanitizer) =>
             {
-                action.Invoke(new Build(name, enableCoverage, enableSanitizer));
+                int returnCode = action.Invoke(new Build(name, enableCoverage, enableSanitizer));
+                return Task.FromResult(returnCode);
             }, newProjectNameArgument, enableCoverage, enableSanitizer);
 
             return command;

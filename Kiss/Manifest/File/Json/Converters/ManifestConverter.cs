@@ -1,7 +1,7 @@
 ﻿using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
 
-namespace Kiss.Manifest.Json.Converters
+namespace Kiss.Manifest.File.Json.Converters
 {
     public class JsonManifestConverter : JsonConverter
     {
@@ -16,8 +16,8 @@ namespace Kiss.Manifest.Json.Converters
             {
                 JObject jo = JObject.Load(reader);
 
-                var package = jo["package"]?.ToObject<Package>(serializer) ?? throw new ArgumentException("Missing package");
-                var profiles = jo["profiles"]?.ToObject<Profiles>(serializer)!;
+                var package = jo["package"]?.ToObject<ManifestPackage>(serializer) ?? throw new ArgumentException("Missing package");
+                var profiles = jo["profiles"]?.ToObject<ManifestProfiles>(serializer)!;
 
                 return new JsonManifest
                 {
@@ -27,7 +27,7 @@ namespace Kiss.Manifest.Json.Converters
             }
             catch (JsonReaderException e)
             {
-                Console.Error.Write(e.Message);
+                Logs.PrintError(e.Message);
                 return null;
             }
         }

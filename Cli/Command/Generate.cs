@@ -1,19 +1,21 @@
 ﻿using Kiss.Generator;
 using System.CommandLine;
 
-//generate cmake proj "Visual Studio 2022 BuildTool"
+//generate cmake proj "Visual Studio 2022 BuildTools"
 
 namespace Command
 {
     public record Generate(string Name)
     {
-        public static System.CommandLine.Command Create(Action<Generate> action)
+        public static System.CommandLine.Command Create(Func<Generate, int> action)
         {
             var command = new System.CommandLine.Command("generate", "Genereate build scripts of a project");
-            command.AddCommand(CMakeGenerate.Create((command) =>
-            {
-                action.Invoke(command);
-            }));
+            command.AddCommand(
+                CMakeGenerate.Create(command =>
+                {
+                    return action.Invoke(command);
+                })
+            );
             return command;
         }
     }
@@ -21,7 +23,7 @@ namespace Command
     internal record CMakeGenerate(string Name, GeneratorType Type, bool EnableCoverage, bool EnableSanitizer)
         : Generate(Name: Name)
     {
-        public static System.CommandLine.Command Create(Action<CMakeGenerate> action)
+        public static System.CommandLine.Command Create(Func<CMakeGenerate, int> action)
         {
             var projectNameArgument = new Argument<string>(
                 name: "name",
@@ -53,11 +55,12 @@ namespace Command
 
             command.SetHandler((name, generator, enableCoverage, enableSanitizer) =>
             {
-                action.Invoke(new CMakeGenerate(
+                int returnCode = action.Invoke(new CMakeGenerate(
                     Name: name,
                     Type: GeneratorTypeExtensions.FromString(generator),
                     EnableCoverage: enableCoverage,
                     EnableSanitizer: enableSanitizer));
+                return Task.FromResult(returnCode);
             }, projectNameArgument, generatorArgument, enableCoverageOption, enableSanitizerOption);
 
             return command;

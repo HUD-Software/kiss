@@ -1,20 +1,20 @@
 import subprocess
 from pathlib import Path
 
-# Base du projet
+# Root directory
 project_root = Path(__file__).parent
 
-# Dossier de shadow build
+# Shadow build
 build_dir = project_root / "build"
-dist_dir = build_dir / "exe"   # exe final
-work_dir = build_dir / "tmp"   # fichiers temporaires PyInstaller
-spec_dir = build_dir / "spec"  # spec PyInstaller
+dist_dir = build_dir / "bin"   # Final binary
+work_dir = build_dir / "tmp"   # PyInstaller temp files
+spec_dir = build_dir / "spec"  # PyInstaller spec files
 
-# Création des dossiers
+# Create directory
 for d in [dist_dir, work_dir, spec_dir]:
     d.mkdir(parents=True, exist_ok=True)
 
-# Commande PyInstaller
+# Run PyInstaller
 pyinstaller_cmd = [
     "pyinstaller",
     "--name", "kiss",

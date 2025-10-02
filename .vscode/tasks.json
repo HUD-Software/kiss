@@ -2,7 +2,7 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Build KISS exe",
+            "label": "Build KISS",
             "type": "shell",
             "command": "python",
             "args": [
@@ -19,14 +19,21 @@
             "problemMatcher": []
         },
         {
-            "label": "Run KISS exe",
+            "label": "Run KISS",
             "type": "shell",
-            "command": "build/exe/kiss.exe",
+            "command": "python",
             "args": [
+                "${workspaceFolder}/run.py",
                 "${workspaceFolder}/tests/modules",
                 "--list"
             ],
-            "dependsOn": "Build KISS exe"
+            "dependsOn": "Build KISS",
+            "group": "test",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
         }
     ]
 }

@@ -8,8 +8,9 @@
             "program": "${workspaceFolder}/src/kiss/kiss.py",
             "console": "integratedTerminal",
             "args": [
-                "--list",
-                "tests/modules"
+                "-d",
+                "tests/modules",
+                "list",
             ]
         }
     ]

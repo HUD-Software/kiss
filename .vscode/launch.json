@@ -1,0 +1,16 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Run KISS exe",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/kiss/kiss.py",
+            "console": "integratedTerminal",
+            "args": [
+                "--list",
+                "tests/modules"
+            ]
+        }
+    ]
+}

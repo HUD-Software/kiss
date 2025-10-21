@@ -21,11 +21,11 @@
         {
             "label": "Run KISS",
             "type": "shell",
-            "command": "python",
+            "command": "${workspaceFolder}/build/bin/kiss.exe",
             "args": [
-                "${workspaceFolder}/run.py",
+                "-d",
                 "${workspaceFolder}/tests/modules",
-                "--list"
+                "list"
             ],
             "dependsOn": "Build KISS",
             "group": "test",

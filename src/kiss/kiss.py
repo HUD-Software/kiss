@@ -1,51 +1,13 @@
 import argparse
-import importlib.util
 from pathlib import Path
-import sys
-from registry import registered_projects
-import modules
+from commands.list import cmd_list
+from commands.new import cmd_new, NewArgs
+from commands.build import cmd_build
+from commands.generate import cmd_generate
 
-# --- Fonction de chargement dynamique des plugins ---
-def load_plugins(path: Path):
-    plugins = {}
-    if not path.exists():
-        return plugins
+def call_new_command(args):
+    cmd_new(NewArgs(args.directory, args.name, args.type))
     
-    for file in path.glob("*.py"):
-        module_name = file.stem
-        spec = importlib.util.spec_from_file_location(module_name, file)
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-        plugins[module_name] = module
-    return plugins
-
-def cmd_new(args):
-    print(f"Creating a new {args.type} project named {args.name}")
-
-def cmd_generate(args):
-    print("Generating build scripts...")
-
-def cmd_build(args):
-    print(f"Building project {args.name}...")
-
-def cmd_list(args):
-    print("Listing all projects...")
-
-def cmd_list(args):
-    load_plugins(args.directory)
-
-    if not registered_projects:
-        print("Aucun projet trouvé !")
-    else:
-        for name, cls in registered_projects.items():
-            print(f"Projet trouvé : {name}, description : {getattr(cls, '_kiss_description', '')}")
-            instance = cls()
-            if hasattr(instance, "prebuild"):
-                instance.prebuild()
-            if hasattr(instance, "postbuild"):
-                instance.postbuild()
-
-
 def path_absolute(p):
     return Path(p).expanduser().resolve()
 
@@ -86,7 +48,7 @@ def main():
         "name",
         help="Name of the project"
     )
-    parser_new.set_defaults(func=cmd_new)
+    parser_new.set_defaults(func=call_new_command)
 
     # --- generate command ---
     parser_generate = subparsers.add_parser(
@@ -106,7 +68,7 @@ def main():
     )
     parser_build.set_defaults(func=cmd_build)
 
-    # --- list command ---
+    # --- list command ---  
     parser_list = subparsers.add_parser(
         "list",
         help="List projects"

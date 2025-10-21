@@ -1,6 +1,23 @@
 import sys
 from types import ModuleType
-from registry import registered_projects
+from pathlib import Path
+import importlib.util
+
+# --- Fonction de chargement dynamique des modules ---
+def load_modules(path: Path):
+    load_modules = {}
+    if not path.exists():
+        return load_modules
+    
+    for file in path.glob("*.py"):
+        module_name = file.stem
+        spec = importlib.util.spec_from_file_location(module_name, file)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        load_modules[module_name] = module
+    return load_modules
+
+registered_projects = {}
 
 # --- décorateur pour créer automatiquement le module kiss ---
 def register_in_kiss(func):

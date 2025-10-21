@@ -10,7 +10,9 @@
             "args": [
                 "-d",
                 "tests/modules",
-                "list",
+                "new",
+                "bin",
+                "coucou"
             ]
         }
     ]

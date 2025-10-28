@@ -23,7 +23,7 @@ pyinstaller_cmd = [
     f"--distpath={dist_dir}",
     f"--workpath={work_dir}",
     f"--specpath={spec_dir}",
-    "src/kiss/kiss.py"
+    "src/kiss.py"
 ]
 
 subprocess.run(pyinstaller_cmd)

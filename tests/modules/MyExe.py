@@ -1,6 +1,6 @@
-from modules import KissProject, Description
+from modules import Bin, Description, ProjectType
 
-@KissProject("mon_projet_toto")
+@Bin("mon_projet_toto")
 @Description("C'est mon projet toto")
 class TotoProject:
     def prebuild(self):

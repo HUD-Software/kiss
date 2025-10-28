@@ -1,0 +1,7 @@
+from projects.project_type import ProjectType
+
+class LibProject:
+    TYPE = ProjectType.lib
+    def __init__(self, name: str, description:str=""):
+        self.name = name
+        self.description = description

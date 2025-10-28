@@ -3,19 +3,24 @@ from types import ModuleType
 from pathlib import Path
 import importlib.util
 
+from projects import ProjectType
+
 # --- Fonction de chargement dynamique des modules ---
-def load_modules(path: Path):
+def load_modules(path: Path, recursive: bool = False):
     load_modules = {}
     if not path.exists():
         return load_modules
     
-    for file in path.glob("*.py"):
+    pattern = "**/*.py" if recursive else "*.py"
+
+    for file in path.glob(pattern):
         module_name = file.stem
         spec = importlib.util.spec_from_file_location(module_name, file)
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
         load_modules[module_name] = module
     return load_modules
+
 
 registered_projects = {}
 
@@ -36,10 +41,31 @@ def register_in_kiss(func):
     return func
 
 @register_in_kiss
-def KissProject(name):
-    """Décorateur pour enregistrer un projet auprès du moteur"""
+def Bin(name):
+    """Décorateur pour enregistrer un projet binaire auprès du moteur"""
     def wrapper(cls):
-        cls._kiss_name = name
+        cls._project_name = name
+        cls._project_type = ProjectType.bin
+        registered_projects[name] = cls
+        return cls
+    return wrapper
+
+@register_in_kiss
+def Lib(name):
+    """Décorateur pour enregistrer un projet libraire statique auprès du moteur"""
+    def wrapper(cls):
+        cls._project_name = name
+        cls._project_type = ProjectType.lib
+        registered_projects[name] = cls
+        return cls
+    return wrapper
+
+@register_in_kiss
+def Dyn(name):
+    """Décorateur pour enregistrer un projet librarie dynamique auprès du moteur"""
+    def wrapper(cls):
+        cls._project_name = name
+        cls._project_type = ProjectType.dyn
         registered_projects[name] = cls
         return cls
     return wrapper
@@ -48,7 +74,7 @@ def KissProject(name):
 def Description(text):
     """Décorateur pour ajouter une description"""
     def wrapper(cls):
-        cls._kiss_description = text
+        cls._project_description = text
         return cls
     return wrapper
 

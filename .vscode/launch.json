@@ -5,14 +5,17 @@
             "name": "Run KISS",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/src/kiss/kiss.py",
+            "program": "${workspaceFolder}/src/kiss.py",
             "console": "integratedTerminal",
+            //"args":["-d", "tests/modules", "list","-r"]
             "args": [
                 "-d",
                 "tests/modules",
                 "new",
                 "bin",
-                "coucou"
+                 "coucou"
+                 "--description",
+                 "Ceci est mon projet coucou"
             ]
         }
     ]

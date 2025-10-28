@@ -1,0 +1,9 @@
+class Directories:
+    project_dir: str
+    project_src_dir: str
+    project_interface_dir: str
+    project_test_dir: str
+    build_dir: str
+    build_src_dir: str
+    build_test_dir: str
+    kiss_dir: str

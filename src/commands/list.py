@@ -14,7 +14,7 @@ def cmd_list(listParams: ListParams):
     else:
         for name, cls in modules.registered_projects.items():
             console.print_success(f"--> Projet trouvé : {name}")
-            console.print(f"    - description : {getattr(cls, '_kiss_description', '')}")
+            console.print(f"    - description : {getattr(cls, '_project_description', '')}")
             console.print(f"    - prebuild : {hasattr(cls, 'prebuild')}")
             console.print(f"    - postbuild : {hasattr(cls, 'postbuild')}")
             console.print(f"    - src : {getattr(cls, 'src', None)}")

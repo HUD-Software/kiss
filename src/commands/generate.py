@@ -1,5 +1,5 @@
 from pathlib import Path
-from generator.generator import BaseGenerator
+from generator import BaseGenerator
 from platform_target import SupportedTarget
 from project import Project
 

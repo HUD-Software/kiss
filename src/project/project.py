@@ -1,7 +1,7 @@
 import re
 import console
 from project import ProjectType
-from typing import Callable, Optional
+from typing import Callable
 
 class Project:
 
@@ -22,11 +22,11 @@ class Project:
         return self._file
     
     @property
-    def prebuild(self) -> Optional[Callable[[], None]]:
+    def prebuild(self) -> Callable[[], None]|None:
         return self._prebuild_callable
     
     @property
-    def postbuild(self) -> Optional[Callable[[], None]]:
+    def postbuild(self) -> Callable[[], None]|None:
         return self._postbuild_callable
     
     @staticmethod

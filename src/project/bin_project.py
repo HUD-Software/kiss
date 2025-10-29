@@ -1,13 +1,9 @@
 
-from project import ProjectType, Project
+from project import Project
 
 class BinProject(Project):
     SRC_LIST = []
 
-    def __init__(self, name: str, description:str):
-        super().__init__(...)
-        self.name = name
-        self.description = description
 
     def to_new_manifest(self) -> str:
         # Add Import statements

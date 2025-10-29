@@ -3,7 +3,6 @@ import commands
 
 
 def main():
-    #Retrieves user configuration
     userparams = params.UserParams.from_args()   
     from commands import ListParams,NewParams, GenerateParams
     match userparams:

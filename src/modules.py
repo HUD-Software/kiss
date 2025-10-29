@@ -16,6 +16,9 @@ class ModuleLoader:
             self.cls_project[cls] = instance
         return self.cls_project[cls]
     
+    def replace_cls_instance(self, cls, instance):
+        self.cls_project[cls] = instance
+
     def projects(self):
         """
         Retourne les classes des Project enregistrés.
@@ -119,25 +122,6 @@ class ModuleRegistry:
 
 ModuleRegistry = ModuleRegistry()
 
-
-# # --- Fonction de chargement dynamique des modules ---
-# def load_modules(path: Path, recursive: bool = False):
-#     pattern = "**/*.py" if recursive else "*.py"
-
-#     for file in path.glob(pattern):
-#         module_name = file.stem
-#         spec = importlib.util.spec_from_file_location(module_name, file)
-#         module = importlib.util.module_from_spec(spec)
-#         spec.loader.exec_module(module)
-    
-#     for project in cls_project.values():
-#         ModuleRegistry.add(project.name, project)
-
-
-
-
-
-
 # --- décorateur pour créer automatiquement le module kiss ---
 def register_in_kiss(func):
     """
@@ -154,13 +138,6 @@ def register_in_kiss(func):
     setattr(kiss_module, func.__name__, func)
     return func
 
-# Si la classe n'hérite pas déjà de Project → on la "wrap"
-def add_inheritance_to_project_class(cls):
-    from project import Project
-    if not issubclass(cls, Project):
-        cls = type(cls.__name__, (Project, cls), dict(cls.__dict__))
-    return cls
-
 def project_file() -> str:
     frame = inspect.currentframe()
     caller_frame = frame.f_back.f_back
@@ -172,11 +149,20 @@ def Bin(name):
     """Décorateur pour enregistrer un projet binaire auprès du moteur"""
     def wrapper(cls):
         instance = ModuleLoader.get_cls_instance(cls)
-        instance.name = name
-        instance.type = ProjectType.bin
-        instance.file = project_file()
-        instance.prebuild = cls.prebuild if hasattr(cls, "prebuild") else None
-        instance.postbuild = cls.postbuild if hasattr(cls, "postbuild") else None
+
+        # Now that we now the type of the project replace it's instance
+        from project import BinProject
+        if not isinstance(instance, BinProject):
+            bin_instance = BinProject()
+            ModuleLoader.replace_cls_instance(cls, bin_instance)
+            bin_instance._description = instance.description if hasattr(instance, "description") else None
+            instance = bin_instance
+
+        instance._name = name
+        instance._type = ProjectType.bin
+        instance._file = project_file()
+        instance._prebuild = cls.prebuild if hasattr(cls, "prebuild") else None
+        instance._postbuild = cls.postbuild if hasattr(cls, "postbuild") else None
         return cls
     return wrapper
 
@@ -185,11 +171,20 @@ def Lib(name):
     """Décorateur pour enregistrer un projet libraire statique auprès du moteur"""
     def wrapper(cls):
         instance = ModuleLoader.get_cls_instance(cls)
-        instance.name = name
-        instance.type = ProjectType.lib
-        instance.file = project_file()
-        instance.prebuild = cls.prebuild if hasattr(cls, "prebuild") else None
-        instance.postbuild = cls.postbuild if hasattr(cls, "postbuild") else None
+        
+        # Now that we now the type of the project replace it's instance
+        from project import LibProject
+        if not isinstance(instance, LibProject):
+            lib_instance = LibProject()
+            ModuleLoader.replace_cls_instance(cls, lib_instance)
+            lib_instance._description = instance.description if hasattr(instance, "description") else None
+            instance = lib_instance
+
+        instance._name = name
+        instance._type = ProjectType.bin
+        instance._file = project_file()
+        instance._prebuild = cls.prebuild if hasattr(cls, "prebuild") else None
+        instance._postbuild = cls.postbuild if hasattr(cls, "postbuild") else None
         return cls
     return wrapper
 
@@ -198,11 +193,20 @@ def Dyn(name):
     """Décorateur pour enregistrer un projet librarie dynamique auprès du moteur"""
     def wrapper(cls):
         instance = ModuleLoader.get_cls_instance(cls)
-        instance.name = name
-        instance.type = ProjectType.dyn
-        instance.file = project_file()
-        instance.prebuild = cls.prebuild if hasattr(cls, "prebuild") else None
-        instance.postbuild = cls.postbuild if hasattr(cls, "postbuild") else None
+
+        # Now that we now the type of the project replace it's instance
+        from project import DynProject
+        if not isinstance(instance, DynProject):
+            dyn_instance = DynProject()
+            ModuleLoader.replace_cls_instance(cls, dyn_instance)
+            dyn_instance._description = instance.description if hasattr(instance, "description") else None
+            instance = dyn_instance
+
+        instance._name = name
+        instance._type = ProjectType.bin
+        instance._file = project_file()
+        instance._prebuild = cls.prebuild if hasattr(cls, "prebuild") else None
+        instance._postbuild = cls.postbuild if hasattr(cls, "postbuild") else None
         return cls
     return wrapper
 
@@ -214,23 +218,3 @@ def Description(desc):
         instance.description = desc
         return cls
     return wrapper
-
-# @register_in_kiss
-# def run_prebuild(name):
-#     project_cls = registered_projects.get(name)
-#     if project_cls:
-#         instance = project_cls()
-#         if hasattr(instance, "prebuild"):
-#             instance.prebuild()
-#         else:
-#             print(f"{name} n'a pas de méthode prebuild")
-
-# @register_in_kiss
-# def run_postbuild(name):
-#     project_cls = registered_projects.get(name)
-#     if project_cls:
-#         instance = project_cls()
-#         if hasattr(instance, "postbuild"):
-#             instance.postbuild()
-#         else:
-#             print(f"{name} n'a pas de méthode postbuild")

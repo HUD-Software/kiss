@@ -1,7 +1,4 @@
-from project import ProjectType
+from project import Project
 
-class LibProject:
-    TYPE = ProjectType.lib
-    def __init__(self, name: str, description:str=""):
-        self.name = name
-        self.description = description
+class LibProject(Project):
+   pass

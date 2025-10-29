@@ -10,24 +10,24 @@ class Project:
         return self._name
     
     @property
-    def description(self) -> str:
-        return self._description
-    
-    @property
     def type(self) -> ProjectType:
         return self._type
     
     @property
     def file(self) -> str:
         return self._file
-    
+
+    @property
+    def description(self) -> str|None:
+        return self._description
+        
     @property
     def prebuild(self) -> Callable[[], None]|None:
-        return self._prebuild_callable
+        return self._prebuild
     
     @property
     def postbuild(self) -> Callable[[], None]|None:
-        return self._postbuild_callable
+        return self._postbuild
     
     @staticmethod
     def to_pascal(name: str) -> str:

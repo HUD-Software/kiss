@@ -1,6 +1,5 @@
-from project import ProjectType
 
-class DynProject:
-    def __init__(self, name: str, description:str=""):
-        self.name = name
-        self.description = description
+from project import Project
+
+class DynProject(Project):
+    pass

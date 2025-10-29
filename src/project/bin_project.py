@@ -1,10 +1,6 @@
 
 from project import Project
-
 class BinProject(Project):
-    SRC_LIST = []
-
-
     def to_new_manifest(self) -> str:
         # Add Import statements
         content = f"from modules import Bin"

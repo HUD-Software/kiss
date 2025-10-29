@@ -1,5 +1,5 @@
 from pathlib import Path
-import modules
+from modules import ModuleRegistry
 import console
 
 class ListParams:
@@ -8,14 +8,16 @@ class ListParams:
         self.recursive = recursive
         
 def cmd_list(listParams: ListParams):
-    modules.load_modules(listParams.directory, listParams.recursive)
-    if not modules.registered_projects:
+    ModuleRegistry.load_modules(listParams.directory, listParams.recursive)
+    if len(ModuleRegistry.items()) == 0:
         console.print_error("Aucun projet trouvé !")
     else:
-        for name, cls in modules.registered_projects.items():
+        for name, project in ModuleRegistry.items():
             console.print_success(f"--> Projet trouvé : {name}")
-            console.print(f"    - description : {getattr(cls, '_project_description', '')}")
-            console.print(f"    - prebuild : {hasattr(cls, 'prebuild')}")
-            console.print(f"    - postbuild : {hasattr(cls, 'postbuild')}")
-            console.print(f"    - src : {getattr(cls, 'src', None)}")
+            console.print(f"    - name : {project.name}")
+            console.print(f"    - type : {project.type}")
+            console.print(f"    - description : {project.description}")
+            console.print(f"    - prebuild : {project.prebuild}")
+            console.print(f"    - postbuild : {project.postbuild}")
+            #console.print(f"    - src : {getattr(cls, 'src', None)}")
             

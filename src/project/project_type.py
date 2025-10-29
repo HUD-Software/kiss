@@ -5,6 +5,9 @@ class ProjectType(str, Enum):
     lib = "lib"
     dyn = "dyn"
     
+    def __str__(self):
+        return self.name
+    
     def manifestText(self, projectName: str) -> str:
         return f'@{self.manifestImportText()}("{projectName}")'
         

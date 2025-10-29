@@ -1,9 +1,10 @@
-from modules import Bin, Description, ProjectType
+from modules import Bin, Description
 
 @Bin("mon_projet_toto")
 @Description("C'est mon projet toto")
-class TotoProject:
+class BinProject:
+    
     def prebuild(self):
-        print("Préparation du build pour TotoProject")
+        print("Préparation du build pour BinProject")
     def postbuild(self):
-        print("Finalisation du build pour TotoProject")
+        print("Finalisation du build pour BinProject")

@@ -1,9 +1,9 @@
-from modules import Lib, Description, ProjectType
+from modules import Lib, Description
 
 LIB_NAME = "ma_lib_jiji"
 
 @Lib(LIB_NAME)
 @Description("C'est ma library Jiji")
-class JijiProject:
+class LibProject:
     def prebuild(self):
         print(f"Préparation du build pour {LIB_NAME}")

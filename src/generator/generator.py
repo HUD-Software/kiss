@@ -14,14 +14,6 @@ class BaseGenerator:
     _generator_name :str= None
     _short_desc :str= None
 
-    @property
-    def name(self) -> str:
-        return self._generator_name
-        
-    @property
-    def short_desc(self) -> str:
-        return self._short_desc
-    
     @classmethod
     def name(cls) -> str:
         return cls._generator_name

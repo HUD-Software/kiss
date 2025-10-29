@@ -1,12 +1,12 @@
 
 from project import ProjectType, Project
 
-
-class BinProject:
-    TYPE = ProjectType.bin
+class BinProject(Project):
+    
     SRC_LIST = []
 
     def __init__(self, name: str, description:str):
+        super().__init__(...)
         self.name = name
         self.description = description
 

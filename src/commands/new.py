@@ -33,7 +33,6 @@ def cmd_new(newParams :NewParams):
             new_project: BinProject = newBinProject(new_directory, newParams)
             with open(pyFile, "w", encoding="utf-8") as f:
                     f.write(new_project.to_new_manifest())
-
         case ProjectType.lib:
             lib = LibProject(name=newParams.project_name, description=newParams.description)
             with open(pyFile, "w", encoding="utf-8") as f:

@@ -1,11 +1,36 @@
 import re
 import console
-import modules
-
+from project import ProjectType
+from typing import Callable, Optional
 
 class Project:
+
+    @property
+    def name(self) -> str:
+        return self._name
+    
+    @property
+    def description(self) -> str:
+        return self._description
+    
+    @property
+    def type(self) -> ProjectType:
+        return self._type
+    
+    @property
+    def file(self) -> str:
+        return self._file
+    
+    @property
+    def prebuild(self) -> Optional[Callable[[], None]]:
+        return self._prebuild_callable
+    
+    @property
+    def postbuild(self) -> Optional[Callable[[], None]]:
+        return self._postbuild_callable
+    
     @staticmethod
-    def to_pascal( name: str) -> str:
+    def to_pascal(name: str) -> str:
         """
         Convert a string like "my_project", "my-project", "myProject",
         "my project" -> "MyProject".
@@ -24,6 +49,7 @@ class Project:
 
     @staticmethod
     def default_project(directory:str) -> str|None:
+        import modules
         modules.load_modules(directory)
         if not modules.registered_projects:
             return None 

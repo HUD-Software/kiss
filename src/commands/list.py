@@ -19,5 +19,5 @@ def cmd_list(listParams: ListParams):
             console.print(f"    - description : {project.description}")
             console.print(f"    - prebuild : {project.prebuild}")
             console.print(f"    - postbuild : {project.postbuild}")
-            #console.print(f"    - src : {getattr(cls, 'src', None)}")
+            console.print(f"    - src : {project.src}")
             

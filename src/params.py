@@ -43,7 +43,7 @@ class UserParams:
         
         generate_parser = subparsers.add_parser("generate", description="generate files used to build the project")
 
-        # Add generators
+        # Create the help string that contains list of all registered generators
         generator_help_str = ""
         for generator in GeneratorRegistry.values():
             if generator_help_str:
@@ -53,6 +53,7 @@ class UserParams:
                                                                 dest="generator",
                                                                 help=generator_help_str, required=True)
         
+        # Add all generatr parser
         for generator in GeneratorRegistry.values():
             generator_parser = generator_subparser.add_parser(generator.name(), description=generator.short_desc())
             generator.add_cli_argument_to_parser(parser=generator_parser)

@@ -8,12 +8,17 @@
             "program": "${workspaceFolder}/src/kiss.py",
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}/tests",
-            "args": [
-                "-d",
-                "modules",
-                "list",
-                "-r"
-            ]
+            // "args": [
+            //     "generate",
+            //     "cmake",
+            //     "--help"
+            // ]
+            // "args": [
+            //     "-d",
+            //     "modules",
+            //     "list",
+            //     "-r"
+            // ]
             // "args": [
             //     "-d",
             //     "modules",
@@ -23,12 +28,12 @@
             //     "--description",
             //     "This is my project"
             // ]
-            // "args": [
-            //     "-d",
-            //     "modules/my_project",
-            //     "generate",
-            //     "cmake",
-            // ]
+            "args": [
+                "-d",
+                "modules/my_project",
+                "generate",
+                "cmake",
+            ]
         }
     ]
 }

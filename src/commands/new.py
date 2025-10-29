@@ -15,7 +15,7 @@ class NewParams:
         self.description = description
 
 def cmd_new(newParams :NewParams):
-    console.print_step(f"Creating a new {newParams.project_type} project named {newParams.project_name}")
+    console.print_step(f"Creating a new {newParams.project_type} project named  `{newParams.project_name}`")
 
     #  Create the directory of the new project if not exists
     new_directory = os.path.join(newParams.directory, newParams.project_name)
@@ -30,19 +30,22 @@ def cmd_new(newParams :NewParams):
     # Write the content of the main python script file
     match newParams.project_type:
         case ProjectType.bin:
-            new_project: BinProject = newBinProject(new_directory, newParams)
+            new_project: BinProject = newBinProject(pyFile, new_directory, newParams)
             with open(pyFile, "w", encoding="utf-8") as f:
                     f.write(new_project.to_new_manifest())
         case ProjectType.lib:
-            lib = LibProject(name=newParams.project_name, description=newParams.description)
+            new_project = LibProject(name=newParams.project_name, description=newParams.description)
             with open(pyFile, "w", encoding="utf-8") as f:
-                f.write(lib.to_new_manifest())
+                f.write(new_project.to_new_manifest())
         case ProjectType.dyn:
-            dyn = DynProject(name=newParams.project_name, description=newParams.description)
+            new_project = DynProject(name=newParams.project_name, description=newParams.description)
             with open(pyFile, "w", encoding="utf-8") as f:
-                f.write(dyn.to_new_manifest())
+                f.write(new_project.to_new_manifest())
+    
+    console.print_success(f"Project {new_project.name} created successfully.")
 
-def newBinProject(new_directory: Path, newParams :NewParams):
+
+def newBinProject(pyFile: str, new_directory: Path, newParams :NewParams):
         # Create the main.cpp file
         src_directory = os.path.join(os.path.join(new_directory, "src"))
         os.makedirs(src_directory, exist_ok=True)
@@ -52,6 +55,8 @@ def newBinProject(new_directory: Path, newParams :NewParams):
             console.print_error(f"The file {mainfile} already exists !")
             sys.exit(2)
 
+        bin = BinProject(name=newParams.project_name,file=pyFile,description= newParams.description, src=["src/main.cpp"])
+
         # Add simple hello world content
         with open(mainfile, "w", encoding="utf-8") as f:
             f.write('#include <iostream>\n\n')
@@ -60,6 +65,5 @@ def newBinProject(new_directory: Path, newParams :NewParams):
             f.write('    return 0;\n')
             f.write('}\n')  
 
-        bin = BinProject(name=newParams.project_name, description=newParams.description)
-        bin.SRC_LIST.append("src/main.cpp")
+
         return bin

@@ -153,16 +153,14 @@ def Bin(name):
         # Now that we now the type of the project replace it's instance
         from project import BinProject
         if not isinstance(instance, BinProject):
-            bin_instance = BinProject()
+            bin_instance = BinProject(name=name,
+                                      file = project_file(), 
+                                      description= instance.description if hasattr(instance, "description") else None,
+                                      src = cls.src if hasattr(cls, "src") else [],
+                                      prebuild = cls.prebuild if hasattr(cls, "prebuild") else None,
+                                      postbuild = cls.postbuild if hasattr(cls, "postbuild") else None)
             ModuleLoader.replace_cls_instance(cls, bin_instance)
-            bin_instance._description = instance.description if hasattr(instance, "description") else None
             instance = bin_instance
-
-        instance._name = name
-        instance._type = ProjectType.bin
-        instance._file = project_file()
-        instance._prebuild = cls.prebuild if hasattr(cls, "prebuild") else None
-        instance._postbuild = cls.postbuild if hasattr(cls, "postbuild") else None
         return cls
     return wrapper
 
@@ -175,16 +173,13 @@ def Lib(name):
         # Now that we now the type of the project replace it's instance
         from project import LibProject
         if not isinstance(instance, LibProject):
-            lib_instance = LibProject()
+            lib_instance = LibProject(name= name,
+                                      file= project_file(),
+                                      description= instance.description if hasattr(instance, "description") else None,
+                                      src = cls.src if hasattr(cls, "src") else [],
+                                      interface = cls.interface if hasattr(cls, "interface") else [])
             ModuleLoader.replace_cls_instance(cls, lib_instance)
-            lib_instance._description = instance.description if hasattr(instance, "description") else None
             instance = lib_instance
-
-        instance._name = name
-        instance._type = ProjectType.bin
-        instance._file = project_file()
-        instance._prebuild = cls.prebuild if hasattr(cls, "prebuild") else None
-        instance._postbuild = cls.postbuild if hasattr(cls, "postbuild") else None
         return cls
     return wrapper
 
@@ -197,16 +192,14 @@ def Dyn(name):
         # Now that we now the type of the project replace it's instance
         from project import DynProject
         if not isinstance(instance, DynProject):
-            dyn_instance = DynProject()
+            dyn_instance = DynProject(name= name,
+                                      file= project_file(),
+                                      description= instance.description if hasattr(instance, "description") else None,
+                                      src = cls.src if hasattr(cls, "src") else [],
+                                      interface = cls.interface if hasattr(cls, "interface") else [])
+        
             ModuleLoader.replace_cls_instance(cls, dyn_instance)
-            dyn_instance._description = instance.description if hasattr(instance, "description") else None
             instance = dyn_instance
-
-        instance._name = name
-        instance._type = ProjectType.bin
-        instance._file = project_file()
-        instance._prebuild = cls.prebuild if hasattr(cls, "prebuild") else None
-        instance._postbuild = cls.postbuild if hasattr(cls, "postbuild") else None
         return cls
     return wrapper
 

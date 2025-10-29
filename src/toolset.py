@@ -20,9 +20,9 @@ class Toolset:
                 print("TBD")
                 
     def __str__(self):
-        return (f"compiler={self.compiler}, "
-                f"cxx_compiler_path={self.cxx_compiler_path}, "
-                f"c_compiler_pathc={self.c_compiler_path})")
+        return (f"""compiler={self.compiler}
+  cxx={self.cxx_compiler_path},
+  c={self.c_compiler_path}""")
 
 
 class LLVMTools:
@@ -43,10 +43,12 @@ class VSToolset(Toolset):
 
     def __str__(self):
         base_str = super().__str__()
-        return (f"VSToolset({base_str}, "
-                f"major_version={self.major_version}, "
-                f"product_name={self.product_name}, "
-                f"product_line_version={self.product_line_version})")
+        return f"""VSToolset(
+  {base_str},
+  major_version={self.major_version},
+  product_name={self.product_name},
+  product_line_version={self.product_line_version}
+)"""
 
 class VSLLVMToolset(VSToolset):
     def __init__(self, compiler: Compiler, cxx_compiler_path:str, c_compiler_path:str,  major_version:int, product_name:str, product_line_version:int, llvm_tools: LLVMTools):

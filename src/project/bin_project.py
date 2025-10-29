@@ -1,6 +1,21 @@
 
-from project import Project
+from project import Project, ProjectType
+from typing import Callable
+
 class BinProject(Project):
+    def __init__(self, name:str, file: str, description: str = None, src: list[str] = [], prebuild: Callable[[], None] = None, postbuild: Callable[[], None] = None):
+        super().__init__(name=name, 
+                         type=ProjectType.bin, 
+                         file=file, 
+                         description=description, 
+                         prebuild=prebuild, 
+                         postbuild=postbuild)
+        self._src = src
+
+    @property
+    def src(self) -> list[str]:
+        return self._src
+    
     def to_new_manifest(self) -> str:
         # Add Import statements
         content = f"from modules import Bin"
@@ -20,7 +35,7 @@ class BinProject(Project):
         content += f"class {Project.to_pascal(self.name)}:\n"
 
         # Add src files
-        src_list = ",\n".join([f'"{src}"' for src in self.SRC_LIST])
+        src_list = ",\n".join([f'"{src}"' for src in self.src])
         content += f"\tsrc=[{src_list}]\n"
     
         # Add prebuild and postbuild fonctions

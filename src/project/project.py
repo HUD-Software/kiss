@@ -49,15 +49,15 @@ class Project:
 
     @staticmethod
     def default_project(directory:str) -> str|None:
-        import modules
-        modules.load_modules(directory)
-        if not modules.registered_projects:
+        from modules import ModuleRegistry
+        ModuleRegistry.load_modules(directory)
+        if len(ModuleRegistry.items()) == 0:
             return None 
-        default_project_name ,default_project = next(iter(modules.registered_projects.items()))
+        default_project_name ,default_project = next(iter(ModuleRegistry.items()))
         # Warn the user if we found more than 1 project
-        if len(modules.registered_projects) > 1:
+        if len(ModuleRegistry.items()) > 1:
             console.print_warning(f"We found more than 1 projet in the directory {directory}.")
-            for project_name ,project in modules.registered_projects.items():
+            for project_name ,project in ModuleRegistry.items():
                 console.print_warning(f"- {project_name} : {project._project_file}")
             console.print_warning(f"\nUse {default_project_name} : {default_project._project_file}")
         return default_project_name

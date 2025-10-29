@@ -2,7 +2,6 @@
 from project import ProjectType, Project
 
 class BinProject(Project):
-    
     SRC_LIST = []
 
     def __init__(self, name: str, description:str):

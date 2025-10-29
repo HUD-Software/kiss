@@ -2,23 +2,32 @@ import os
 from pathlib import Path
 import sys
 import console
-import params
-from projects import BinProject, LibProject, DynProject, ProjectType
 
-def cmd_new(newParams :params.NewParams):
+from project import BinProject, LibProject, DynProject, ProjectType
+
+class NewParams:
+    def __init__(self, directory:Path, project_name:str, project_type:ProjectType, coverage_enabled:str, sanitizer_enabled:str, description:str):
+        self.directory = directory
+        self.project_name = project_name
+        self.project_type = project_type
+        self.coverage_enabled = coverage_enabled
+        self.sanitizer_enabled = sanitizer_enabled
+        self.description = description
+
+def cmd_new(newParams :NewParams):
     console.print_step(f"Creating a new {newParams.project_type} project named {newParams.project_name}")
 
     #  Create the directory of the new project if not exists
     new_directory = os.path.join(newParams.directory, newParams.project_name)
     os.makedirs(new_directory, exist_ok=True)
 
-    # Create the python script file
+    # Create the main python script file
     pyFile = os.path.join(new_directory, f"{newParams.project_name}.py")
     if os.path.exists(pyFile): 
         console.print_error(f"The file {pyFile} already exists !")
         sys.exit(2)
 
-    # Write the content of the python script file
+    # Write the content of the main python script file
     match newParams.project_type:
         case ProjectType.bin:
             new_project: BinProject = newBinProject(new_directory, newParams)
@@ -34,7 +43,7 @@ def cmd_new(newParams :params.NewParams):
             with open(pyFile, "w", encoding="utf-8") as f:
                 f.write(dyn.to_new_manifest())
 
-def newBinProject(new_directory: Path, newParams :params.NewParams):
+def newBinProject(new_directory: Path, newParams :NewParams):
         # Create the main.cpp file
         src_directory = os.path.join(os.path.join(new_directory, "src"))
         os.makedirs(src_directory, exist_ok=True)

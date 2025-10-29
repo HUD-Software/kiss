@@ -1,9 +1,8 @@
-from enum import Enum
 import os
 import platform
 import sys
 import console
-from generation import Compiler
+from compiler import Compiler
 
 
 class Toolset:
@@ -12,13 +11,19 @@ class Toolset:
         self.cxx_compiler_path=cxx_compiler_path
         self.c_compiler_path=c_compiler_path
 
+    @staticmethod
     def get_latest_toolset(compiler:Compiler):
         match platform.system():
             case "Windows":
-                return get_latest_toolset(compiler)
+                return get_windows_latest_toolset(compiler)
             case "Linux":
                 print("TBD")
-    
+                
+    def __str__(self):
+        return (f"compiler={self.compiler}, "
+                f"cxx_compiler_path={self.cxx_compiler_path}, "
+                f"c_compiler_pathc={self.c_compiler_path})")
+
 
 class LLVMTools:
     def __init__(self, path: str, profdata: str):
@@ -36,6 +41,13 @@ class VSToolset(Toolset):
         self.product_name=product_name
         self.product_line_version=product_line_version
 
+    def __str__(self):
+        base_str = super().__str__()
+        return (f"VSToolset({base_str}, "
+                f"major_version={self.major_version}, "
+                f"product_name={self.product_name}, "
+                f"product_line_version={self.product_line_version})")
+
 class VSLLVMToolset(VSToolset):
     def __init__(self, compiler: Compiler, cxx_compiler_path:str, c_compiler_path:str,  major_version:int, product_name:str, product_line_version:int, llvm_tools: LLVMTools):
         VSToolset.__init__(self=self,
@@ -47,13 +59,19 @@ class VSLLVMToolset(VSToolset):
                            product_line_version=product_line_version)
         self.llvm: LLVMTools = llvm_tools
 
+    def __str__(self):
+        return (f"VSLLVMToolset(product_name={self.product_name}, "
+                f"major_version={self.major_version}, "
+                f"cxx={self.cxx_compiler_path}, "
+                f"c={self.c_compiler_path})")
 
 
-def get_latest_toolset(compiler:Compiler):
+
+def get_windows_latest_toolset(compiler:Compiler):
         import vswhere
         import json
-        latest_installation_path = vswhere.get_latest_path(products="Microsoft.VisualStudio.Product.BuildTools")
-        latest_major_version = vswhere.get_latest_major_version(products='Microsoft.VisualStudio.Product.BuildTools')
+        latest_installation_path = vswhere.get_latest_path()
+        latest_major_version = vswhere.get_latest_major_version()
         latest_product_info = vswhere.find(path=latest_installation_path)
         json_str = json.dumps(latest_product_info[0], indent=2)
         json_object = json.loads(json_str)

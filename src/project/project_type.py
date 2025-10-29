@@ -18,5 +18,3 @@ class ProjectType(str, Enum):
         else:
             raise ValueError(f"Unknown ProjectType: {self}")
         
-
-        

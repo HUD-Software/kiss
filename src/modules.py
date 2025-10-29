@@ -1,9 +1,10 @@
+import os
 import sys
 from types import ModuleType
 from pathlib import Path
 import importlib.util
-
-from projects import ProjectType
+import inspect
+from project import ProjectType
 
 # --- Fonction de chargement dynamique des modules ---
 def load_modules(path: Path, recursive: bool = False):
@@ -46,6 +47,11 @@ def Bin(name):
     def wrapper(cls):
         cls._project_name = name
         cls._project_type = ProjectType.bin
+        # Récupérer le fichier Python où le décorateur est utilisé
+        frame = inspect.currentframe()
+        caller_frame = frame.f_back
+        filename = caller_frame.f_code.co_filename
+        cls._project_file = os.path.abspath(filename)
         registered_projects[name] = cls
         return cls
     return wrapper
@@ -56,6 +62,11 @@ def Lib(name):
     def wrapper(cls):
         cls._project_name = name
         cls._project_type = ProjectType.lib
+        # Récupérer le fichier Python où le décorateur est utilisé
+        frame = inspect.currentframe()
+        caller_frame = frame.f_back
+        filename = caller_frame.f_code.co_filename
+        cls._project_file = os.path.abspath(filename)
         registered_projects[name] = cls
         return cls
     return wrapper
@@ -66,6 +77,11 @@ def Dyn(name):
     def wrapper(cls):
         cls._project_name = name
         cls._project_type = ProjectType.dyn
+        # Récupérer le fichier Python où le décorateur est utilisé
+        frame = inspect.currentframe()
+        caller_frame = frame.f_back
+        filename = caller_frame.f_code.co_filename
+        cls._project_file = os.path.abspath(filename)
         registered_projects[name] = cls
         return cls
     return wrapper

@@ -1,4 +1,4 @@
-from projects.project_type import ProjectType
+from project import ProjectType
 
 class LibProject:
     TYPE = ProjectType.lib

@@ -4,11 +4,11 @@ import console
 
 class ListParams:
     def __init__(self, directory:Path, recursive:bool):
-        self.directory = directory
+        self.project_directory = directory
         self.recursive = recursive
         
 def cmd_list(listParams: ListParams):
-    ModuleRegistry.load_modules(listParams.directory, listParams.recursive)
+    ModuleRegistry.load_modules(listParams.project_directory, listParams.recursive)
     if len(ModuleRegistry.items()) == 0:
         console.print_error("Aucun projet trouvé !")
     else:

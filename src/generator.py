@@ -1,4 +1,10 @@
-class BaseGenerator:
+
+from abc import ABC, abstractmethod
+
+from kiss_parser import KissParser
+from project.project import Project
+
+class BaseGenerator(ABC):
     """
     Classe de base pour tous les générateurs.
 
@@ -11,12 +17,15 @@ class BaseGenerator:
             pass
      ```
     """
-    _generator_name :str= None
+    _name :str= None
     _short_desc :str= None
-
+    @abstractmethod
+    def generate(self, args : KissParser, project: Project):
+        pass
+        
     @classmethod
     def name(cls) -> str:
-        return cls._generator_name
+        return cls._name
     
     @classmethod
     def short_desc(cls) -> str:
@@ -81,7 +90,7 @@ class GeneratorRegistry:
                 cls = type(cls.__name__, (BaseGenerator, cls), dict(cls.__dict__))
 
              # On ajoute un attribut utile pour introspection
-            cls._generator_name = name
+            cls._name = name
             cls._short_desc = short_desc
             self._registry[name] = cls
 
@@ -121,7 +130,7 @@ class GeneratorRegistry:
         cls = self.get(name)
         if cls is None:
             raise KeyError(f"Générateur '{name}' introuvable.")
-        return cls.create()
+        return cls.create(*args, **kwargs)
 
     def __contains__(self, name):
         """

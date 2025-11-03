@@ -3,7 +3,25 @@ import os
 import sys
 from colorama import Fore, Style
 
-def run_process(program: str, args: list[str], working_dir: str = os.curdir, env: dict[str, str] = {}):
+import console
+
+def print_process(program: str, args: list[str] = [], working_dir: str = os.curdir, env: dict[str, str] = {}):
+    if args is None:
+        args = []
+    if env is None:
+        env = {}
+
+    # Construire la ligne de commande lisible
+    cmd_str = " ".join([program] + [str(a) for a in args])
+
+    console.print_step(f"🛠  Command: {cmd_str}")
+    console.print_step(f"📂 Working directory: {os.path.abspath(working_dir)}")
+    
+    if env:
+        env_str = " ".join(f"{k}={v}" for k, v in env.items())
+        console.print_step(f"🌱 Environment: {env_str}")
+        
+def run_process(program: str, args: list[str] = [], working_dir: str = os.curdir, env: dict[str, str] = {}):
    return asyncio.run(__run_process(program, args, working_dir, env))
 
 async def __run_process(program: str, args: list[str], working_dir: str = os.curdir, env: dict[str, str] = {}):

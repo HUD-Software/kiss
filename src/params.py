@@ -1,5 +1,3 @@
-
-
 class UserParams:
     def from_args():
         import argparse
@@ -8,6 +6,9 @@ class UserParams:
         from project import ProjectType
         from kiss_parser import KissParser
         from generator import GeneratorRegistry
+        from builder import BuilderRegistry
+        from platform_target import SupportedTarget
+        from cmake import GeneratorCMake, BuilderCMake
 
         parser = KissParser(description=f"{sys.argv[0]} is used to create, run C/C++ project", formatter_class=argparse.RawTextHelpFormatter)
         parser.add_argument(
@@ -42,6 +43,8 @@ class UserParams:
         new_parser.add_argument("-san", "--sanitizer", help="enable sanitizer", action='store_true')
         
         generate_parser = subparsers.add_parser("generate", description="generate files used to build the project")
+        generate_parser.add_argument("-p", "--project", help="name of the project.py to generate", dest="project_name", required=False)
+        generate_parser.add_argument("-t", "--target", help="specify the target platform", dest="platform_target", default=SupportedTarget.default_target(), required=False)
 
         # Create the help string that contains list of all registered generators
         generator_help_str = ""
@@ -51,12 +54,33 @@ class UserParams:
             generator_help_str += f"'{generator.name()}' {generator.short_desc()}"
         generator_subparser = generate_parser.add_subparsers(title="choose one of the following generator",
                                                                 dest="generator",
-                                                                help=generator_help_str, required=True)
+                                                                help=generator_help_str)
         
-        # Add all generatr parser
+        # Add all generator parser
         for generator in GeneratorRegistry.values():
             generator_parser = generator_subparser.add_parser(generator.name(), description=generator.short_desc())
             generator.add_cli_argument_to_parser(parser=generator_parser)
+
+
+        builder_parser = subparsers.add_parser("build", description="builder used to build the project")
+        builder_parser.add_argument("-p", "--project", help="name of the project.py to generate", dest="project_name", required=False)
+        builder_parser.add_argument("-t", "--target", help="specify the target platform", dest="platform_target", default=SupportedTarget.default_target(), required=False)
+
+        # Create the help string that contains list of all registerd builders
+        builder_help_str = ""
+        for builder in BuilderRegistry.values():
+            if builder_help_str:
+                builder_help_str += "\n"
+            builder_help_str += f"'{builder.name()}' {builder.short_desc()}"
+        builder_subparser = builder_parser.add_subparsers(title="choose one of the following builder",
+                                                                dest="builder",
+                                                                help=builder_help_str)
+        
+        # Add all builder parser
+        for builder in BuilderRegistry.values():
+            builder_parser = builder_subparser.add_parser(builder.name(), description=builder.short_desc())
+            builder.add_cli_argument_to_parser(parser=builder_parser)
+
 
 
         # build_parser = subparsers.add_parser("build", description="build the project")
@@ -107,7 +131,14 @@ class UserParams:
         
         if args.option == "generate": 
             from commands import GenerateParams
-            return GenerateParams(directory=args.directory, project_name=args.project_name, generator=GeneratorRegistry.create(args.generator), platform_target=args.platform_target)
+            generator = GeneratorRegistry.create(args.generator if args.generator is not None else "cmake", args)
+            return GenerateParams(directory=args.directory, project_name=args.project_name, generator=generator, platform_target=args.platform_target)
+        
+
+        if args.option == "build": 
+            from commands import BuildParams
+            builder = BuilderRegistry.create(args.builder if args.builder is not None else "cmake", args)
+            return BuildParams(directory=args.directory, project_name=args.project_name, builder=builder, platform_target=args.platform_target)
         # build_config = args.config if args.config is not None else UserParams.default_build_configuration
         # compiler = args.compiler if args.compiler is not None else Compiler.cl
         # debug_info = args.debug_info if args.debug_info is not None else False

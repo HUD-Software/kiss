@@ -7,15 +7,29 @@ class BinProject(Project):
         super().__init__(name=name, 
                          type=ProjectType.bin, 
                          file=file, 
-                         description=description, 
-                         prebuild=prebuild, 
-                         postbuild=postbuild)
+                         description=description)
         self._sources = sources
+        self._prebuild = prebuild
+        self._postbuild = postbuild
 
     @property
     def sources(self) -> list[str]:
         return self._sources
 
+    @property
+    def prebuild(self) -> Callable[[], None]|None:
+        return self._prebuild
+    @prebuild.setter
+    def prebuild(self, value):
+        self._prebuild = value
+    
+    @property
+    def postbuild(self) -> Callable[[], None]|None:
+        return self._postbuild
+    @postbuild.setter
+    def postbuild(self, value):
+        self._postbuild = value
+        
     def to_new_manifest(self) -> str:
         # Add Import statements
         content = f"from modules import Bin"

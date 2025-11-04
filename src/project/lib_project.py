@@ -6,12 +6,11 @@ class LibProject(Project):
         super().__init__(name=name, 
                          type=ProjectType.lib, 
                          file=file, 
-                         description=description, 
-                         prebuild=prebuild, 
-                         postbuild=postbuild)
+                         description=description)
         self._sources = sources
         self._interface_directories = interface_directories
-
+        self._prebuild = prebuild
+        self._postbuild = postbuild
 
     @property
     def sources(self) -> list[str]:

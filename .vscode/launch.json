@@ -23,34 +23,34 @@
             //     "-d",
             //     "tests",
             //     "new",
-            //     "lib",
-            //     "my_lib",
+            //     "dyn",
+            //     "my_dyn",
             //     "--description",
-            //     "This is my lib"
+            //     "This is my dyn"
             // ]
             // "args": [
             //     "-d",
-            //     "tests/my_lib",
+            //     "tests/my_dyn",
             //     "generate",
             // ]
             // "args": [
             //     "-d",
-            //     "tests/my_lib",
+            //     "tests/my_dyn",
             //     "build"
             // ],
             // "args": [
             //     "-d",
-            //     "tests/my_lib",
+            //     "tests/my_dyn",
             //     "run"
             // ]
-            "args": [
-                "-d",
-                "tests",
-                "new",
-                "workspace",
-                "my_lib",
-                "my_dyn"
-            ]
+            // "args": [
+            //     "-d",
+            //     "tests",
+            //     "new",
+            //     "workspace",
+            //     "my_bin",
+            //     "my_dyn"
+            // ]
         }
     ]
 }

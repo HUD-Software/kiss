@@ -41,6 +41,8 @@ def cmd_new(new_params :NewParams):
             new_project: DynProject = newDynProject(file, new_directory, new_params)
             with open(file, "w", encoding="utf-8") as f:
                 f.write(new_project.to_new_manifest())
+        case ProjectType.workspace:
+            new_project: Workspace = newWorkspace(file)
     
     console.print_success(f"Project {new_project.name} created successfully.")
 

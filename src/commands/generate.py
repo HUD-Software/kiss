@@ -22,8 +22,4 @@ def cmd_generate(generate_params: GenerateParams):
         console.print_error(f"Aucun projet trouvé dans le dossier {generate_params.project_directory}")
         sys.exit(2)
     
-   
-    generate_params.generator.generate(generate_params, project)
-  
-   
-        
+    generate_params.generator.generate(generate_params, project)        

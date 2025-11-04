@@ -3,9 +3,8 @@ from cmake.cmake_directories import CMakeDirectories
 from compiler import Compiler
 from config import Config
 from kiss_parser import KissParser
-from process import print_process, run_process
 from project.project import Project
-import console
+
 
 
 @BuilderRegistry.register("cmake", "Build cmake CMakeLists.txt")
@@ -19,30 +18,27 @@ class BuilderCMake:
         parser.add_argument("-san", "--sanitizer", help="enable sanitizer", action='store_const', const=True)
 
     def __init__(self, parser: KissParser):
-        self.config = getattr(parser, "config", None) or Config.debug
+        self.config = getattr(parser, "config", None) or Config.default_config()
         self.compiler = getattr(parser, "compiler", None) or Compiler.cl
         self.debug = getattr(parser, "debug", None) or False
         self.coverage = getattr(parser, "coverage", None) or False
         self.sanitizer = getattr(parser, "sanitizer", None) or False
 
-    def __config_to_cmake_config(self, config: Config):
-        match config:
-            case Config.debug:
-                return "Debug"
-            case Config.release:
-                return "Release"
+ 
             
     def __configure(self,  directories:CMakeDirectories, project: Project):
+        from process import run_process
+        import console
+        from cmake.config_cmake import config_to_cmake_config
+
         # Configure
         console.print_step("CMake configure...")
         args = ["--no-warn-unused-cli", "-S", directories.cmakelists_directory, "-G", "Visual Studio 17 2022", "-T", "host=x64", "-A", "x64"]
-        print_process("cmake", args, directories.cmakelists_directory)
         run_process("cmake", args, directories.cmakelists_directory)
         
         # Build
         console.print_step("CMake build...")
-        args = ["--build", ".", "--config", self.__config_to_cmake_config(self.config)]
-        print_process("cmake", args, directories.cmakelists_directory)
+        args = ["--build", ".", "--config", config_to_cmake_config(self.config)]
         run_process("cmake", args, directories.cmakelists_directory)
 
     def build(self, args : KissParser, project: Project):

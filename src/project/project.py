@@ -13,7 +13,6 @@ class Project:
         self.prebuild = prebuild
         self.postbuild = postbuild
 
-
     @property
     def name(self) -> str:
         return self._name

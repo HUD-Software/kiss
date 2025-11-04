@@ -36,6 +36,23 @@
             "problemMatcher": []
         },
         {
+            "label": "List projects",
+            "type": "shell",
+            "command": "python",
+            "args": [
+                "${workspaceFolder}/src/kiss.py",
+                "-d",
+                "${workspaceFolder}/tests/modules",
+                "list",
+                "--recursive"
+            ],
+            "group": "test",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+        },
+        {
             "label": "New project",
             "type": "shell",
             "command": "python",
@@ -82,6 +99,22 @@
                 "${workspaceFolder}/tests/modules/${input:project_name}",
                 "build",
                 "${input:generator}"
+            ],
+            "group": "test",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+        },
+        {
+            "label": "Run project",
+            "type": "shell",
+            "command": "python",
+            "args": [
+                "${workspaceFolder}/src/kiss.py",
+                "-d",
+                "${workspaceFolder}/tests/modules/${input:project_name}",
+                "run"
             ],
             "group": "test",
             "presentation": {

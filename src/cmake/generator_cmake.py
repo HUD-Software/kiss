@@ -19,6 +19,7 @@ class GeneratorCMake:
     def __init__(self, parser: KissParser):
         self.coverage = getattr(parser, "coverage", False)
         self.sanitizer = getattr(parser, "sanitizer", False)
+
     def __resolve_sources(self, src_list: list[str], project_directory): 
         import glob
         result = []
@@ -38,8 +39,8 @@ class GeneratorCMake:
             matches = glob.glob(pattern)
 
             for match in matches:
-                result.append(str(Path(match).resolve()).replace("\\", "/"))
-
+                path_str = str(Path(match).resolve()).replace("\\", "/")
+                result.append(f'"{path_str}"')
         return result
     
     def __generateBin(self, directories:CMakeDirectories, project: BinProject):
@@ -47,14 +48,16 @@ class GeneratorCMake:
         # Generate CMakeLists.txt
         normalized_src = self.__resolve_sources(project.src, directories.project_directory)
         src_str = "\n".join(normalized_src)
+        normalized_project_name = Project.to_pascal(project.name)
         with open(os.path.join(directories.cmakelists_directory, "CMakeLists.txt"), "w", encoding="utf-8") as f:
             f.write(f"""cmake_minimum_required(VERSION 3.18)
 
-project({project.name} LANGUAGES CXX )
+project(\"{project.name}\" LANGUAGES CXX )
 
-add_executable({project.name}
+add_executable({normalized_project_name}
 {src_str}
 )
+set_target_properties({normalized_project_name} PROPERTIES OUTPUT_NAME \"{project.name}\")
 """)
             
 

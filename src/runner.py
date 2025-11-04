@@ -4,16 +4,16 @@ from kiss_parser import KissParser
 from platform_target import PlatformTarget
 from project.project import Project
 
-class BaseBuilder(ABC):
+class BaseRunner(ABC):
     """
-    Classe de base pour tous les builder.
+    Classe de base pour tous les runner.
 
     Ajoutée automatiquement comme classe de base lors de la décoration.
 
     Exemple :
     ```
-        @BuilderRegistry.register("cmake", "Build CMake CMakeLists.txt")
-        class BuilderCMake:
+        @RunnerRegistry.register("cmake", "Run project built with cmake")
+        class RunnerCMake:
             pass
      ```
     """
@@ -21,7 +21,7 @@ class BaseBuilder(ABC):
     _short_desc :str= None
 
     @abstractmethod
-    def build(self, args : KissParser, project: Project):
+    def run(self, args : KissParser, project: Project):
         pass
 
     @classmethod
@@ -34,7 +34,7 @@ class BaseBuilder(ABC):
     
     @classmethod
     def create(cls, *args, **kwargs):
-        """Instancie le builder"""
+        """Instancie le runner"""
         return cls(*args, **kwargs)
 
     @classmethod
@@ -44,25 +44,25 @@ class BaseBuilder(ABC):
     
     @classmethod
     def info(self):
-        """Retourne une description basique du builder."""
-        return f"Builder: {self.name} ({self.__class__.__name__})"
+        """Retourne une description basique du runner."""
+        return f"Runner: {self.name} ({self.__class__.__name__})"
     
     def __str__(self):
         return f"{getattr(self, 'name')}"
     
 
 
-class BuilderRegistry:
+class RunnerRegistry:
     """
-    BuilderRegistry est une classe permettant d'enregistrer des builder 
-    afin de pouvoir être appeler lors d'une commande de builder ou de build par exemple.
+    RunnerRegistry est une classe permettant d'enregistrer des runner 
+    afin de pouvoir être appeler lors d'une commande de runner ou de build par exemple.
 
-    Les Builders sont automatiquement enregistré lorsqu'ils sont décorées avec @BuilderRegistry.register:
+    Les Runners sont automatiquement enregistré lorsqu'ils sont décorées avec @RunnerRegistry.register:
 
     Exemple:
     ```
-    @GBuilderRegistry.register("cmake", "Build CMake CMakeLists.txt") # Le builder `BuilderCMake` est enregistrer sous le nom `cmake`
-        class BuilderCMake:
+    @RunnerRegistry.register("cmake", "Run project built with cmake") # Le runner `RunnerCMake` est enregistrer sous le nom `cmake`
+        class GeneratorCMake:
             pass
     ```
     """
@@ -71,25 +71,25 @@ class BuilderRegistry:
 
     def register(self, name: str, short_desc:str):
         """
-        Décorateur pour enregistrer une classe de builder.
+        Décorateur pour enregistrer une classe de runner.
 
-        Ce décorateur ajoute automatiquement la classe dans le registre des builder.
-        Si la classe n'hérite pas déjà de BaseBuilder, elle est automatiquement étendue.
+        Ce décorateur ajoute automatiquement la classe dans le registre des runner.
+        Si la classe n'hérite pas déjà de BaseRunner, elle est automatiquement étendue.
 
         Args:
-            name (str): Nom unique du builder.
-            short_desc (str): Description courte du builder, utile pour l'introspection et le CLI.
+            name (str): Nom unique du runner.
+            short_desc (str): Description courte du runner, utile pour l'introspection et le CLI.
 
         Returns:
             Callable: Le décorateur qui prendra la classe et l'enregistrera.
         """
         def decorator(cls):
             if name in self._registry:
-                raise RuntimeError(f"Le builder '{name}' est déjà enregistré !")
+                raise RuntimeError(f"Le runner '{name}' est déjà enregistré !")
             
-            # Si la classe n'hérite pas déjà de BaseBuilder → on la "wrap"
-            if not issubclass(cls, BaseBuilder):
-                cls = type(cls.__name__, (BaseBuilder, cls), dict(cls.__dict__))
+            # Si la classe n'hérite pas déjà de BaseRunner → on la "wrap"
+            if not issubclass(cls, BaseRunner):
+                cls = type(cls.__name__, (BaseRunner, cls), dict(cls.__dict__))
 
              # On ajoute un attribut utile pour introspection
             cls._name = name
@@ -101,48 +101,48 @@ class BuilderRegistry:
     
     def get(self, name: str):
         """
-        Récupère la classe associée à un builder par son nom.
+        Récupère la classe associée à un runner par son nom.
 
         Args:
-            name (str): Nom unique du builder à rechercher.
+            name (str): Nom unique du runner à rechercher.
 
         Returns:
-            Builder|None: La classe du builder si trouvée, sinon None.
+            Runner|None: La classe du runner si trouvée, sinon None.
         """
         return self._registry.get(name)
 
     def create(self, name: str, *args, **kwargs):
         """
-        Instancie un builder par son nom et retourne l'objet généré.
+        Instancie un runner par son nom et retourne l'objet généré.
 
-        Cette méthode utilise la méthode `create()` de la classe du builder,
-        qui doit être définie comme `@classmethod` dans la classe du builder.
+        Cette méthode utilise la méthode `create()` de la classe du runner,
+        qui doit être définie comme `@classmethod` dans la classe du runner.
 
         Args:
-            name (str): Nom unique du builder à instancier.
-            *args: Arguments positionnels à passer au constructeur du builder.
-            **kwargs: Arguments nommés à passer au constructeur du builder.
+            name (str): Nom unique du runner à instancier.
+            *args: Arguments positionnels à passer au constructeur du runner.
+            **kwargs: Arguments nommés à passer au constructeur du runner.
 
         Returns:
-            BaseGenerator: Une instance du builder correspondant.
+            BaseGenerator: Une instance du runner correspondant.
 
         Raises:
-            KeyError: Si aucun builder avec le nom fourni n'est trouvé.
+            KeyError: Si aucun runner avec le nom fourni n'est trouvé.
         """
         cls = self.get(name)
         if cls is None:
-            raise KeyError(f"builder '{name}' introuvable.")
+            raise KeyError(f"runner '{name}' introuvable.")
         return cls.create(*args, **kwargs)
 
     def __contains__(self, name):
         """
-        Vérifie si un builder avec le nom donné est enregistré.
+        Vérifie si un runner avec le nom donné est enregistré.
 
         Args:
-            name (str): Nom du builder à vérifier.
+            name (str): Nom du runner à vérifier.
 
         Returns:
-            bool: True si le builder existe dans le registre, False sinon.
+            bool: True si le runner existe dans le registre, False sinon.
         """
         return name in self._registry
 
@@ -182,4 +182,4 @@ class BuilderRegistry:
         """
         return self._registry.items()
 
-BuilderRegistry = BuilderRegistry()
+RunnerRegistry = RunnerRegistry()

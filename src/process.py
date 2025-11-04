@@ -1,8 +1,6 @@
 import asyncio
 import os
 import sys
-from colorama import Fore, Style
-
 import console
 
 def print_process(program: str, args: list[str] = [], working_dir: str = os.curdir, env: dict[str, str] = {}):
@@ -22,6 +20,7 @@ def print_process(program: str, args: list[str] = [], working_dir: str = os.curd
         console.print_step(f"  🌱 Environment: {env_str}")
         
 def run_process(program: str, args: list[str] = [], working_dir: str = os.curdir, env: dict[str, str] = {}):
+   print_process(program, args, working_dir, env)
    return asyncio.run(__run_process(program, args, working_dir, env))
 
 async def __run_process(program: str, args: list[str], working_dir: str = os.curdir, env: dict[str, str] = {}):
@@ -32,14 +31,23 @@ async def __run_process(program: str, args: list[str], working_dir: str = os.cur
         sys.exit(2)
     environ = os.environ.copy()
     environ |= env
-    proc = await asyncio.create_subprocess_exec(
-        program, 
-        *args, 
-        stdout=asyncio.subprocess.PIPE, 
-        stderr=asyncio.subprocess.PIPE, 
-        cwd=working_dir, 
-        env=environ
-    )
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            program, 
+            *args, 
+            stdout=asyncio.subprocess.PIPE, 
+            stderr=asyncio.subprocess.PIPE, 
+            cwd=working_dir, 
+            env=environ
+        )
+    except FileNotFoundError:
+        console.print_error(f"  | Error: Program not found: {program}")
+        console.print_error(f"  | Current directory: {os.path.abspath(os.curdir)}")
+        console.print_error(f"  | Command: {program} {args}")
+        return 1
+    except PermissionError:
+        console.print_error(f"  | Error: Permission denied when trying to run: {program}")
+        return 1
 
     while True:
         if proc.stdout.at_eof() and proc.stderr.at_eof():

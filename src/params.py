@@ -7,8 +7,9 @@ class UserParams:
         from kiss_parser import KissParser
         from generator import GeneratorRegistry
         from builder import BuilderRegistry
-        from platform_target import SupportedTarget
-        from cmake import GeneratorCMake, BuilderCMake
+        from runner import RunnerRegistry
+        from platform_target import PlatformTarget
+        from cmake import GeneratorCMake, BuilderCMake, RunnerCMake
 
         parser = KissParser(description=f"{sys.argv[0]} is used to create, run C/C++ project", formatter_class=argparse.RawTextHelpFormatter)
         parser.add_argument(
@@ -44,7 +45,7 @@ class UserParams:
         
         generate_parser = subparsers.add_parser("generate", description="generate files used to build the project")
         generate_parser.add_argument("-p", "--project", help="name of the project.py to generate", dest="project_name", required=False)
-        generate_parser.add_argument("-t", "--target", help="specify the target platform", dest="platform_target", default=SupportedTarget.default_target(), required=False)
+        generate_parser.add_argument("-t", "--target", help="specify the target platform", dest="platform_target", default=PlatformTarget.default_target(), required=False)
 
         # Create the help string that contains list of all registered generators
         generator_help_str = ""
@@ -64,7 +65,7 @@ class UserParams:
 
         builder_parser = subparsers.add_parser("build", description="builder used to build the project")
         builder_parser.add_argument("-p", "--project", help="name of the project.py to generate", dest="project_name", required=False)
-        builder_parser.add_argument("-t", "--target", help="specify the target platform", dest="platform_target", default=SupportedTarget.default_target(), required=False)
+        builder_parser.add_argument("-t", "--target", help="specify the target platform", dest="platform_target", default=PlatformTarget.default_target(), required=False)
 
         # Create the help string that contains list of all registerd builders
         builder_help_str = ""
@@ -81,11 +82,29 @@ class UserParams:
             builder_parser = builder_subparser.add_parser(builder.name(), description=builder.short_desc())
             builder.add_cli_argument_to_parser(parser=builder_parser)
 
-        run_parser = subparsers.add_parser("run", description="create a project")
+
+        # Create the help string that contains list of all registerd runners
+        run_parser = subparsers.add_parser("run", description="Run a project")
+        run_parser.add_argument("-p", "--project", help="name of the project.py to generate", dest="project_name", required=False)
+        run_parser.add_argument("-t", "--target", help="specify the target platform", dest="platform_target", default=PlatformTarget.default_target(), required=False)
+        run_help_str = ""
+        for runner in RunnerRegistry.values():
+            if run_help_str:
+                run_help_str += "\n"
+            run_help_str += f"'{runner.name()}' {runner.short_desc()}"
+        runner_subparser = run_parser.add_subparsers(title="choose one of the following runner",
+                                                                dest="runner",
+                                                                help=run_help_str)
+        
+        # Add all runner parser
+        for runner in RunnerRegistry.values():
+            runner_parser = runner_subparser.add_parser(runner.name(), description=runner.short_desc())
+            runner.add_cli_argument_to_parser(parser=runner_parser)
+
 
         # build_parser = subparsers.add_parser("build", description="build the project")
         # build_parser.add_argument("-p", "--path", help="specify the project path to build", dest="root", required=False)
-        # build_parser.add_argument("-t", "--target", help="specify the target platform", dest="platform_target", default=SupportedTarget.default_target(), required=False)
+        # build_parser.add_argument("-t", "--target", help="specify the target platform", dest="platform_target", default=PlatformTarget.default_target(), required=False)
         # build_parser.add_argument("-b", "--build_dir",  help="specify the build directory", dest="build_dir", default=UserParams.default_build_dir)
         # build_parser.add_argument("-c", "--config", choices=Config._member_names_, help="specify the build configuration", dest="config", type=Config)
         # build_parser.add_argument("-compiler", choices=Compiler._member_names_, help="specify the compiler to use", type=Compiler)
@@ -95,7 +114,7 @@ class UserParams:
 
         # run_parser = subparsers.add_parser("run", description="build and run the project")
         # run_parser.add_argument("-p", "--path", help="specify the project path to build", dest="root", required=False)
-        # run_parser.add_argument("-t", "--target", help="specify the target platform", dest="platform_target", default=SupportedTarget.default_target(), required=False)
+        # run_parser.add_argument("-t", "--target", help="specify the target platform", dest="platform_target", default=PlatformTarget.default_target(), required=False)
         # run_parser.add_argument("-b", "--build_dir",  help="specify the build directory", dest="build_dir", default=UserParams.default_build_dir)
         # run_parser.add_argument("-c", "--config", choices=Config._member_names_, help="specify the build configuration", dest="config", type=Config)
         # run_parser.add_argument("-compiler", choices=Compiler._member_names_, help="specify the compiler to use", type=Compiler)
@@ -105,7 +124,7 @@ class UserParams:
 
         # test_parser = subparsers.add_parser("test", description="Run test of a project")
         # test_parser.add_argument("-p", "--path", help="specify the project path to build", dest="root", required=False)
-        # test_parser.add_argument("-t", "--target", help="specify the target platform", dest="platform_target", default=SupportedTarget.default_target(), required=False)
+        # test_parser.add_argument("-t", "--target", help="specify the target platform", dest="platform_target", default=PlatformTarget.default_target(), required=False)
         # test_parser.add_argument("-b", "--build_dir",  help="specify the build directory", dest="build_dir", default=UserParams.default_build_dir)
         # test_parser.add_argument("-c", "--config", choices=Config._member_names_, help="specify the build configuration", dest="config", type=Config)
         # test_parser.add_argument("-compiler", choices=Compiler._member_names_, help="specify the compiler to use", type=Compiler)
@@ -118,28 +137,23 @@ class UserParams:
        
         if args.option == "list": 
             from commands import ListParams
-            return ListParams(directory=args.directory, recursive=args.recursive)
+            return ListParams(args)
         
-        if args.option == "new": 
+        elif args.option == "new": 
             from commands import NewParams
-            return NewParams(directory=args.directory, 
-                            project_name=args.project_name, 
-                            project_type=args.type, 
-                            coverage_enabled=args.coverage, 
-                            sanitizer_enabled=args.sanitizer,
-                            description=args.description)
+            return NewParams(args)
         
-        if args.option == "generate": 
+        elif args.option == "generate": 
             from commands import GenerateParams
-            generator = GeneratorRegistry.create(args.generator if args.generator is not None else "cmake", args)
-            return GenerateParams(directory=args.directory, project_name=args.project_name, generator=generator, platform_target=args.platform_target)
+            return GenerateParams(args)
         
-
-        if args.option == "build": 
+        elif args.option == "build": 
             from commands import BuildParams
-            builder = BuilderRegistry.create(args.builder if args.builder is not None else "cmake", args)
-            return BuildParams(directory=args.directory, project_name=args.project_name, builder=builder, platform_target=args.platform_target)
+            return BuildParams(args)
         
+        elif args.option == "run": 
+            from commands import RunParams
+            return RunParams(args)
 
         # build_config = args.config if args.config is not None else UserParams.default_build_configuration
         # compiler = args.compiler if args.compiler is not None else Compiler.cl

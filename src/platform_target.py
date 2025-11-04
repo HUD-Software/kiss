@@ -1,6 +1,6 @@
 from enum import Enum
 
-class SupportedTarget(str, Enum):
+class PlatformTarget(str, Enum):
     x86_64_pc_windows_msvc = "x86_64-pc-windows-msvc"
 
     def default_target():
@@ -20,4 +20,4 @@ class SupportedTarget(str, Enum):
 
         match [machine, system]:
             case ["x86_64", "pc-windows-msvc"]:
-                return SupportedTarget.x86_64_pc_windows_msvc
+                return PlatformTarget.x86_64_pc_windows_msvc

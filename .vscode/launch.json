@@ -33,10 +33,15 @@
             //     "modules/new_project",
             //     "generate",
             // ]
+            // "args": [
+            //     "-d",
+            //     "modules/new_project",
+            //     "build"
+            // ],
             "args": [
                 "-d",
                 "modules/new_project",
-                "build"
+                "run"
             ]
         }
     ]

@@ -1,14 +1,15 @@
 from pathlib import Path
-from modules import ModuleRegistry
+from kiss_parser import KissParser
 import console
 
 class ListParams:
-    def __init__(self, directory:Path, recursive:bool):
-        self.project_directory = directory
-        self.recursive = recursive
+    def __init__(self, args: KissParser):
+        self.project_directory : Path = Path(args.directory)
+        self.recursive: bool = args.recursive
         
-def cmd_list(listParams: ListParams):
-    ModuleRegistry.load_modules(listParams.project_directory, listParams.recursive)
+def cmd_list(list_params: ListParams):
+    from modules import ModuleRegistry
+    ModuleRegistry.load_modules(list_params.project_directory, list_params.recursive)
     if len(ModuleRegistry.items()) == 0:
         console.print_error("Aucun projet trouvé !")
     else:

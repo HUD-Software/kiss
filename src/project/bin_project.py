@@ -15,7 +15,7 @@ class BinProject(Project):
     @property
     def src(self) -> list[str]:
         return self._src
-    
+
     def to_new_manifest(self) -> str:
         # Add Import statements
         content = f"from modules import Bin"

@@ -1,38 +1,29 @@
-from pathlib import Path
-from generator import BaseGenerator
-from modules import ModuleRegistry
-from platform_target import SupportedTarget
-from project import Project
+from kiss_parser import KissParser
 
 class GenerateParams:
-    def __init__(self, directory:Path, project_name:str, generator:BaseGenerator, platform_target:SupportedTarget):
-        self.project_directory = directory
-        self.project_name = project_name if project_name else Project.default_project(directory)
-        self.generator = generator
-        self.platform_target = platform_target
+    def __init__(self, args: KissParser):
+        from generator import GeneratorRegistry, BaseGenerator
+        from pathlib import Path
+        from platform_target import PlatformTarget
+        from project import Project
+        self.project_directory:Path = Path(args.directory)
+        self.project_name: str = args.project_name if args.project_name else Project.default_project(args.directory)
+        self.generator: BaseGenerator = GeneratorRegistry.create(args.generator if args.generator is not None else "cmake", args)
+        self.platform_target: PlatformTarget = args.platform_target
 
-def cmd_generate(generateParams: GenerateParams):
+def cmd_generate(generate_params: GenerateParams):
     # If the no project name is present, search for the one loadable in the current directory
     import console, sys
+    from modules import ModuleRegistry
     console.print_step("Generating build scripts...")
-    ModuleRegistry.load_modules(generateParams.project_directory)
-    project = ModuleRegistry.get(generateParams.project_name)
+    ModuleRegistry.load_modules(generate_params.project_directory)
+    project = ModuleRegistry.get(generate_params.project_name)
     if not project:
-        console.print_error(f"Aucun projet trouvé dans le dossier {generateParams.project_directory}")
+        console.print_error(f"Aucun projet trouvé dans le dossier {generate_params.project_directory}")
         sys.exit(2)
     
-    import platform
-    from compiler import Compiler
-
-    console.print(f"project_directory = {generateParams.project_directory}")
-    console.print(f"project_name = {generateParams.project_name}")
-    console.print(f"generator = {generateParams.generator.name()}")
-    console.print(f"platform_target = {generateParams.platform_target}")
-    if platform.system() == "Windows":
-        from toolset import VSToolset
-        console.print(f"latest_toolset = {VSToolset.get_latest_toolset(Compiler.cl)}")
-
-    generateParams.generator.generate(generateParams, project)
+   
+    generate_params.generator.generate(generate_params, project)
   
    
         

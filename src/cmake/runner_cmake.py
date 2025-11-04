@@ -1,7 +1,9 @@
 import os
-
+import sys
+import console
 from cmake.cmake_directories import CMakeDirectories
 from config import Config
+
 from kiss_parser import KissParser
 from project.project import Project
 from runner import RunnerRegistry
@@ -26,5 +28,10 @@ class RunnerCMake:
         artifact_directory = Path(os.path.join(directories.build_directory, project.name, config_to_cmake_config(self.config)))
         artifact = Artifact(project, args.platform_target, self.config)
         artifact_path = os.path.join(artifact_directory, artifact.name)
+
+        if not artifact.is_executable:
+            console.print_error(f"{project.name} is not an executable")
+            sys.exit(2)
+
         run_process(artifact_path)
         

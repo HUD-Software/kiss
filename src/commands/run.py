@@ -1,4 +1,6 @@
+from artifact import Artifact
 from kiss_parser import KissParser
+
 
 class RunParams:
     def __init__(self, args: KissParser):
@@ -15,22 +17,12 @@ class RunParams:
 def cmd_run(run_params: RunParams):
     import console, sys
     from modules import ModuleRegistry
+    from project import ProjectType, Project
     ModuleRegistry.load_modules(run_params.project_directory)
-    project = ModuleRegistry.get(run_params.project_name)
+    project:Project = ModuleRegistry.get(run_params.project_name)
     if not project:
         console.print_error(f"Aucun projet trouvé dans le dossier {run_params.project_directory}")
         sys.exit(2)
     
-    console.print_step(f"Building project {project.name} in {project.file}...")
-
-    import platform
-    from compiler import Compiler
-    console.print(f"directory = {run_params.project_directory}")
-    console.print(f"project_name = {run_params.project_name}")
-    console.print(f"runner = {run_params.runner.name()}")
-    console.print(f"platform_target = {run_params.platform_target}")
-    if platform.system() == "Windows":
-        from toolset import VSToolset
-        console.print(f"latest_toolset = {VSToolset.get_latest_toolset(Compiler.cl)}")
-
+    console.print_step(f"Running project {project.name} in {project.file}...")
     run_params.runner.run(run_params, project)

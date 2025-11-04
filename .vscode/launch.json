@@ -7,7 +7,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/src/kiss.py",
             "console": "integratedTerminal",
-            "cwd": "${workspaceFolder}/tests",
+            "cwd": "${workspaceFolder}",
             // "args": [
             //     "generate",
             //     "cmake",
@@ -15,33 +15,41 @@
             // ]
             // "args": [
             //     "-d",
-            //     "modules",
+            //     "tests",
             //     "list",
             //     "-r"
             // ]
             // "args": [
             //     "-d",
-            //     "modules",
+            //     "tests",
             //     "new",
-            //     "bin",
-            //     "new_project",
+            //     "lib",
+            //     "my_lib",
             //     "--description",
-            //     "This is my project"
+            //     "This is my lib"
             // ]
             // "args": [
             //     "-d",
-            //     "modules/new_project",
+            //     "tests/my_lib",
             //     "generate",
             // ]
             // "args": [
             //     "-d",
-            //     "modules/new_project",
+            //     "tests/my_lib",
             //     "build"
             // ],
+            // "args": [
+            //     "-d",
+            //     "tests/my_lib",
+            //     "run"
+            // ]
             "args": [
                 "-d",
-                "modules/new_project",
-                "run"
+                "tests",
+                "new",
+                "workspace",
+                "my_lib",
+                "my_dyn"
             ]
         }
     ]

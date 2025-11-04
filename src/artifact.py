@@ -10,22 +10,34 @@ EXTENSIONS = {
     }
 
 class Artifact:
-    
     def __init__(self,  project: Project, platform_target: PlatformTarget, config : Config):
-        import platform
-        match platform.system():
-            case "Windows":
-                self._name = project.name + "." + Artifact.extension(platform_target, project.type)
-            case _: 
-                raise ValueError(f"Plateforme non supportée: { platform.system()}")
+        self._platform_target = platform_target
+        self._config = config
+        self._project = project
+        
+        
+    @property
+    def extension(self) -> str:
+        if not getattr(self, "_extension", None):
+            try:
+                self._extension = EXTENSIONS[(self._platform_target, self._project.type)]
+            except KeyError:
+                raise ValueError(f"Combinaison non supportée: {self._platform_target}, {type}")
+        return self._extension
 
     @property
     def name(self) -> str:
+        if not getattr(self, "_name", None):
+            import platform
+            match platform.system():
+                case "Windows":
+                    self._name =  self._project.name + "." + self.extension
+                case _: 
+                    raise ValueError(f"Plateforme non supportée: { platform.system()}")
         return self._name
     
-    def extension(platform_target : PlatformTarget, type : ProjectType) -> str:
-        try:
-            return EXTENSIONS[(platform_target, type)]
-        except KeyError:
-            raise ValueError(f"Combinaison non supportée: {platform_target}, {type}")
-
+    @property
+    def is_executable(self) -> bool:
+        return self.extension == "exe"
+    
+  

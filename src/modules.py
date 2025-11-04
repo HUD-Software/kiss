@@ -156,7 +156,7 @@ def Bin(name):
             bin_instance = BinProject(name=name,
                                       file = project_file(), 
                                       description= instance.description if hasattr(instance, "description") else None,
-                                      src = cls.src if hasattr(cls, "src") else [],
+                                      sources = cls.SOURCES if hasattr(cls, "SOURCES") else [],
                                       prebuild = cls.prebuild if hasattr(cls, "prebuild") else None,
                                       postbuild = cls.postbuild if hasattr(cls, "postbuild") else None)
             ModuleLoader.replace_cls_instance(cls, bin_instance)
@@ -176,8 +176,8 @@ def Lib(name):
             lib_instance = LibProject(name= name,
                                       file= project_file(),
                                       description= instance.description if hasattr(instance, "description") else None,
-                                      src = cls.src if hasattr(cls, "src") else [],
-                                      interface = cls.interface if hasattr(cls, "interface") else [])
+                                      sources= cls.SOURCES if hasattr(cls, "SOURCES") else [],
+                                      interface_directories= cls.INTERFACES if hasattr(cls, "INTERFACES") else [])
             ModuleLoader.replace_cls_instance(cls, lib_instance)
             instance = lib_instance
         return cls
@@ -195,8 +195,8 @@ def Dyn(name):
             dyn_instance = DynProject(name= name,
                                       file= project_file(),
                                       description= instance.description if hasattr(instance, "description") else None,
-                                      src = cls.src if hasattr(cls, "src") else [],
-                                      interface = cls.interface if hasattr(cls, "interface") else [])
+                                      sources= cls.SOURCES if hasattr(cls, "SOURCES") else [],
+                                      interface_directories= cls.INTERFACES if hasattr(cls, "INTERFACES") else [])
         
             ModuleLoader.replace_cls_instance(cls, dyn_instance)
             instance = dyn_instance

@@ -24,7 +24,7 @@
             "command": "${workspaceFolder}/build/bin/kiss.exe",
             "args": [
                 "-d",
-                "${workspaceFolder}/tests/modules",
+                "${workspaceFolder}/tests",
                 "list"
             ],
             "dependsOn": "Build KISS",
@@ -42,7 +42,7 @@
             "args": [
                 "${workspaceFolder}/src/kiss.py",
                 "-d",
-                "${workspaceFolder}/tests/modules",
+                "${workspaceFolder}/tests",
                 "list",
                 "--recursive"
             ],
@@ -59,7 +59,7 @@
             "args": [
                 "${workspaceFolder}/src/kiss.py",
                 "-d",
-                "${workspaceFolder}/tests/modules",
+                "${workspaceFolder}/tests",
                 "new",
                 "${input:project_type}",
                 "${input:project_name}",
@@ -79,7 +79,7 @@
             "args": [
                 "${workspaceFolder}/src/kiss.py",
                 "-d",
-                "${workspaceFolder}/tests/modules/${input:project_name}",
+                "${workspaceFolder}/tests/${input:project_name}",
                 "generate",
                 "${input:generator}"
             ],
@@ -96,7 +96,7 @@
             "args": [
                 "${workspaceFolder}/src/kiss.py",
                 "-d",
-                "${workspaceFolder}/tests/modules/${input:project_name}",
+                "${workspaceFolder}/tests/${input:project_name}",
                 "build",
                 "${input:generator}"
             ],
@@ -113,7 +113,7 @@
             "args": [
                 "${workspaceFolder}/src/kiss.py",
                 "-d",
-                "${workspaceFolder}/tests/modules/${input:project_name}",
+                "${workspaceFolder}/tests/${input:project_name}",
                 "run"
             ],
             "group": "test",
@@ -148,7 +148,6 @@
             "id": "project_name",
             "type": "promptString",
             "description": "Name of the project",
-            "default": "new_project"
         },
         {
             "id": "project_description",

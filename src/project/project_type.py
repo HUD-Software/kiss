@@ -4,6 +4,7 @@ class ProjectType(str, Enum):
     bin = "bin"
     lib = "lib"
     dyn = "dyn"
+    workspace = "workspace"
     
     def __str__(self):
         return self.name
@@ -19,5 +20,5 @@ class ProjectType(str, Enum):
         elif self is ProjectType.dyn:
             return "Dyn"
         else:
-            raise ValueError(f"Unknown ProjectType: {self}")
+            raise ValueError(f"Invalid ProjectType: {self}")
         

@@ -81,7 +81,7 @@ class UserParams:
             builder_parser = builder_subparser.add_parser(builder.name(), description=builder.short_desc())
             builder.add_cli_argument_to_parser(parser=builder_parser)
 
-
+        run_parser = subparsers.add_parser("run", description="create a project")
 
         # build_parser = subparsers.add_parser("build", description="build the project")
         # build_parser.add_argument("-p", "--path", help="specify the project path to build", dest="root", required=False)
@@ -139,6 +139,8 @@ class UserParams:
             from commands import BuildParams
             builder = BuilderRegistry.create(args.builder if args.builder is not None else "cmake", args)
             return BuildParams(directory=args.directory, project_name=args.project_name, builder=builder, platform_target=args.platform_target)
+        
+
         # build_config = args.config if args.config is not None else UserParams.default_build_configuration
         # compiler = args.compiler if args.compiler is not None else Compiler.cl
         # debug_info = args.debug_info if args.debug_info is not None else False

@@ -21,7 +21,7 @@ def cmd_generate(generateParams: GenerateParams):
         console.print_error(f"Aucun projet trouvé dans le dossier {generateParams.project_directory}")
         sys.exit(2)
     
-    import os, platform
+    import platform
     from compiler import Compiler
 
     console.print(f"project_directory = {generateParams.project_directory}")

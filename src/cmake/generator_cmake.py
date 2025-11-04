@@ -38,8 +38,7 @@ class GeneratorCMake:
             matches = glob.glob(pattern)
 
             for match in matches:
-                if os.path.isfile(match) and "CMakeFiles" not in match:
-                    result.append(str(Path(match).resolve()).replace("\\", "/"))
+                result.append(str(Path(match).resolve()).replace("\\", "/"))
 
         return result
     

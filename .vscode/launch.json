@@ -24,18 +24,18 @@
             //     "modules",
             //     "new",
             //     "bin",
-            //     "my_project",
+            //     "new_project",
             //     "--description",
             //     "This is my project"
             // ]
             // "args": [
             //     "-d",
-            //     "modules/my_project",
+            //     "modules/new_project",
             //     "generate",
             // ]
             "args": [
                 "-d",
-                "modules/my_project",
+                "modules/new_project",
                 "build"
             ]
         }

@@ -34,6 +34,94 @@
                 "panel": "shared"
             },
             "problemMatcher": []
+        },
+        {
+            "label": "New project",
+            "type": "shell",
+            "command": "python",
+            "args": [
+                "${workspaceFolder}/src/kiss.py",
+                "-d",
+                "${workspaceFolder}/tests/modules",
+                "new",
+                "${input:project_type}",
+                "${input:project_name}",
+                "--description",
+                "${input:project_description}"
+            ],
+            "group": "test",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+        },
+        {
+            "label": "Generate project",
+            "type": "shell",
+            "command": "python",
+            "args": [
+                "${workspaceFolder}/src/kiss.py",
+                "-d",
+                "${workspaceFolder}/tests/modules/${input:project_name}",
+                "generate",
+                "${input:generator}"
+            ],
+            "group": "test",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+        },
+        {
+            "label": "Build project",
+            "type": "shell",
+            "command": "python",
+            "args": [
+                "${workspaceFolder}/src/kiss.py",
+                "-d",
+                "${workspaceFolder}/tests/modules/${input:project_name}",
+                "build",
+                "${input:generator}"
+            ],
+            "group": "test",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
         }
+    ],
+    "inputs": [
+        {
+            "id": "generator",
+            "type": "pickString",
+            "description": "Type of generator to use",
+            "options": [
+                "cmake"
+            ],
+            "default": "cmake"
+        },
+        {
+            "id": "project_type",
+            "type": "pickString",
+            "description": "Type of project to create",
+            "options": [
+                "bin",
+                "lib",
+                "dyn"
+            ],
+            "default": "bin"
+        },
+        {
+            "id": "project_name",
+            "type": "promptString",
+            "description": "Name of the project",
+            "default": "new_project"
+        },
+        {
+            "id": "project_description",
+            "type": "promptString",
+            "description": "Description of the project",
+            "default": "This is the new_project"
+        },
     ]
 }

@@ -73,6 +73,6 @@ class Project:
         if len(ModuleRegistry.items()) > 1:
             console.print_warning(f"We found more than 1 projet in the directory {directory}.")
             for project_name ,project in ModuleRegistry.items():
-                console.print_warning(f"- {project_name} : {project._project_file}")
-            console.print_warning(f"\nUse {default_project_name} : {default_project._project_file}")
+                console.print_warning(f"- {project_name} : {project.file}")
+            console.print_warning(f"\nUse {default_project_name} : {default_project.file}")
         return default_project_name

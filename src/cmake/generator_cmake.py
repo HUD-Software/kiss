@@ -5,7 +5,7 @@ from cmake.cmake_directories import CMakeDirectories
 from cmake import coverage_cmake
 from generator import GeneratorRegistry
 from kiss_parser import KissParser
-from project import Project, BinProject, LibProject, DynProject
+from project import Project, BinProject, LibProject, DynProject, Workspace
 
 @GeneratorRegistry.register("cmake", "Generate cmake CMakeLists.txt")
 class GeneratorCMake:
@@ -109,12 +109,16 @@ set_target_properties({normalized_project_name} PROPERTIES OUTPUT_NAME \"{projec
     def generate(self, args : KissParser, project: Project):
         directories = CMakeDirectories (args, project)
         match project:
-            case BinProject():
+            case BinProject() as project:
                 self.__generateBin(directories, project)
-            case LibProject():
+            case LibProject() as project:
                 self.__generateLib(directories, project)
-            case DynProject():
+            case DynProject() as project:
                 self.__generateDyn(directories, project)
+            case Workspace() as project :
+                for project in project.projects:
+                    self.generate(args, project)
+
                 
             
     

@@ -20,5 +20,4 @@ class ProjectType(str, Enum):
         elif self is ProjectType.dyn:
             return "Dyn"
         else:
-            raise ValueError(f"Invalid ProjectType: {self}")
-        
+            raise ValueError(f"Invalid ProjectType: {self}")   

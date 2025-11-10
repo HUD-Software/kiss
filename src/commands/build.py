@@ -12,7 +12,9 @@ class BuildParams:
         self.builder: BaseBuilder = BuilderRegistry.create(args.builder if args.builder is not None else "cmake", args)
         self.platform_target: PlatformTarget = args.platform_target
 
-def cmd_build(build_params: BuildParams):
+def cmd_build(build_params: KissParser):
+    build_params = BuildParams(build_params)
+    
     import console, sys
     from modules import ModuleRegistry
     ModuleRegistry.load_modules(build_params.project_directory)

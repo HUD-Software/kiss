@@ -11,7 +11,9 @@ class GenerateParams:
         self.generator: BaseGenerator = GeneratorRegistry.create(args.generator if args.generator is not None else "cmake", args)
         self.platform_target: PlatformTarget = args.platform_target
 
-def cmd_generate(generate_params: GenerateParams):
+def cmd_generate(generate_params: KissParser):
+    generate_params = GenerateParams(generate_params)
+
     # If the no project name is present, search for the one loadable in the current directory
     import console, sys
     from modules import ModuleRegistry

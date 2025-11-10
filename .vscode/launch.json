@@ -9,8 +9,8 @@
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}",
             // "args": [
-            //     "generate",
-            //     "cmake",
+            //     "new",
+            //     "workspace",
             //     "--help"
             // ]
             // "args": [
@@ -23,24 +23,24 @@
             //     "-d",
             //     "tests",
             //     "new",
-            //     "dyn",
-            //     "my_dyn",
+            //     "bin",
+            //     "my_bin",
             //     "--description",
             //     "This is my dyn"
             // ]
+            "args": [
+                "-d",
+                "tests",
+                "generate",
+            ]
             // "args": [
             //     "-d",
-            //     "tests/my_dyn",
-            //     "generate",
-            // ]
-            // "args": [
-            //     "-d",
-            //     "tests/my_dyn",
+            //     "tests/my_bin",
             //     "build"
             // ],
             // "args": [
             //     "-d",
-            //     "tests/my_dyn",
+            //     "tests/my_bin",
             //     "run"
             // ]
             // "args": [
@@ -48,8 +48,10 @@
             //     "tests",
             //     "new",
             //     "workspace",
+            //     "my_workspace",
+            //     "-p",
             //     "my_bin",
-            //     "my_dyn"
+            //     "my_lib"
             // ]
         }
     ]

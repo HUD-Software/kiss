@@ -1,3 +1,4 @@
+from kiss_parser import KissParser
 from project import Project,ProjectType
 from typing import Callable
 
@@ -12,6 +13,13 @@ class LibProject(Project):
         self._prebuild = prebuild
         self._postbuild = postbuild
 
+    @classmethod
+    def add_cli_argument_to_parser(cls, parser: KissParser):
+        parser.add_argument("project_name", help="name of the project to create")
+        parser.add_argument("-desc", "--description", help="project description", default="", type=str) 
+        parser.add_argument("-cov", "--coverage", help="enable code coverage", action="store_true")
+        parser.add_argument("-san", "--sanitizer", help="enable sanitizer", action='store_true')
+        
     @property
     def sources(self) -> list[str]:
         return self._sources 

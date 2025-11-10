@@ -15,6 +15,7 @@ class RunParams:
 
 
 def cmd_run(run_params: RunParams):
+    run_params = RunParams(run_params)
     import console, sys
     from modules import ModuleRegistry
     from project import ProjectType, Project

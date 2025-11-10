@@ -32,7 +32,6 @@ class ModuleLoader:
 ModuleLoader = ModuleLoader()
 
 
-
 class ModuleRegistry:
     def __init__(self):
         self._registry: dict[str, Project] = {}
@@ -200,6 +199,24 @@ def Dyn(name):
         
             ModuleLoader.replace_cls_instance(cls, dyn_instance)
             instance = dyn_instance
+        return cls
+    return wrapper
+
+@register_in_kiss
+def Workspace(name):
+    """Décorateur pour enregistrer un workspace auprès du moteur"""
+    def wrapper(cls):
+        instance = ModuleLoader.get_cls_instance(cls)
+
+        # Now that we now the type of the project replace it's instance
+        from project import Workspace
+        if not isinstance(instance, Workspace):
+            workspace = Workspace(name= name,
+                                  file= project_file(),
+                                  description= instance.description if hasattr(instance, "description") else None,
+                                  projects= cls.PROJECTS if hasattr(cls, "PROJECTS") else [])
+            ModuleLoader.replace_cls_instance(cls, workspace)
+            instance = workspace
         return cls
     return wrapper
 

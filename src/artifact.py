@@ -32,8 +32,8 @@ class Artifact:
             match platform.system():
                 case "Windows":
                     self._name =  self._project.name + "." + self.extension
-                case _: 
-                    raise ValueError(f"Plateforme non supportée: { platform.system()}")
+                case _ as value: 
+                    raise ValueError(f"Plateforme non supportée: {value}")
         return self._name
     
     @property

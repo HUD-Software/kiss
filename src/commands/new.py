@@ -73,11 +73,17 @@ def new_worspace(file: str, new_directory: Path, new_params :KissParser):
             else:
                 projects.append(ModuleRegistry.get(name))
 
-    return Workspace(name=Path(new_params.workspace_name).name,file=file, description=new_params.description, projects=projects)
+    return Workspace(
+                name=Path(new_params.workspace_name).name,
+                directory=new_directory,
+                file=file, 
+                description=new_params.description,
+                projects=projects
+                )
 
 def new_bin_project(file: str, new_directory: Path, new_params :KissParser):
     # Add a simple hello world main file
-    relative_src_directory = "src"
+    relative_src_directory = Path("src")
     absolute_src_directory = new_directory / relative_src_directory
     os.makedirs(absolute_src_directory, exist_ok=True)
     
@@ -93,11 +99,17 @@ def new_bin_project(file: str, new_directory: Path, new_params :KissParser):
         f.write('    return 0;\n')
         f.write('}\n')  
 
-    return BinProject(name=Path(new_params.project_name).name,file=file,description=new_params.description, sources=[os.path.join(relative_src_directory, f"main.cpp")])
+    return BinProject(
+                name=Path(new_params.project_name).name,
+                directory=new_directory,
+                file=file,
+                description=new_params.description,
+                sources=[relative_src_directory / "main.cpp"]
+                )
 
 def new_lib_project(file: str, new_directory: Path, new_params :KissParser):
     # Create the main.cpp file
-    relative_src_directory = "src"
+    relative_src_directory = Path("src")
     absolute_src_directory = new_directory / relative_src_directory
     os.makedirs(absolute_src_directory, exist_ok=True)
 
@@ -130,15 +142,16 @@ def new_lib_project(file: str, new_directory: Path, new_params :KissParser):
 
     return LibProject(
             name=Path(new_params.project_name).name,
+            directory=new_directory,
             file=file,
             description=new_params.description,
             interface_directories=[relative_interface_directory],
-            sources=[os.path.join(relative_src_directory, f"lib.cpp")]
+            sources=[relative_src_directory / "lib.cpp"]
             )
 
 def new_dyn_project(file: str, new_directory: Path, new_params :KissParser):
     # Create the main.cpp file
-    relative_src_directory = "src"
+    relative_src_directory = Path("src")
     absolute_src_directory = new_directory / relative_src_directory
     os.makedirs(absolute_src_directory, exist_ok=True)
 
@@ -171,8 +184,9 @@ def new_dyn_project(file: str, new_directory: Path, new_params :KissParser):
 
     return DynProject(
             name=Path(new_params.project_name).name,
+            directory=new_directory,
             file=file,
             description=new_params.description,
             interface_directories=[relative_interface_directory],
-            sources=[os.path.join(relative_src_directory, f"dyn.cpp")]
+            sources=[relative_src_directory / "dyn.cpp"]
             )

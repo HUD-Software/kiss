@@ -139,11 +139,11 @@ def register_in_kiss(func):
     setattr(kiss_module, func.__name__, func)
     return func
 
-def project_file() -> str:
+def project_file_from_frame() -> Path:
     frame = inspect.currentframe()
     caller_frame = frame.f_back.f_back
     filename = caller_frame.f_code.co_filename
-    return os.path.abspath(filename)
+    return Path(filename).absolute()
 
 @register_in_kiss
 def Bin(name):
@@ -154,8 +154,10 @@ def Bin(name):
         # Now that we now the type of the project replace it's instance
         from project import BinProject
         if not isinstance(instance, BinProject):
+            project_file = project_file_from_frame()
             bin_instance = BinProject(name=name,
-                                      file = project_file(), 
+                                      directory=project_file.parent,
+                                      file = project_file, 
                                       description= instance.description if hasattr(instance, "description") else None,
                                       sources = cls.SOURCES if hasattr(cls, "SOURCES") else [],
                                       prebuild = cls.prebuild if hasattr(cls, "prebuild") else None,
@@ -174,8 +176,10 @@ def Lib(name):
         # Now that we now the type of the project replace it's instance
         from project import LibProject
         if not isinstance(instance, LibProject):
+            project_file = project_file_from_frame()
             lib_instance = LibProject(name= name,
-                                      file= project_file(),
+                                      directory=project_file.parent,
+                                      file = project_file, 
                                       description= instance.description if hasattr(instance, "description") else None,
                                       sources= cls.SOURCES if hasattr(cls, "SOURCES") else [],
                                       interface_directories= cls.INTERFACES if hasattr(cls, "INTERFACES") else [])
@@ -193,8 +197,10 @@ def Dyn(name):
         # Now that we now the type of the project replace it's instance
         from project import DynProject
         if not isinstance(instance, DynProject):
+            project_file = project_file_from_frame()
             dyn_instance = DynProject(name= name,
-                                      file= project_file(),
+                                      directory=project_file.parent,
+                                      file = project_file,
                                       description= instance.description if hasattr(instance, "description") else None,
                                       sources= cls.SOURCES if hasattr(cls, "SOURCES") else [],
                                       interface_directories= cls.INTERFACES if hasattr(cls, "INTERFACES") else [])
@@ -213,8 +219,10 @@ def Workspace(name):
         # Now that we now the type of the project replace it's instance
         from project import Workspace
         if not isinstance(instance, Workspace):
+            project_file = project_file_from_frame()
             workspace = Workspace(name= name,
-                                  file= project_file(),
+                                  directory=project_file.parent,
+                                  file = project_file, 
                                   description= instance.description if hasattr(instance, "description") else None,
                                   projects= cls.PROJECTS if hasattr(cls, "PROJECTS") else [])
             ModuleLoader.replace_cls_instance(cls, workspace)

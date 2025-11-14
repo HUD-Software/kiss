@@ -15,15 +15,16 @@ def cmd_list(list_params: KissParser):
             console.print(f"    - name : {project.name}")
             console.print(f"    - type : {project.type}")
             console.print(f"    - description : {project.description}")
+            console.print(f"    - directory : {project.directory}")
             match project:
                 case BinProject() as bin_project:
                     console.print(f"    - sources : {bin_project.sources}")
                 case LibProject() as lib_project:
                     console.print(f"    - sources : {lib_project.sources}")
-                    console.print(f"    - interfaces : {lib_project.interface_directories}")
+                    console.print(f"    - interface directories : {lib_project.interface_directories}")
                 case DynProject() as dyn_project:
                     console.print(f"    - sources : {dyn_project.sources}")
-                    console.print(f"    - interfaces : {dyn_project.interface_directories}")
+                    console.print(f"    - interface directories : {dyn_project.interface_directories}")
 
 
             

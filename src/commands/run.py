@@ -8,8 +8,8 @@ class RunParams:
         from runner import RunnerRegistry,BaseRunner 
         from project import Project
         from platform_target import PlatformTarget
-        self.project_directory:Path=Path(args.directory)
-        self.project_name:str = args.project_name if args.project_name else Project.default_project(args.directory)
+        self.project_directory = args.directory / args.project_name
+        self.project_name = Path(args.project_name).name if args.project_name else Project.default_project(args.directory)
         self.runner: BaseRunner = RunnerRegistry.create(args.runner if args.runner is not None else "cmake", args)
         self.platform_target: PlatformTarget = args.platform_target
 

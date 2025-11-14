@@ -61,7 +61,7 @@ class UserParams:
 
       
         generate_parser = subparsers.add_parser("generate", description="generate files used to build the project")
-        generate_parser.add_argument("-p", "--project", help="name of the project.py to generate", dest="project_name", required=False)
+        generate_parser.add_argument("-p", "--project", help="name of the project.py to generate", dest="project_name", required=False, type=Path)
         generate_parser.add_argument("-t", "--target", help="specify the target platform", dest="platform_target", default=PlatformTarget.default_target(), required=False)
 
         # Create the help string that contains list of all registered generators       
@@ -81,7 +81,7 @@ class UserParams:
 
 
         builder_parser = subparsers.add_parser("build", description="builder used to build the project")
-        builder_parser.add_argument("-p", "--project", help="name of the project.py to generate", dest="project_name", required=False)
+        builder_parser.add_argument("-p", "--project", help="name of the project.py to generate", dest="project_name", required=False, type=Path)
         builder_parser.add_argument("-t", "--target", help="specify the target platform", dest="platform_target", default=PlatformTarget.default_target(), required=False)
 
         # Create the help string that contains list of all registerd builders
@@ -102,7 +102,7 @@ class UserParams:
 
         # Create the help string that contains list of all registerd runners
         run_parser = subparsers.add_parser("run", description="Run a project")
-        run_parser.add_argument("-p", "--project", help="name of the project.py to generate", dest="project_name", required=False)
+        run_parser.add_argument("-p", "--project", help="name of the project.py to generate", dest="project_name", required=False, type=Path)
         run_parser.add_argument("-t", "--target", help="specify the target platform", dest="platform_target", default=PlatformTarget.default_target(), required=False)
         run_help_str = ""
         for runner in RunnerRegistry.values():

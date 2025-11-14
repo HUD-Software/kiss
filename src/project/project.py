@@ -1,3 +1,4 @@
+from pathlib import Path
 import re
 import console
 from project import ProjectType
@@ -5,16 +6,21 @@ from typing import Callable
 
 class Project:
 
-    def __init__(self, name:str, type:ProjectType, file: str, description: str = None):
+    def __init__(self, name:str, directory: Path, type:ProjectType, file: Path, description: str = None):
         self._name = name
         self._type = type
         self._file = file
         self._description = description
+        self._directory = directory
 
     @property
     def name(self) -> str:
         return self._name
-
+    
+    @property
+    def directory(self) -> str:
+        return self._directory
+    
     @property
     def type(self) -> ProjectType:
         return self._type

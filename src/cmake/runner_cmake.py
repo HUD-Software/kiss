@@ -25,9 +25,9 @@ class RunnerCMake:
         from artifact import Artifact
         from process import run_process
         from cmake.config_cmake import config_to_cmake_config
-        artifact_directory = Path(os.path.join(directories.build_directory, project.name, config_to_cmake_config(self.config)))
+        artifact_directory = directories.build_directory / project.name / config_to_cmake_config(self.config)
         artifact = Artifact(project, args.platform_target, self.config)
-        artifact_path = os.path.join(artifact_directory, artifact.name)
+        artifact_path = artifact_directory / artifact.name
 
         if not artifact.is_executable:
             console.print_error(f"{project.name} is not an executable")

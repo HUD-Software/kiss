@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 from cmake.cmake_directories import CMakeDirectories
 from cmake import coverage_cmake
+import console
 from generator import GeneratorRegistry
 from kiss_parser import KissParser
 from project import Project, BinProject, LibProject, DynProject, Workspace
@@ -43,13 +44,14 @@ class GeneratorCMake:
                 result.append(f'"{path_str}"')
         return result
     
-    def __generateBin(self, directories:CMakeDirectories, project: BinProject):
+    def __generateBinCMakeLists(self, directories:CMakeDirectories, project: BinProject) -> Path:
         os.makedirs(directories.cmakelists_directory, exist_ok=True)
         # Generate CMakeLists.txt
         normalized_src = self.__resolve_sources(project.sources, directories.project_directory)
         src_str = "\n".join(normalized_src)
         normalized_project_name = Project.to_pascal(project.name)
-        with open(os.path.join(directories.cmakelists_directory, "CMakeLists.txt"), "w", encoding="utf-8") as f:
+        cmakefile = directories.cmakelists_directory / "CMakeLists.txt"
+        with open(cmakefile, "w", encoding="utf-8") as f:
             f.write(f"""cmake_minimum_required(VERSION 3.18)
 
 project(\"{project.name}\" LANGUAGES CXX )
@@ -59,8 +61,10 @@ add_executable({normalized_project_name}
 )
 set_target_properties({normalized_project_name} PROPERTIES OUTPUT_NAME \"{project.name}\")
 """)
+        return cmakefile
+
             
-    def __generateLib(self, directories:CMakeDirectories, project: LibProject):
+    def __generateLibCMakeLists(self, directories:CMakeDirectories, project: LibProject):
         os.makedirs(directories.cmakelists_directory, exist_ok=True)
         # Generate CMakeLists.txt
         normalized_src = self.__resolve_sources(project.sources, directories.project_directory)
@@ -68,7 +72,8 @@ set_target_properties({normalized_project_name} PROPERTIES OUTPUT_NAME \"{projec
         normalized_interface = self.__resolve_sources(project.interface_directories, directories.project_directory)
         interface_str = "\n".join(normalized_interface)
         normalized_project_name = Project.to_pascal(project.name)
-        with open(os.path.join(directories.cmakelists_directory, "CMakeLists.txt"), "w", encoding="utf-8") as f:
+        cmakefile = directories.cmakelists_directory / "CMakeLists.txt"
+        with open(cmakefile, "w", encoding="utf-8") as f:
             f.write(f"""cmake_minimum_required(VERSION 3.18)
 
 project(\"{project.name}\" LANGUAGES CXX )
@@ -80,8 +85,9 @@ target_include_directories({normalized_project_name} PUBLIC {interface_str})
 
 set_target_properties({normalized_project_name} PROPERTIES OUTPUT_NAME \"{project.name}\")
 """)
+        return cmakefile
             
-    def __generateDyn(self, directories:CMakeDirectories, project: LibProject):
+    def __generateDynCMakeLists(self, directories:CMakeDirectories, project: LibProject):
         os.makedirs(directories.cmakelists_directory, exist_ok=True)
         # Generate CMakeLists.txt
         normalized_src = self.__resolve_sources(project.sources, directories.project_directory)
@@ -89,7 +95,8 @@ set_target_properties({normalized_project_name} PROPERTIES OUTPUT_NAME \"{projec
         normalized_interface = self.__resolve_sources(project.interface_directories, directories.project_directory)
         interface_str = "\n".join(normalized_interface)
         normalized_project_name = Project.to_pascal(project.name)
-        with open(os.path.join(directories.cmakelists_directory, "CMakeLists.txt"), "w", encoding="utf-8") as f:
+        cmakefile = directories.cmakelists_directory / "CMakeLists.txt"
+        with open(cmakefile, "w", encoding="utf-8") as f:
             f.write(f"""cmake_minimum_required(VERSION 3.18)
 
 project(\"{project.name}\" LANGUAGES CXX )
@@ -101,6 +108,7 @@ target_include_directories({normalized_project_name} PUBLIC {interface_str})
 
 set_target_properties({normalized_project_name} PROPERTIES OUTPUT_NAME \"{project.name}\")
 """)
+        return cmakefile
 
         # #if self.coverage:
         # coverage_cmake.generateCoverageCMakeFile(directories)
@@ -110,11 +118,14 @@ set_target_properties({normalized_project_name} PROPERTIES OUTPUT_NAME \"{projec
         directories = CMakeDirectories (args, project)
         match project:
             case BinProject() as project:
-                self.__generateBin(directories, project)
+                cmakefile = self.__generateBinCMakeLists(directories, project)
+                console.print_success(f"CMake {cmakefile} generated for {project.name}")
             case LibProject() as project:
-                self.__generateLib(directories, project)
+                cmakefile = self.__generateLibCMakeLists(directories, project)
+                console.print_success(f"CMake {cmakefile} generated for {project.name}")
             case DynProject() as project:
-                self.__generateDyn(directories, project)
+                cmakefile = self.__generateDynCMakeLists(directories, project)
+                console.print_success(f"CMake {cmakefile} generated for {project.name}")
             case Workspace() as project :
                 for project in project.projects:
                     self.generate(args, project)

@@ -2,7 +2,7 @@ import os
 from cmake.cmake_directories import CMakeDirectories
 
 def generateSanitizerCMakeFile(self, directories:CMakeDirectories):
-    filepath = os.path.join(directories.build_directory, "sanitizer.cmake")
+    filepath = directories.build_directory / "sanitizer.cmake"
     if not os.path.exists(filepath):
         with open(filepath, "w", encoding="utf-8") as f:
             f.write(self.__windowsCheckStr())

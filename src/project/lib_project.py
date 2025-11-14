@@ -1,10 +1,12 @@
+from pathlib import Path
 from kiss_parser import KissParser
 from project import Project,ProjectType
 from typing import Callable
 
 class LibProject(Project):
-    def __init__(self, name:str, file: str, description: str = None, interface_directories: list[str] = [], sources: list[str] = [], prebuild: Callable[[], None] = None, postbuild: Callable[[], None] = None):
-        super().__init__(name=name, 
+    def __init__(self, name:str, file: str, directory: Path, description: str = None, interface_directories: list[str] = [], sources: list[str] = [], prebuild: Callable[[], None] = None, postbuild: Callable[[], None] = None):
+        super().__init__(name=name,
+                         directory=directory,
                          type=ProjectType.lib, 
                          file=file, 
                          description=description)

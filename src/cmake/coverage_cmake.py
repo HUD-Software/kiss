@@ -3,7 +3,7 @@ from cmake.cmake_directories import CMakeDirectories
 
 
 def generateCoverageCMakeFile(self, directories:CMakeDirectories):
-    filepath = os.path.join(directories.build_directory, "coverage.cmake")
+    filepath = directories.build_directory / "coverage.cmake"
     if not os.path.exists(filepath):
         with open(filepath, "w", encoding="utf-8") as f:
             f.write(self.__windowsCheckStr())

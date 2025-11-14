@@ -6,8 +6,8 @@ class GenerateParams:
         from pathlib import Path
         from platform_target import PlatformTarget
         from project import Project
-        self.project_directory:Path = Path(args.directory)
-        self.project_name: str = args.project_name if args.project_name else Project.default_project(args.directory)
+        self.project_directory = args.directory / args.project_name
+        self.project_name = Path(args.project_name).name if args.project_name else Project.default_project(args.directory)
         self.generator: BaseGenerator = GeneratorRegistry.create(args.generator if args.generator is not None else "cmake", args)
         self.platform_target: PlatformTarget = args.platform_target
 

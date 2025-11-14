@@ -1,32 +1,33 @@
 import asyncio
 import os
+from pathlib import Path
 import sys
 import console
 
-def print_process(program: str, args: list[str] = [], working_dir: str = os.curdir, env: dict[str, str] = {}):
+def print_process(program: Path, args: list[str] = [], working_dir = Path(os.curdir), env: dict[str, str] = {}):
     if args is None:
         args = []
     if env is None:
         env = {}
 
     # Construire la ligne de commande lisible
-    cmd_str = " ".join([program] + [str(a) for a in args])
+    cmd_str = " ".join([str(program)] + [str(a) for a in args])
 
     console.print_step(f"🛠  Command: {cmd_str}")
-    console.print_step(f"  📂 Working directory: {os.path.abspath(working_dir)}")
+    console.print_step(f"  📂 Working directory: {working_dir.absolute()}")
     
     if env:
         env_str = " ".join(f"{k}={v}" for k, v in env.items())
         console.print_step(f"  🌱 Environment: {env_str}")
         
-def run_process(program: str, args: list[str] = [], working_dir: str = os.curdir, env: dict[str, str] = {}):
+def run_process(program: Path, args: list[str] = [], working_dir= Path(os.curdir), env: dict[str, str] = {}):
    print_process(program, args, working_dir, env)
    return asyncio.run(__run_process(program, args, working_dir, env))
 
-async def __run_process(program: str, args: list[str], working_dir: str = os.curdir, env: dict[str, str] = {}):
+async def __run_process(program: Path, args: list[str], working_dir= Path(os.curdir), env: dict[str, str] = {}):
     if not os.path.exists(working_dir):
         console.print_error(f"  | Error: Working directory is invalid : {working_dir}")
-        console.print_error(f"  | Current directory {os.path.abspath(os.curdir)}")
+        console.print_error(f"  | Current directory {Path(os.curdir)}")
         console.print_error(f"  | Command: {program} {args}")
         sys.exit(2)
     environ = os.environ.copy()
@@ -42,7 +43,7 @@ async def __run_process(program: str, args: list[str], working_dir: str = os.cur
         )
     except FileNotFoundError:
         console.print_error(f"  | Error: Program not found: {program}")
-        console.print_error(f"  | Current directory: {os.path.abspath(os.curdir)}")
+        console.print_error(f"  | Current directory: {Path(os.curdir)}")
         console.print_error(f"  | Command: {program} {args}")
         return 1
     except PermissionError:

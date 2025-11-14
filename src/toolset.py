@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 import platform
 import sys
 import console
@@ -78,11 +79,11 @@ def get_windows_latest_toolset(compiler:Compiler):
         json_str = json.dumps(latest_product_info[0], indent=2)
         json_object = json.loads(json_str)
         json_catalog = json_object["catalog"]
-        json_installation_path:str = json_object["installationPath"]
+        json_installation_path = Path(json_object["installationPath"])
         match compiler:
             case Compiler.cl:
                 # From https://github.com/microsoft/vswhere/wiki/Find-VC
-                vctool_default_version_path = os.path.join(json_installation_path, "VC\\Auxiliary\\Build\\Microsoft.VCToolsVersion.default.txt")
+                vctool_default_version_path = json_installation_path / "VC\\Auxiliary\\Build\\Microsoft.VCToolsVersion.default.txt"
                 if os.path.exists(vctool_default_version_path):
                     vctool_default_version = open(vctool_default_version_path).readline().strip()
                 else:
@@ -90,20 +91,20 @@ def get_windows_latest_toolset(compiler:Compiler):
                                           Should be here: {vctool_default_version_path}\n \
                                           Repair Visual studio installation")
                     sys.exit(2)
-                compiler_path=os.path.join(json_installation_path, f"VC\\Tools\\MSVC\\{vctool_default_version}\\bin\\Hostx64\\x64\\")
+                compiler_path=json_installation_path / f"VC\\Tools\\MSVC\\{vctool_default_version}\\bin\\Hostx64\\x64\\"
                 return VSToolset(compiler=Compiler.cl,
-                                 cxx_compiler_path=os.path.join(compiler_path,"cl.exe"),
-                                 c_compiler_path=os.path.join(compiler_path,"cl.exe"),
+                                 cxx_compiler_path=compiler_path / "cl.exe",
+                                 c_compiler_path=compiler_path / "cl.exe",
                                  major_version=latest_major_version,
                                  product_name=json_catalog['productName'],
                                  product_line_version=json_catalog['productLineVersion'])
             case Compiler.clang:
-                compiler_path=os.path.join(json_installation_path, "VC\\Tools\\Llvm\\x64\\bin\\")
+                compiler_path=json_installation_path / "VC\\Tools\\Llvm\\x64\\bin\\"
                 return VSLLVMToolset(compiler=Compiler.clang,
-                                     cxx_compiler_path=os.path.join(compiler_path,"clang-cl.exe"),
-                                     c_compiler_path=os.path.join(compiler_path,"clang-cl.exe"),
+                                     cxx_compiler_path=compiler_path / "clang-cl.exe",
+                                     c_compiler_path=compiler_path / "clang-cl.exe",
                                      major_version=latest_major_version,
                                      product_name=json_catalog['productName'],
                                      product_line_version=json_catalog['productLineVersion'],
                                      llvm_tools=LLVMTools(path=compiler_path,
-                                                          profdata=os.path.join(compiler_path,"llvm-profdata.exe")))
+                                                          profdata=compiler_path / "llvm-profdata.exe"))

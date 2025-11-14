@@ -11,5 +11,5 @@ class CMakeDirectories:
 
     def __init__(self, args : KissParser, project: Project):
         self.project_directory = Path(args.project_directory)
-        self.build_directory = Path(os.path.join(args.project_directory, "build", args.platform_target, "cmake"))
-        self.cmakelists_directory =  Path(os.path.join(self.build_directory, project.name))
+        self.build_directory = self.project_directory / "build" / args.platform_target.name / "cmake"
+        self.cmakelists_directory =  self.build_directory / project.name

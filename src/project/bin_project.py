@@ -1,11 +1,13 @@
 
+from pathlib import Path
 from kiss_parser import KissParser
 from project import Project, ProjectType
 from typing import Callable
 
 class BinProject(Project):
-    def __init__(self, name:str, file: str, description: str = None, sources: list[str] = [], prebuild: Callable[[], None] = None, postbuild: Callable[[], None] = None):
-        super().__init__(name=name, 
+    def __init__(self, name:str, file: Path, directory: Path, description: str = None, sources: list[str] = [], prebuild: Callable[[], None] = None, postbuild: Callable[[], None] = None):
+        super().__init__(name=name,
+                         directory=directory,
                          type=ProjectType.bin, 
                          file=file, 
                          description=description)

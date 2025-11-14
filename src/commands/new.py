@@ -60,18 +60,17 @@ def new_worspace(file: str, new_directory: Path, new_params :KissParser):
 
     # Transform the given projet path to absolute path relative to the new_directory path
     absolute_project_paths = []
-    for rel in new_params.projects:
-        p = Path(rel)
-        base = p if p.is_absolute() else new_directory / p
+    for project_path in new_params.projects:
+        base = project_path if project_path.is_absolute() else new_directory / project_path
         absolute_project_paths.append(base.resolve())
 
     if(len(absolute_project_paths) > 0):
         ModuleRegistry.load_modules(path=new_directory, recursive=True)
-        for name in absolute_project_paths:
-            if name not in ModuleRegistry.projects_names():
-                console.print_error(f"Project '{name}' not found.")
+        for project_path in absolute_project_paths:
+            if project_path.name not in ModuleRegistry.projects_names():
+                console.print_error(f"Project '{project_path}' not found.")
             else:
-                projects.append(ModuleRegistry.get(name))
+                projects.append(ModuleRegistry.get(project_path.name))
 
     return Workspace(
                 name=Path(new_params.workspace_name).name,

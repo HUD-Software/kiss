@@ -23,42 +23,41 @@
             //     "-d",
             //     "tests",
             //     "new",
-            //     "dyn",
-            //     "inner/my_dyn",
+            //     "bin",
+            //     "inner/my_bin2",
             //     "--description",
-            //     "This is my_dyn"
+            //     "This is my_bin2"
             // ]
             // "args": [
             //     "-d",
             //     "tests",
-            //     "generate",
-            //     "-p",
-            //     "inner/my_dyn"
+            //     "generate"
             // ]
             // "args": [
             //     "-d",
             //     "tests",
             //     "build",
-            //     "-p",
-            //     "inner/my_bin"
             // ],
-            // "args": [
-            //     "-d",
-            //     "tests",
-            //     "run",
-            //     "-p",
-            //     "inner/my_dyn"
-            // ]
             "args": [
                 "-d",
                 "tests",
-                "new",
-                "workspace",
-                "my_workspace",
-                "-p",
-                "inner/my_bin",
-                "my_lib"
+                "run"
             ]
+            // "args": [
+            //     "-d",
+            //     "tests",
+            //     "new",
+            //     "workspace",
+            //     "my_workspace",
+            //     "-p",
+            //     "inner/my_bin",
+            //     "my_lib"
+            // ]
+            // "args": [
+            //     "-d",
+            //     "tests",
+            //     "generate",
+            // ]
         }
     ]
 }

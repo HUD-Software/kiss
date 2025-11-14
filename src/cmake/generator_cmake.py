@@ -6,6 +6,8 @@ from cmake import coverage_cmake
 import console
 from generator import GeneratorRegistry
 from kiss_parser import KissParser
+from modules import ModuleRegistry
+from platform_target import PlatformTarget
 from project import Project, BinProject, LibProject, DynProject, Workspace
 
 @GeneratorRegistry.register("cmake", "Generate cmake CMakeLists.txt")
@@ -17,7 +19,7 @@ class GeneratorCMake:
         parser.add_argument("-san", "--sanitizer", help="enable sanitizer", action='store_const', const=True)
 
 
-    def __init__(self, parser: KissParser):
+    def __init__(self, parser: KissParser = None):
         self.coverage = getattr(parser, "coverage", False)
         self.sanitizer = getattr(parser, "sanitizer", False)
 
@@ -114,8 +116,8 @@ set_target_properties({normalized_project_name} PROPERTIES OUTPUT_NAME \"{projec
         # coverage_cmake.generateCoverageCMakeFile(directories)
         # coverage_cmake.generateSanitizerCMakeFile(directories)
 
-    def generate(self, args : KissParser, project: Project):
-        directories = CMakeDirectories (args, project)
+    def generate_project(self, project_directory: Path, platform_target:PlatformTarget, project: Project):
+        directories = CMakeDirectories(project_directory, platform_target,project)
         match project:
             case BinProject() as project:
                 cmakefile = self.__generateBinCMakeLists(directories, project)
@@ -127,8 +129,17 @@ set_target_properties({normalized_project_name} PROPERTIES OUTPUT_NAME \"{projec
                 cmakefile = self.__generateDynCMakeLists(directories, project)
                 console.print_success(f"CMake {cmakefile} generated for {project.name}")
             case Workspace() as project :
-                for project in project.projects:
-                    self.generate(args, project)
+                for project_path in project.project_paths:
+                    ModuleRegistry.load_modules(project_path)
+                    project = ModuleRegistry.get_from_dir(project_path)
+                    self.generate_project(project.directory, platform_target, project)
+
+    def generate(self, args : KissParser, project: Project):
+        self.generate_project(project_directory = args.project_directory,
+                        platform_target= args.platform_target,
+                        project=project)
+
+        
 
                 
             

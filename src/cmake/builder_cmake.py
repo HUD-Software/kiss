@@ -1,9 +1,13 @@
+from pathlib import Path
 from builder import BuilderRegistry
 from cmake.cmake_directories import CMakeDirectories
+from cmake.generator_cmake import GeneratorCMake
 from compiler import Compiler
 from config import Config
 from kiss_parser import KissParser
-from project.project import Project
+from modules import ModuleRegistry
+from platform_target import PlatformTarget
+from project import Project, Workspace
 
 
 
@@ -17,16 +21,20 @@ class BuilderCMake:
         parser.add_argument("-cov", "--coverage", help="enable code coverage", action='store_const', const=True)
         parser.add_argument("-san", "--sanitizer", help="enable sanitizer", action='store_const', const=True)
 
-    def __init__(self, parser: KissParser):
+    def __init__(self, parser: KissParser = None):      
         self.config = getattr(parser, "config", None) or Config.default_config()
-        self.compiler = getattr(parser, "compiler", None) or Compiler.cl
+        self.compiler = getattr(parser, "compiler", None) or Compiler.default_compiler()
         self.debug = getattr(parser, "debug", None) or False
         self.coverage = getattr(parser, "coverage", None) or False
         self.sanitizer = getattr(parser, "sanitizer", None) or False
 
- 
-            
-    def __configure(self,  directories:CMakeDirectories, project: Project):
+    def build_project(self, project_directory: Path, platform_target:PlatformTarget, project: Project):
+        # Generate before
+        generator = GeneratorCMake ()
+        generator.generate_project(project_directory,platform_target,project)
+     
+        # Build Now
+        directories = CMakeDirectories(project_directory, platform_target,project)
         from process import run_process
         import console
         from cmake.config_cmake import config_to_cmake_config
@@ -42,5 +50,14 @@ class BuilderCMake:
         run_process("cmake", args, directories.cmakelists_directory)
 
     def build(self, args : KissParser, project: Project):
-        directories = CMakeDirectories (args, project)
-        self.__configure(directories, project)
+        if isinstance(project, Workspace):
+            for project_path in project.project_paths:
+                ModuleRegistry.load_modules(project_path)
+                project = ModuleRegistry.get_from_dir(project_path)
+                self.build_project(project_directory=project.directory,
+                             platform_target=args.platform_target,
+                             project=project)
+        else:
+            self.build_project(project_directory = args.project_directory,
+                        platform_target= args.platform_target,
+                        project=project)

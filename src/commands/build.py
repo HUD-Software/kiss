@@ -7,8 +7,8 @@ class BuildParams:
         from builder import BuilderRegistry, BaseBuilder
         from platform_target import PlatformTarget
         from project.project import Project
-        self.project_directory = args.directory / args.project_name
-        self.project_name = Path(args.project_name).name if args.project_name else Project.default_project(args.directory)
+        self.project_name = str(Path(args.project_name).name) if args.project_name else Project.default_project(args.directory)
+        self.project_directory = args.directory / args.project_name if args.project_name else args.directory
         self.builder: BaseBuilder = BuilderRegistry.create(args.builder if args.builder is not None else "cmake", args)
         self.platform_target: PlatformTarget = args.platform_target
 

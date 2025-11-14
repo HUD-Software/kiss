@@ -52,7 +52,7 @@ class Project:
         return ''.join(part.capitalize() for part in parts if part)
 
     @staticmethod
-    def default_project(directory:str) -> str|None:
+    def default_project(directory:Path) -> str|None:
         from modules import ModuleRegistry
         ModuleRegistry.load_modules(directory)
         if len(ModuleRegistry.items()) == 0:

@@ -50,6 +50,28 @@ class ModuleRegistry:
         """
         return self._registry.get(name)
 
+    def get_from_dir(self, directory: Path) -> Project|None:
+        """
+        Récupère le projet associé a un dossier.
+
+        Args:
+            directory (Path): Chemin du dossier à rechercher.
+
+        Returns:
+            Project|None: La classe du générateur si trouvée, sinon None.
+        """
+        for project in self.projects():
+            if project.directory == directory:
+                return project
+        return None
+
+    def all_bin(self) -> list[Project]:
+        bin_list: list[Project] =[]
+        for project in self.projects():
+            if project.type == ProjectType.bin:
+                bin_list.append(project)
+        return bin_list
+
     def add(self, name: str, project: ProjectType):
         """
         Ajoute un projet associé avec son nom
@@ -109,16 +131,28 @@ class ModuleRegistry:
         """
         return self._registry.items()
     
+    def is_file_loaded(self, filepath:Path) -> bool:
+        for project in self.projects():
+            if project.file == filepath:
+                return True
+        return False
+    
     def load_modules(self, path: Path, recursive: bool = False):
         pattern = f"**/{MODULE_FILENAME}" if recursive else MODULE_FILENAME
 
+        # Load modules
         for file in path.glob(pattern):
+            if self.is_file_loaded(file):
+                continue
             module_name = file.stem
             spec = importlib.util.spec_from_file_location(module_name, file)
             module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(module)
         
+        # Add projects only once
         for project in ModuleLoader.projects():
+            if project.name in self._registry:
+                continue
             self.add(project.name, project)
 
 ModuleRegistry = ModuleRegistry()
@@ -224,7 +258,7 @@ def Workspace(name):
                                   directory=project_file.parent,
                                   file = project_file, 
                                   description= instance.description if hasattr(instance, "description") else None,
-                                  projects= cls.PROJECTS if hasattr(cls, "PROJECTS") else [])
+                                  project_paths= cls.PROJECTS if hasattr(cls, "PROJECTS") else [])
             ModuleLoader.replace_cls_instance(cls, workspace)
             instance = workspace
         return cls

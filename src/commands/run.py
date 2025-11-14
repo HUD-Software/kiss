@@ -8,8 +8,8 @@ class RunParams:
         from runner import RunnerRegistry,BaseRunner 
         from project import Project
         from platform_target import PlatformTarget
-        self.project_directory = args.directory / args.project_name
-        self.project_name = Path(args.project_name).name if args.project_name else Project.default_project(args.directory)
+        self.project_name = str(Path(args.project_name).name) if args.project_name else Project.default_project(args.directory)
+        self.project_directory = args.directory / args.project_name if args.project_name else args.directory
         self.runner: BaseRunner = RunnerRegistry.create(args.runner if args.runner is not None else "cmake", args)
         self.platform_target: PlatformTarget = args.platform_target
 
@@ -18,7 +18,7 @@ def cmd_run(run_params: RunParams):
     run_params = RunParams(run_params)
     import console, sys
     from modules import ModuleRegistry
-    from project import ProjectType, Project
+    from project import Project
     ModuleRegistry.load_modules(run_params.project_directory)
     project:Project = ModuleRegistry.get(run_params.project_name)
     if not project:

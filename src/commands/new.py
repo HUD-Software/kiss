@@ -1,19 +1,20 @@
+
 import os
 from pathlib import Path
 import sys
 import console
 from kiss_parser import KissParser
-from project import BinProject, LibProject, DynProject, ProjectType, Workspace
-
+from project import Project, BinProject, LibProject, DynProject, ProjectType, Workspace
+from modules import MODULE_FILENAME
 
 def cmd_new(new_params :KissParser):
     new_params.project_type = ProjectType(new_params.project_type)
 
     if new_params.project_type is ProjectType.workspace:
-        new_directory = os.path.join(new_params.directory)
+        new_directory:Path = Path(new_params.directory)
         os.makedirs(new_directory, exist_ok=True)
         # Create the workspace file
-        file = os.path.join(new_directory, f"kiss_workspace.py")
+        file:Path = new_directory / MODULE_FILENAME
         if os.path.exists(file): 
             console.print_error(f"The file {file} already exists !")
             sys.exit(2)
@@ -24,11 +25,11 @@ def cmd_new(new_params :KissParser):
         console.print_step(f"Creating a new {new_params.project_type} project named  `{new_params.project_name}`")
 
         # Create the directory of the new project if not exists
-        new_directory = os.path.join(new_params.directory, new_params.project_name)
+        new_directory:Path = Path(new_params.directory) / new_params.project_name
         os.makedirs(new_directory, exist_ok=True)
 
         # Create the main python script file
-        file = os.path.join(new_directory, f"{new_params.project_name}.py")
+        file :Path= new_directory / MODULE_FILENAME
         if os.path.exists(file): 
             console.print_error(f"The file {file} already exists !")
             sys.exit(2)
@@ -53,16 +54,34 @@ def cmd_new(new_params :KissParser):
         console.print_success(f"Project {new_project.name} created successfully.")
 
 def new_worspace(file: str, new_directory: Path, new_params :KissParser):
+    from modules import ModuleRegistry
     os.makedirs(new_directory, exist_ok=True)
-    return Workspace(name=new_params.workspace_name,file=file, description=new_params.description, projects=new_params.projects)
+    projects : list[Project] = []
+
+    # Transform the given projet path to absolute path relative to the new_directory path
+    absolute_project_paths = []
+    for rel in new_params.projects:
+        p = Path(rel)
+        base = p if p.is_absolute() else new_directory / p
+        absolute_project_paths.append(base.resolve())
+
+    if(len(absolute_project_paths) > 0):
+        ModuleRegistry.load_modules(path=new_directory, recursive=True)
+        for name in absolute_project_paths:
+            if name not in ModuleRegistry.projects_names():
+                console.print_error(f"Project '{name}' not found.")
+            else:
+                projects.append(ModuleRegistry.get(name))
+
+    return Workspace(name=Path(new_params.workspace_name).name,file=file, description=new_params.description, projects=projects)
 
 def new_bin_project(file: str, new_directory: Path, new_params :KissParser):
     # Add a simple hello world main file
     relative_src_directory = "src"
-    absolute_src_directory = os.path.join(new_directory, relative_src_directory)
+    absolute_src_directory = new_directory / relative_src_directory
     os.makedirs(absolute_src_directory, exist_ok=True)
     
-    absolute_mainfile = os.path.join(absolute_src_directory, f"main.cpp")
+    absolute_mainfile = absolute_src_directory / "main.cpp"
     if os.path.exists(absolute_mainfile): 
         console.print_error(f"The file {absolute_mainfile} already exists !")
         sys.exit(2)
@@ -74,16 +93,16 @@ def new_bin_project(file: str, new_directory: Path, new_params :KissParser):
         f.write('    return 0;\n')
         f.write('}\n')  
 
-    return BinProject(name=new_params.project_name,file=file,description=new_params.description, sources=[os.path.join(relative_src_directory, f"main.cpp")])
+    return BinProject(name=Path(new_params.project_name).name,file=file,description=new_params.description, sources=[os.path.join(relative_src_directory, f"main.cpp")])
 
 def new_lib_project(file: str, new_directory: Path, new_params :KissParser):
     # Create the main.cpp file
     relative_src_directory = "src"
-    absolute_src_directory = os.path.join(new_directory, relative_src_directory)
+    absolute_src_directory = new_directory / relative_src_directory
     os.makedirs(absolute_src_directory, exist_ok=True)
 
     # Add a simple hello world main file
-    absolute_libfile = os.path.join(absolute_src_directory, f"lib.cpp")
+    absolute_libfile = absolute_src_directory / "lib.cpp"
     if os.path.exists(absolute_libfile): 
         console.print_error(f"The file {absolute_libfile} already exists !")
         sys.exit(2)
@@ -95,10 +114,10 @@ def new_lib_project(file: str, new_directory: Path, new_params :KissParser):
 
     # Add the interface header
     relative_interface_directory = "interface"
-    absolute_interface_directory = os.path.join(new_directory, relative_interface_directory)
+    absolute_interface_directory = new_directory / relative_interface_directory
     os.makedirs(absolute_interface_directory, exist_ok=True)
 
-    absolute_header = os.path.join(absolute_interface_directory, f"lib.h")
+    absolute_header = absolute_interface_directory / "lib.h"
     if os.path.exists(absolute_header): 
         console.print_error(f"The file {absolute_header} already exists !")
         sys.exit(2)
@@ -110,7 +129,7 @@ def new_lib_project(file: str, new_directory: Path, new_params :KissParser):
         f.write('\n#endif // LIB_H\n')
 
     return LibProject(
-            name=new_params.project_name,
+            name=Path(new_params.project_name).name,
             file=file,
             description=new_params.description,
             interface_directories=[relative_interface_directory],
@@ -120,11 +139,11 @@ def new_lib_project(file: str, new_directory: Path, new_params :KissParser):
 def new_dyn_project(file: str, new_directory: Path, new_params :KissParser):
     # Create the main.cpp file
     relative_src_directory = "src"
-    absolute_src_directory = os.path.join(new_directory, relative_src_directory)
+    absolute_src_directory = new_directory / relative_src_directory
     os.makedirs(absolute_src_directory, exist_ok=True)
 
     # Add a simple hello world main file
-    absolute_libfile = os.path.join(absolute_src_directory, f"dyn.cpp")
+    absolute_libfile = absolute_src_directory / "dyn.cpp"
     if os.path.exists(absolute_libfile): 
         console.print_error(f"The file {absolute_libfile} already exists !")
         sys.exit(2)
@@ -136,10 +155,10 @@ def new_dyn_project(file: str, new_directory: Path, new_params :KissParser):
 
     # Add the interface header
     relative_interface_directory = "interface"
-    absolute_interface_directory = os.path.join(new_directory, relative_interface_directory)
+    absolute_interface_directory = new_directory / relative_interface_directory
     os.makedirs(absolute_interface_directory, exist_ok=True)
 
-    absolute_header = os.path.join(absolute_interface_directory, f"dyn.h")
+    absolute_header = absolute_interface_directory / "dyn.h"
     if os.path.exists(absolute_header): 
         console.print_error(f"The file {absolute_header} already exists !")
         sys.exit(2)
@@ -151,7 +170,7 @@ def new_dyn_project(file: str, new_directory: Path, new_params :KissParser):
         f.write('\n#endif // DYN_H\n')
 
     return DynProject(
-            name=new_params.project_name,
+            name=Path(new_params.project_name).name,
             file=file,
             description=new_params.description,
             interface_directories=[relative_interface_directory],

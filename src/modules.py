@@ -6,6 +6,8 @@ import importlib.util
 import inspect
 from project import ProjectType, Project
 
+MODULE_FILENAME = "kiss.py"
+
 class ModuleLoader:
     def __init__(self):
         self.cls_project : dict[type, Project]= {}
@@ -80,7 +82,7 @@ class ModuleRegistry:
         """
         return iter(self._registry.items())
 
-    def projects_name(self):
+    def projects_names(self):
         """
         Retourne les noms des projets enregistrés.
 
@@ -108,7 +110,7 @@ class ModuleRegistry:
         return self._registry.items()
     
     def load_modules(self, path: Path, recursive: bool = False):
-        pattern = "**/*.py" if recursive else "*.py"
+        pattern = f"**/{MODULE_FILENAME}" if recursive else MODULE_FILENAME
 
         for file in path.glob(pattern):
             module_name = file.stem

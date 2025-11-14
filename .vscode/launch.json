@@ -13,26 +13,26 @@
             //     "workspace",
             //     "--help"
             // ]
-            // "args": [
-            //     "-d",
-            //     "tests",
-            //     "list",
-            //     "-r"
-            // ]
+            "args": [
+                "-d",
+                "tests",
+                "list",
+                "-r"
+            ]
             // "args": [
             //     "-d",
             //     "tests",
             //     "new",
-            //     "bin",
-            //     "my_bin",
+            //     "dyn",
+            //     "inner/my_dyn",
             //     "--description",
-            //     "This is my dyn"
+            //     "This is my_dyn"
             // ]
-            "args": [
-                "-d",
-                "tests",
-                "generate",
-            ]
+            // "args": [
+            //     "-d",
+            //     "tests",
+            //     "generate",
+            // ]
             // "args": [
             //     "-d",
             //     "tests/my_bin",
@@ -50,7 +50,7 @@
             //     "workspace",
             //     "my_workspace",
             //     "-p",
-            //     "my_bin",
+            //     "inner/my_bin",
             //     "my_lib"
             // ]
         }

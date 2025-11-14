@@ -3,7 +3,7 @@ from kiss_parser import KissParser
 from project import Project, ProjectType
 
 class Workspace(Project):
-    def __init__(self, name:str, file: str, description: str = None, projects: list[str] = []):
+    def __init__(self, name:str, file: str, description: str = None, projects: list[Project] = []):
         super().__init__(name=name, 
                          type=ProjectType.workspace, 
                          file=file,
@@ -39,7 +39,7 @@ class Workspace(Project):
         content += f"class {Project.to_pascal(self.name)}:\n"
 
         # Add project directories
-        project_list = ",".join([f'"{project}"' for project in self.projects])
+        project_list = ",".join([f'"{project.name}"' for project in self.projects])
         content += f"\n\t# List all projects in the PROJECTS variable\n"
         content += f"\tPROJECTS=[{project_list}]\n"
 

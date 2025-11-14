@@ -1,6 +1,7 @@
 from pathlib import Path
 from kiss_parser import KissParser
 import console
+from project import BinProject, LibProject, DynProject
 
        
 def cmd_list(list_params: KissParser):
@@ -14,4 +15,15 @@ def cmd_list(list_params: KissParser):
             console.print(f"    - name : {project.name}")
             console.print(f"    - type : {project.type}")
             console.print(f"    - description : {project.description}")
+            match project:
+                case BinProject() as bin_project:
+                    console.print(f"    - sources : {bin_project.sources}")
+                case LibProject() as lib_project:
+                    console.print(f"    - sources : {lib_project.sources}")
+                    console.print(f"    - interfaces : {lib_project.interface_directories}")
+                case DynProject() as dyn_project:
+                    console.print(f"    - sources : {dyn_project.sources}")
+                    console.print(f"    - interfaces : {dyn_project.interface_directories}")
+
+
             

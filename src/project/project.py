@@ -18,7 +18,7 @@ class Project:
         return self._name
     
     @property
-    def directory(self) -> str:
+    def directory(self) -> Path:
         return self._directory
     
     @property
@@ -26,7 +26,7 @@ class Project:
         return self._type
 
     @property
-    def file(self) -> str:
+    def file(self) -> Path:
         return self._file
     
     @property

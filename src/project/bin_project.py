@@ -5,7 +5,7 @@ from project import Project, ProjectType
 from typing import Callable
 
 class BinProject(Project):
-    def __init__(self, name:str, file: Path, directory: Path, description: str = None, sources: list[str] = [], prebuild: Callable[[], None] = None, postbuild: Callable[[], None] = None):
+    def __init__(self, name:Path, file: Path, directory: Path, description: str = None, sources: list[str] = [], prebuild: Callable[[], None] = None, postbuild: Callable[[], None] = None):
         super().__init__(name=name,
                          directory=directory,
                          type=ProjectType.bin, 
@@ -23,7 +23,7 @@ class BinProject(Project):
         parser.add_argument("-san", "--sanitizer", help="enable sanitizer", action='store_true')
 
     @property
-    def sources(self) -> list[str]:
+    def sources(self) -> list[Path]:
         return self._sources
 
     @property
@@ -40,7 +40,7 @@ class BinProject(Project):
     def postbuild(self, value):
         self._postbuild = value
         
-    def to_new_manifest(self) -> str:
+    def to_new_manifest_str(self) -> str:
         # Add Import statements
         content = f"from modules import Bin"
         if self.description:

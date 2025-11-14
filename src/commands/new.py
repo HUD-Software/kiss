@@ -20,7 +20,7 @@ def cmd_new(new_params :KissParser):
             sys.exit(2)
         new_workspace: Workspace = new_worspace(file, new_directory, new_params)
         with open(file, "w", encoding="utf-8") as f:
-            f.write(new_workspace.to_new_manifest())
+            f.write(new_workspace.to_new_manifest_str())
     else:
         console.print_step(f"Creating a new {new_params.project_type} project named  `{new_params.project_name}`")
 
@@ -39,15 +39,15 @@ def cmd_new(new_params :KissParser):
             case ProjectType.bin:
                 new_project: BinProject = new_bin_project(file, new_directory, new_params)
                 with open(file, "w", encoding="utf-8") as f:
-                        f.write(new_project.to_new_manifest())
+                        f.write(new_project.to_new_manifest_str())
             case ProjectType.lib:
                 new_project: LibProject = new_lib_project(file, new_directory, new_params)
                 with open(file, "w", encoding="utf-8") as f:
-                    f.write(new_project.to_new_manifest())
+                    f.write(new_project.to_new_manifest_str())
             case ProjectType.dyn:
                 new_project: DynProject = new_dyn_project(file, new_directory, new_params)
                 with open(file, "w", encoding="utf-8") as f:
-                    f.write(new_project.to_new_manifest())
+                    f.write(new_project.to_new_manifest_str())
             case _ as value:
                 raise ValueError(f"Unsupported project type: {value}")
         

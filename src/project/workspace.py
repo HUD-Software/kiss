@@ -1,10 +1,12 @@
 
+from pathlib import Path
 from kiss_parser import KissParser
 from project import Project, ProjectType
 
 class Workspace(Project):
-    def __init__(self, name:str, file: str, description: str = None, projects: list[Project] = []):
+    def __init__(self, name:str, file: Path,directory: Path, description: str = None, projects: list[Project] = []):
         super().__init__(name=name, 
+                         directory=directory,
                          type=ProjectType.workspace, 
                          file=file,
                          description=description)
@@ -20,7 +22,7 @@ class Workspace(Project):
     def projects(self)-> list[str]:
         return self._projects
     
-    def to_new_manifest(self) -> str:
+    def to_new_manifest_str(self) -> str:
         # Add Import statements
         content = f"from modules import Workspace"
         if self.description:

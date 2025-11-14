@@ -42,23 +42,23 @@
             //     "-p",
             //     "inner/my_bin"
             // ],
-            "args": [
-                "-d",
-                "tests",
-                "run",
-                "-p",
-                "inner/my_dyn"
-            ]
             // "args": [
             //     "-d",
             //     "tests",
-            //     "new",
-            //     "workspace",
-            //     "my_workspace",
+            //     "run",
             //     "-p",
-            //     "inner/my_bin",
-            //     "my_lib"
+            //     "inner/my_dyn"
             // ]
+            "args": [
+                "-d",
+                "tests",
+                "new",
+                "workspace",
+                "my_workspace",
+                "-p",
+                "inner/my_bin",
+                "my_lib"
+            ]
         }
     ]
 }

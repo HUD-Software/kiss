@@ -4,7 +4,7 @@ from project import Project,ProjectType
 from typing import Callable
 
 class LibProject(Project):
-    def __init__(self, name:str, file: str, directory: Path, description: str = None, interface_directories: list[str] = [], sources: list[str] = [], prebuild: Callable[[], None] = None, postbuild: Callable[[], None] = None):
+    def __init__(self, name:str, file: Path, directory: Path, description: str = None, interface_directories: list[str] = [], sources: list[str] = [], prebuild: Callable[[], None] = None, postbuild: Callable[[], None] = None):
         super().__init__(name=name,
                          directory=directory,
                          type=ProjectType.lib, 
@@ -30,7 +30,7 @@ class LibProject(Project):
     def interface_directories(self) -> list[str]:
         return self._interface_directories
     
-    def to_new_manifest(self) -> str:
+    def to_new_manifest_str(self) -> str:
         # Add Import statements
         content = f"from modules import Lib"
         if self.description:

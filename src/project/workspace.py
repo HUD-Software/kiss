@@ -44,7 +44,7 @@ class Workspace(Project):
         content += f"class {Project.to_pascal(self.name)}:\n"
 
         # Add project directories
-        project_list = ",".join([f'"{project.directory.relative_to(self.directory)}"' for project in self.projects])
+        project_list = ",".join([f'"{project_path.relative_to(self.directory)}"' for project_path in self.project_paths])
         content += f"\n\t# List all projects in the PROJECTS variable\n"
         content += f"\tPROJECTS=[{project_list}]\n"
 

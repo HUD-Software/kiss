@@ -38,21 +38,21 @@
             //     "tests",
             //     "build",
             // ],
-            "args": [
-                "-d",
-                "tests",
-                "run"
-            ]
             // "args": [
             //     "-d",
             //     "tests",
-            //     "new",
-            //     "workspace",
-            //     "my_workspace",
-            //     "-p",
-            //     "inner/my_bin",
-            //     "my_lib"
+            //     "run"
             // ]
+            "args": [
+                "-d",
+                "tests",
+                "new",
+                "workspace",
+                "my_workspace",
+                "-p",
+                "inner/my_bin",
+                "my_lib"
+            ]
             // "args": [
             //     "-d",
             //     "tests",

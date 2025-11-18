@@ -21,6 +21,7 @@ def cmd_new(new_params :KissParser):
         new_workspace: Workspace = new_worspace(file, new_directory, new_params)
         with open(file, "w", encoding="utf-8") as f:
             f.write(new_workspace.to_new_manifest_str())
+        console.print_success(f"Worksapce {new_workspace.name} created successfully.")
     else:
         console.print_step(f"Creating a new {new_params.project_type} project named  `{new_params.project_name}`")
 
@@ -67,8 +68,8 @@ def new_worspace(file: str, new_directory: Path, new_params :KissParser):
     if(len(absolute_project_paths) > 0):
         ModuleRegistry.load_modules(path=new_directory, recursive=True)
         for project_path in absolute_project_paths:
-            if project_path.name not in ModuleRegistry.projects_names():
-                console.print_error(f"Project '{project_path}' not found.")
+            if not ModuleRegistry.get_from_dir(project_path):
+                console.print_warning(f"Project '{project_path}' not found.")
             else:
                 projects.append(ModuleRegistry.get(project_path.name))
 
@@ -77,7 +78,7 @@ def new_worspace(file: str, new_directory: Path, new_params :KissParser):
                 directory=new_directory,
                 file=file, 
                 description=new_params.description,
-                projects=projects
+                project_paths=absolute_project_paths
                 )
 
 def new_bin_project(file: str, new_directory: Path, new_params :KissParser):

@@ -1,9 +1,11 @@
 from pathlib import Path
+import sys
 from builder import BuilderRegistry
 from cmake.cmake_directories import CMakeDirectories
 from cmake.generator_cmake import GeneratorCMake
 from compiler import Compiler
 from config import Config
+import console
 from kiss_parser import KissParser
 from modules import ModuleRegistry
 from platform_target import PlatformTarget
@@ -54,6 +56,9 @@ class BuilderCMake:
             for project_path in project.project_paths:
                 ModuleRegistry.load_modules(project_path)
                 project = ModuleRegistry.get_from_dir(project_path)
+                if not project:
+                    console.print_error(f"Project {project_path} not found.")
+                    sys.exit(2)
                 self.build_project(project_directory=project.directory,
                              platform_target=args.platform_target,
                              project=project)

@@ -1,6 +1,7 @@
 
 import os
 from pathlib import Path
+import sys
 from cmake.cmake_directories import CMakeDirectories
 from cmake import coverage_cmake
 import console
@@ -132,6 +133,9 @@ set_target_properties({normalized_project_name} PROPERTIES OUTPUT_NAME \"{projec
                 for project_path in project.project_paths:
                     ModuleRegistry.load_modules(project_path)
                     project = ModuleRegistry.get_from_dir(project_path)
+                    if not project:
+                        console.print_error(f"Project {project_path} not found.")
+                        sys.exit(2)
                     self.generate_project(project.directory, platform_target, project)
 
     def generate(self, args : KissParser, project: Project):

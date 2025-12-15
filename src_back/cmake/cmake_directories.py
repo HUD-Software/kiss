@@ -13,7 +13,7 @@ class CMakeDirectories:
     def __init__(self, project_directory: Path, platform_target: PlatformTarget, project: Project):
         self._project_directory = project_directory
         self._build_directory = self.project_directory / "build" / platform_target.name / "cmake"
-        self._cmakelists_directory =  self.build_directory / project.name
+        self._cmakelists_directory =  self.build_directory / f"{project.name}_{hash(project.file)& 0xFFFFFFFF}"
 
     @property
     def project_directory(self) -> Path:

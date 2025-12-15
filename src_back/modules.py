@@ -4,6 +4,7 @@ from types import ModuleType
 from pathlib import Path
 import importlib.util
 import inspect
+import console
 from project import ProjectType, Project
 
 MODULE_FILENAME = "kiss.py"
@@ -48,7 +49,10 @@ class ModuleRegistry:
         Returns:
             Project|None: La classe du générateur si trouvée, sinon None.
         """
-        return self._registry.get(name)
+        for project in self.projects():
+            if project.name == name:
+                return project
+        return None
 
     def get_from_dir(self, directory: Path) -> Project|None:
         """
@@ -64,6 +68,21 @@ class ModuleRegistry:
             if project.directory == directory:
                 return project
         return None
+    
+    def get_from_projet_file(self, project_file: Path) -> Project|None:
+        """
+        Récupère le projet associé a un ficiher .kiss.
+
+        Args:
+            directory (Path): Chemin du dossier à rechercher.
+
+        Returns:
+            Project|None: La classe du générateur si trouvée, sinon None.
+        """
+        for project in self.projects():
+            if project.file == project_file:
+                return project
+        return None
 
     def all_bin(self) -> list[Project]:
         bin_list: list[Project] =[]
@@ -72,7 +91,7 @@ class ModuleRegistry:
                 bin_list.append(project)
         return bin_list
 
-    def add(self, name: str, project: ProjectType):
+    def add(self, project: ProjectType):
         """
         Ajoute un projet associé avec son nom
 
@@ -80,10 +99,10 @@ class ModuleRegistry:
             name (str): Nom du projet à ajouter.
             project (ProjectType): Le projet à ajouter
         """
-        if name not in self._registry:
-            self._registry[name] = project
+        if project.file not in self._registry:
+            self._registry[project.file] = project
 
-    def __contains__(self, name):
+    def __contains__(self, project):
         """
         Vérifie si un projet est enregistré.
 
@@ -93,7 +112,7 @@ class ModuleRegistry:
         Returns:
             bool: True si le projet existe dans le registre, False sinon.
         """
-        return name in self._registry
+        return project.file in self._registry
 
     def __iter__(self):
         """
@@ -111,7 +130,10 @@ class ModuleRegistry:
         Returns:
             KeysView[str]: Vue sur les clés du registre.
         """
-        return self._registry.keys()
+        names =  list()
+        for project in self.projects():
+            names.append(project.name)
+        return names
 
     def projects(self):
         """
@@ -132,10 +154,7 @@ class ModuleRegistry:
         return self._registry.items()
     
     def is_file_loaded(self, filepath:Path) -> bool:
-        for project in self.projects():
-            if project.file == filepath:
-                return True
-        return False
+        return filepath in self._registry
     
     def load_modules(self, path: Path, recursive: bool = False):
         pattern = f"**/{MODULE_FILENAME}" if recursive else MODULE_FILENAME
@@ -151,9 +170,9 @@ class ModuleRegistry:
         
         # Add projects only once
         for project in ModuleLoader.projects():
-            if project.name in self._registry:
-                continue
-            self.add(project.name, project)
+            if not project.file in self._registry:
+                console.print(f"add {project.name} {project.file} {project.directory}")
+                self.add(project)
 
 ModuleRegistry = ModuleRegistry()
 

@@ -46,22 +46,25 @@ class RunnerCMake:
         run_process(artifact_path)
 
     def run(self, args : KissParser, project: Project):
-        if isinstance(project, Workspace):
-            for project_path in project.project_paths:
-                ModuleRegistry.load_modules(project_path)
-            bin_list:list[Project] = ModuleRegistry.all_bin()
-            if len(bin_list)> 1:
-                console.print_error(f"`kiss run` requires that a binary target is available.")
-                names = ", ".join(b.name for b in bin_list)
-                console.print_error(f"multiple binary targets found: {names}")
-                sys.exit(2)
-            project = bin_list[0]
-            self.run_project(project_directory=project.directory,
-                       platform_target=args.platform_target,
-                       project=project)
-        else:
-            self.run_project(project_directory=args.project_directory,
+        match project:
+            case Workspace() as project:
+                for project_path in project.project_paths:
+                    ModuleRegistry.load_modules(project_path)
+                bin_list:list[Project] = ModuleRegistry.all_bin()
+                if len(bin_list)> 1:
+                    console.print_error(f"`kiss run` requires that a binary target is available.")
+                    names = ", ".join(b.name for b in bin_list)
+                    console.print_error(f"multiple binary targets found: {names}")
+                    sys.exit(2)
+                project = bin_list[0]
+                self.run_project(project_directory=project.directory,
                         platform_target=args.platform_target,
                         project=project)
+                
+            case _:
+                self.run_project(project_directory=args.project_directory,
+                        platform_target=args.platform_target,
+                        project=project)
+           
             
         

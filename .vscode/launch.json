@@ -8,11 +8,11 @@
             "program": "${workspaceFolder}/src/kiss.py",
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}",
-            // "args": [
-            //     "new",
-            //     "workspace",
-            //     "--help"
-            // ]
+            "args": [
+                "new",
+                "workspace",
+                "--help"
+            ]
             // "args": [
             //     "-d",
             //     "tests",
@@ -24,9 +24,9 @@
             //     "tests",
             //     "new",
             //     "bin",
-            //     "inner/my_bin2",
+            //     "my_bin",
             //     "--description",
-            //     "This is my_bin2"
+            //     "This is my_bin"
             // ]
             // "args": [
             //     "-d",
@@ -38,11 +38,11 @@
             //     "tests",
             //     "build",
             // ],
-            "args": [
-                "-d",
-                "tests",
-                "run"
-            ]
+            // "args": [
+            //     "-d",
+            //     "tests",
+            //     "run"
+            // ]
             // "args": [
             //     "-d",
             //     "tests",

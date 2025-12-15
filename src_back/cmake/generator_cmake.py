@@ -130,13 +130,16 @@ set_target_properties({normalized_project_name} PROPERTIES OUTPUT_NAME \"{projec
                 cmakefile = self.__generateDynCMakeLists(directories, project)
                 console.print_success(f"CMake {cmakefile} generated for {project.name}")
             case Workspace() as project :
+                project_list = list()
                 for project_path in project.project_paths:
                     ModuleRegistry.load_modules(project_path)
                     project = ModuleRegistry.get_from_dir(project_path)
                     if not project:
                         console.print_error(f"Project {project_path} not found.")
                         sys.exit(2)
-                    self.generate_project(project.directory, platform_target, project)
+                    project_list.append(project)
+                for project in  project_list :
+                    self.generate_project(project_directory, platform_target, project)
 
     def generate(self, args : KissParser, project: Project):
         self.generate_project(project_directory = args.project_directory,

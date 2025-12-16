@@ -15,21 +15,31 @@
             //     "-r"
             // ],
             // --> Create bin project in directory
+            "args": [
+                "-d",
+                "tests",
+                "new",
+                "bin",
+                "my_bin",
+                "--description",
+                "This is my_bin"
+            ],
+            // --> Create lib project in directory
             // "args": [
             //     "-d",
-            //     "tests/my_bin",
+            //     "tests",
             //     "new",
-            //     "bin",
-            //     "my_bin2",
+            //     "lib",
+            //     "my_lib",
             //     "--description",
-            //     "This is my_bin"
+            //     "This is my_lib"
             // ],
             // --> Add my_lib as dependency to my_bin
             // "args": [
             //     "-d",
-            //     "tests/my_bin",
+            //     "tests",
             //     "add",
-            //     "my_bin",
+            //     "my_lib",
             //     "--path",
             //     "../my_lib"
             // ],
@@ -48,7 +58,7 @@
             //     "tests/my_bin",
             //     "new",
             //     "--existing",
-            //     "bin",
+            //     "lib",
             //     "my_lib",
             //     "--description",
             //     "This is my_lib",
@@ -58,11 +68,11 @@
             //     "tests",
             //     "generate"
             // ]
-            "args": [
-                "-d",
-                "tests",
-                "build",
-            ],
+            // "args": [
+            //     "-d",
+            //     "tests",
+            //     "build",
+            // ],
             // "args": [
             //     "-d",
             //     "tests",

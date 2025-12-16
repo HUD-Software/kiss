@@ -1,0 +1,4 @@
+colorama
+vswhere
+semver
+pyyaml

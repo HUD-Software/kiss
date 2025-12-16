@@ -71,7 +71,20 @@ class LibProject(Project):
     def interface_directories(self) -> list[Path]:
         return self.interface_directories_
     
+class DynProject(Project):
+    def __init__(self, file: Path, path: Path,name: str, description :str, version: Version, sources: list[Path] = [], interface_directories: list[Path] = []):
+        super().__init__(file, path, name, description, version)
+        self.sources_ = sources
+        self.interface_directories_ = interface_directories
 
+    @property
+    def sources(self) -> list[Path]:
+        return self.sources_
+    
+    @property
+    def interface_directories(self) -> list[Path]:
+        return self.interface_directories_
+    
 class ProjectYAML:
     # Valid root keys in the YAML file
     VALID_ROOT = ["bin", "dyn", "lib", "workspace"]
@@ -167,6 +180,10 @@ class ProjectYAML:
                             sources = [self.file.parent / src for src in item.get("sources", [])]
                             interface_dirs = [self.file.parent / src for src in item.get("interface_directories", [])]
                             projects.append(LibProject(file=self.file,  path=path,name=name, description=description, sources=sources, interface_directories=interface_dirs, version=version))
+                        case ProjectType.dyn:
+                            sources = [self.file.parent / src for src in item.get("sources", [])]
+                            interface_dirs = [self.file.parent / src for src in item.get("interface_directories", [])]
+                            projects.append(DynProject(file=self.file,  path=path,name=name, description=description, sources=sources, interface_directories=interface_dirs, version=version))
         return projects
     
     # Check if a project with the same name and path already exists in the yaml file
@@ -234,6 +251,11 @@ class ProjectYAML:
                 self.yaml_[key].append(project_yaml)
             case LibProject():
                 key = str(ProjectType.lib)
+                if key not in self.yaml_:
+                    self.yaml_[key] = []
+                self.yaml_[key].append(project_yaml)
+            case DynProject():
+                key = str(ProjectType.dyn)
                 if key not in self.yaml_:
                     self.yaml_[key] = []
                 self.yaml_[key].append(project_yaml)

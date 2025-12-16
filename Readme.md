@@ -19,7 +19,7 @@ Name should not contains space or special caracter ```@#$%^&*()+={}[].,``
 ```
 
 ```yaml
-# my_binary.kiss.yaml
+# my_binary/kiss.yaml
 bin:
   - name: "my_binary"
     description : "This is my binary project"
@@ -78,8 +78,10 @@ kiss new dyn my_dyn_library -desc "This is my dynamic library"
 
 ## Multi-project
 You can add project inside another project like a bin that use a lib.
+You have 2 ways to add a project, you can create a new projet in a separated file (We strongly recommend this), or you can put everything in the same file.
+### Separate file
 You can add dependencies to other project. In this exemple, *my_binary* needs *my_library*
-
+Note that we need to add the `dependencies` in *my_binary*.
 ```text
 📁 my_binary
 ├─ 📄 kiss.yaml
@@ -90,21 +92,58 @@ You can add dependencies to other project. In this exemple, *my_binary* needs *m
 ```yaml
 # my_binary/kiss.yaml
 bin:
-  - name: "my_binary"
+   name: "my_binary"
     description : "This is my binary project"
     version: "0.0.1"
     dependencies : 
       - path : "my_library"
 ```
+```yaml
+# my_binary/my_library/kiss.yaml
+lib:
+  - name: "my_library"
+    description : "This is my library project"
+    version: "0.0.1"
+```
+###### Command
+```sh
+# Create the `my_library` and add it `my_library` as dependencies of `my_binary`
+cd my_binary && kiss new my_library && kiss add my_library --path "./my_library"
+# or simply
+cd my_binary && kiss new my_library && kiss add my_library
+```
+
+### Same file
+You can add dependencies to other project. In this exemple, *my_binary* needs *my_library*
+Note that we need to add the `dependencies` in *my_binary*.
+```text
+📁 my_binary
+├─ 📄 kiss.yaml
+└─ 📁 my_library
+```
+
+```yaml
+# my_binary/kiss.yaml
+bin:
+  - name: "my_binary"
+    description : "This is my binary project"
+    version: "0.0.1"
+    dependencies : 
+      - path : "my_library"
+lib:
+  - name: "my_library"
+    description : "This is my library project"
+    version: "0.0.1"
+    path: "my_library"
+```
 
 ###### Command
 ```sh
 # Create the `my_library` and add it `my_library` as dependencies of `my_binary`
-cd my_binary && kiss new my_library && kiss add my_library
+cd my_binary && kiss new --existing lib my_library --path "./my_library"
 # or simply
-kiss add new my_library
+cd my_binary && kiss new --existing lib my_library
 ```
-
 ## Workspace
 Workspace are special place where you can reference multiple project under 1 big project.
 Workspace does not contains code, it contains projects similar to visual studio .sln or VSCode .workspace.
@@ -121,7 +160,7 @@ Workspace does not contains code, it contains projects similar to visual studio 
 ```
 
 ```yaml
-# my_big_project.kiss.yaml
+# my_big_project/kiss.yaml
 workspace:
   name: "my_big_project"
   description : "This is my workspace w"
@@ -152,7 +191,7 @@ Using external project can produce name collision when you request a build of a 
 └─ 📄 kiss.yaml
 ```
 ```yaml
-# my_big_project.kiss.yaml
+# my_big_project/kiss.yaml
 workspace:
   name: "my_big_project"
   description : "This is my workspace w"
@@ -179,7 +218,7 @@ kiss build my_library
 Solution: Use an alias
 You can differentiate projects by adding an alias:
 ```yaml
-# my_big_project.kiss.yaml
+# my_big_project/kiss.yaml
 workspace:
   name: "my_big_project"
   description : "This is my workspace w"

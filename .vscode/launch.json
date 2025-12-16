@@ -8,26 +8,51 @@
             "program": "${workspaceFolder}/src/kiss.py",
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}",
-            "args": [
-                "new",
-                "workspace",
-                "--help"
-            ]
             // "args": [
             //     "-d",
             //     "tests",
             //     "list",
             //     "-r"
-            // ]
+            // ],
+            // --> Create bin project in directory
             // "args": [
             //     "-d",
-            //     "tests",
+            //     "tests/my_bin",
             //     "new",
             //     "bin",
-            //     "my_bin",
+            //     "my_bin2",
             //     "--description",
             //     "This is my_bin"
-            // ]
+            // ],
+            // --> Add my_lib as dependency to my_bin
+            // "args": [
+            //     "-d",
+            //     "tests/my_bin",
+            //     "add",
+            //     "my_bin",
+            //     "--path",
+            //     "../my_lib"
+            // ],
+            // --> Add my_lib as dependency to my_bin
+            // "args": [
+            //     "-d",
+            //     "tests/my_bin",
+            //     "add",
+            //     "gtest",
+            //     "git",
+            //     "git@github.com:google/googletest.git",
+            // ],
+            // --> Add lib project to my_bin kiss project
+            // "args": [
+            //     "-d",
+            //     "tests/my_bin",
+            //     "new",
+            //     "--existing",
+            //     "bin",
+            //     "my_lib",
+            //     "--description",
+            //     "This is my_lib",
+            // ],
             // "args": [
             //     "-d",
             //     "tests",

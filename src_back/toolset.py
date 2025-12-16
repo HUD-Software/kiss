@@ -74,7 +74,15 @@ def get_windows_latest_toolset(compiler:Compiler):
         import vswhere
         import json
         latest_installation_path = vswhere.get_latest_path()
-        latest_major_version = vswhere.get_latest_major_version()
+        if latest_installation_path:
+            latest_major_version = vswhere.get_latest_major_version()
+        else:
+            latest_installation_path = vswhere.get_latest_path(products='Microsoft.VisualStudio.Product.BuildTools')
+            if latest_installation_path:
+                latest_major_version = vswhere.get_latest_major_version(products='Microsoft.VisualStudio.Product.BuildTools')
+            else:
+                console.print_error("Visual Studio is not found.")
+                sys.exit(2)
         latest_product_info = vswhere.find(path=latest_installation_path)
         json_str = json.dumps(latest_product_info[0], indent=2)
         json_object = json.loads(json_str)

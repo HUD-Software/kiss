@@ -2,6 +2,23 @@
     "version": "2.0.0",
     "tasks": [
         {
+            "label": "Setup KISS",
+            "type": "shell",
+            "command": "python",
+            "args": [
+                "${workspaceFolder}/setup.py"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
             "label": "Build KISS",
             "type": "shell",
             "command": "python",

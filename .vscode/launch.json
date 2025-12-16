@@ -58,11 +58,11 @@
             //     "tests",
             //     "generate"
             // ]
-            // "args": [
-            //     "-d",
-            //     "tests",
-            //     "build",
-            // ],
+            "args": [
+                "-d",
+                "tests",
+                "build",
+            ],
             // "args": [
             //     "-d",
             //     "tests",

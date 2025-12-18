@@ -1,5 +1,5 @@
 import os
-from cmake.cmake_directories import CMakeDirectories
+from cmake.cmake_context import CMakeDirectories
 
 def generateSanitizerCMakeFile(self, directories:CMakeDirectories):
     filepath = directories.build_directory / "sanitizer.cmake"

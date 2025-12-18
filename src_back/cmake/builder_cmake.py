@@ -1,7 +1,7 @@
 from pathlib import Path
 import sys
 from builder import BuilderRegistry
-from cmake.cmake_directories import CMakeDirectories
+from cmake.cmake_context import CMakeDirectories
 from cmake.generator_cmake import GeneratorCMake
 from compiler import Compiler
 from config import Config

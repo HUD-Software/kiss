@@ -73,11 +73,11 @@
             //     "--description",
             //     "This is my_lib",
             // ],
-            // "args": [
-            //     "-d",
-            //     "tests",
-            //     "generate"
-            // ]
+            "args": [
+                "-d",
+                "tests/my_bin",
+                "generate"
+            ]
             // "args": [
             //     "-d",
             //     "tests",

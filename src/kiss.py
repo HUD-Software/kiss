@@ -1,6 +1,7 @@
 from add import cmd_add
 from list import cmd_list
 from new import cmd_new
+from generate import cmd_generate
 import cli
 
 def main():
@@ -15,8 +16,8 @@ def main():
     elif args.option == "add": 
         cmd_add(add_params=args)
         
-    # elif args.option == "generate": 
-    #     commands.generate.cmd_generate(generate_params=args)
+    elif args.option == "generate": 
+        cmd_generate(generate_params=args)
     
     # elif args.option == "build": 
     #     commands.build.cmd_build(build_params=args)

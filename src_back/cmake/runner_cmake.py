@@ -2,7 +2,7 @@ from pathlib import Path
 import sys
 from cmake.builder_cmake import BuilderCMake
 import console
-from cmake.cmake_directories import CMakeDirectories
+from cmake.cmake_context import CMakeDirectories
 from config import Config
 
 from kiss_parser import KissParser

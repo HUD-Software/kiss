@@ -1,19 +1,14 @@
 
 import os
 from pathlib import Path
-import sys
-from cmake.cmake_context import CMakeDirectories
-from cmake import coverage_cmake
+from cli import KissParser
+from cmake.cmake_context import CMakeContext
 import console
-from generator import GeneratorRegistry
-from kiss_parser import KissParser
-from modules import ModuleRegistry
+from generate import BaseGenerator
 from platform_target import PlatformTarget
-from project import Project, BinProject, LibProject, DynProject, Workspace
+from project import Project, BinProject, LibProject, DynProject
 
-@GeneratorRegistry.register("cmake", "Generate cmake CMakeLists.txt")
-class GeneratorCMake:
-     
+class GeneratorCMake(BaseGenerator):
     @classmethod
     def add_cli_argument_to_parser(cls, parser: KissParser):
         parser.add_argument("-cov", "--coverage", help="enable code coverage", action='store_const', const=True)
@@ -21,6 +16,7 @@ class GeneratorCMake:
 
 
     def __init__(self, parser: KissParser = None):
+        super().__init__("cmake", "Generate cmake CMakeLists.txt")
         self.coverage = getattr(parser, "coverage", False)
         self.sanitizer = getattr(parser, "sanitizer", False)
 
@@ -47,13 +43,13 @@ class GeneratorCMake:
                 result.append(f'"{path_str}"')
         return result
     
-    def __generateBinCMakeLists(self, directories:CMakeDirectories, project: BinProject) -> Path:
-        os.makedirs(directories.cmakelists_directory, exist_ok=True)
+    def __generateBinCMakeLists(self, context:CMakeContext, project: BinProject) -> Path:
+        os.makedirs(context.cmakelists_directory, exist_ok=True)
         # Generate CMakeLists.txt
-        normalized_src = self.__resolve_sources(project.sources, directories.project_directory)
+        normalized_src = self.__resolve_sources(project.sources, context.project_directory)
         src_str = "\n".join(normalized_src)
         normalized_project_name = Project.to_pascal(project.name)
-        cmakefile = directories.cmakelists_directory / "CMakeLists.txt"
+        cmakefile = context.cmakelists_directory / "CMakeLists.txt"
         with open(cmakefile, "w", encoding="utf-8") as f:
             f.write(f"""cmake_minimum_required(VERSION 3.18)
 
@@ -67,15 +63,15 @@ set_target_properties({normalized_project_name} PROPERTIES OUTPUT_NAME \"{projec
         return cmakefile
 
             
-    def __generateLibCMakeLists(self, directories:CMakeDirectories, project: LibProject):
-        os.makedirs(directories.cmakelists_directory, exist_ok=True)
+    def __generateLibCMakeLists(self, context:CMakeContext, project: LibProject):
+        os.makedirs(context.cmakelists_directory, exist_ok=True)
         # Generate CMakeLists.txt
-        normalized_src = self.__resolve_sources(project.sources, directories.project_directory)
+        normalized_src = self.__resolve_sources(project.sources, context.project_directory)
         src_str = "\n".join(normalized_src)
-        normalized_interface = self.__resolve_sources(project.interface_directories, directories.project_directory)
+        normalized_interface = self.__resolve_sources(project.interface_directories, context.project_directory)
         interface_str = "\n".join(normalized_interface)
         normalized_project_name = Project.to_pascal(project.name)
-        cmakefile = directories.cmakelists_directory / "CMakeLists.txt"
+        cmakefile = context.cmakelists_directory / "CMakeLists.txt"
         with open(cmakefile, "w", encoding="utf-8") as f:
             f.write(f"""cmake_minimum_required(VERSION 3.18)
 
@@ -90,15 +86,15 @@ set_target_properties({normalized_project_name} PROPERTIES OUTPUT_NAME \"{projec
 """)
         return cmakefile
             
-    def __generateDynCMakeLists(self, directories:CMakeDirectories, project: LibProject):
-        os.makedirs(directories.cmakelists_directory, exist_ok=True)
+    def __generateDynCMakeLists(self, context:CMakeContext, project: LibProject):
+        os.makedirs(context.cmakelists_directory, exist_ok=True)
         # Generate CMakeLists.txt
-        normalized_src = self.__resolve_sources(project.sources, directories.project_directory)
+        normalized_src = self.__resolve_sources(project.sources, context.project_directory)
         src_str = "\n".join(normalized_src)
-        normalized_interface = self.__resolve_sources(project.interface_directories, directories.project_directory)
+        normalized_interface = self.__resolve_sources(project.interface_directories, context.project_directory)
         interface_str = "\n".join(normalized_interface)
         normalized_project_name = Project.to_pascal(project.name)
-        cmakefile = directories.cmakelists_directory / "CMakeLists.txt"
+        cmakefile = context.cmakelists_directory / "CMakeLists.txt"
         with open(cmakefile, "w", encoding="utf-8") as f:
             f.write(f"""cmake_minimum_required(VERSION 3.18)
 
@@ -118,7 +114,7 @@ set_target_properties({normalized_project_name} PROPERTIES OUTPUT_NAME \"{projec
         # coverage_cmake.generateSanitizerCMakeFile(directories)
 
     def generate_project(self, project_directory: Path, platform_target:PlatformTarget, project: Project):
-        directories = CMakeDirectories(project_directory, platform_target,project)
+        directories = CMakeContext(project_directory, platform_target,project)
         match project:
             case BinProject() as project:
                 cmakefile = self.__generateBinCMakeLists(directories, project)
@@ -129,17 +125,17 @@ set_target_properties({normalized_project_name} PROPERTIES OUTPUT_NAME \"{projec
             case DynProject() as project:
                 cmakefile = self.__generateDynCMakeLists(directories, project)
                 console.print_success(f"CMake {cmakefile} generated for {project.name}")
-            case Workspace() as project :
-                project_list = list()
-                for project_path in project.project_paths:
-                    ModuleRegistry.load_modules(project_path)
-                    project = ModuleRegistry.get_from_dir(project_path)
-                    if not project:
-                        console.print_error(f"Project {project_path} not found.")
-                        sys.exit(2)
-                    project_list.append(project)
-                for project in  project_list :
-                    self.generate_project(project_directory, platform_target, project)
+            # case Workspace() as project :
+            #     project_list = list()
+            #     for project_path in project.project_paths:
+            #         ModuleRegistry.load_modules(project_path)
+            #         project = ModuleRegistry.get_from_dir(project_path)
+            #         if not project:
+            #             console.print_error(f"Project {project_path} not found.")
+            #             sys.exit(2)
+            #         project_list.append(project)
+            #     for project in  project_list :
+            #         self.generate_project(project_directory, platform_target, project)
 
     def generate(self, args : KissParser, project: Project):
         self.generate_project(project_directory = args.project_directory,

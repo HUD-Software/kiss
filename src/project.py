@@ -178,8 +178,6 @@ class ProjectYAML:
                 console.print_error (f"⚠️  Error: invalid project type '{key}' in {self.file}")
                 return None
 
-            projects = list[Project]()
-
             for item in value:
                 if isinstance(item, dict):
                     # Read 'name'
@@ -413,36 +411,39 @@ class ProjectYAML:
 
 class ProjectRegistry:
     def __init__(self):
-        self.registry_: dict[Path, list[Project]] = {}
+        self.projects_: dict[Path, list[Project]] = {}
 
     def __contains__(self, path: Path) -> bool:
-        return path in self.registry_
+        return path in self.projects_
 
     def __iter__(self):
-        return iter(self.registry_.items())
+        return iter(self.projects_.items())
     
     def items(self):
-        return self.registry_.items()
+        return self.projects_.items()
     
-    def projects(self) -> list[Project]:
-        all_projects: list[Project] = []
-        for project_list in self.registry_.values():
-            all_projects.extend(project_list)
-        return all_projects
+    @property
+    def project(self) -> dict[Path, list[Project]]:
+        return self.projects_
+    # def projects(self) -> list[Project]:
+    #     all_projects: list[Project] = []
+    #     for project_list in self.registry_.values():
+    #         all_projects.extend(project_list)
+    #     return all_projects
     
     def paths(self):
-        return self.registry_.keys()
+        return self.projects_.keys()
     
     def register_project(self, project: Project):
-        if project.file not in self.registry_:
-            self.registry_[project.file] = list[Project]()
-        if project in self.registry_[project.file]:
+        if project.file not in self.projects_:
+            self.projects_[project.file] = list[Project]()
+        if project in self.projects_[project.file]:
             console.print_warning(f"⚠️  Warning: Project already registered: {project.file}")
         else:
-            self.registry_[project.file].append(project)
+            self.projects_[project.file].append(project)
 
     def is_file_loaded(self, filepath:Path) -> bool:
-        return filepath in self.registry_
+        return filepath in self.projects_
     
     def load_projects_in_directory(self, path: Path, recursive: bool = False):
         pattern = f"**/{PROJECT_FILE_NAME}" if recursive else PROJECT_FILE_NAME

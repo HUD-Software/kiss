@@ -1,6 +1,5 @@
 from pathlib import Path
 from typing import Optional
-from cli import KissParser
 import console
 import semver
 from semver import Version
@@ -9,7 +8,37 @@ from enum import Enum
 
 PROJECT_FILE_NAME = "kiss.yaml"
 
+class Dependency:
+    def __init__(self, name :str):
+        self.name_ = name
 
+    @property
+    def name(self) -> str:
+        return self.name_
+
+class PathDependency(Dependency):
+    def __init__(self, name: str, path: Path):
+        super().__init__( name)
+        self.path_ = path
+
+    @property 
+    def path(self) -> Path:
+        return self.path_
+
+class GitDependency(Dependency):
+    def __init__(self, name: str, git: str, branch: str):
+        super().__init__( name)
+        self.git_ = git
+        self.branch_ = branch
+
+    @property 
+    def git(self) -> str:
+        return self.git_
+    
+    @property 
+    def branch(self) -> str:
+        return self.branch_
+    
 class ProjectType(str, Enum):
     bin = "bin"
     lib = "lib"
@@ -20,12 +49,13 @@ class ProjectType(str, Enum):
         return self.name
 
 class Project:
-    def __init__(self, file: Path, path: Path, name: str, description :str, version: Version):
+    def __init__(self, file: Path, path: Path, name: str, description :str, version: Version, dependencies :list[Dependency]=[]):
         self.file_ = file
         self.path_ = path
         self.name_ = name
         self.description_ = description
         self.version_ = version
+        self.dependencies_ = dependencies
 
     @property
     def file(self):
@@ -46,10 +76,14 @@ class Project:
     @property 
     def path(self) -> Path:
         return self.path_
+    
+    @property
+    def dependencies(self) -> list[Dependency]:
+        return self.dependencies_
 
 class BinProject(Project):
-    def __init__(self, file: Path, path: Path,name: str, description :str, version: Version, sources: list[Path] = []):
-        super().__init__(file, path,name, description, version)
+    def __init__(self, file: Path, path: Path,name: str, description :str, version: Version, sources: list[Path] = [],  dependencies :list[Dependency]=[]):
+        super().__init__(file, path,name, description, version, dependencies)
         self.sources_ = sources
 
     @property
@@ -58,8 +92,8 @@ class BinProject(Project):
 
 
 class LibProject(Project):
-    def __init__(self, file: Path, path: Path,name: str, description :str, version: Version, sources: list[Path] = [], interface_directories: list[Path] = []):
-        super().__init__(file, path, name, description, version)
+    def __init__(self, file: Path, path: Path,name: str, description :str, version: Version, sources: list[Path] = [], interface_directories: list[Path] = [], dependencies :list[Dependency]=[]):
+        super().__init__(file, path, name, description, version, dependencies)
         self.sources_ = sources
         self.interface_directories_ = interface_directories
 
@@ -72,8 +106,8 @@ class LibProject(Project):
         return self.interface_directories_
     
 class DynProject(Project):
-    def __init__(self, file: Path, path: Path,name: str, description :str, version: Version, sources: list[Path] = [], interface_directories: list[Path] = []):
-        super().__init__(file, path, name, description, version)
+    def __init__(self, file: Path, path: Path,name: str, description :str, version: Version, sources: list[Path] = [], interface_directories: list[Path] = [],  dependencies :list[Dependency]=[]):
+        super().__init__(file, path, name, description, version, dependencies)
         self.sources_ = sources
         self.interface_directories_ = interface_directories
 
@@ -120,26 +154,26 @@ class ProjectYAML:
         import yaml
         try:
             with self.file.open("w", encoding="utf-8") as f:
-                yaml.safe_dump(self.yaml_, f, sort_keys=False,          # garde l'ordre des clés
-                    allow_unicode=True,       # supporte les caractères Unicode
-                    default_flow_style=False, # force le style multi-lignes
-                    default_style=None,      # utilise le style par défaut
-                    indent=2,                  # indentation pour les listes)
+                yaml.safe_dump(self.yaml_, f, sort_keys=False,
+                    allow_unicode=True,
+                    default_flow_style=False,
+                    default_style=None,
+                    indent=2,      
                 )
             return True
 
         except (OSError, yaml.YAMLError) as e:
-            console.print_error(f"Erreur lors de l’écriture de {self.file}: {e}")
+            console.print_error(f"Erreur lors de l'écriture de {self.file}: {e}")
             return False
     
     # load projects from a yaml file
-    def load_projects(self, yaml: dict) -> list[Project] | None:
-        if not yaml:
+    def load_projects(self) -> list[Project] | None:
+        if not self.yaml:
             return []
 
         projects = list[Project]()
 
-        for key, value in yaml.items():
+        for key, value in self.yaml.items():
             if key not in ProjectYAML.VALID_ROOT:
                 console.print_error (f"⚠️  Error: invalid project type '{key}' in {self.file}")
                 return None
@@ -171,19 +205,51 @@ class ProjectYAML:
                     path = Path(item.get("path", self.file.parent))
                     path = path if path.is_absolute() else self.file.parent / path
 
+                    # Read 'dependencies'
+                    dependencies:list[Dependency] = []
+                    for dependency in item.get("dependencies", []):
+                        # Read dependency 'name'
+                        name = dependency.get("name")
+                        if not name:
+                            console.print_error(f"⚠️  Error: Project name is missing in {self.file} under '{key}'")
+                            return None
+                        path = dependency.get("path")
+                        git = dependency.get("git")
+
+                        # We need at least git or path
+                        if not path and not git:
+                            console.print_error(
+                                f"⚠️  Error: Dependency '{name}' must define either 'path' or 'git' in {self.file} under '{key}'"
+                            )
+                            return None
+
+                        # empêcher les deux à la fois
+                        if path and git:
+                            console.print_error(
+                                f"⚠️  Error: Dependency '{name}' cannot define both 'path' and 'git' in {self.file} under '{key}'"
+                            )
+                            return None
+                        
+                        if path:
+                            dependencies.append(PathDependency(name, path))
+                        elif git:
+                            branch = dependency.get("branch")
+                            dependencies.append(GitDependency(name, git, branch))
+
+                                            
                     # Create project
                     match key:
                         case ProjectType.bin:
                             sources = [self.file.parent / src for src in item.get("sources", [])]
-                            projects.append(BinProject(file=self.file, path=path,name=name, description=description, sources=sources, version=version))
+                            projects.append(BinProject(file=self.file, path=path,name=name, description=description, sources=sources, version=version, dependencies=dependencies))
                         case ProjectType.lib:
                             sources = [self.file.parent / src for src in item.get("sources", [])]
                             interface_dirs = [self.file.parent / src for src in item.get("interface_directories", [])]
-                            projects.append(LibProject(file=self.file,  path=path,name=name, description=description, sources=sources, interface_directories=interface_dirs, version=version))
+                            projects.append(LibProject(file=self.file,  path=path,name=name, description=description, sources=sources, interface_directories=interface_dirs, version=version, dependencies=dependencies))
                         case ProjectType.dyn:
                             sources = [self.file.parent / src for src in item.get("sources", [])]
                             interface_dirs = [self.file.parent / src for src in item.get("interface_directories", [])]
-                            projects.append(DynProject(file=self.file,  path=path,name=name, description=description, sources=sources, interface_directories=interface_dirs, version=version))
+                            projects.append(DynProject(file=self.file,  path=path,name=name, description=description, sources=sources, interface_directories=interface_dirs, version=version, dependencies=dependencies))
         return projects
     
     # Check if a project with the same name and path already exists in the yaml file
@@ -214,6 +280,7 @@ class ProjectYAML:
                     if name == project_name:
                         return True
         return False
+    
     # Convert a project to a yaml dictionary
     def project_to_yaml_dict(self, project: Project) -> dict:
         data: dict = {
@@ -344,8 +411,9 @@ class ProjectRegistry:
         for file in path.glob(pattern):
             if self.is_file_loaded(file):
                 continue
-            projects = ProjectYAML.load_projects_from_yaml(file)
-            for project in projects :
+            yaml = ProjectYAML(file)
+            yaml.load_yaml()
+            for project in yaml.load_projects() :
                 self.register_project(project)
 
 ProjectRegistry = ProjectRegistry()

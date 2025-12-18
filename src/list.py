@@ -1,6 +1,6 @@
 import cli
 import console
-from project import BinProject, DynProject, LibProject, ProjectRegistry
+from project import BinProject, DynProject, GitDependency, LibProject, PathDependency, ProjectRegistry
 
 
 def cmd_list(list_params: cli.KissParser):
@@ -13,6 +13,18 @@ def cmd_list(list_params: cli.KissParser):
                 console.print(f"    - name : {project.name}")
                 console.print(f"    - description : {project.description}")
                 console.print(f"    - path : {project.path}")
+                if project.dependencies:
+                    console.print(f"    - dependencies : ")
+                    for dep in  project.dependencies:
+                        console.print(f"      - name : {dep.name}")
+                        match dep:
+                            case PathDependency():
+                                console.print(f"      - path : {dep.name}")
+                            case GitDependency():
+                                console.print(f"      - git : {dep.git}")
+                                console.print(f"      - branch : {dep.branch}")
+                else:
+                    console.print(f"    - dependencies : []")
                 match project:
                     case BinProject() as bin_project:
                         console.print(f"    - sources : {bin_project.sources}")
@@ -22,3 +34,5 @@ def cmd_list(list_params: cli.KissParser):
                     case DynProject() as dyn_project:
                         console.print(f"    - sources : {dyn_project.sources}")
                         console.print(f"    - interface directories : {dyn_project.interface_directories}")
+                
+

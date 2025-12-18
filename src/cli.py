@@ -12,12 +12,21 @@ def add_bin_to_parser(parser: argparse.ArgumentParser):
     parser.add_argument("-desc", "--description", help="project description", default="", type=str) 
     parser.add_argument("-cov", "--coverage", help="enable code coverage", action="store_true")
     parser.add_argument("-san", "--sanitizer", help="enable sanitizer", action='store_true')
+    parser.add_argument("-e", "--empty", help="do not create defaut source code", action='store_true')
 
 def add_lib_to_parser(parser: argparse.ArgumentParser):
     parser.add_argument("project_name", help="name of the project to create")
     parser.add_argument("-desc", "--description", help="project description", default="", type=str) 
     parser.add_argument("-cov", "--coverage", help="enable code coverage", action="store_true")
     parser.add_argument("-san", "--sanitizer", help="enable sanitizer", action='store_true')
+    parser.add_argument("-e", "--empty", help="do not create defaut source code", action='store_true')
+
+def add_dyn_to_parser(parser: argparse.ArgumentParser):
+    parser.add_argument("project_name", help="name of the project to create")
+    parser.add_argument("-desc", "--description", help="project description", default="", type=str) 
+    parser.add_argument("-cov", "--coverage", help="enable code coverage", action="store_true")
+    parser.add_argument("-san", "--sanitizer", help="enable sanitizer", action='store_true')
+    parser.add_argument("-e", "--empty", help="do not create defaut source code", action='store_true')
 
 class UserParams:
     def from_args():
@@ -66,10 +75,10 @@ class UserParams:
             match projet_type:
                 case ProjectType.bin:
                     add_bin_to_parser(new_project_parser)
-                # case ProjectType.dyn:
-                #     DynProject.add_cli_argument_to_parser(new_project_parser)
                 case ProjectType.lib:
                     add_lib_to_parser(new_project_parser)
+                case ProjectType.dyn:
+                    add_dyn_to_parser(new_project_parser)
                 # case ProjectType.workspace:
                 #     Workspace.add_cli_argument_to_parser(new_project_parser)
     

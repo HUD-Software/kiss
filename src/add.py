@@ -20,7 +20,7 @@ def cmd_add(add_params: cli.KissParser):
         project_name = add_params.project_name
     else:
         project_name = project_dir.name
-
+    
     if add_params.path is not None:
         console.print_step(f"""Adding to the project `{project_name}` in file {project_file} the dependency :
  - name : \"{add_params.dependency_name}\" 
@@ -28,6 +28,11 @@ def cmd_add(add_params: cli.KissParser):
         # Warning if we give an absolute path
         if add_params.path.is_absolute():
             console.print_warning(f"⚠️  Warning: You are adding a dependency with an absolute path `{add_params.path}`. This may cause issues if the project is moved to another location.")
+        # Check that the dependency with the same path is not already added
+        absolute_path = project_dir / add_params.path
+        yaml_file.
+        
+        # Add the dependency to the project yaml
         yaml_path_dict = yaml_file.path_depencendies_to_yaml_dict(add_params.dependency_name, add_params.path)
         if not yaml_file.add_dependency_to_project(project_name, yaml_path_dict):
             console.print_error(f"Error: Unable to add dependency `{add_params.dependency_name}` to project `{project_name}` in file `{project_file}`")

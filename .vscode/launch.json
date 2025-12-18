@@ -8,22 +8,22 @@
             "program": "${workspaceFolder}/src/kiss.py",
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}",
-            // "args": [
-            //     "-d",
-            //     "tests",
-            //     "list",
-            //     "-r"
-            // ],
-            // --> Create bin project in directory
             "args": [
                 "-d",
                 "tests",
-                "new",
-                "bin",
-                "my_bin",
-                "--description",
-                "This is my_bin"
+                "list",
+                "-r"
             ],
+            // --> Create bin project in directory
+            // "args": [
+            //     "-d",
+            //     "tests",
+            //     "new",
+            //     "bin",
+            //     "my_bin",
+            //     "--description",
+            //     "This is my_bin"
+            // ],
             // --> Create lib project in directory
             // "args": [
             //     "-d",
@@ -34,12 +34,22 @@
             //     "--description",
             //     "This is my_lib"
             // ],
-            // --> Add my_lib as dependency to my_bin
+            // --> Create dyn project in directory
             // "args": [
             //     "-d",
             //     "tests",
+            //     "new",
+            //     "dyn",
+            //     "my_dyn",
+            //     "--description",
+            //     "This is my_dyn"
+            // ],
+            // --> Add my_lib as dependency to my_bin
+            // "args": [
+            //     "-d",
+            //     "tests/my_bin",
             //     "add",
-            //     "my_lib",
+            //     "my_lib2",
             //     "--path",
             //     "../my_lib"
             // ],

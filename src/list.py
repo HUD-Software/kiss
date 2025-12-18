@@ -6,7 +6,7 @@ from project import BinProject, DynProject, GitDependency, LibProject, PathDepen
 def cmd_list(list_params: cli.KissParser):
     ProjectRegistry.load_projects_in_directory(path=list_params.directory, recursive=list_params.recursive)
     if len(ProjectRegistry.items()) == 0:
-        console.print_error("Aucun projet trouvé !")
+        console.print_error(f"Aucun projet trouvé dans {list_params.directory}")
     else:
         for project in ProjectRegistry.projects():
                 console.print_success(f"--> Projet trouvé : {project.file}")

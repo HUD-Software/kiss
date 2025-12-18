@@ -8,7 +8,7 @@ def cmd_list(list_params: KissParser):
     from modules import ModuleRegistry
     ModuleRegistry.load_modules(list_params.directory, list_params.recursive)
     if len(ModuleRegistry.items()) == 0:
-        console.print_error("Aucun projet trouvé !")
+        console.print_error(f"Aucun projet trouvé dans {list_params.directory}")
     else:
         for name, project in ModuleRegistry.items():
             console.print_success(f"--> Projet trouvé : {name}")

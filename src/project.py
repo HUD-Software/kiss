@@ -261,11 +261,23 @@ class ProjectYAML:
                 continue
             for item in value:
                 if isinstance(item, dict):
-                    name = item.get("name")
-                    path = item.get("path", self.file.parent)
-                    if name == project.name and Path(path) == project.path:
+                    if item.get("name") == project.name:
                         return True
         return False
+    
+    def get_yaml_project_with_dependency(self, dependency_name: str) -> dict | None:
+        if self.yaml is None:
+            return None
+        for key, value in self.yaml.items():
+            if key not in ProjectYAML.VALID_ROOT:
+                continue
+            for item in value:
+                if isinstance(item, dict):
+                    dependencies = item.get("dependencies", [])
+                    for dependency in dependencies:
+                        if dependency.get("name") == dependency_name:
+                            return item
+        return None
     
     # Check if a project with the same name already exists in the yaml file
     def is_project_name_present(self, project_name: str) -> bool:
@@ -287,15 +299,31 @@ class ProjectYAML:
             "name": project.name,
             "version": str(project.version)
         }
+        # Add the description if present
         if project.description:
             data["description"] = project.description
+        # Add the path if different from the project file directory
+        # Make sure to make it relative if possible
         if project.path != project.file.parent:
-            data["path"] = str(project.path)
+            try:
+                path = str(project.path.relative_to(project.file.parent))
+                if path != project.file.parent:
+                    data["path"] = path
+            except ValueError:
+                data["path"] = str(project.path)
         if isinstance(project, BinProject):
-            data["sources"] = [str(src) for src in project.sources]
+            if project.sources:
+                data["sources"] = [str(src) for src in project.sources]
         elif isinstance(project, LibProject):
-            data["sources"] = [str(src) for src in project.sources]
-            data["interface_directories"] = [str(dir) for dir in project.interface_directories]
+            if project.sources:
+                data["sources"] = [str(src) for src in project.sources]
+            if project.interface_directories:
+                data["interface_directories"] = [str(dir) for dir in project.interface_directories]
+        elif isinstance(project, DynProject):
+            if project.sources:
+                data["sources"] = [str(src) for src in project.sources]
+            if project.interface_directories:
+                data["interface_directories"] = [str(dir) for dir in project.interface_directories]
         return data
     
     # Add a project to the yaml file
@@ -364,6 +392,18 @@ class ProjectYAML:
                         )
                         return False
 
+                    # Check that we don't have the same path or git already present
+                    for existing_dep in item["dependencies"]:
+                        if "path" in dependency_yaml and existing_dep.get("path") == dependency_yaml.get("path"):
+                            console.print_error(
+                                f"⚠️  Error: Dependency `{existing_dep.get('name')}` already exists with the same path `{dependency_yaml.get('path')}` in project `{project_name}`"
+                            )
+                            return False
+                        if "git" in dependency_yaml and existing_dep.get("git") == dependency_yaml.get("git"):
+                            console.print_error(
+                                f"⚠️  Error: Dependency `{existing_dep.get('name')}` already exists with the same git `{dependency_yaml.get('git')}` in project `{project_name}`"
+                            )
+                            return False
                     item["dependencies"].append(dependency_yaml)
                     return True
 

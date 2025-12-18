@@ -19,7 +19,7 @@ def __new_project_in_project_file(project_file: Path, project: Project):
         # Check that no dependency with the same name exists
         yaml_project_with_dependency_with_same_name = yaml_file.get_yaml_project_with_dependency(project.name)
         if yaml_project_with_dependency_with_same_name is not None:
-            console.print_error(f"Error: A dependency in project `{yaml_project_with_dependency_with_same_name.get('name')}` has the same name as the project we add `{project.name}` in `{project_file}`")
+            console.print_error(f"Error: `{project.name}` dependency already exists in project `{yaml_project_with_dependency_with_same_name.get('name')}` in `{project_file}`")
             exit(1)
     # Add the project to the yaml file
     if not yaml_file.add_project(project=project):

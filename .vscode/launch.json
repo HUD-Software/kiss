@@ -45,21 +45,21 @@
             //     "This is my_dyn"
             // ],
             // --> Add my_lib as dependency to my_bin
-            "args": [
-                "-d",
-                "tests/my_bin",
-                "add",
-                "my_lib",
-                "--path",
-                "deps/my_lib"
-            ],
+            // "args": [
+            //     "-d",
+            //     "tests/my_bin",
+            //     "add",
+            //     "my_lib",
+            //     "--path",
+            //     "deps/my_lib"
+            // ],
             // --> Add my_lib as dependency to my_bin
             // "args": [
             //     "-d",
             //     "tests/my_bin",
             //     "add",
             //     "gtest",
-            //     "git",
+            //     "--git",
             //     "git@github.com:google/googletest.git",
             // ],
             // --> Add lib project to my_bin kiss project

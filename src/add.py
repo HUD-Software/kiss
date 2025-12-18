@@ -23,11 +23,12 @@ def cmd_add(add_params: cli.KissParser):
     
     if add_params.path is not None:
         console.print_step(f"""Adding to the project `{project_name}` in file {project_file} the dependency :
- - name : \"{add_params.dependency_name}\" 
-   path : \"{add_params.path}\" """)
+ - name : {add_params.dependency_name} 
+   path : {add_params.path} """)
         # Warning if we give an absolute path
         if add_params.path.is_absolute():
             console.print_warning(f"⚠️  Warning: You are adding a dependency with an absolute path `{add_params.path}`. This may cause issues if the project is moved to another location.")
+            
         # Check that dependency directory exists
         dependency_dir = project_dir / add_params.path
         if not dependency_dir.exists():
@@ -47,9 +48,9 @@ def cmd_add(add_params: cli.KissParser):
             exit(1)
     elif add_params.git is not None:
         console.print_step(f"""Adding to the project `{project_name}` in file {project_file} the dependency :
- - name : \"{add_params.dependency_name}\" 
-   git : \"{add_params.url}\" """)
-        yaml_git_dict = yaml_file.git_depencendies_to_yaml_dict(add_params.dependency_name, add_params.url)
+ - name : {add_params.dependency_name} 
+   git : {add_params.git} """)
+        yaml_git_dict = yaml_file.git_depencendies_to_yaml_dict(add_params.dependency_name, add_params.git)
         if not yaml_file.add_dependency_to_project(project_name, yaml_git_dict):
             console.print_error(f"Error: Unable to add dependency `{add_params.dependency_name}` to project `{project_name}` in file `{project_file}`")
             exit(1)

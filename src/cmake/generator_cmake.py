@@ -4,9 +4,9 @@ from pathlib import Path
 from cli import KissParser
 from cmake.cmake_context import CMakeContext
 import console
-from generate import BaseGenerator
-from platform_target import PlatformTarget
-from project import Project, BinProject, LibProject, DynProject
+from generate import GenerateContext
+from generator import BaseGenerator
+from project import  BinProject, LibProject, DynProject, PathDependency, ProjectRegistry
 
 class GeneratorCMake(BaseGenerator):
     @classmethod
@@ -20,92 +20,141 @@ class GeneratorCMake(BaseGenerator):
         self.coverage = getattr(parser, "coverage", False)
         self.sanitizer = getattr(parser, "sanitizer", False)
 
-    def __resolve_sources(self, src_list: list[str], project_directory): 
-        import glob
-        result = []
-        for src in src_list:
-            # Nettoyage des caractères d'échappement et normalisation
-            clean = src.encode('unicode_escape').decode().replace("\\", "/")
+    def _split_path_with_pattern(self, path: Path):
+        parts = path.parts
 
-            # Chemin relatif à project_dir si nécessaire
-            path = Path(clean)
-            if not path.is_absolute():
-                path = project_directory / path
+        # Chercher le premier composant qui contient '*' ou '?'
+        base = Path() 
+        pattern = None
+        rest = None
+        for i, part in enumerate(parts):
+            if '*' in part or '?' in part:
+                pattern = str(part)
+                rest = Path(*parts[i+1:]) if i + 1 < len(parts) else None
+                break
+            else:
+                base = base / part
 
-            # Converti en str avec / pour glob
-            pattern = str(path)
-
-            # Ajouter ** si le motif contient **
-            matches = glob.glob(pattern)
-
-            for match in matches:
-                path_str = str(Path(match).resolve()).replace("\\", "/")
-                result.append(f'"{path_str}"')
-        return result
+        
+        # Si aucun wildcard
+        return base, pattern, rest
     
-    def __generateBinCMakeLists(self, context:CMakeContext, project: BinProject) -> Path:
+    def _resolve_glob_path(self, base, pattern, rest):
+        all_files = set()
+
+        if "**" in pattern:
+            pattern = pattern.replace("**", "**/*")
+            
+        # glob the pattern from base
+        for f in  base.glob(pattern):
+            # It's a file, add it
+            if f.is_file(): 
+                all_files.add(f'"{f.resolve().as_posix()}"')
+            # It's a directory and we have rest
+            # Add the rest avec the current directory and reapply the glob
+            elif f.is_dir() and rest:
+                src = f / rest
+                base_d, pattern_d, rest_d = self._split_path_with_pattern(src)
+                all_files.update(self._resolve_glob_path(base_d, pattern_d, rest_d))
+        return all_files
+  
+    def _resolve_sources(self, src_list: list[Path]): 
+        all_files = set()
+        for src in src_list:
+            base, pattern, rest = self._split_path_with_pattern(src)
+            # We have a pattern like "**", "*" or "?"
+            if pattern:
+                all_files.update(self._resolve_glob_path(base, pattern, rest))
+                    
+            #  There is not pattern and it's a file, just add it
+            elif base.is_file(): 
+                all_files.add(f'"{base.resolve().as_posix()}"')
+        return list(all_files)
+    
+    def _generateProject(self, cmake_context :CMakeContext):
+        match cmake_context.project:
+            case BinProject() as project:
+                cmakefile = self._generateBinCMakeLists(cmake_context, project)
+                console.print_success(f"CMake {cmakefile} generated for {project.name}")
+            case LibProject() as project:
+                cmakefile = self._generateLibCMakeLists(cmake_context, project)
+                console.print_success(f"CMake {cmakefile} generated for {project.name}")
+            case DynProject() as project:
+                cmakefile = self._generateDynCMakeLists(cmake_context, project)
+                console.print_success(f"CMake {cmakefile} generated for {project.name}")
+
+
+    def _generateBinCMakeLists(self, context:CMakeContext, project: BinProject) -> Path:
         os.makedirs(context.cmakelists_directory, exist_ok=True)
         # Generate CMakeLists.txt
-        normalized_src = self.__resolve_sources(project.sources, context.project_directory)
+        normalized_src = self._resolve_sources(project.sources)
         src_str = "\n".join(normalized_src)
-        normalized_project_name = Project.to_pascal(project.name)
+        project_name = project.name
         cmakefile = context.cmakelists_directory / "CMakeLists.txt"
         with open(cmakefile, "w", encoding="utf-8") as f:
-            f.write(f"""cmake_minimum_required(VERSION 3.18)
+            f.write(
+f"""cmake_minimum_required(VERSION 3.18)
 
 project(\"{project.name}\" LANGUAGES CXX )
 
-add_executable({normalized_project_name}
+add_executable({project_name}
 {src_str}
 )
-set_target_properties({normalized_project_name} PROPERTIES OUTPUT_NAME \"{project.name}\")
+set_target_properties({project_name} PROPERTIES OUTPUT_NAME \"{project.name}\")
 """)
+    
+        for dependency in project.dependencies:
+            context = CMakeContext(project_directory=context.project_directory, platform_target=context.platform_target, project=dependency.project)
+            self._generateProject(cmake_context=context)
+           
         return cmakefile
 
             
-    def __generateLibCMakeLists(self, context:CMakeContext, project: LibProject):
+    def _generateLibCMakeLists(self, context:CMakeContext, project: LibProject):
         os.makedirs(context.cmakelists_directory, exist_ok=True)
         # Generate CMakeLists.txt
-        normalized_src = self.__resolve_sources(project.sources, context.project_directory)
+        normalized_src = self._resolve_sources(project.sources)
         src_str = "\n".join(normalized_src)
-        normalized_interface = self.__resolve_sources(project.interface_directories, context.project_directory)
+        normalized_interface = self._resolve_sources(project.interface_directories)
         interface_str = "\n".join(normalized_interface)
-        normalized_project_name = Project.to_pascal(project.name)
+        project_name = project.name
         cmakefile = context.cmakelists_directory / "CMakeLists.txt"
         with open(cmakefile, "w", encoding="utf-8") as f:
-            f.write(f"""cmake_minimum_required(VERSION 3.18)
+            f.write(
+f"""cmake_minimum_required(VERSION 3.18)
 
 project(\"{project.name}\" LANGUAGES CXX )
 
-add_library({normalized_project_name} STATIC 
+add_library({project_name} STATIC 
 {src_str}
 )
-target_include_directories({normalized_project_name} PUBLIC {interface_str})
+target_include_directories({project_name} PUBLIC {interface_str})
 
-set_target_properties({normalized_project_name} PROPERTIES OUTPUT_NAME \"{project.name}\")
+set_target_properties({project_name} PROPERTIES OUTPUT_NAME \"{project.name}\")
 """)
         return cmakefile
-            
-    def __generateDynCMakeLists(self, context:CMakeContext, project: LibProject):
+    
+    def _generateDynCMakeLists(self, context:CMakeContext, project: LibProject):
         os.makedirs(context.cmakelists_directory, exist_ok=True)
         # Generate CMakeLists.txt
-        normalized_src = self.__resolve_sources(project.sources, context.project_directory)
+        normalized_src = self._resolve_sources(project.sources)
         src_str = "\n".join(normalized_src)
-        normalized_interface = self.__resolve_sources(project.interface_directories, context.project_directory)
+        normalized_interface = self._resolve_sources(project.interface_directories)
         interface_str = "\n".join(normalized_interface)
-        normalized_project_name = Project.to_pascal(project.name)
+        project_name = project.name
         cmakefile = context.cmakelists_directory / "CMakeLists.txt"
         with open(cmakefile, "w", encoding="utf-8") as f:
-            f.write(f"""cmake_minimum_required(VERSION 3.18)
+            f.write(
+f"""cmake_minimum_required(VERSION 3.18)
 
 project(\"{project.name}\" LANGUAGES CXX )
 
-add_library({normalized_project_name} SHARED 
+add_library({project_name} SHARED 
 {src_str}
 )
-target_include_directories({normalized_project_name} PUBLIC {interface_str})
+target_include_directories({project_name} PUBLIC {interface_str})
 
-set_target_properties({normalized_project_name} PROPERTIES OUTPUT_NAME \"{project.name}\")
+set_target_properties({project_name} PROPERTIES OUTPUT_NAME \"{project.name}\")
 """)
         return cmakefile
 
@@ -113,34 +162,12 @@ set_target_properties({normalized_project_name} PROPERTIES OUTPUT_NAME \"{projec
         # coverage_cmake.generateCoverageCMakeFile(directories)
         # coverage_cmake.generateSanitizerCMakeFile(directories)
 
-    def generate_project(self, project_directory: Path, platform_target:PlatformTarget, project: Project):
-        directories = CMakeContext(project_directory, platform_target,project)
-        match project:
-            case BinProject() as project:
-                cmakefile = self.__generateBinCMakeLists(directories, project)
-                console.print_success(f"CMake {cmakefile} generated for {project.name}")
-            case LibProject() as project:
-                cmakefile = self.__generateLibCMakeLists(directories, project)
-                console.print_success(f"CMake {cmakefile} generated for {project.name}")
-            case DynProject() as project:
-                cmakefile = self.__generateDynCMakeLists(directories, project)
-                console.print_success(f"CMake {cmakefile} generated for {project.name}")
-            # case Workspace() as project :
-            #     project_list = list()
-            #     for project_path in project.project_paths:
-            #         ModuleRegistry.load_modules(project_path)
-            #         project = ModuleRegistry.get_from_dir(project_path)
-            #         if not project:
-            #             console.print_error(f"Project {project_path} not found.")
-            #             sys.exit(2)
-            #         project_list.append(project)
-            #     for project in  project_list :
-            #         self.generate_project(project_directory, platform_target, project)
+    def generate_project(self, generate_context: GenerateContext):
+        context = CMakeContext(generate_context.directory, generate_context.platform_target, generate_context.project)
+        self._generateProject(cmake_context=context)
 
-    def generate(self, args : KissParser, project: Project):
-        self.generate_project(project_directory = args.project_directory,
-                        platform_target= args.platform_target,
-                        project=project)
+    def generate(self, generate_context: GenerateContext):
+        self.generate_project(generate_context=generate_context)
 
         
 

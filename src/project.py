@@ -9,35 +9,47 @@ from enum import Enum
 PROJECT_FILE_NAME = "kiss.yaml"
 
 class Dependency:
-    def __init__(self, name :str):
-        self.name_ = name
+    def __init__(self, name: str):
+        self._name = name
 
     @property
     def name(self) -> str:
-        return self.name_
+        return self._name
 
+    @property
+    def project(self) -> "Project":
+        return self._project
+    
+    @project.setter
+    def project(self, value : "Project"):
+        self._project = value
+    
+    @property
+    def directory(self) -> Path:
+        return self._directory
+        
 class PathDependency(Dependency):
-    def __init__(self, name: str, path: Path):
-        super().__init__( name)
-        self.path_ = path
+    def __init__(self, name: str, directory: Path):
+        super().__init__(name)
+        self._directory = directory
 
     @property 
-    def path(self) -> Path:
-        return self.path_
+    def directory(self) -> Path:
+        return self._directory
 
 class GitDependency(Dependency):
     def __init__(self, name: str, git: str, branch: str):
         super().__init__( name)
-        self.git_ = git
-        self.branch_ = branch
+        self._git = git
+        self._branch = branch
 
     @property 
     def git(self) -> str:
-        return self.git_
+        return self._git
     
     @property 
     def branch(self) -> str:
-        return self.branch_
+        return self._branch
     
 class ProjectType(str, Enum):
     bin = "bin"
@@ -49,75 +61,75 @@ class ProjectType(str, Enum):
         return self.name
 
 class Project:
-    def __init__(self, file: Path, path: Path, name: str, description :str, version: Version, dependencies :list[Dependency]=[]):
-        self.file_ = file
-        self.path_ = path
-        self.name_ = name
-        self.description_ = description
-        self.version_ = version
-        self.dependencies_ = dependencies
+    def __init__(self, file: Path, directory: Path, name: str, description :str, version: Version, dependencies :list[Dependency]=[]):
+        self._file = file
+        self._directory = directory
+        self._name = name
+        self._description = description
+        self._version = version
+        self._dependencies = dependencies
 
     @property
     def file(self):
-        return self.file_
+        return self._file
     
     @property
     def name(self):
-        return self.name_
+        return self._name
     
     @property
     def description(self): 
-        return self.description_
+        return self._description
     
     @property
     def version(self):
-        return self.version_
+        return self._version
     
     @property 
-    def path(self) -> Path:
-        return self.path_
+    def directory(self) -> Path:
+        return self._directory
     
     @property
     def dependencies(self) -> list[Dependency]:
-        return self.dependencies_
+        return self._dependencies
 
 class BinProject(Project):
-    def __init__(self, file: Path, path: Path,name: str, description :str, version: Version, sources: list[Path] = [],  dependencies :list[Dependency]=[]):
-        super().__init__(file, path,name, description, version, dependencies)
-        self.sources_ = sources
+    def __init__(self, file: Path, directory: Path,name: str, description :str, version: Version, sources: list[Path] = [],  dependencies :list[Dependency]=[]):
+        super().__init__(file, directory, name, description, version, dependencies)
+        self._sources = sources
 
     @property
     def sources(self) -> list[Path]:
-        return self.sources_
+        return self._sources
 
 
 class LibProject(Project):
-    def __init__(self, file: Path, path: Path,name: str, description :str, version: Version, sources: list[Path] = [], interface_directories: list[Path] = [], dependencies :list[Dependency]=[]):
-        super().__init__(file, path, name, description, version, dependencies)
-        self.sources_ = sources
-        self.interface_directories_ = interface_directories
+    def __init__(self, file: Path, directory: Path,name: str, description :str, version: Version, sources: list[Path] = [], interface_directories: list[Path] = [], dependencies :list[Dependency]=[]):
+        super().__init__(file, directory, name, description, version, dependencies)
+        self._sources = sources
+        self._interface_directories = interface_directories
 
     @property
     def sources(self) -> list[Path]:
-        return self.sources_
+        return self._sources
     
     @property
     def interface_directories(self) -> list[Path]:
-        return self.interface_directories_
+        return self._interface_directories
     
 class DynProject(Project):
-    def __init__(self, file: Path, path: Path,name: str, description :str, version: Version, sources: list[Path] = [], interface_directories: list[Path] = [],  dependencies :list[Dependency]=[]):
-        super().__init__(file, path, name, description, version, dependencies)
-        self.sources_ = sources
-        self.interface_directories_ = interface_directories
+    def __init__(self, file: Path, directory: Path,name: str, description :str, version: Version, sources: list[Path] = [], interface_directories: list[Path] = [],  dependencies :list[Dependency]=[]):
+        super().__init__(file, directory, name, description, version, dependencies)
+        self._sources = sources
+        self._interface_directories = interface_directories
 
     @property
     def sources(self) -> list[Path]:
-        return self.sources_
+        return self._sources
     
     @property
     def interface_directories(self) -> list[Path]:
-        return self.interface_directories_
+        return self._interface_directories
     
 class ProjectYAML:
     # Valid root keys in the YAML file
@@ -125,36 +137,37 @@ class ProjectYAML:
 
     # Initialize with the project file path
     def __init__(self, file: Path):
-        self.file_ = file
-        self.yaml_ : Optional[dict] = None
+        self._file = file
+        self._yaml : Optional[dict] = {}
         
     # Get the project file path
     @property
     def file(self) -> Path:
-        return self.file_
+        return self._file
     
     # Get the loaded yaml dictionary
     @property
     def yaml(self) -> dict | None:
-        return self.yaml_
+        return self._yaml
     
     # Load the yaml file into a dictionary
     def load_yaml(self) -> bool:
         import yaml
         try:
             with self.file.open() as f:
-                self.yaml_ = yaml.safe_load(f)
+                self._yaml = yaml.safe_load(f)
             return True
         except (OSError, yaml.YAMLError) as e:
-            console.print_error(f"Erreur lors du chargement de {self.file}: {e}")
+            console.print_error(f"Error: When loading {self.file} file: {e}")
             return False
         
     # Save the current yaml dictionary to the file
     def save_yaml(self) -> bool:
         import yaml
         try:
+            self.file.parent.mkdir(parents=True, exist_ok=True)
             with self.file.open("w", encoding="utf-8") as f:
-                yaml.safe_dump(self.yaml_, f, sort_keys=False,
+                yaml.safe_dump(self.yaml, f, sort_keys=False,
                     allow_unicode=True,
                     default_flow_style=False,
                     default_style=None,
@@ -163,11 +176,11 @@ class ProjectYAML:
             return True
 
         except (OSError, yaml.YAMLError) as e:
-            console.print_error(f"Erreur lors de l'écriture de {self.file}: {e}")
+            console.print_error(f"Error: When saving {self.file} file: {e}")
             return False
     
     # load projects from a yaml file
-    def load_projects(self) -> list[Project] | None:
+    def load_projects(self) -> list[Project]:
         if not self.yaml:
             return []
 
@@ -175,8 +188,8 @@ class ProjectYAML:
 
         for key, value in self.yaml.items():
             if key not in ProjectYAML.VALID_ROOT:
-                console.print_error (f"⚠️  Error: invalid project type '{key}' in {self.file}")
-                return None
+                console.print_error (f"⚠️  Error: Invalid project type '{key}' in {self.file}")
+                exit(1)
 
             for item in value:
                 if isinstance(item, dict):
@@ -184,70 +197,69 @@ class ProjectYAML:
                     name = item.get("name")
                     if not name:
                         console.print_error(f"⚠️  Error: Project name is missing in {self.file} under '{key}'")
-                        return None
+                        exit(1)
                     # Read 'version' as semver version
                     version = item.get("version")
                     if not version:
                         console.print_error(f"⚠️  Error: Project name is missing in {self.file} under '{key}'")
-                        return None
+                        exit(1)
                     try:
                         version = semver.VersionInfo.parse(version)
                     except Exception as e:
                         console.print_error(f"⚠️  Error: Invalid version format in {self.file} under '{key}': {e}")
-                        return None
+                        exit(1)
 
                     # Read 'description'
                     description = item.get("description", "")
 
                     # Read 'path', make it absolute if relative to the project file
-                    path = Path(item.get("path", self.file.parent))
-                    path = path if path.is_absolute() else self.file.parent / path
+                    project_directory = Path(item.get("path", self.file.parent))
+                    project_directory = project_directory if project_directory.is_absolute() else self.file.parent / project_directory
 
                     # Read 'dependencies'
                     dependencies:list[Dependency] = []
                     for dependency in item.get("dependencies", []):
                         # Read dependency 'name'
-                        name = dependency.get("name")
-                        if not name:
+                        dep_name = dependency.get("name")
+                        if not dep_name:
                             console.print_error(f"⚠️  Error: Project name is missing in {self.file} under '{key}'")
-                            return None
-                        path = dependency.get("path")
-                        git = dependency.get("git")
-
-                        # We need at least git or path
-                        if not path and not git:
-                            console.print_error(
-                                f"⚠️  Error: Dependency '{name}' must define either 'path' or 'git' in {self.file} under '{key}'"
-                            )
-                            return None
-
-                        # empêcher les deux à la fois
-                        if path and git:
-                            console.print_error(
-                                f"⚠️  Error: Dependency '{name}' cannot define both 'path' and 'git' in {self.file} under '{key}'"
-                            )
-                            return None
+                            exit(1)
+                        dep_path = dependency.get("path")
+                        dep_git = dependency.get("git")
                         
-                        if path:
-                            dependencies.append(PathDependency(name, path))
-                        elif git:
+                        # Path and git are exclusive
+                        if dep_path and dep_git:
+                            console.print_error(
+                                f"⚠️  Error: Dependency '{dep_name}' cannot define both 'path' and 'git' in {self.file} under '{key}'"
+                            )
+                            exit(1)
+                        
+                        # Read git if any
+                        if dep_git:
                             branch = dependency.get("branch")
-                            dependencies.append(GitDependency(name, git, branch))
+                            dependencies.append(GitDependency(dep_name, dep_git, branch))
 
-                                            
+                        # If no path is given, the default behaviour is that path is the name of dependency
+                        elif dep_path:
+                            dep_path = Path(dep_path)
+                            dependencies.append(PathDependency(dep_name, dep_path if dep_path.is_absolute() else (self.file.parent / dep_path).resolve(strict=False)))
+                        else:
+                            dependencies.append(PathDependency(dep_name, self.file.parent / Path(dep_name)))
+        
                     # Create project
                     match key:
                         case ProjectType.bin:
                             sources = [self.file.parent / src for src in item.get("sources", [])]
-                            projects.append(BinProject(file=self.file, path=path,name=name, description=description, sources=sources, version=version, dependencies=dependencies))
+                            projects.append(BinProject(file=self.file, directory=project_directory, name=name, description=description, sources=sources, version=version, dependencies=dependencies))
                         case ProjectType.lib:
                             sources = [self.file.parent / src for src in item.get("sources", [])]
                             interface_dirs = [self.file.parent / src for src in item.get("interface_directories", [])]
-                            projects.append(LibProject(file=self.file,  path=path,name=name, description=description, sources=sources, interface_directories=interface_dirs, version=version, dependencies=dependencies))
+                            projects.append(LibProject(file=self.file,  directory=project_directory, name=name, description=description, sources=sources, interface_directories=interface_dirs, version=version, dependencies=dependencies))
                         case ProjectType.dyn:
                             sources = [self.file.parent / src for src in item.get("sources", [])]
                             interface_dirs = [self.file.parent / src for src in item.get("interface_directories", [])]
-                            projects.append(DynProject(file=self.file,  path=path,name=name, description=description, sources=sources, interface_directories=interface_dirs, version=version, dependencies=dependencies))
+                            projects.append(DynProject(file=self.file,  directory=project_directory, name=name, description=description, sources=sources, interface_directories=interface_dirs, version=version, dependencies=dependencies))
+
         return projects
     
     # Check if a project with the same name and path already exists in the yaml file
@@ -302,13 +314,13 @@ class ProjectYAML:
             data["description"] = project.description
         # Add the path if different from the project file directory
         # Make sure to make it relative if possible
-        if project.path != project.file.parent:
+        if project.directory != project.file.parent:
             try:
-                path = str(project.path.relative_to(project.file.parent))
+                path = str(project.directory.relative_to(project.file.parent))
                 if path != project.file.parent:
                     data["path"] = path
             except ValueError:
-                data["path"] = str(project.path)
+                data["path"] = str(project.directory)
         if isinstance(project, BinProject):
             if project.sources:
                 data["sources"] = [str(src) for src in project.sources]
@@ -327,8 +339,8 @@ class ProjectYAML:
     # Add a project to the yaml file
     def add_project(self, project: Project) -> bool:
         # If the yaml is not loaded, initialize it
-        if self.yaml_ is None:
-            self.yaml_ = {}
+        if self.yaml is None:
+            self._yaml = {}
          
         # Check if project is not already present
         if self.is_project_present(project):
@@ -339,19 +351,19 @@ class ProjectYAML:
         match project:
             case BinProject():
                 key = str(ProjectType.bin)
-                if key not in self.yaml_:
-                    self.yaml_[key] = []
-                self.yaml_[key].append(project_yaml)
+                if key not in self.yaml:
+                    self.yaml[key] = []
+                self.yaml[key].append(project_yaml)
             case LibProject():
                 key = str(ProjectType.lib)
-                if key not in self.yaml_:
-                    self.yaml_[key] = []
-                self.yaml_[key].append(project_yaml)
+                if key not in self.yaml:
+                    self.yaml[key] = []
+                self.yaml[key].append(project_yaml)
             case DynProject():
                 key = str(ProjectType.dyn)
-                if key not in self.yaml_:
-                    self.yaml_[key] = []
-                self.yaml_[key].append(project_yaml)
+                if key not in self.yaml:
+                    self.yaml[key] = []
+                self.yaml[key].append(project_yaml)
         return True
 
     def path_depencendies_to_yaml_dict(self, dependency_name: str, dependency_path: Path) -> dict:
@@ -370,11 +382,11 @@ class ProjectYAML:
         return data
 
     def add_dependency_to_project(self, project_name: str, dependency_yaml:dict) -> bool:
-        if self.yaml_ is None:
+        if self.yaml is None:
             console.print_error(f"⚠️  Error: YAML not loaded for {self.file}")
             return False
     
-        for key, value in self.yaml_.items():
+        for key, value in self.yaml.items():
             if key not in ProjectYAML.VALID_ROOT:
                 continue
             for item in value:
@@ -417,19 +429,14 @@ class ProjectRegistry:
         return path in self.projects_
 
     def __iter__(self):
-        return iter(self.projects_.items())
+        return iter(self.projects_)
     
     def items(self):
         return self.projects_.items()
     
     @property
-    def project(self) -> dict[Path, list[Project]]:
+    def projects(self) -> dict[Path, list[Project]]:
         return self.projects_
-    # def projects(self) -> list[Project]:
-    #     all_projects: list[Project] = []
-    #     for project_list in self.registry_.values():
-    #         all_projects.extend(project_list)
-    #     return all_projects
     
     def paths(self):
         return self.projects_.keys()
@@ -445,17 +452,94 @@ class ProjectRegistry:
     def is_file_loaded(self, filepath:Path) -> bool:
         return filepath in self.projects_
     
-    def load_projects_in_directory(self, path: Path, recursive: bool = False):
+    def load_project_from_file(self, file: Path, load_dependencies:bool):
+        if self.is_file_loaded(file):
+           return 
+        
+        # Load the yaml
+        yaml = ProjectYAML(file)
+        if not yaml.load_yaml():
+            console.print_warning(f"Error: Unable to load project file `{file}`")
+            exit(1)
+
+        # Load the project
+        projects = yaml.load_projects()
+
+        # Register loaded projects
+        for project in projects :
+            self.register_project(project)
+
+        # Load all project dependencies
+        if load_dependencies:
+            for project in projects :
+                for dependency in project.dependencies:
+                    match dependency:
+                        case PathDependency() as path_dependency:
+                            loaded = False
+                            file = None
+                            # Check if the project is declared in the project that depends on it.
+                            for dep_project in projects:
+                                if dep_project.name == path_dependency.name:
+                                    loaded = True
+                                    file = project.file
+                                    break
+
+                            # If we don't found it load the file
+                            if not loaded:
+                                dependency_file = path_dependency.directory / PROJECT_FILE_NAME
+                                # If the file is not loaded load it
+                                if not self.projects.get(dependency_file):
+                                    if dependency_file.exists():
+                                        self.load_project_from_file(dependency_file, load_dependencies)
+                                        for p in ProjectRegistry.projects.get(dependency_file):
+                                            if p.name == path_dependency.name and path_dependency.directory == p.directory:
+                                                loaded = True
+                                                file = dependency_file            
+                                else:
+                                    loaded = True
+                                    file = dependency_file
+
+                            # If project is loaded link the dependency with the project that depends on it
+                            if loaded and file:
+                                for p in ProjectRegistry.projects.get(file):
+                                    if p.name == path_dependency.name:
+                                        path_dependency.project = p 
+                            else:
+                                console.print_error(f"Error: Failed to load dependency '{path_dependency.name}' for project '{project.name}'.\n\n" +
+                                                    f"Possible causes:\n" + 
+                                                    f"1. The file '{PROJECT_FILE_NAME}' is missing in:\n" + 
+                                                    f"   {path_dependency.directory}\n\n" +
+                                                    f"2. The dependency '{path_dependency.name}' is not declared in:\n" + 
+                                                    f"   {project.file}\n\n")
+                                console.print_tips(f"Tips:\n" + 
+                                                    f"Each dependency must:\n"+
+                                                    f"  - Have a '{PROJECT_FILE_NAME}' file in its root directory of the dependency, or\n" + 
+                                                    f"  - Be declared in the '{PROJECT_FILE_NAME}' of the project that depends on it.")
+                                exit(1)
+                        case GitDependency():
+                            # Clone the repo and tr to load yaml file or request for a project in dependent project
+                            pass
+                            
+                            
+                            
+    def load_projects_in_directory(self, directory: Path, load_dependencies : bool = True, recursive: bool = False ):
         pattern = f"**/{PROJECT_FILE_NAME}" if recursive else PROJECT_FILE_NAME
 
         # Load modules
-        for file in path.glob(pattern):
-            if self.is_file_loaded(file):
+        for file in directory.glob(pattern):
+            self.load_project_from_file(file, load_dependencies)
+
+    def projects_in_directory(self, directory: Path) -> list[Project]:
+        for path, project_list in self.projects.items():
+            if path.parent != directory:
                 continue
-            yaml = ProjectYAML(file)
-            yaml.load_yaml()
-            for project in yaml.load_projects() :
-                self.register_project(project)
+            return project_list
+        return []
+            
+
+            
+
+
 
 ProjectRegistry = ProjectRegistry()
 

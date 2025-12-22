@@ -1,7 +1,7 @@
 import argparse
 from pathlib import Path
 import sys
-from generate import GeneratorRegistry
+from generator import GeneratorRegistry
 from platform_target import PlatformTarget
 from project import ProjectType
 
@@ -76,7 +76,7 @@ def _add_generate_command(parser : argparse.ArgumentParser):
     GeneratorRegistry.register(GeneratorCMake())
     
     generate_parser = parser.add_parser("generate", description="generate files used to build the project")
-    generate_parser.add_argument("-p", "--project", help="name of the project.py to generate", dest="project_name", required=False, type=Path)
+    generate_parser.add_argument("-p", "--project", help="name of the project.py to generate", dest="project_name", required=False, type=str)
     generate_parser.add_argument("-t", "--target", help="specify the target platform", dest="platform_target", default=PlatformTarget.default_target(), required=False)
 
     # Create the help string that contains list of all registered generators       

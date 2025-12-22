@@ -1,17 +1,17 @@
 class Workspace:
     def __init__(self, name: str, description: str = ""):
-        self.name = name
-        self.description_ = description
-        self.projects_ = []
+        self._name = name
+        self._description = description
+        self._projects = []
         
     @property
     def name(self) -> str:
-        return self.name
+        return self._name
     
     @property
     def description(self) -> str:
-        return self.description_
+        return self._description
     
     @property
     def projects(self) -> list:
-        return self.projects_
+        return self._projects

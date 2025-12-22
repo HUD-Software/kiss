@@ -38,8 +38,11 @@ def cmd_add(add_params: cli.KissParser):
         # Check that we have a kiss.yaml in the dependency directory
         dependency_file = dependency_dir / PROJECT_FILE_NAME
         if not dependency_file.exists():
-            console.print_error(f"Error: Missing '{PROJECT_FILE_NAME}' file in '{dependency_dir}' directory")
-            exit(1)
+            if not yaml_file.is_project_name_present(add_params.dependency_name):
+                console.print_error(f"Error: Missing '{PROJECT_FILE_NAME}' file in '{dependency_dir}' directory. \n"+
+                                    f"       Add 'kiss.yaml' file to '{dependency_dir}' project directory.\n" + 
+                                    f"       Or add it to target project '{project_name}' in file {project_file}.")
+                exit(1)
 
         # Add the dependency to the project yaml
         yaml_path_dict = yaml_file.path_depencendies_to_yaml_dict(add_params.dependency_name, add_params.path)

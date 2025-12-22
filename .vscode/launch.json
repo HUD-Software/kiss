@@ -49,9 +49,7 @@
             //     "-d",
             //     "tests/my_bin",
             //     "add",
-            //     "my_lib",
-            //     "--path",
-            //     "deps/my_lib"
+            //     "my_lib"
             // ],
             // --> Add my_lib as dependency to my_bin
             // "args": [
@@ -67,7 +65,7 @@
             //     "-d",
             //     "tests/my_bin",
             //     "new",
-            //     "--existing",
+            //     "-e",
             //     "lib",
             //     "my_lib",
             //     "--description",
@@ -76,14 +74,16 @@
             "args": [
                 "-d",
                 "tests/my_bin",
-                "generate"
+                "generate",
+                "-p",
+                "my_bin"
             ]
             // "args": [
             //     "-d",
             //     "tests",
             //     "build",
             // ],
-            // "args": [
+            // "args": [    
             //     "-d",
             //     "tests",
             //     "run"

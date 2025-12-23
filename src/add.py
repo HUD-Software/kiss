@@ -1,13 +1,13 @@
 import cli
 import console
-from project import PROJECT_FILE_NAME, ProjectYAML
+from yaml_project import PROJECT_FILE_NAME, YamlFile
 
 
 def cmd_add(add_params: cli.KissParser):
     project_name = add_params.project_name
     project_dir = add_params.directory
     project_file = project_dir / PROJECT_FILE_NAME
-    yaml_file = ProjectYAML(file=project_file)
+    yaml_file = YamlFile(file=project_file)
     # Check that the project file exists
     if not yaml_file.load_yaml():
         console.print_warning(f"Error: Unable to load project file `{project_file}`")
@@ -57,4 +57,6 @@ def cmd_add(add_params: cli.KissParser):
         if not yaml_file.add_dependency_to_project(project_name, yaml_git_dict):
             console.print_error(f"Error: Unable to add dependency `{add_params.dependency_name}` to project `{project_name}` in file `{project_file}`")
             exit(1)
-    yaml_file.save_yaml()
+    if not yaml_file.save_yaml():
+        console.print_error(f"Error: Unable to save project file `{project_file}`")
+        exit(1)

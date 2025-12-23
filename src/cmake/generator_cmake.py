@@ -6,7 +6,7 @@ from cmake.cmake_context import CMakeContext
 import console
 from generate import GenerateContext
 from generator import BaseGenerator
-from project import  BinProject, LibProject, DynProject, PathDependency, ProjectRegistry
+from project import  BinProject, LibProject, DynProject
 
 class GeneratorCMake(BaseGenerator):
     @classmethod
@@ -39,7 +39,7 @@ class GeneratorCMake(BaseGenerator):
         # Si aucun wildcard
         return base, pattern, rest
     
-    def _resolve_glob_path(self, base, pattern, rest):
+    def _resolve_glob_source_path(self, base, pattern, rest):
         all_files = set()
 
         if "**" in pattern:
@@ -48,27 +48,33 @@ class GeneratorCMake(BaseGenerator):
         # glob the pattern from base
         for f in  base.glob(pattern):
             # It's a file, add it
-            if f.is_file(): 
+            if f.is_file():
                 all_files.add(f'"{f.resolve().as_posix()}"')
             # It's a directory and we have rest
             # Add the rest avec the current directory and reapply the glob
             elif f.is_dir() and rest:
                 src = f / rest
                 base_d, pattern_d, rest_d = self._split_path_with_pattern(src)
-                all_files.update(self._resolve_glob_path(base_d, pattern_d, rest_d))
+                all_files.update(self._resolve_glob_source_path(base_d, pattern_d, rest_d))
         return all_files
   
-    def _resolve_sources(self, src_list: list[Path]): 
+    def _resolve_sources(self, context:CMakeContext, src_list: list[Path]): 
         all_files = set()
         for src in src_list:
             base, pattern, rest = self._split_path_with_pattern(src)
+
             # We have a pattern like "**", "*" or "?"
             if pattern:
-                all_files.update(self._resolve_glob_path(base, pattern, rest))
-                    
+                all_files.update(self._resolve_glob_source_path(base, pattern, rest))
+           
             #  There is not pattern and it's a file, just add it
-            elif base.is_file(): 
-                all_files.add(f'"{base.resolve().as_posix()}"')
+            else:
+                if not src.exists():
+                    console.print_error(f"Error when generating CMake file for {context.project.name}: file {src} not found")
+                    exit(1)
+                if base.is_file(): 
+                    all_files.add(f'"{base.resolve().as_posix()}"')
+
         return list(all_files)
     
     def _generateProject(self, cmake_context :CMakeContext):
@@ -87,7 +93,7 @@ class GeneratorCMake(BaseGenerator):
     def _generateBinCMakeLists(self, context:CMakeContext, project: BinProject) -> Path:
         os.makedirs(context.cmakelists_directory, exist_ok=True)
         # Generate CMakeLists.txt
-        normalized_src = self._resolve_sources(project.sources)
+        normalized_src = self._resolve_sources(context, project.sources)
         src_str = "\n".join(normalized_src)
         project_name = project.name
         cmakefile = context.cmakelists_directory / "CMakeLists.txt"
@@ -104,7 +110,7 @@ set_target_properties({project_name} PROPERTIES OUTPUT_NAME \"{project.name}\")
 """)
     
         for dependency in project.dependencies:
-            context = CMakeContext(project_directory=context.project_directory, platform_target=context.platform_target, project=dependency.project)
+            context = CMakeContext(project_directory=dependency.directory, platform_target=context.platform_target, project=dependency.project)
             self._generateProject(cmake_context=context)
            
         return cmakefile
@@ -113,9 +119,9 @@ set_target_properties({project_name} PROPERTIES OUTPUT_NAME \"{project.name}\")
     def _generateLibCMakeLists(self, context:CMakeContext, project: LibProject):
         os.makedirs(context.cmakelists_directory, exist_ok=True)
         # Generate CMakeLists.txt
-        normalized_src = self._resolve_sources(project.sources)
+        normalized_src = self._resolve_sources(context, project.sources)
         src_str = "\n".join(normalized_src)
-        normalized_interface = self._resolve_sources(project.interface_directories)
+        normalized_interface = self._resolve_sources(context, project.interface_directories)
         interface_str = "\n".join(normalized_interface)
         project_name = project.name
         cmakefile = context.cmakelists_directory / "CMakeLists.txt"
@@ -137,9 +143,9 @@ set_target_properties({project_name} PROPERTIES OUTPUT_NAME \"{project.name}\")
     def _generateDynCMakeLists(self, context:CMakeContext, project: LibProject):
         os.makedirs(context.cmakelists_directory, exist_ok=True)
         # Generate CMakeLists.txt
-        normalized_src = self._resolve_sources(project.sources)
+        normalized_src = self._resolve_sources(context, project.sources)
         src_str = "\n".join(normalized_src)
-        normalized_interface = self._resolve_sources(project.interface_directories)
+        normalized_interface = self._resolve_sources(context, project.interface_directories)
         interface_str = "\n".join(normalized_interface)
         project_name = project.name
         cmakefile = context.cmakelists_directory / "CMakeLists.txt"

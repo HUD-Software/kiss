@@ -8,11 +8,26 @@
             "program": "${workspaceFolder}/src/kiss.py",
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}",
+            // -> List everything
+            "args": [
+                "-d",
+                "tests",
+                "list",
+                "-r",
+                "-d"
+            ],
+            //-> List projects in my_bin without dependencies
             // "args": [
             //     "-d",
-            //     "tests",
+            //     "tests/my_bin",
+            //     "list"
+            // ],
+            // -> List projects in my_bin and dependencies
+            // "args": [
+            //     "-d",
+            //     "tests/my_bin",
             //     "list",
-            //     "-r"
+            //     "-d"
             // ],
             // --> Create bin project in directory
             // "args": [
@@ -47,9 +62,11 @@
             // --> Add my_lib as dependency to my_bin
             // "args": [
             //     "-d",
-            //     "tests/my_bin",
+            //     "tests/my_lib",
             //     "add",
-            //     "my_lib"
+            //     "my_dyn",
+            //     "--path",
+            //     "../my_dyn"
             // ],
             // --> Add my_lib as dependency to my_bin
             // "args": [
@@ -67,17 +84,23 @@
             //     "new",
             //     "-e",
             //     "lib",
-            //     "my_lib",
+            //     "my_lib2",
             //     "--description",
             //     "This is my_lib",
             // ],
-            "args": [
-                "-d",
-                "tests/my_bin",
-                "generate",
-                "-p",
-                "my_bin"
-            ]
+            // "args": [
+            //     "-d",
+            //     "tests/my_bin",
+            //     "add",
+            //     "my_lib2",
+            // ],
+            // "args": [
+            //     "-d",
+            //     "tests/my_bin",
+            //     "generate",
+            //     "-p",
+            //     "my_bin"
+            // ]
             // "args": [
             //     "-d",
             //     "tests",

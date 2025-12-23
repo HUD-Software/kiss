@@ -7,7 +7,8 @@ import console
 from context import Context
 from generator import BaseGenerator, GeneratorRegistry
 from platform_target import PlatformTarget
-from project import Project, ProjectRegistry
+from project import Project
+from projectregistry import ProjectRegistry
 
 
 class GenerateContext(Context):
@@ -32,7 +33,7 @@ class GenerateContext(Context):
     @classmethod
     def from_cli_parser(cls, cli_parser: cli.KissParser) -> Self:
         #### Find the project to generate
-        ProjectRegistry.load_projects_in_directory(directory=cli_parser.directory)
+        ProjectRegistry.register_all_project_in_directory(directory=cli_parser.directory, load_dependencies=True, recursive=False)
         project_to_generate = None
         projects_in_directory = ProjectRegistry.projects_in_directory(directory=cli_parser.directory)
         if len(projects_in_directory) == 0:

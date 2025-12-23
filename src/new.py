@@ -4,7 +4,9 @@ from typing import Self
 import cli
 import console
 from context import Context
-from project import PROJECT_FILE_NAME, BinProject, DynProject, LibProject, Project, ProjectType, ProjectYAML
+from project import BinProject, DynProject, LibProject, Project, ProjectType
+from yaml_project import PROJECT_FILE_NAME, YamlFile
+
 
 class NewContext(Context):
     def __init__(self, directory:Path, project_file: Path, existing: bool, project_type: ProjectType, populate:bool, project_name:str, project_description:str):
@@ -74,7 +76,7 @@ class NewContext(Context):
     
     
 def __new_project_in_project_file(new_context: NewContext, project: Project):
-    yaml_file = ProjectYAML(file=new_context.project_file)
+    yaml_file = YamlFile(file=new_context.project_file)
 
     # If the file exist load it and check that the project does not already exists or a dependency with the same name already exists
     if new_context.project_file.exists():
@@ -82,7 +84,7 @@ def __new_project_in_project_file(new_context: NewContext, project: Project):
             console.print_error(f"Error: Unable to load existing project file `{new_context.project_file}`")
             exit(1)
         # Check that the project does not already exists in the yaml file
-        if yaml_file.is_project_present(project):
+        if yaml_file.is_project_in_yaml(project.name):
             console.print_error(f"Error: Project `{project.name}` already exists in `{new_context.project_file}`")
             exit(1)
         # Check that no dependency with the same name exists
@@ -91,19 +93,19 @@ def __new_project_in_project_file(new_context: NewContext, project: Project):
             console.print_error(f"Error: `{project.name}` dependency already exists in project `{yaml_project_with_dependency_with_same_name.get('name')}` in `{new_context.project_file}`")
             exit(1)
     # Add the project to the yaml file
-    if not yaml_file.add_project(project=project):
+    if not yaml_file.add_yaml_project(project.to_yaml_project()):
         console.print_error(f"Error: Unable to add project `{project.name}` to `{new_context.project_file}`")
-        return
+        exit(1)
     # Save the file
     if not yaml_file.save_yaml():
         console.print_error(f"Error: Unable to save project file `{new_context.project_file}`")
-        return
+        exit(1)
     console.print_success(f"Project `{project.name}` created successfully in `{new_context.project_file}`")
     
 def __new_bin_project_in_project_file(new_context: NewContext):
     project = BinProject(
             file=new_context.project_file,
-            path=new_context.directory,
+            directory=new_context.directory,
             name=new_context.project_name,
             description=new_context.project_description,
             version="0.1.0",
@@ -139,7 +141,7 @@ def __new_bin_project_in_project_file(new_context: NewContext):
 def __new_lib_project_in_project_file(new_context: NewContext):
     project = LibProject(
                 file=new_context.project_file,
-                path=new_context.directory,
+                directory=new_context.directory,
                 name=new_context.project_name,
                 description=new_context.project_description,
                 version="0.1.0",
@@ -189,7 +191,7 @@ def __new_lib_project_in_project_file(new_context: NewContext):
 def __new_dyn_project_in_project_file(new_context: NewContext):
     project = DynProject(
                 file=new_context.project_file,
-                path=new_context.directory,
+                directory=new_context.directory,
                 name=new_context.project_name,
                 description=new_context.project_description,
                 version="0.1.0",

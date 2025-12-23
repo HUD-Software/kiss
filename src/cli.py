@@ -1,37 +1,49 @@
 import argparse
 from pathlib import Path
+import re
 import sys
+import console
 from generator import GeneratorRegistry
 from platform_target import PlatformTarget
 from project import ProjectType
 
+_NAME_REGEX = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+
+def valid_project_name(name: str) -> str:
+    if not _NAME_REGEX.fullmatch(name):
+        raise argparse.ArgumentTypeError(
+            f"\n  Invalid project name '{name}'.\n"
+            "   - Only ASCII letters, digits, underscore;\n"
+            "   - Must not start with a digit; '-' is not allowed.\n")
+    return name
 
 class KissParser(argparse.ArgumentParser):
     def error(self, message):
-        sys.stderr.write('error: %s\n\n' % message)
+        console.print_error(f"Error : {message}")
         self.print_help()
         sys.exit(2)
 
 def _add_list_command(parser : argparse.ArgumentParser):
     list_parser = parser.add_parser("list", description="list projects in directory")
     list_parser.add_argument("-r", "--recursive", help="iterate over directories", action='store_const', const=True, default=False) 
+    list_parser.add_argument("-d", "--list-dependencies", help="list all dependencies", action='store_const', const=True, default=False) 
 
 def _add_bin_to_parser(parser: argparse.ArgumentParser):
-    parser.add_argument("project_name", help="name of the project to create")
+    parser.add_argument("project_name", help="name of the project to create", type=valid_project_name)
     parser.add_argument("-desc", "--description", help="project description", default="", type=str) 
     parser.add_argument("-cov", "--coverage", help="enable code coverage", action="store_true")
     parser.add_argument("-san", "--sanitizer", help="enable sanitizer", action='store_true')
     parser.add_argument("-e", "--empty", help="do not create defaut source code", action='store_true')
 
 def _add_lib_to_parser(parser: argparse.ArgumentParser):
-    parser.add_argument("project_name", help="name of the project to create")
+    parser.add_argument("project_name", help="name of the project to create", type=valid_project_name)
     parser.add_argument("-desc", "--description", help="project description", default="", type=str) 
     parser.add_argument("-cov", "--coverage", help="enable code coverage", action="store_true")
     parser.add_argument("-san", "--sanitizer", help="enable sanitizer", action='store_true')
     parser.add_argument("-e", "--empty", help="do not create defaut source code", action='store_true')
 
 def _add_dyn_to_parser(parser: argparse.ArgumentParser):
-    parser.add_argument("project_name", help="name of the project to create")
+    parser.add_argument("project_name", help="name of the project to create", type=valid_project_name)
     parser.add_argument("-desc", "--description", help="project description", default="", type=str) 
     parser.add_argument("-cov", "--coverage", help="enable code coverage", action="store_true")
     parser.add_argument("-san", "--sanitizer", help="enable sanitizer", action='store_true')
@@ -64,8 +76,8 @@ def _add_add_command(parser : argparse.ArgumentParser):
     # Create the parser to add a dependency to a project
     add_parser = parser.add_parser("add", description="add a dependency to project")
     # Target project to which we want to add a dependency
-    add_parser.add_argument("dependency_name",help="Name of the dependency", type=str)
-    add_parser.add_argument("-p", "--project", required=False, help="Target project", dest="project_name", type=str)
+    add_parser.add_argument("dependency_name",help="Name of the dependency", type=valid_project_name)
+    add_parser.add_argument("-p", "--project", required=False, help="Target project", dest="project_name", type=valid_project_name)
     group = add_parser.add_mutually_exclusive_group()
     group.add_argument("--path", type=Path, help="Path to the dependency project")
     group.add_argument("--git", type=str, help="Git repository URL")
@@ -76,7 +88,7 @@ def _add_generate_command(parser : argparse.ArgumentParser):
     GeneratorRegistry.register(GeneratorCMake())
     
     generate_parser = parser.add_parser("generate", description="generate files used to build the project")
-    generate_parser.add_argument("-p", "--project", help="name of the project.py to generate", dest="project_name", required=False, type=str)
+    generate_parser.add_argument("-p", "--project", help="name of the project.py to generate", dest="project_name", required=False, type=valid_project_name)
     generate_parser.add_argument("-t", "--target", help="specify the target platform", dest="platform_target", default=PlatformTarget.default_target(), required=False)
 
     # Create the help string that contains list of all registered generators       

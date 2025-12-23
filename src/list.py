@@ -3,8 +3,7 @@ from typing import Self
 import cli
 import console
 from context import Context
-from projectregistry import ProjectRegistry
-from yaml_project import YamlGitDependency, YamlPathDependency, YamlProjectType
+from yaml_project import YamlFile, YamlGitDependency, YamlPathDependency, YamlProjectType
 
 
 class ListContext(Context):
@@ -27,7 +26,7 @@ class ListContext(Context):
     
 def cmd_list(list_params: cli.KissParser):
     list_context = ListContext.from_cli_parser(list_params)
-    all_yaml_projects = ProjectRegistry.load_yaml_projects_in_directory(directory=list_context.directory, recursive=list_context.recursive, load_dependencies=list_context.list_dependencies)
+    all_yaml_projects = YamlFile.load_yaml_projects_in_directory(directory=list_context.directory, recursive=list_context.recursive, load_dependencies=list_context.list_dependencies)
     if not all_yaml_projects:
         console.print_success(f"No project found in '{list_context.directory}'")
     else:

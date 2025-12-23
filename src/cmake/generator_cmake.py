@@ -109,9 +109,9 @@ add_executable({project_name}
 set_target_properties({project_name} PROPERTIES OUTPUT_NAME \"{project.name}\")
 """)
     
-        for dependency in project.dependencies:
-            context = CMakeContext(project_directory=dependency.directory, platform_target=context.platform_target, project=dependency.project)
-            self._generateProject(cmake_context=context)
+        # for dependency in project.dependencies:
+        #     context = CMakeContext(project_directory=dependency.directory, platform_target=context.platform_target, project=dependency.project)
+            #self._generateProject(cmake_context=context)
            
         return cmakefile
 

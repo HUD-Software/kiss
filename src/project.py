@@ -30,13 +30,13 @@ class Project:
     # - A Description that describe the project
     # - Version of the project
     # - List of dependencie
-    def __init__(self, file: Path, directory: Path, name: str, description :str, version: Version, dependencies :list[YamlDependency]=[]):
+    def __init__(self, file: Path, directory: Path, name: str, description :str, version: Version):
         self._file = file
         self._directory = directory
         self._name = name
         self._description = description
         self._version = version
-        self._dependencies = dependencies
+        self._dependencies: list[Project]= []
      
     # The file where the project is described
     @property
@@ -65,7 +65,7 @@ class Project:
     
     # List of dependencies
     @property
-    def dependencies(self) -> list[YamlDependency]:
+    def dependencies(self) -> list[Self]:
         return self._dependencies
     
     @abstractmethod
@@ -95,8 +95,8 @@ class BinProject(Project):
     # - Version of the project
     # - List of source file to compile
     # - List of dependencies
-    def __init__(self, file: Path, directory: Path,name: str, description :str, version: Version, sources: list[Path] = [],  dependencies :list[YamlDependency]=[]):
-        super().__init__(file, directory, name, description, version, dependencies)
+    def __init__(self, file: Path, directory: Path,name: str, description :str, version: Version, sources: list[Path] = []):
+        super().__init__(file, directory, name, description, version)
         self._sources = sources
 
     # List of sources to compile
@@ -112,8 +112,7 @@ class BinProject(Project):
             name=yaml_project.name,
             description=yaml_project.description,
             version = yaml_project.version,
-            sources=yaml_project.sources,
-            dependencies=yaml_project.dependencies
+            sources=yaml_project.sources
         )
 
    
@@ -138,8 +137,8 @@ class LibProject(Project):
     # - List of source file to compile
     # - List of interface directory used to interface with the library
     # - List of dependencies
-    def __init__(self, file: Path, directory: Path,name: str, description :str, version: Version, sources: list[Path] = [], interface_directories: list[Path] = [], dependencies :list[YamlDependency]=[]):
-        super().__init__(file, directory, name, description, version, dependencies)
+    def __init__(self, file: Path, directory: Path,name: str, description :str, version: Version, sources: list[Path] = [], interface_directories: list[Path] = []):
+        super().__init__(file, directory, name, description, version)
         self._sources = sources
         self._interface_directories = interface_directories
 
@@ -162,8 +161,7 @@ class LibProject(Project):
             description=yaml_project.description,
             version = yaml_project.version,
             sources=yaml_project.sources,
-            interface_directories=yaml_project.interface_directories,
-            dependencies=yaml_project.dependencies
+            interface_directories=yaml_project.interface_directories
         )
     
     def to_yaml_project(self) -> YamlLibProject:
@@ -188,8 +186,8 @@ class DynProject(Project):
     # - List of source file to compile
     # - List of interface directory used to interface with the library
     # - List of dependencies
-    def __init__(self, file: Path, directory: Path,name: str, description :str, version: Version, sources: list[Path] = [], interface_directories: list[Path] = [],  dependencies :list[YamlDependency]=[]):
-        super().__init__(file, directory, name, description, version, dependencies)
+    def __init__(self, file: Path, directory: Path,name: str, description :str, version: Version, sources: list[Path] = [], interface_directories: list[Path] = []):
+        super().__init__(file, directory, name, description, version)
         self._sources = sources
         self._interface_directories = interface_directories
     
@@ -211,9 +209,7 @@ class DynProject(Project):
             name=yaml_project.name,
             description=yaml_project.description,
             version = yaml_project.version,
-            sources=yaml_project.sources,
-            interface_directories=yaml_project.interface_directories,
-            dependencies=yaml_project.dependencies
+            sources=yaml_project.sources
         )
     
     def to_yaml_project(self) -> YamlDynProject:

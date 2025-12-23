@@ -3,7 +3,7 @@ from abc import abstractmethod
 from enum import Enum
 from pathlib import Path
 import traceback
-from typing import Optional
+from typing import Optional, TypeAlias
 import semver
 import console
 import yaml
@@ -30,7 +30,6 @@ class YamlDependency:
     # The association is done with the project property setter later
     def __init__(self, type: YamlDependencyType, name: str):
         self._name = str(name)
-        self._project = None
         self._type = type
 
     # The type of the dependency
@@ -42,16 +41,6 @@ class YamlDependency:
     @property
     def name(self) -> str:
         return self._name
-    
-    # # The project associated, could not exist if the project is not found in the loaded project
-    # @property
-    # def project(self) -> Optional["YamlFile"]:
-    #     return self._project
-    
-    # # The associated project to set ( Should correspond )
-    # @project.setter
-    # def project(self, value : "YamlFile"):
-    #     self._project = value
     
 # A YamlPathDependency represent a dependency that is in a directory 
 class YamlPathDependency(YamlDependency):
@@ -171,8 +160,6 @@ class YamlProject:
     def to_yaml_dict(self) -> tuple[str, dict]:
         pass
 
-
-
 class YamlBinProject(YamlProject):
     def __init__(self, file: Path, directory: Path, name: str, description :str, version: semver.Version, sources:list[Path], dependencies :list[YamlDependency]=[]):
         super().__init__(YamlProjectType.bin, 
@@ -233,7 +220,7 @@ class YamlDynProject(YamlProject):
                          description=description,
                          version=version,
                          dependencies=dependencies
-                         )
+                        )
         self._sources = sources
         self._interface_directories = interface_directories
 
@@ -435,8 +422,68 @@ class YamlFile:
                         pass
         return yaml_dependency_projects
 
+    def topological_sort(self, all_projects : dict[Path, list[YamlProject]]) -> list[YamlProject]:
+        all_projects: list[YamlProject] = [ project
+                                            for projects in all_projects
+                                            for project in projects
+                                            ]
+         
+        def resolve_dependency(dep: YamlDependency) -> YamlProject:
+            dep_key = (dep.name, dep.directory)
+            if dep_key not in projects_by_key:
+                raise RuntimeError(
+                    f"Dependency '{dep.name}' in '{dep.directory}' not found among loaded projects"
+                )
+            return projects_by_key[dep_key]
+        
+        # Build dependencies graph
+        from collections import defaultdict
+        ProjectKey: TypeAlias = tuple[str, Path]
+
+        graph: dict[ProjectKey, set[ProjectKey]] = defaultdict(set)
+        projects_by_key: dict[ProjectKey, YamlProject] = {}
+
+        for project in all_projects:
+            key: ProjectKey = (project.name, project.directory)
+            projects_by_key[key] = project
+
+        for project in all_projects:
+            project_key: ProjectKey = (project.name, project.directory)
+            for dep in project.dependencies:
+                dep_project = resolve_dependency(dep)
+                dep_key: ProjectKey = (dep_project.name, dep_project.directory)
+                graph[project_key].add(dep_key)
+
+        sorted_projects: list[ProjectKey] = []
+        visited: set[ProjectKey] = set()
+        visiting: set[ProjectKey] = set() 
+        def visit(node: ProjectKey):
+            if node in visited:
+                return
+
+            if node in visiting:
+                raise RuntimeError(
+                    f"Cyclic dependency detected involving project "
+                    f"'{node[0]}' in directory '{node[1]}'"
+                )
+
+            visiting.add(node)
+
+            for dep in graph.get(node, ()):
+                visit(dep)
+
+            visiting.remove(node)
+            visited.add(node)
+            sorted_projects.append(projects_by_key[node])
+        for key in projects_by_key:
+            visit(key)
+
+        return sorted_projects
+    # Load YamlProject in a directory.
+    # When load_dependencies is True, also load YamlProject of dependencies
+    # When recursive is true, also load YamlProject in child directories 
     @classmethod
-    def load_yaml_projects_in_directory(cls, directory: Path, load_dependencies : bool, recursive: bool ) -> dict[Path, list[YamlProject]]:
+    def load_yaml_projects_in_directory(cls, directory: Path, load_dependencies : bool, recursive: bool) -> dict[Path, list[YamlProject]]:
         all_yaml_projects :dict[Path, list[YamlProject]] = {}
 
         pattern = f"**/{PROJECT_FILE_NAME}" if recursive else PROJECT_FILE_NAME
@@ -462,12 +509,14 @@ class YamlFile:
             if load_dependencies:
                 # Load dependencies of all projects in the file
                 yaml_dependency_projects: dict[Path, list[YamlProject]] = YamlFile._load_yaml_dependency(all_yaml_projects, yaml_projects)
-                # Add all yaml dependencies to the set
-                for dependency_file, yaml_dependencies in yaml_dependency_projects.items():
-                    for dep in yaml_dependencies:
-                        all_yaml_projects.setdefault(dependency_file, []).append(dep)
+
 
                 while yaml_dependency_projects:
+                    # Add all yaml dependencies to the set
+                    for dependency_file, yaml_dependencies in yaml_dependency_projects.items():
+                        for dep in yaml_dependencies:
+                            all_yaml_projects.setdefault(dependency_file, []).append(dep)
+
                     # Load all dependencies of dependencies
                     yaml_dependency_projects_old = yaml_dependency_projects
                     yaml_dependency_projects = {}

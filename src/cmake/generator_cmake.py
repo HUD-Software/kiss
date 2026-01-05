@@ -122,7 +122,7 @@ set_target_properties({project_name} PROPERTIES OUTPUT_NAME {project.name})
             for cmake_dep_context in cmake_dep_context_list:
                 cmake_dep_context : CMakeContext = cmake_dep_context
                 f.write(f"""\n# Add {cmake_dep_context.project.name} dependency 
-add_subdirectory("{cmake_dep_context.cmakelists_directory.resolve().as_posix()}")
+add_subdirectory("{cmake_dep_context.cmakelists_directory.resolve().as_posix()} {context.cmakelists_directory.resolve().as_posix()}")
 target_link_libraries({project_name} PRIVATE {cmake_dep_context.project.name})
 target_include_directories({project_name} PRIVATE $<TARGET_PROPERTY:{cmake_dep_context.project.name},INTERFACE_INCLUDE_DIRECTORIES>)
 """)
@@ -174,7 +174,7 @@ set_target_properties({project_name} PROPERTIES OUTPUT_NAME {project.name})
             for cmake_dep_context in cmake_dep_context_list:
                 cmake_dep_context : CMakeContext = cmake_dep_context
                 f.write(f"""\n# Add {cmake_dep_context.project.name} dependency 
-add_subdirectory("{cmake_dep_context.cmakelists_directory.resolve().as_posix()}")
+add_subdirectory("{cmake_dep_context.cmakelists_directory.resolve().as_posix()} {context.cmakelists_directory.resolve().as_posix()}")
 target_link_libraries({project_name} PRIVATE {cmake_dep_context.project.name})
 target_include_directories({project_name} PRIVATE $<TARGET_PROPERTY:{cmake_dep_context.project.name},INTERFACE_INCLUDE_DIRECTORIES>)
 """)
@@ -223,7 +223,7 @@ set_target_properties({project_name} PROPERTIES OUTPUT_NAME {project.name})
             for cmake_dep_context in cmake_dep_context_list:
                 cmake_dep_context : CMakeContext = cmake_dep_context
                 f.write(f"""\n# Add {cmake_dep_context.project.name} dependency 
-add_subdirectory("{cmake_dep_context.cmakelists_directory.resolve().as_posix()}")
+add_subdirectory("{cmake_dep_context.cmakelists_directory.resolve().as_posix()} {context.cmakelists_directory.resolve().as_posix()}")
 target_link_libraries({project_name} PRIVATE {cmake_dep_context.project.name})
 target_include_directories({project_name} PRIVATE $<TARGET_PROPERTY:{cmake_dep_context.project.name},INTERFACE_INCLUDE_DIRECTORIES>)
 """)

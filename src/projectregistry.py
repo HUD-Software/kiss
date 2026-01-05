@@ -3,10 +3,9 @@
 # A Project is linked with it's file, and a file can contains multiple project
 # To find a specific project you must provide a file to differenciate a project A that is in multiple file
 from pathlib import Path
-from typing import TypeAlias
 import console
 from project import Project
-from yaml_project import YamlDependency, YamlFile, YamlProject
+from yaml_project import YamlFile, YamlProject
 
 class ProjectRegistry:
     def __init__(self):
@@ -39,36 +38,31 @@ class ProjectRegistry:
     def is_file_loaded(self, filepath:Path) -> bool:
         return filepath in self.projects_
     
-    def register_all_project_in_directory(self, directory: Path, load_dependencies : bool, recursive: bool ):
+    def load_and_register_all_project_in_directory(self, directory: Path, load_dependencies : bool, recursive: bool ):
         # Load all yaml projects
         list_all_yaml_project = YamlFile.load_yaml_projects_in_directory(directory, load_dependencies, recursive).values()
             
-        # Create projects
-        all_projects: list[Project] = []
+        # Create all projects
+        all_projects: set[(YamlProject, Project)] = set()
         for yaml_project_list in list_all_yaml_project:
             for yaml_project in yaml_project_list:
-                all_projects.append(Project.from_yaml_project(yaml_project))
+                all_projects.add((yaml_project, Project.from_yaml_project(yaml_project)))
 
-
-        # Resolve dependencies
-        # project_by_key: dict[tuple[str, Path], Project] = {}
-        # for project in all_projects:
-        #     key = (project.name, project.directory)
-        #     project_by_key[key] = project
-
-        # for yaml_project_list in list_all_yaml_project:
-        #     for yaml_project in yaml_project_list:
-        #         for dep in yaml_project.dependencies:
-        #             dep_key = (dep.name, dep.directory)
-        #             dep_project = project_by_key.get(dep_key)
-        #             if not dep_project:
-        #                 raise RuntimeError(
-        #                     f"Dependency '{dep.name}' in '{dep.directory}' not found among loaded projects"
-        #                 )
-        #             console.print_success(f"{project.name} depends on {dep_project.name}")
-
-        for project in all_projects:
-            # Register projects
+        # Resolve dependencies match yaml dependency with corresponding projects
+        for yaml_project, project in all_projects:
+            for yaml_dep in yaml_project.dependencies:
+                resolved = False
+                for yaml_project_dep, project_dep in all_projects:
+                    if yaml_project_dep.match_dependency(yaml_dep):
+                        project.dependencies.append(project_dep)
+                        resolved = True
+                        break
+                if not resolved:
+                    console.print_error(f"Failed to find project that match the {yaml_dep.type} dependency '{yaml_dep.name}' for the project '{yaml_project.name}' in file {yaml_project.file}")
+                    exit(1)
+                    
+        # Register projects
+        for _, project in all_projects:
             self.register_project(project)
         
     def projects_in_directory(self, directory: Path) -> list[Project]:

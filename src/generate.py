@@ -33,7 +33,7 @@ class GenerateContext(Context):
     @classmethod
     def from_cli_parser(cls, cli_parser: cli.KissParser) -> Self:
         #### Find the project to generate
-        ProjectRegistry.register_all_project_in_directory(directory=cli_parser.directory, load_dependencies=True, recursive=False)
+        ProjectRegistry.load_and_register_all_project_in_directory(directory=cli_parser.directory, load_dependencies=True, recursive=False)
         project_to_generate = None
         projects_in_directory = ProjectRegistry.projects_in_directory(directory=cli_parser.directory)
         if len(projects_in_directory) == 0:

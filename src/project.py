@@ -9,10 +9,10 @@ from yaml_project import YamlBinProject, YamlDependency, YamlDynProject, YamlLib
 
 # Enumeration of the project type that is supported
 class ProjectType(str, Enum):
-    bin = "bin"
-    lib = "lib"
-    dyn = "dyn"
-    workspace = "workspace"
+    bin = YamlProjectType.bin
+    lib = YamlProjectType.lib
+    dyn = YamlProjectType.dyn
+    workspace = YamlProjectType.workspace
     
     def __str__(self):
         return self.name
@@ -30,14 +30,29 @@ class Project:
     # - A Description that describe the project
     # - Version of the project
     # - List of dependencie
-    def __init__(self, file: Path, directory: Path, name: str, description :str, version: Version):
+    def __init__(self, type: ProjectType, file: Path, directory: Path, name: str, description :str, version: Version):
+        self._type = type
         self._file = file
         self._directory = directory
         self._name = name
         self._description = description
         self._version = version
         self._dependencies: list[Project]= []
-     
+
+    def __hash__(self):
+        return hash((self._type, self._name, self._file))
+
+    def __eq__(self, other):
+        if not isinstance(other, YamlProject):
+            return False
+        return (self._type == other.type and
+                self._name == other.name and
+                self._file == other.file)
+    # The type of the project
+    @property
+    def type(self) -> YamlProjectType:
+        return self._type
+    
     # The file where the project is described
     @property
     def file(self):
@@ -96,7 +111,7 @@ class BinProject(Project):
     # - List of source file to compile
     # - List of dependencies
     def __init__(self, file: Path, directory: Path,name: str, description :str, version: Version, sources: list[Path] = []):
-        super().__init__(file, directory, name, description, version)
+        super().__init__(ProjectType.bin, file, directory, name, description, version)
         self._sources = sources
 
     # List of sources to compile
@@ -138,7 +153,7 @@ class LibProject(Project):
     # - List of interface directory used to interface with the library
     # - List of dependencies
     def __init__(self, file: Path, directory: Path,name: str, description :str, version: Version, sources: list[Path] = [], interface_directories: list[Path] = []):
-        super().__init__(file, directory, name, description, version)
+        super().__init__(ProjectType.lib,  file, directory, name, description, version)
         self._sources = sources
         self._interface_directories = interface_directories
 
@@ -187,7 +202,7 @@ class DynProject(Project):
     # - List of interface directory used to interface with the library
     # - List of dependencies
     def __init__(self, file: Path, directory: Path,name: str, description :str, version: Version, sources: list[Path] = [], interface_directories: list[Path] = []):
-        super().__init__(file, directory, name, description, version)
+        super().__init__(ProjectType.dyn, file, directory, name, description, version)
         self._sources = sources
         self._interface_directories = interface_directories
     

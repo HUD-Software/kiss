@@ -82,87 +82,156 @@ class GeneratorCMake(BaseGenerator):
         match cmake_context.project:
             case BinProject() as project:
                 cmakefile = self._generateBinCMakeLists(cmake_context, project)
-                console.print_success(f"CMake {cmakefile} generated for {project.name}")
             case LibProject() as project:
                 cmakefile = self._generateLibCMakeLists(cmake_context, project)
-                console.print_success(f"CMake {cmakefile} generated for {project.name}")
             case DynProject() as project:
                 cmakefile = self._generateDynCMakeLists(cmake_context, project)
-                console.print_success(f"CMake {cmakefile} generated for {project.name}")
+        console.print_success(f"CMake {cmakefile} generated for {project.name}")
 
 
     def _generateBinCMakeLists(self, context:CMakeContext, project: BinProject) -> Path:
         os.makedirs(context.cmakelists_directory, exist_ok=True)
-        # Generate CMakeLists.txt
-        normalized_src = self._resolve_sources(context, project.sources)
-        src_str = "\n".join(normalized_src)
         project_name = project.name
         cmakefile = context.cmakelists_directory / "CMakeLists.txt"
-        with open(cmakefile, "w", encoding="utf-8") as f:
-            f.write(
-f"""cmake_minimum_required(VERSION 3.18)
 
-project(\"{project.name}\" LANGUAGES CXX )
-
-add_executable({project_name}
-{src_str}
-)
-set_target_properties({project_name} PROPERTIES OUTPUT_NAME \"{project.name}\")
-""")
-
+        # Create context for each dependency
+        cmake_dep_context_list = []
         for dependency in project.dependencies:
-            context = CMakeContext(project_directory=dependency.directory, platform_target=context.platform_target, project=dependency.project)
-            self._generateProject(cmake_context=context)
+            cmake_dep_context_list.append(CMakeContext(project_directory=context.project_directory, platform_target=context.platform_target, project=dependency))
+
+        # Write the CMakeLists.txt file
+        with open(cmakefile, "w", encoding="utf-8") as f:
+            # Write CMake common
+            f.write("cmake_minimum_required(VERSION 3.18)\n")
+            
+            # Write project description
+            f.write(f"""                    
+# {project.name} description
+project({project.name} LANGUAGES CXX )
+set_target_properties({project_name} PROPERTIES OUTPUT_NAME {project.name})
+""")
+            # Write project sources
+            if project.sources:
+                normalized_src = self._resolve_sources(context, project.sources)
+                src_str:str =""
+                for src in normalized_src:
+                    src_str += f"\n\t{src}"
+                f.write(f"add_executable({project_name} {src_str})\n")
+
+            # Write dependencies
+            for cmake_dep_context in cmake_dep_context_list:
+                cmake_dep_context : CMakeContext = cmake_dep_context
+                f.write(f"""\n# Add {cmake_dep_context.project.name} dependency 
+add_subdirectory("{cmake_dep_context.cmakelists_directory.resolve().as_posix()}")
+target_link_libraries({project_name} PRIVATE {cmake_dep_context.project.name})
+target_include_directories({project_name} PRIVATE $<TARGET_PROPERTY:{cmake_dep_context.project.name},INTERFACE_INCLUDE_DIRECTORIES>)
+""")
+                
+        # Generate all dependency projects
+        for cmake_dep_context in cmake_dep_context_list:
+            self._generateProject(cmake_context=cmake_dep_context)
            
         return cmakefile
 
             
     def _generateLibCMakeLists(self, context:CMakeContext, project: LibProject):
         os.makedirs(context.cmakelists_directory, exist_ok=True)
-        # Generate CMakeLists.txt
-        normalized_src = self._resolve_sources(context, project.sources)
-        src_str = "\n".join(normalized_src)
-        normalized_interface = self._resolve_sources(context, project.interface_directories)
-        interface_str = "\n".join(normalized_interface)
         project_name = project.name
         cmakefile = context.cmakelists_directory / "CMakeLists.txt"
+
+        # Create context for each dependency
+        cmake_dep_context_list = []
+        for dependency in project.dependencies:
+            cmake_dep_context_list.append(CMakeContext(project_directory=context.project_directory, platform_target=context.platform_target, project=dependency))
+    
+        # Write the CMakeLists.txt file
         with open(cmakefile, "w", encoding="utf-8") as f:
-            f.write(
-f"""cmake_minimum_required(VERSION 3.18)
+            # Write CMake common
+            f.write("cmake_minimum_required(VERSION 3.18)\n")
 
-project(\"{project.name}\" LANGUAGES CXX )
-
-add_library({project_name} STATIC 
-{src_str}
-)
-target_include_directories({project_name} PUBLIC {interface_str})
-
-set_target_properties({project_name} PROPERTIES OUTPUT_NAME \"{project.name}\")
+            # Write project description
+            f.write(f"""                    
+# {project.name} description
+project({project.name} LANGUAGES CXX )
+set_target_properties({project_name} PROPERTIES OUTPUT_NAME {project.name})
 """)
+            # Write project sources
+            if project.sources:
+                normalized_src = self._resolve_sources(context, project.sources)
+                src_str:str =""
+                for src in normalized_src:
+                    src_str += f"\n\t{src}"
+                f.write(f"add_library({project_name} STATIC {src_str})\n")
+
+            # Write project interfaces
+            if project.interface_directories:
+                interface_str:str =""
+                for interface in project.interface_directories:
+                    interface_str += f"\n\t$<BUILD_INTERFACE:{str(interface.resolve().as_posix())}"
+                f.write(f"target_include_directories({project_name} PUBLIC {interface_str})\n")
+
+            # Write dependencies
+            for cmake_dep_context in cmake_dep_context_list:
+                cmake_dep_context : CMakeContext = cmake_dep_context
+                f.write(f"""\n# Add {cmake_dep_context.project.name} dependency 
+add_subdirectory("{cmake_dep_context.cmakelists_directory.resolve().as_posix()}")
+target_link_libraries({project_name} PRIVATE {cmake_dep_context.project.name})
+target_include_directories({project_name} PRIVATE $<TARGET_PROPERTY:{cmake_dep_context.project.name},INTERFACE_INCLUDE_DIRECTORIES>)
+""")
+        # Generate all dependency projects
+        for cmake_dep_context in cmake_dep_context_list:
+            self._generateProject(cmake_context=cmake_dep_context)
+       
         return cmakefile
     
     def _generateDynCMakeLists(self, context:CMakeContext, project: LibProject):
         os.makedirs(context.cmakelists_directory, exist_ok=True)
-        # Generate CMakeLists.txt
-        normalized_src = self._resolve_sources(context, project.sources)
-        src_str = "\n".join(normalized_src)
-        normalized_interface = self._resolve_sources(context, project.interface_directories)
-        interface_str = "\n".join(normalized_interface)
         project_name = project.name
         cmakefile = context.cmakelists_directory / "CMakeLists.txt"
+        # Create context for each dependency
+        cmake_dep_context_list = []
+        for dependency in project.dependencies:
+            cmake_dep_context_list.append(CMakeContext(project_directory=context.project_directory, platform_target=context.platform_target, project=dependency))
+    
+        # Write the CMakeLists.txt file
         with open(cmakefile, "w", encoding="utf-8") as f:
-            f.write(
-f"""cmake_minimum_required(VERSION 3.18)
+            # Write CMake common
+            f.write("cmake_minimum_required(VERSION 3.18)\n")
 
-project(\"{project.name}\" LANGUAGES CXX )
-
-add_library({project_name} SHARED 
-{src_str}
-)
-target_include_directories({project_name} PUBLIC {interface_str})
-
-set_target_properties({project_name} PROPERTIES OUTPUT_NAME \"{project.name}\")
+            # Write project description
+            f.write(f"""                    
+# {project.name} description
+project({project.name} LANGUAGES CXX )
+set_target_properties({project_name} PROPERTIES OUTPUT_NAME {project.name})
 """)
+            # Write project sources
+            if project.sources:
+                normalized_src = self._resolve_sources(context, project.sources)
+                src_str:str =""
+                for src in normalized_src:
+                    src_str += f"\n\t{src}"
+                f.write(f"add_library({project_name} SHARED {src_str})\n")
+
+            # Write project interfaces
+            if project.interface_directories:
+                interface_str:str =""
+                for interface in project.interface_directories:
+                    interface_str += f"\n\t$<BUILD_INTERFACE:{str(interface.resolve().as_posix())}"
+                f.write(f"target_include_directories({project_name} PUBLIC {interface_str})\n")
+
+            # Write dependencies
+            for cmake_dep_context in cmake_dep_context_list:
+                cmake_dep_context : CMakeContext = cmake_dep_context
+                f.write(f"""\n# Add {cmake_dep_context.project.name} dependency 
+add_subdirectory("{cmake_dep_context.cmakelists_directory.resolve().as_posix()}")
+target_link_libraries({project_name} PRIVATE {cmake_dep_context.project.name})
+target_include_directories({project_name} PRIVATE $<TARGET_PROPERTY:{cmake_dep_context.project.name},INTERFACE_INCLUDE_DIRECTORIES>)
+""")
+        # Generate all dependency projects
+        for cmake_dep_context in cmake_dep_context_list:
+            self._generateProject(cmake_context=cmake_dep_context)
+       
+
         return cmakefile
 
         # #if self.coverage:

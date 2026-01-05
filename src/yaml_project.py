@@ -42,6 +42,8 @@ class YamlDependency:
     def name(self) -> str:
         return self._name
     
+    
+    
 # A YamlPathDependency represent a dependency that is in a directory 
 class YamlPathDependency(YamlDependency):
 
@@ -54,7 +56,7 @@ class YamlPathDependency(YamlDependency):
     @property 
     def directory(self) -> Path:
         return self._directory
-    
+   
 
 # A YamlGitDependency represent a dependency that is in a git repository with a branch
 class YamlGitDependency(YamlDependency):
@@ -91,14 +93,24 @@ _VALID_YAML_ROOT = [str(YamlProjectType.bin), str(YamlProjectType.dyn), str(Yaml
 
 class YamlProject:
     def __init__(self, type: YamlProjectType, file: Path, directory: Path, name: str, description :str, version: semver.Version, dependencies :list[YamlDependency]=[]):
+        self._type = type
         self._file = file
         self._directory = directory
         self._name = name
         self._description = description
         self._version = version
-        self._type = type
         self._dependencies = dependencies
 
+    def __hash__(self):
+        return hash((self._type, self._name, self._file))
+
+    def __eq__(self, other):
+        if not isinstance(other, YamlProject):
+            return False
+        return (self._type == other.type and
+                self._name == other.name and
+                self._file == other.file)
+    
     @property
     def type(self) -> YamlProjectType:
         return self._type
@@ -288,33 +300,33 @@ class YamlFile:
             return False
     
     # load projects from a yaml file
-    def load_yaml_projects(self) -> list[YamlProject]:
+    def _load_yaml_projects(self) -> list[YamlProject]:
         if not self.yaml:
             return []
 
         projects = list[YamlProject]()
 
-        for key, value in self.yaml.items():
-            if key not in _VALID_YAML_ROOT:
-                console.print_error (f"⚠️  Error: Invalid project type '{key}' in {self.file}")
+        for project_type_key, yaml_project in self.yaml.items():
+            if project_type_key not in _VALID_YAML_ROOT:
+                console.print_error (f"⚠️  Error: Invalid project type '{project_type_key}' in {self.file}")
                 exit(1)
 
-            for item in value:
+            for item in yaml_project:
                 if isinstance(item, dict):
                     # Read 'name'
                     name = item.get("name")
                     if not name:
-                        console.print_error(f"⚠️  Error: Project name is missing in {self.file} under '{key}'")
+                        console.print_error(f"⚠️  Error: Project name is missing in {self.file} under '{project_type_key}'")
                         exit(1)
                     # Read 'version' as semver version
                     version = item.get("version")
                     if not version:
-                        console.print_error(f"⚠️  Error: Project name is missing in {self.file} under '{key}'")
+                        console.print_error(f"⚠️  Error: Project name is missing in {self.file} under '{project_type_key}'")
                         exit(1)
                     try:
                         version = semver.VersionInfo.parse(version)
                     except Exception as e:
-                        console.print_error(f"⚠️  Error: Invalid version format in {self.file} under '{key}': {e}")
+                        console.print_error(f"⚠️  Error: Invalid version format in {self.file} under '{project_type_key}': {e}")
                         exit(1)
 
                     # Read 'description'
@@ -330,7 +342,7 @@ class YamlFile:
                         # Read dependency 'name'
                         dep_name = dependency.get("name")
                         if not dep_name:
-                            console.print_error(f"⚠️  Error: Project name is missing in {self.file} under '{key}'")
+                            console.print_error(f"⚠️  Error: Project name is missing in {self.file} under '{project_type_key}'")
                             exit(1)
                         dep_path = dependency.get("path")
                         dep_git = dependency.get("git")
@@ -338,7 +350,7 @@ class YamlFile:
                         # Path and git are exclusive
                         if dep_path and dep_git:
                             console.print_error(
-                                f"⚠️  Error: Dependency '{dep_name}' cannot define both 'path' and 'git' in {self.file} under '{key}'"
+                                f"⚠️  Error: Dependency '{dep_name}' cannot define both 'path' and 'git' in {self.file} under '{project_type_key}'"
                             )
                             exit(1)
                         
@@ -352,20 +364,51 @@ class YamlFile:
                             dep_path = Path(dep_path)
                             dependencies.append(YamlPathDependency(dep_name, dep_path if dep_path.is_absolute() else (self.file.parent / dep_path).resolve(strict=False)))
                         else:
-                            dependencies.append(YamlPathDependency(dep_name, self.file.parent / Path(dep_name)))
+                            dep_path = Path(dep_name)
+                            dependencies.append(YamlPathDependency(dep_name, (self.file.parent / dep_path).resolve(strict=False)))
         
                     # Create project
-                    match key:
+                    match project_type_key:
                         case YamlProjectType.bin:
-                            sources = [self.file.parent / src for src in item.get("sources", [])]
+                            sources = []
+                            for src in item.get("sources", []):
+                                src_path = Path(src)
+                                if src_path.is_absolute():
+                                    sources.append(src_path)
+                                else:
+                                    sources.append(project_directory / src_path)
                             projects.append(YamlBinProject(file=self.file, directory=project_directory, name=name, description=description, sources=sources, version=version, dependencies=dependencies))
                         case YamlProjectType.lib:
-                            sources = [self.file.parent / src for src in item.get("sources", [])]
-                            interface_dirs = [self.file.parent / src for src in item.get("interface_directories", [])]
+                            sources = []
+                            for src in item.get("sources", []):
+                                src_path = Path(src)
+                                if src_path.is_absolute():
+                                    sources.append(src_path)
+                                else:
+                                    sources.append(project_directory / src_path)
+                            interface_dirs = []
+                            for dir in item.get("interface_directories", []):
+                                dir_path = Path(dir)
+                                if dir_path.is_absolute():
+                                    interface_dirs.append(dir_path)
+                                else:
+                                    interface_dirs.append(project_directory / dir_path)
                             projects.append(YamlLibProject(file=self.file,  directory=project_directory, name=name, description=description, sources=sources, interface_directories=interface_dirs, version=version, dependencies=dependencies))
                         case YamlProjectType.dyn:
-                            sources = [self.file.parent / src for src in item.get("sources", [])]
-                            interface_dirs = [self.file.parent / src for src in item.get("interface_directories", [])]
+                            sources = []
+                            for src in item.get("sources", []):
+                                src_path = Path(src)
+                                if src_path.is_absolute():
+                                    sources.append(src_path)
+                                else:
+                                    sources.append(project_directory / src_path)
+                            interface_dirs = []
+                            for dir in item.get("interface_directories", []):
+                                dir_path = Path(dir)
+                                if dir_path.is_absolute():
+                                    interface_dirs.append(dir_path)
+                                else:
+                                    interface_dirs.append(project_directory / dir_path)
                             projects.append(YamlDynProject(file=self.file,  directory=project_directory, name=name, description=description, sources=sources, interface_directories=interface_dirs, version=version, dependencies=dependencies))
 
         return projects
@@ -395,16 +438,19 @@ class YamlFile:
                                                     f"1. The file '{PROJECT_FILE_NAME}' is missing in:\n" + 
                                                     f"   {path_dependency.directory}\n\n" +
                                                     f"2. The dependency '{path_dependency.name}' is not declared in:\n" + 
-                                                    f"   {yaml_project.file}\n\n")
+                                                    f"   {yaml_project.file}\n" +
+                                                    f"   or the 'path' attributs is not set.\n\n")
+  
                                 console.print_tips( f"Tips:\n" + 
                                                     f"Each dependency must:\n"+
                                                     f"  - Have a '{PROJECT_FILE_NAME}' file in its root directory of the dependency, or\n" + 
-                                                    f"  - Be declared in the '{PROJECT_FILE_NAME}' of the project that depends on it.")
+                                                    f"  - Be declared in the '{PROJECT_FILE_NAME}' of the project that depends on it. note that 'path' is required in this case.")
                                 exit(1)
                             else:
                                 # Don't reload the file if already loaded
                                 if file_in_directory in all_yaml_projects:
                                     continue
+                                
                                 # Load the yaml
                                 yaml = YamlFile(file_in_directory)
                                 if not yaml.load_yaml():
@@ -412,8 +458,8 @@ class YamlFile:
                                     exit(1)
                                 
                                 # Load yaml projects and save them in the dependency set
-                                for yaml_project in yaml.load_yaml_projects():
-                                    yaml_dependency_projects.setdefault(file_in_directory, []).append(yaml_project)
+                                for yaml_project_deps in yaml._load_yaml_projects():
+                                    yaml_dependency_projects.setdefault(file_in_directory, []).append(yaml_project_deps)
                                     
 
                     case YamlDependencyType.git:
@@ -422,63 +468,6 @@ class YamlFile:
                         pass
         return yaml_dependency_projects
 
-    def topological_sort(self, all_projects : dict[Path, list[YamlProject]]) -> list[YamlProject]:
-        all_projects: list[YamlProject] = [ project
-                                            for projects in all_projects
-                                            for project in projects
-                                            ]
-         
-        def resolve_dependency(dep: YamlDependency) -> YamlProject:
-            dep_key = (dep.name, dep.directory)
-            if dep_key not in projects_by_key:
-                raise RuntimeError(
-                    f"Dependency '{dep.name}' in '{dep.directory}' not found among loaded projects"
-                )
-            return projects_by_key[dep_key]
-        
-        # Build dependencies graph
-        from collections import defaultdict
-        ProjectKey: TypeAlias = tuple[str, Path]
-
-        graph: dict[ProjectKey, set[ProjectKey]] = defaultdict(set)
-        projects_by_key: dict[ProjectKey, YamlProject] = {}
-
-        for project in all_projects:
-            key: ProjectKey = (project.name, project.directory)
-            projects_by_key[key] = project
-
-        for project in all_projects:
-            project_key: ProjectKey = (project.name, project.directory)
-            for dep in project.dependencies:
-                dep_project = resolve_dependency(dep)
-                dep_key: ProjectKey = (dep_project.name, dep_project.directory)
-                graph[project_key].add(dep_key)
-
-        sorted_projects: list[ProjectKey] = []
-        visited: set[ProjectKey] = set()
-        visiting: set[ProjectKey] = set() 
-        def visit(node: ProjectKey):
-            if node in visited:
-                return
-
-            if node in visiting:
-                raise RuntimeError(
-                    f"Cyclic dependency detected involving project "
-                    f"'{node[0]}' in directory '{node[1]}'"
-                )
-
-            visiting.add(node)
-
-            for dep in graph.get(node, ()):
-                visit(dep)
-
-            visiting.remove(node)
-            visited.add(node)
-            sorted_projects.append(projects_by_key[node])
-        for key in projects_by_key:
-            visit(key)
-
-        return sorted_projects
     # Load YamlProject in a directory.
     # When load_dependencies is True, also load YamlProject of dependencies
     # When recursive is true, also load YamlProject in child directories 
@@ -501,7 +490,7 @@ class YamlFile:
                 exit(1)
 
             # Load yaml projects
-            yaml_projects: list[YamlProject] = yaml.load_yaml_projects()
+            yaml_projects: list[YamlProject] = yaml._load_yaml_projects()
             for yaml_project in yaml_projects:
                 all_yaml_projects.setdefault(file, []).append(yaml_project)
 
@@ -509,7 +498,6 @@ class YamlFile:
             if load_dependencies:
                 # Load dependencies of all projects in the file
                 yaml_dependency_projects: dict[Path, list[YamlProject]] = YamlFile._load_yaml_dependency(all_yaml_projects, yaml_projects)
-
 
                 while yaml_dependency_projects:
                     # Add all yaml dependencies to the set

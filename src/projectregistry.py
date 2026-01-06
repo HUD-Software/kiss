@@ -1,4 +1,3 @@
-
 # ProjectRegistry represent all instanciation of project
 # A Project is linked with it's file, and a file can contains multiple project
 # To find a specific project you must provide a file to differenciate a project A that is in multiple file

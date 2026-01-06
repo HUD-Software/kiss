@@ -86,7 +86,7 @@
             //     "lib",
             //     "my_lib2",
             //     "--description",
-            //     "This is my_lib",
+            //     "This is my_lib2",
             // ],
             // "args": [
             //     "-d",
@@ -94,21 +94,23 @@
             //     "add",
             //     "my_lib2",
             // ],
+            // "args": [
+            //     "-d",
+            //     "tests/my_bin",
+            //     "generate",
+            //     "-p",
+            //     "my_bin"
+            // ]
             "args": [
                 "-d",
                 "tests/my_bin",
-                "generate",
+                "build",
                 "-p",
                 "my_bin"
-            ]
-            // "args": [
-            //     "-d",
-            //     "tests",
-            //     "build",
-            // ],
+            ],
             // "args": [    
             //     "-d",
-            //     "tests",
+            //     "tests/my_bin",
             //     "run"
             // ]
             // "args": [

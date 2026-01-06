@@ -2,6 +2,7 @@ import argparse
 from pathlib import Path
 import re
 import sys
+from builder import BuilderRegistry
 import console
 from generator import GeneratorRegistry
 from platform_target import PlatformTarget
@@ -91,7 +92,7 @@ def _add_generate_command(parser : argparse.ArgumentParser):
     generate_parser.add_argument("-p", "--project", help="name of the project.py to generate", dest="project_name", required=False, type=valid_project_name)
     generate_parser.add_argument("-t", "--target", help="specify the target platform", dest="platform_target", default=PlatformTarget.default_target(), required=False)
 
-    # Create the help string that contains list of all registered generators       
+    # Create the help string that contains list of all registered generators  
     generator_help_str = ""
     for generator in GeneratorRegistry.generators.values():
         if generator_help_str:
@@ -105,6 +106,29 @@ def _add_generate_command(parser : argparse.ArgumentParser):
     for generator in GeneratorRegistry.generators.values():
         generator_parser = generator_subparser.add_parser(generator.name, description=generator.description)
         generator.add_cli_argument_to_parser(parser=generator_parser)
+
+def _add_build_command(parser : argparse.ArgumentParser):
+    from cmake.builder_cmake import BuilderCMake
+    BuilderRegistry.register(BuilderCMake())
+    
+    build_parser = parser.add_parser("build", description="build files used to build the project")
+    build_parser.add_argument("-p", "--project", help="name of the project.py to build", dest="project_name", required=False, type=valid_project_name)
+    build_parser.add_argument("-t", "--target", help="specify the target platform", dest="platform_target", default=PlatformTarget.default_target(), required=False)
+
+    # Create the help string that contains list of all registered builders
+    builder_help_str = ""
+    for builder in BuilderRegistry.builders.values():
+        if builder_help_str:
+            builder_help_str += "\n"
+        builder_help_str += f"'{builder.name}' {builder.description}"
+    builder_subparser = build_parser.add_subparsers(title="choose one of the following builder",
+                                                            dest="builder",
+                                                            help=builder_help_str)
+    
+    # Add all generator parser
+    for builder in BuilderRegistry.builders.values():
+        builder_parser = builder_subparser.add_parser(builder.name, description=builder.description)
+        builder.add_cli_argument_to_parser(parser=builder_parser)
 
 class UserParams:
     def from_args():
@@ -145,7 +169,7 @@ class UserParams:
         _add_new_command(subparsers)
         _add_add_command(subparsers)    
         _add_generate_command(subparsers)
-
+        _add_build_command(subparsers)
         # builder_parser = subparsers.add_parser("build", description="builder used to build the project")
         # builder_parser.add_argument("-p", "--project", help="name of the project.py to generate", dest="project_name", required=False, type=Path)
         # builder_parser.add_argument("-t", "--target", help="specify the target platform", dest="platform_target", default=PlatformTarget.default_target(), required=False)

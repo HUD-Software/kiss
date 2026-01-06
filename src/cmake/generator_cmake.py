@@ -7,7 +7,6 @@ import console
 from generate import GenerateContext
 from generator import BaseGenerator
 from project import  BinProject, LibProject, DynProject
-from projectregistry import ProjectRegistry
 
 class GeneratorCMake(BaseGenerator):
     @classmethod
@@ -108,7 +107,6 @@ class GeneratorCMake(BaseGenerator):
             f.write(f"""                    
 # {project.name} description
 project({project.name} LANGUAGES CXX )
-set_target_properties({project_name} PROPERTIES OUTPUT_NAME {project.name})
 """)
             # Write project sources
             if project.sources:
@@ -118,11 +116,17 @@ set_target_properties({project_name} PROPERTIES OUTPUT_NAME {project.name})
                     src_str += f"\n\t{src}"
                 f.write(f"add_executable({project_name} {src_str})\n")
 
+            # Write output name
+            f.write(f"""                    
+# {project.name} output name
+set_target_properties({project_name} PROPERTIES OUTPUT_NAME {project.name})
+""")
+            
             # Write dependencies
             for cmake_dep_context in cmake_dep_context_list:
                 cmake_dep_context : CMakeContext = cmake_dep_context
                 f.write(f"""\n# Add {cmake_dep_context.project.name} dependency 
-add_subdirectory("{cmake_dep_context.cmakelists_directory.resolve().as_posix()} {context.cmakelists_directory.resolve().as_posix()}")
+add_subdirectory("{cmake_dep_context.cmakelists_directory.resolve().as_posix()}" "{cmake_dep_context.cmakelists_directory.resolve().as_posix()}")
 target_link_libraries({project_name} PRIVATE {cmake_dep_context.project.name})
 target_include_directories({project_name} PRIVATE $<TARGET_PROPERTY:{cmake_dep_context.project.name},INTERFACE_INCLUDE_DIRECTORIES>)
 """)
@@ -153,7 +157,6 @@ target_include_directories({project_name} PRIVATE $<TARGET_PROPERTY:{cmake_dep_c
             f.write(f"""                    
 # {project.name} description
 project({project.name} LANGUAGES CXX )
-set_target_properties({project_name} PROPERTIES OUTPUT_NAME {project.name})
 """)
             # Write project sources
             if project.sources:
@@ -170,11 +173,16 @@ set_target_properties({project_name} PROPERTIES OUTPUT_NAME {project.name})
                     interface_str += f"\n\t$<BUILD_INTERFACE:{str(interface.resolve().as_posix())}"
                 f.write(f"target_include_directories({project_name} PUBLIC {interface_str})\n")
 
+            # Write output name
+            f.write(f"""                    
+# {project.name} output name
+set_target_properties({project_name} PROPERTIES OUTPUT_NAME {project.name})
+""")
             # Write dependencies
             for cmake_dep_context in cmake_dep_context_list:
                 cmake_dep_context : CMakeContext = cmake_dep_context
                 f.write(f"""\n# Add {cmake_dep_context.project.name} dependency 
-add_subdirectory("{cmake_dep_context.cmakelists_directory.resolve().as_posix()} {context.cmakelists_directory.resolve().as_posix()}")
+add_subdirectory("{cmake_dep_context.cmakelists_directory.resolve().as_posix()}" "{cmake_dep_context.cmakelists_directory.resolve().as_posix()}")
 target_link_libraries({project_name} PRIVATE {cmake_dep_context.project.name})
 target_include_directories({project_name} PRIVATE $<TARGET_PROPERTY:{cmake_dep_context.project.name},INTERFACE_INCLUDE_DIRECTORIES>)
 """)
@@ -219,11 +227,16 @@ set_target_properties({project_name} PROPERTIES OUTPUT_NAME {project.name})
                     interface_str += f"\n\t$<BUILD_INTERFACE:{str(interface.resolve().as_posix())}"
                 f.write(f"target_include_directories({project_name} PUBLIC {interface_str})\n")
 
+            # Write output name
+            f.write(f"""                    
+# {project.name} output name
+set_target_properties({project_name} PROPERTIES OUTPUT_NAME {project.name})
+""")
             # Write dependencies
             for cmake_dep_context in cmake_dep_context_list:
                 cmake_dep_context : CMakeContext = cmake_dep_context
                 f.write(f"""\n# Add {cmake_dep_context.project.name} dependency 
-add_subdirectory("{cmake_dep_context.cmakelists_directory.resolve().as_posix()} {context.cmakelists_directory.resolve().as_posix()}")
+add_subdirectory("{cmake_dep_context.cmakelists_directory.resolve().as_posix()}" "{cmake_dep_context.cmakelists_directory.resolve().as_posix()}")
 target_link_libraries({project_name} PRIVATE {cmake_dep_context.project.name})
 target_include_directories({project_name} PRIVATE $<TARGET_PROPERTY:{cmake_dep_context.project.name},INTERFACE_INCLUDE_DIRECTORIES>)
 """)
@@ -239,7 +252,9 @@ target_include_directories({project_name} PRIVATE $<TARGET_PROPERTY:{cmake_dep_c
         # coverage_cmake.generateSanitizerCMakeFile(directories)
 
     def generate_project(self, generate_context: GenerateContext):
-        context = CMakeContext(generate_context.directory, generate_context.platform_target, generate_context.project)
+        context = CMakeContext(project_directory=generate_context.directory, 
+                               platform_target=generate_context.platform_target, 
+                               project=generate_context.project)
         self._generateProject(cmake_context=context)
 
     def generate(self, generate_context: GenerateContext):

@@ -106,18 +106,18 @@ def get_windows_latest_toolset(compiler:Compiler) -> Optional[VSToolset] :
                                 cxx_compiler_path=compiler_path / "cl.exe",
                                 c_compiler_path=compiler_path / "cl.exe",
                                 major_version=latest_major_version,
-                                product_name=json_catalog['productName'],
-                                product_line_version=json_catalog['productLineVersion'],
-                                product_year=json_catalog['featureReleaseYear'])
+                                product_name=json_catalog.get('productName'),
+                                product_line_version=json_catalog.get('productLineVersion'),
+                                product_year=json_catalog.get('featureReleaseYear'))
         case Compiler.clang:
             compiler_path=json_installation_path / "VC\\Tools\\Llvm\\x64\\bin\\"
             return VSLLVMToolset(compiler=Compiler.clang,
                                     cxx_compiler_path=compiler_path / "clang-cl.exe",
                                     c_compiler_path=compiler_path / "clang-cl.exe",
                                     major_version=latest_major_version,
-                                    product_name=json_catalog['productName'],
-                                    product_line_version=json_catalog['productLineVersion'],
-                                    product_year=json_catalog['featureReleaseYear'],
+                                    product_name=json_catalog.get('productName'),
+                                    product_line_version=json_catalog.get('productLineVersion'),
+                                    product_year=json_catalog.get('featureReleaseYear'),
                                     llvm_tools=LLVMTools(path=compiler_path,
                                                         profdata=compiler_path / "llvm-profdata.exe"))
     return None

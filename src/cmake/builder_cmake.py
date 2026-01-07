@@ -50,7 +50,7 @@ class BuilderCMake(BaseBuilder):
         if toolset.major_version == 18:
             toolset.product_year = 2026
         
-        cmake_generator_name = f"{toolset.product_name} {toolset.product_line_version} {toolset.product_year}"
+        cmake_generator_name = f"{toolset.product_name} {toolset.product_year if toolset.product_year else toolset.major_version } {toolset.product_line_version}"
         args = ["--no-warn-unused-cli", "-S", context.cmakelists_directory, "-G", cmake_generator_name, "-T", "host=x64", "-A", "x64"]
         run_process("cmake", args, context.cmakelists_directory)
         

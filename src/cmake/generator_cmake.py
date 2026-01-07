@@ -85,7 +85,8 @@ class GeneratorCMake(BaseGenerator):
                 cmakefile = self._generateLibCMakeLists(cmake_context, project)
             case DynProject() as project:
                 cmakefile = self._generateDynCMakeLists(cmake_context, project)
-        console.print_success(f"CMake {cmakefile} generated for {project.name}")
+        
+        console.print_success(f" - {cmakefile.relative_to(cmake_context.project_directory)} generated for {project.name}")
 
 
     def _generateBinCMakeLists(self, context:CMakeContext, project: BinProject) -> Path:
@@ -210,7 +211,6 @@ target_include_directories({project_name} PRIVATE $<TARGET_PROPERTY:{cmake_dep_c
             f.write(f"""                    
 # {project.name} description
 project({project.name} LANGUAGES CXX )
-set_target_properties({project_name} PROPERTIES OUTPUT_NAME {project.name})
 """)
             # Write project sources
             if project.sources:
@@ -240,6 +240,7 @@ add_subdirectory("{cmake_dep_context.cmakelists_directory.resolve().as_posix()}"
 target_link_libraries({project_name} PRIVATE {cmake_dep_context.project.name})
 target_include_directories({project_name} PRIVATE $<TARGET_PROPERTY:{cmake_dep_context.project.name},INTERFACE_INCLUDE_DIRECTORIES>)
 """)
+                
         # Generate all dependency projects
         for cmake_dep_context in cmake_dep_context_list:
             self._generateProject(cmake_context=cmake_dep_context)
@@ -252,6 +253,7 @@ target_include_directories({project_name} PRIVATE $<TARGET_PROPERTY:{cmake_dep_c
         # coverage_cmake.generateSanitizerCMakeFile(directories)
 
     def generate_project(self, generate_context: GenerateContext):
+        console.print_step("Generate CMakeLists.txt...")
         context = CMakeContext(project_directory=generate_context.directory, 
                                platform_target=generate_context.platform_target, 
                                project=generate_context.project)

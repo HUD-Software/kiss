@@ -92,22 +92,24 @@
             //     "-d",
             //     "tests/my_bin",
             //     "add",
-            //     "my_lib2",
+            //     "my_lib",
+            //     "--path",
+            //     "../my_lib"
             // ],
-            // "args": [
-            //     "-d",
-            //     "tests/my_bin",
-            //     "generate",
-            //     "-p",
-            //     "my_bin"
-            // ]
             "args": [
                 "-d",
                 "tests/my_bin",
-                "build",
+                "generate",
                 "-p",
                 "my_bin"
-            ],
+            ]
+            // "args": [
+            //     "-d",
+            //     "tests/my_bin",
+            //     "build",
+            //     "-p",
+            //     "my_bin"
+            // ],
             // "args": [    
             //     "-d",
             //     "tests/my_bin",

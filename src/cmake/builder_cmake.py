@@ -46,13 +46,18 @@ class BuilderCMake(BaseBuilder):
                                project=build_context.project)
         
         console.print_step("CMake configure...")
+
+        # Get Visual studio CMake Generator
         toolset = get_windows_latest_toolset(self.compiler)
+        year = toolset.product_year
         if toolset.major_version == 18:
-            toolset.product_year = 2026
-        
-        cmake_generator_name = f"{toolset.product_name} {toolset.product_year if toolset.product_year else toolset.major_version } {toolset.product_line_version}"
+            year = 2026
+        if not year:
+            year = int(toolset.product_line_version)
+        cmake_generator_name = f"{toolset.product_name} {toolset.major_version} {year}"
         args = ["--no-warn-unused-cli", "-S", context.cmakelists_directory, "-G", cmake_generator_name, "-T", "host=x64", "-A", "x64"]
-        run_process("cmake", args, context.cmakelists_directory)
+        if not run_process("cmake", args, context.cmakelists_directory) == 0:
+            exit(1)
         
         # Build
         console.print_step("CMake build...")

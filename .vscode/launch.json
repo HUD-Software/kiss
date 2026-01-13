@@ -8,7 +8,7 @@
             "program": "${workspaceFolder}/src/kiss.py",
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}",
-            // -> List everything
+            //   -> List everything
             // "args": [
             //     "-d",
             //     "tests",

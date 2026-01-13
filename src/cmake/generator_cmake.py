@@ -1,14 +1,15 @@
 
-from collections import deque
+from collections import defaultdict, deque
 import os
 from pathlib import Path
 from typing import Optional
 from cli import KissParser
 from cmake.cmake_context import CMakeContext
+from cmake.fingerprint import Fingerprint
 import console
 from generate import GenerateContext
 from generator import BaseGenerator
-from project import  BinProject, LibProject, DynProject
+from project import  BinProject, LibProject, DynProject, Project
 
 class GeneratorCMake(BaseGenerator):
     @classmethod
@@ -82,22 +83,69 @@ class GeneratorCMake(BaseGenerator):
 
         return list(all_files)
     
-    # Create a tree of CMakeContext to generate
-    @staticmethod
-    def _listProjectToGenerate(cmake_context :CMakeContext) -> list[CMakeContext]:
-        for dependency_project in cmake_context.project.dependencies:
-            for ctx in GeneratorCMake._listProjectToGenerate(CMakeContext(project_directory=cmake_context.project_directory, platform_target=cmake_context.platform_target, project=dependency_project, fingerprint=cmake_context.fingerprint)):
-                cmake_context.dependencies_context.append(ctx)
+    # # Create a tree of CMakeContext to generate
+    # @staticmethod
+    # def _topologicalSortProjects(project:Project) -> list[Project]:
+    #     """
+    #     Kahn Algorithm
+    #     graph : dictionnaire {u: [v1, v2, ...]}
+    #             représente les arêtes u -> v
 
-        # If the current project if not fresh, we regenerate it
-        # If one of the dependency is not fresh, we regenerate the dependency AND the current project
-        # Else we generate nothing
-        to_generate_list :list[CMakeContext] = []
-        if not cmake_context.fingerprint.is_fresh_file(cmake_context.cmakefile):
-            to_generate_list.append(cmake_context)
-        elif cmake_context.dependencies_context:
-            to_generate_list.append(cmake_context)
-        return to_generate_list
+    #     retourne :
+    #     - liste des sommets dans un ordre topologique
+    #     - lève une exception si le graphe contient un cycle
+    #     """
+    #     # 1. Collecte du sous-graphe (DFS)
+    #     all_projects: set[Project] = set()
+    #     visiting: set[Project] = set()
+
+    #     def collect(project :Project, parent_project: Project):
+    #         # Detect cyclic dependency
+    #         if project in visiting:
+    #             console.print_error(f"⚠️ Error: Cyclic dependency between '{project.name}' and '{parent_project.name}'")
+    #             exit(1)
+    #         visiting.add(project)
+
+    #         # Visit the project only once
+    #         if project in all_projects:
+    #             return
+
+    #         # Visit dependency
+    #         for dep_project in project.dependencies:
+    #             collect(dep_project, project)
+                
+    #         visiting.remove(project)
+    #         all_projects.add(project)
+    #     collect(project,  None)
+
+    #     # 2. Construction du graphe inversé
+    #     graph = defaultdict(list)     # dep -> [dependants]
+    #     in_degree = defaultdict(int)  # nombre de dépendances restantes
+
+    #     for project in all_projects:
+    #         in_degree[project] = 0
+    #     for project in all_projects:
+    #         for dep_ctx in project.dependencies:
+    #             graph[dep_ctx].append(project)
+    #             in_degree[project] += 1
+
+    #     # 3. Kahn : leaf en premier
+    #     queue = deque(
+    #         project for project in all_projects if in_degree[project] == 0
+    #     )
+
+    #     ordered = []
+
+    #     while queue:
+    #         project = queue.popleft()
+    #         ordered.append(project)
+
+    #         for dependant in graph[project]:
+    #             in_degree[dependant] -= 1
+    #             if in_degree[dependant] == 0:
+    #                 queue.append(dependant)
+
+    #     return ordered
     
     def _generateProject(self, cmake_context :CMakeContext):
         match cmake_context.project:
@@ -106,8 +154,7 @@ class GeneratorCMake(BaseGenerator):
             case LibProject() as project:
                 self._generateLibCMakeLists(cmake_context, project)
             case DynProject() as project:
-                self._generateDynCMakeLists(cmake_context, project)
-        cmake_context.fingerprint.update_file(cmake_context.cmakefile)       
+                self._generateDynCMakeLists(cmake_context, project)       
 
     def _generateBinCMakeLists(self, context:CMakeContext, project: BinProject):
         os.makedirs(context.cmakelists_directory, exist_ok=True)
@@ -142,8 +189,6 @@ add_subdirectory("{cmake_dep_context.cmakelists_directory.resolve().as_posix()}"
 target_link_libraries({project.name} PRIVATE {cmake_dep_context.project.name})
 target_include_directories({project.name} PRIVATE $<TARGET_PROPERTY:{cmake_dep_context.project.name},INTERFACE_INCLUDE_DIRECTORIES>)
 """)
-                
-        context.fingerprint.update_file(context.cmakefile)
 
     def _generateLibCMakeLists(self, context:CMakeContext, project: LibProject):
         os.makedirs(context.cmakelists_directory, exist_ok=True)
@@ -225,7 +270,6 @@ add_subdirectory("{cmake_dep_context.cmakelists_directory.resolve().as_posix()}"
 target_link_libraries({project.name} PRIVATE {cmake_dep_context.project.name})
 target_include_directories({project.name} PRIVATE $<TARGET_PROPERTY:{cmake_dep_context.project.name},INTERFACE_INCLUDE_DIRECTORIES>)
 """)        
-        context.fingerprint.update_file(context.cmakefile)
 
     @staticmethod
     def print_generated(context):
@@ -256,20 +300,65 @@ target_include_directories({project.name} PRIVATE $<TARGET_PROPERTY:{cmake_dep_c
 
     def generate_project(self, generate_context: GenerateContext):
         console.print_step("Generate CMakeLists.txt...")
-        context = CMakeContext(project_directory=generate_context.directory, 
-                               platform_target=generate_context.platform_target, 
-                               project=generate_context.project,
-                               fingerprint=None)
-        context.fingerprint.load_or_create()
-        to_generate = self._listProjectToGenerate(cmake_context=context)
-        for generated_cmakecontext in to_generate:
-            generated_list : list[CMakeContext] = generated_cmakecontext.flatten_leaf_to_root()
-            for to_generate in generated_list:
-                print(to_generate.project.name)
-                self._generateProject(to_generate)
-            GeneratorCMake.print_tree(generated_cmakecontext)
 
-        context.fingerprint.save()
+        # Create the finger print and load it
+        fingerprint = Fingerprint(CMakeContext.resolveBuildDirectory(generate_context.directory, generate_context.platform_target))
+        fingerprint.load_or_create()
+
+        # List flatten projet to generate
+        project_list_to_generate = generate_context.project._topologicalSortProjects()
+
+        # Create a CMakeContext list that keep the same order as the topoligical sort
+        unfreshlist : set[CMakeContext] = set()
+        for project in project_list_to_generate:
+            context = CMakeContext(project_directory=generate_context.directory, 
+                                   platform_target=generate_context.platform_target, 
+                                   project=project)
+            if not fingerprint.is_fresh_file(context.cmakefile):
+                unfreshlist.add(context)
+            for deps in project_list_to_generate:
+                if deps in unfreshlist:
+                    unfreshlist.add(context)
+
+        # unfresh_list_to_generate : list[CMakeContext] = []
+        # for project in project_list_to_generate:
+        #     if project in unfreshlist:
+        #         unfresh_list_to_generate.append(project)
+        
+        for ctx in unfreshlist:
+            print(ctx.project.name)
+            self._generateProject(ctx)
+        # project_context_to_generate : list[CMakeContext] = []
+        
+        # for project_to_generate in project_list_to_generate:
+        #     context = CMakeContext(project_directory=generate_context.directory, 
+        #                            platform_target=generate_context.platform_target, 
+        #                            project=project_to_generate)
+            
+        #     project_context_to_generate.append(context)
+        #     # Add dependencies
+        #     for project_to_generate in project_to_generate.dependencies:
+        #             project_to_generate.dependencies
+
+
+        # Add dependencies
+
+        # for i, context in enumerate(project_context_to_generate):
+        #     # The project is not fresh, add it to the generation list and it's parents
+        #     if not fingerprint.is_fresh_file(context.cmakefile):
+
+        # for project_to_generate in project_list_to_generate:
+        #     context = CMakeContext(project_directory=generate_context.directory, 
+        #                  platform_target=generate_context.platform_target, 
+        #                  project=project_to_generate)
+
+        #     # If the project is no more fresh regenerate it
+        #     if not fingerprint.is_fresh_file(context.cmakefile):
+        #         print(project_to_generate.name)
+        #         self._generateProject(context)
+        #         fingerprint.update_file(context.cmakefile)
+
+        # fingerprint.save()
 
     def generate(self, generate_context: GenerateContext):
         self.generate_project(generate_context=generate_context)

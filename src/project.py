@@ -1,4 +1,5 @@
 from abc import abstractmethod
+from collections import defaultdict, deque
 from pathlib import Path
 from typing import Self
 from semver import Version
@@ -99,6 +100,68 @@ class Project:
         console.print_error("Invalid project type")
         exit(1)
 
+    def _topologicalSortProjects(self) -> list[Self]:
+        """
+        Kahn Algorithm
+        graph : dictionnaire {u: [v1, v2, ...]}
+                représente les arêtes u -> v
+
+        retourne :
+        - liste des sommets dans un ordre topologique
+        - lève une exception si le graphe contient un cycle
+        """
+        # 1. Collecte du sous-graphe (DFS)
+        all_projects: set[Project] = set()
+        visiting: set[Project] = set()
+
+        def collect(project :Project, parent_project: Project):
+            # Detect cyclic dependency
+            if project in visiting:
+                console.print_error(f"⚠️ Error: Cyclic dependency between '{project.name}' and '{parent_project.name}'")
+                exit(1)
+            visiting.add(project)
+
+            # Visit the project only once
+            if project in all_projects:
+                return
+
+            # Visit dependency
+            for dep_project in project.dependencies:
+                collect(dep_project, project)
+                
+            visiting.remove(project)
+            all_projects.add(project)
+        collect(self,  None)
+
+        # 2. Construction du graphe inversé
+        graph = defaultdict(list)     # dep -> [dependants]
+        in_degree = defaultdict(int)  # nombre de dépendances restantes
+
+        for project in all_projects:
+            in_degree[project] = 0
+        for project in all_projects:
+            for dep_ctx in project.dependencies:
+                graph[dep_ctx].append(project)
+                in_degree[project] += 1
+
+        # 3. Kahn : leaf en premier
+        queue = deque(
+            project for project in all_projects if in_degree[project] == 0
+        )
+
+        ordered = []
+
+        while queue:
+            project = queue.popleft()
+            ordered.append(project)
+
+            for dependant in graph[project]:
+                in_degree[dependant] -= 1
+                if in_degree[dependant] == 0:
+                    queue.append(dependant)
+
+        return ordered
+
         
 
 # BinProject represent a project that is a binary project (elf or .exe file)
@@ -110,8 +173,8 @@ class BinProject(Project):
     # - Version of the project
     # - List of source file to compile
     # - List of dependencies
-    def __init__(self, file: Path, directory: Path,name: str, description :str, version: Version, sources: list[Path] = []):
-        super().__init__(ProjectType.bin, file, directory, name, description, version)
+    def __init__(self, file: Path, path: Path,name: str, description :str, version: Version, sources: list[Path] = []):
+        super().__init__(ProjectType.bin, file, path, name, description, version)
         self._sources = sources
 
     # List of sources to compile
@@ -123,7 +186,7 @@ class BinProject(Project):
     def from_yaml_project(cls, yaml_project:YamlBinProject) -> Self:
         return BinProject(
             file= yaml_project.file,
-            directory=yaml_project.directory,
+            path=yaml_project.path,
             name=yaml_project.name,
             description=yaml_project.description,
             version = yaml_project.version,
@@ -134,7 +197,7 @@ class BinProject(Project):
     def to_yaml_project(self) -> YamlBinProject:
         return YamlBinProject(
             file= self.file,
-            directory=self.directory,
+            path=self.path,
             name=self.name,
             description=self.description,
             version=self.version,
@@ -146,14 +209,14 @@ class BinProject(Project):
 class LibProject(Project):
     # Initialize a project with the following informations:
     # - The file 'kiss.yaml' that describe this project
-    # - The directory where the project reside (Kiss allow to have a 'kiss.yaml' file in another directory than the project it self that contains sources)
+    # - The path where the project reside (Kiss allow to have a 'kiss.yaml' file in another path than the project it self that contains sources)
     # - A Description that describe the project
     # - Version of the project
     # - List of source file to compile
-    # - List of interface directory used to interface with the library
+    # - List of interface path used to interface with the library
     # - List of dependencies
-    def __init__(self, file: Path, directory: Path,name: str, description :str, version: Version, sources: list[Path] = [], interface_directories: list[Path] = []):
-        super().__init__(ProjectType.lib,  file, directory, name, description, version)
+    def __init__(self, file: Path, path: Path,name: str, description :str, version: Version, sources: list[Path] = [], interface_directories: list[Path] = []):
+        super().__init__(ProjectType.lib,  file, path, name, description, version)
         self._sources = sources
         self._interface_directories = interface_directories
 
@@ -162,7 +225,7 @@ class LibProject(Project):
     def sources(self) -> list[Path]:
         return self._sources
     
-    # List of interface directory used to interface with the library
+    # List of interface path used to interface with the library
     @property
     def interface_directories(self) -> list[Path]:
         return self._interface_directories
@@ -171,7 +234,7 @@ class LibProject(Project):
     def from_yaml_project(cls, yaml_project:YamlLibProject) -> Self:
         return LibProject(
             file= yaml_project.file,
-            directory=yaml_project.directory,
+            path=yaml_project.path,
             name=yaml_project.name,
             description=yaml_project.description,
             version = yaml_project.version,
@@ -182,7 +245,7 @@ class LibProject(Project):
     def to_yaml_project(self) -> YamlLibProject:
         return YamlLibProject(
             file= self.file,
-            directory=self.directory,
+            path=self.path,
             name=self.name,
             description=self.description,
             version=self.version,
@@ -195,14 +258,14 @@ class LibProject(Project):
 class DynProject(Project):
     # Initialize a project with the following informations:
     # - The file 'kiss.yaml' that describe this project
-    # - The directory where the project reside (Kiss allow to have a 'kiss.yaml' file in another directory than the project it self that contains sources)
+    # - The path where the project reside (Kiss allow to have a 'kiss.yaml' file in another path than the project it self that contains sources)
     # - A Description that describe the project
     # - Version of the project
     # - List of source file to compile
-    # - List of interface directory used to interface with the library
+    # - List of interface path used to interface with the library
     # - List of dependencies
-    def __init__(self, file: Path, directory: Path,name: str, description :str, version: Version, sources: list[Path] = [], interface_directories: list[Path] = []):
-        super().__init__(ProjectType.dyn, file, directory, name, description, version)
+    def __init__(self, file: Path, path: Path,name: str, description :str, version: Version, sources: list[Path] = [], interface_directories: list[Path] = []):
+        super().__init__(ProjectType.dyn, file, path, name, description, version)
         self._sources = sources
         self._interface_directories = interface_directories
     
@@ -211,7 +274,7 @@ class DynProject(Project):
     def sources(self) -> list[Path]:
         return self._sources
     
-    # List of interface directory used to interface with the library
+    # List of interface path used to interface with the library
     @property
     def interface_directories(self) -> list[Path]:
         return self._interface_directories
@@ -220,7 +283,7 @@ class DynProject(Project):
     def from_yaml_project(cls, yaml_project:YamlDynProject) -> Self:
         return DynProject(
             file= yaml_project.file,
-            directory=yaml_project.directory,
+            path=yaml_project.path,
             name=yaml_project.name,
             description=yaml_project.description,
             version = yaml_project.version,
@@ -230,7 +293,7 @@ class DynProject(Project):
     def to_yaml_project(self) -> YamlDynProject:
         return YamlDynProject(
             file= self.file,
-            directory=self.directory,
+            path=self.path,
             name=self.name,
             description=self.description,
             version=self.version,

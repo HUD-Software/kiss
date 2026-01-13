@@ -52,7 +52,10 @@ class ProjectRegistry:
             for yaml_dep in yaml_project.dependencies:
                 resolved = False
                 for yaml_project_dep, project_dep in all_projects:
-                    if yaml_project_dep.match_dependency(yaml_dep):
+                    # Check if Yaml match ( means we have a kiss.yaml in the depencency directory)
+                    # Or if the Yaml don't match, check if the yaml dependency name match the project name and the directory of that project (Where the kiss.yaml is)match the file directory of the project
+                    # We add this extra test to allow user to add a project as a dependency if this project is defined as a inner project (A/kiss.yml define a project 'B' in A/B directory)
+                    if yaml_project_dep.is_matching_yaml_dependency(yaml_dep) or (yaml_dep.name == project_dep.name and project_dep.file.parent == yaml_dep.path):
                         project.dependencies.append(project_dep)
                         resolved = True
                         break

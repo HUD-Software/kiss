@@ -27,14 +27,14 @@ class Project:
    
     # Initialize a project with the following informations:
     # - The file 'kiss.yaml' that describe this project
-    # - The directory where the project reside (Kiss allow to have a 'kiss.yaml' file in another directory than the project it self that contains sources)
+    # - The path where the project reside (Kiss allow to have a 'kiss.yaml' file in another path than the project it self that contains sources)
     # - A Description that describe the project
     # - Version of the project
     # - List of dependencie
-    def __init__(self, type: ProjectType, file: Path, directory: Path, name: str, description :str, version: Version):
+    def __init__(self, type: ProjectType, file: Path, path: Path, name: str, description :str, version: Version):
         self._type = type
         self._file = file
-        self._directory = directory
+        self._path = path
         self._name = name
         self._description = description
         self._version = version
@@ -74,10 +74,10 @@ class Project:
     def version(self):
         return self._version
     
-    # The directory where the project reside (Kiss allow to have a 'kiss.yaml' file in another directory than the project it self that contains sources)
+    # The path where the project reside (Kiss allow to have a 'kiss.yaml' file in another path than the project it self that contains sources)
     @property 
-    def directory(self) -> Path:
-        return self._directory
+    def path(self) -> Path:
+        return self._path
     
     # List of dependencies
     @property
@@ -103,12 +103,11 @@ class Project:
     def _topologicalSortProjects(self) -> list[Self]:
         """
         Kahn Algorithm
-        graph : dictionnaire {u: [v1, v2, ...]}
-                représente les arêtes u -> v
+        Retourne une liste de ce projet et ses dépendances triées par ordre de priorité ( Si A dépend de B, A est après B).
 
-        retourne :
-        - liste des sommets dans un ordre topologique
-        - lève une exception si le graphe contient un cycle
+        @return :
+        - liste des projects dans l'ordre de dépendances
+        - lève une exception si le graphe contient un cycle de dépendances
         """
         # 1. Collecte du sous-graphe (DFS)
         all_projects: set[Project] = set()
@@ -140,8 +139,8 @@ class Project:
         for project in all_projects:
             in_degree[project] = 0
         for project in all_projects:
-            for dep_ctx in project.dependencies:
-                graph[dep_ctx].append(project)
+            for dep_project in project.dependencies:
+                graph[dep_project].append(project)
                 in_degree[project] += 1
 
         # 3. Kahn : leaf en premier
@@ -168,7 +167,7 @@ class Project:
 class BinProject(Project):
     # Initialize a project with the following informations:
     # - The file 'kiss.yaml' that describe this project
-    # - The directory where the project reside (Kiss allow to have a 'kiss.yaml' file in another directory than the project it self that contains sources)
+    # - The path where the project reside (Kiss allow to have a 'kiss.yaml' file in another path than the project it self that contains sources)
     # - A Description that describe the project
     # - Version of the project
     # - List of source file to compile

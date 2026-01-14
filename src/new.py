@@ -105,7 +105,7 @@ def __new_project_in_project_file(new_context: NewContext, project: Project):
 def __new_bin_project_in_project_file(new_context: NewContext):
     project = BinProject(
             file=new_context.project_file,
-            directory=new_context.directory,
+            path=new_context.directory,
             name=new_context.project_name,
             description=new_context.project_description,
             version="0.1.0",
@@ -117,7 +117,7 @@ def __new_bin_project_in_project_file(new_context: NewContext):
     # Add them the to project sources
     if new_context.populate:
         relative_src_directory = Path("src")
-        absolute_src_directory = project.directory / relative_src_directory
+        absolute_src_directory = project.path / relative_src_directory
         absolute_mainfile = absolute_src_directory / "main.cpp"
         if os.path.exists(absolute_mainfile): 
             console.print_error(f"The file {absolute_mainfile} already exists !")
@@ -129,7 +129,7 @@ def __new_bin_project_in_project_file(new_context: NewContext):
 
     # Everything is ok we can create the files now
     if new_context.populate:
-        project.directory.mkdir(parents=True, exist_ok=True)
+        project.path.mkdir(parents=True, exist_ok=True)
         os.makedirs(absolute_src_directory, exist_ok=True)
         with open(absolute_mainfile, "w", encoding="utf-8") as f:
             f.write('#include <iostream>\n\n')
@@ -141,7 +141,7 @@ def __new_bin_project_in_project_file(new_context: NewContext):
 def __new_lib_project_in_project_file(new_context: NewContext):
     project = LibProject(
                 file=new_context.project_file,
-                directory=new_context.directory,
+                path=new_context.directory,
                 name=new_context.project_name,
                 description=new_context.project_description,
                 version="0.1.0",
@@ -154,7 +154,7 @@ def __new_lib_project_in_project_file(new_context: NewContext):
     # Add them the to project sources
     if new_context.populate:
         relative_src_directory = Path("src")
-        absolute_src_directory = project.directory / relative_src_directory
+        absolute_src_directory = project.path / relative_src_directory
         absolute_libfile = absolute_src_directory / "lib.cpp"
         if os.path.exists(absolute_libfile): 
             console.print_error(f"The file {absolute_libfile} already exists !")
@@ -162,7 +162,7 @@ def __new_lib_project_in_project_file(new_context: NewContext):
         project.sources.append(relative_src_directory / "lib.cpp")
 
         relative_interface_directory = Path("interface") / project.name
-        absolute_interface_directory = project.directory / relative_interface_directory
+        absolute_interface_directory = project.path / relative_interface_directory
         absolute_header = absolute_interface_directory / "lib.h"
         if os.path.exists(absolute_header): 
             console.print_error(f"The file {absolute_header} already exists !")
@@ -174,7 +174,7 @@ def __new_lib_project_in_project_file(new_context: NewContext):
     
      # Everything is ok we can create the files now
     if new_context.populate:
-        project.directory.mkdir(parents=True, exist_ok=True)
+        project.path.mkdir(parents=True, exist_ok=True)
         os.makedirs(absolute_src_directory, exist_ok=True)
         with open(absolute_libfile, "w", encoding="utf-8") as f:
             f.write('#include <iostream>\n\n')
@@ -191,7 +191,7 @@ def __new_lib_project_in_project_file(new_context: NewContext):
 def __new_dyn_project_in_project_file(new_context: NewContext):
     project = DynProject(
                 file=new_context.project_file,
-                directory=new_context.directory,
+                path=new_context.directory,
                 name=new_context.project_name,
                 description=new_context.project_description,
                 version="0.1.0",
@@ -203,7 +203,7 @@ def __new_dyn_project_in_project_file(new_context: NewContext):
     # Add them the to project sources
     if new_context.populate:
         relative_src_directory = Path("src")
-        absolute_src_directory = project.directory / relative_src_directory
+        absolute_src_directory = project.path / relative_src_directory
         absolute_dynfile = absolute_src_directory / "dyn.cpp"
         if os.path.exists(absolute_dynfile): 
             console.print_error(f"The file {absolute_dynfile} already exists !")
@@ -211,7 +211,7 @@ def __new_dyn_project_in_project_file(new_context: NewContext):
         project.sources.append(relative_src_directory / "dyn.cpp")
 
         relative_interface_directory = Path("interface") / project.name
-        absolute_interface_directory = project.directory / relative_interface_directory
+        absolute_interface_directory = project.path / relative_interface_directory
         absolute_header = absolute_interface_directory / "dyn.h"
         if os.path.exists(absolute_header): 
             console.print_error(f"The file {absolute_header} already exists !")
@@ -223,7 +223,7 @@ def __new_dyn_project_in_project_file(new_context: NewContext):
     
      # Everything is ok we can create the files now
     if new_context.populate:
-        project.directory.mkdir(parents=True, exist_ok=True)
+        project.path.mkdir(parents=True, exist_ok=True)
         os.makedirs(absolute_src_directory, exist_ok=True)
         with open(absolute_dynfile, "w", encoding="utf-8") as f:
             f.write('#include <iostream>\n\n')

@@ -62,11 +62,11 @@
             // --> Add my_lib as dependency to my_bin
             // "args": [
             //     "-d",
-            //     "tests/my_lib",
+            //     "tests/my_bin",
             //     "add",
-            //     "my_dyn",
+            //     "my_lib",
             //     "--path",
-            //     "../my_dyn"
+            //     "../my_lib"
             // ],
             // --> Add my_lib as dependency to my_bin
             // "args": [
@@ -84,9 +84,9 @@
             //     "new",
             //     "-e",
             //     "lib",
-            //     "my_lib2",
+            //     "my_lib_inner",
             //     "--description",
-            //     "This is my_lib2",
+            //     "This is my_lib_inner",
             // ],
             // "args": [
             //     "-d",

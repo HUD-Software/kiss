@@ -298,9 +298,7 @@ target_include_directories({project.name} PRIVATE $<TARGET_PROPERTY:{cmake_dep_c
             new_prefix = prefix + ("│  " if not is_last else "")
             GeneratorCMake.print_tree(child, new_prefix, i == len(children) - 1, is_root=False)
 
-    def generate_project(self, generate_context: GenerateContext):
-        console.print_step("Generate CMakeLists.txt...")
-
+    def generate_project(self, generate_context: GenerateContext) -> list[CMakeContext]:
         # Create the finger print and load it
         fingerprint = Fingerprint(CMakeContext.resolveBuildDirectory(generate_context.directory, generate_context.platform_target))
         fingerprint.load_or_create()
@@ -309,59 +307,40 @@ target_include_directories({project.name} PRIVATE $<TARGET_PROPERTY:{cmake_dep_c
         project_list_to_generate = generate_context.project._topologicalSortProjects()
 
         # Create a CMakeContext list that keep the same order as the topoligical sort
-        unfreshlist : set[CMakeContext] = set()
+        unfreshlist : list[CMakeContext] = list()
         for project in project_list_to_generate:
             context = CMakeContext(project_directory=generate_context.directory, 
                                    platform_target=generate_context.platform_target, 
                                    project=project)
-            if not fingerprint.is_fresh_file(context.cmakefile):
-                unfreshlist.add(context)
-            for deps in project_list_to_generate:
-                if deps in unfreshlist:
-                    unfreshlist.add(context)
+            # If the project is not fresh anymore add it to refresh
+            if not (fingerprint.is_fresh_file(context.cmakefile) and fingerprint.is_fresh_file(context.project.file)):
+                unfreshlist.append(context)
+            else:
+                # If one of the dependency of this project is unfresh, we also mark it as unfresh
+                is_one_deps_is_unfresh = False
+                for deps_project in project.dependencies:
+                    for unfresh_ctx in unfreshlist:
+                        if unfresh_ctx.project is deps_project:
+                            is_one_deps_is_unfresh = True
+                            break
+                if is_one_deps_is_unfresh:
+                    unfreshlist.append(context)
 
-        # unfresh_list_to_generate : list[CMakeContext] = []
-        # for project in project_list_to_generate:
-        #     if project in unfreshlist:
-        #         unfresh_list_to_generate.append(project)
-        
-        for ctx in unfreshlist:
-            print(ctx.project.name)
-            self._generateProject(ctx)
-        # project_context_to_generate : list[CMakeContext] = []
-        
-        # for project_to_generate in project_list_to_generate:
-        #     context = CMakeContext(project_directory=generate_context.directory, 
-        #                            platform_target=generate_context.platform_target, 
-        #                            project=project_to_generate)
-            
-        #     project_context_to_generate.append(context)
-        #     # Add dependencies
-        #     for project_to_generate in project_to_generate.dependencies:
-        #             project_to_generate.dependencies
+        # generate all unfresh project in order
+        if unfreshlist:
+            console.print_step("⚙️  Generate CMakeLists.txt...")
+            for ctx in unfreshlist:
+                console.print_tips(f"  📝 {ctx.project.name}")
+                self._generateProject(ctx)
+                fingerprint.update_file(ctx.cmakefile)
+                fingerprint.update_file(ctx.project.file)
+            fingerprint.save()
+        else:
+            console.print_tips(f"✔️  All CMakeLists.txt are up-to-date")
+        return unfreshlist
 
-
-        # Add dependencies
-
-        # for i, context in enumerate(project_context_to_generate):
-        #     # The project is not fresh, add it to the generation list and it's parents
-        #     if not fingerprint.is_fresh_file(context.cmakefile):
-
-        # for project_to_generate in project_list_to_generate:
-        #     context = CMakeContext(project_directory=generate_context.directory, 
-        #                  platform_target=generate_context.platform_target, 
-        #                  project=project_to_generate)
-
-        #     # If the project is no more fresh regenerate it
-        #     if not fingerprint.is_fresh_file(context.cmakefile):
-        #         print(project_to_generate.name)
-        #         self._generateProject(context)
-        #         fingerprint.update_file(context.cmakefile)
-
-        # fingerprint.save()
-
-    def generate(self, generate_context: GenerateContext):
-        self.generate_project(generate_context=generate_context)
+    def generate(self, generate_context: GenerateContext)-> list[CMakeContext]:
+        return self.generate_project(generate_context=generate_context)
 
         
 

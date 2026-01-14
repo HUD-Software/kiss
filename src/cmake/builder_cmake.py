@@ -8,6 +8,7 @@ from config import Config
 import console
 from generate import GenerateContext
 from generator import GeneratorRegistry
+from platform_target import PlatformTarget
 from process import run_process
 from visual_studio import get_windows_latest_toolset
 
@@ -24,7 +25,7 @@ class BuilderCMake(BaseBuilder):
     def __init__(self, parser: KissParser = None):
         super().__init__("cmake", "Build cmake CMakeLists.txt")
         self.config = getattr(parser, "config", None) or Config.default_config()
-        self.compiler = getattr(parser, "compiler", None) or Compiler.default_compiler()
+        self.compiler = getattr(parser, "compiler", None) or Compiler.default_compiler(platform_target=PlatformTarget.default_target())
         self.debug = getattr(parser, "debug", None) or False
         self.coverage = getattr(parser, "coverage", None) or False
         self.sanitizer = getattr(parser, "sanitizer", None) or False
@@ -35,10 +36,10 @@ class BuilderCMake(BaseBuilder):
         if not cmake_generator:
             console.print_error(f"Generator {build_context.builder_name} not found")
             exit(1)
-        cmake_generator.generate(GenerateContext.create(directory=build_context.directory,
-                                                        project_name=build_context.project.name,
-                                                        generator_name=build_context.builder_name,
-                                                        platform_target=build_context.platform_target))
+        generated_context_list = cmake_generator.generate(GenerateContext.create(directory=build_context.directory,
+                                                            project_name=build_context.project.name,
+                                                            generator_name=build_context.builder_name,
+                                                            platform_target=build_context.platform_target))
        
         # Get Visual studio CMake Generator
         toolset = get_windows_latest_toolset(self.compiler)
@@ -49,17 +50,16 @@ class BuilderCMake(BaseBuilder):
             year = int(toolset.product_line_version)
         cmake_generator_name = f"{toolset.product_name} {toolset.major_version} {year}"
 
-        # Configure
-        console.print_step(f"CMake configure with {cmake_generator_name} ...")
-        context = CMakeContext(project_directory=build_context.directory, 
-                               platform_target=build_context.platform_target, 
-                               project=build_context.project)
-        args = ["--no-warn-unused-cli", "-S", context.cmakelists_directory, "-G", cmake_generator_name, "-T", "host=x64", "-A", "x64"]
-        if not run_process("cmake", args, context.cmakelists_directory) == 0:
-            exit(1)
+        # Configure only if we change the CMakeLists.txt
+        if generated_context_list:
+            for generated_context in generated_context_list:
+                console.print_step(f"🛠️ CMake configure with {cmake_generator_name} ...")
+                args = ["--no-warn-unused-cli", "-S", generated_context.cmakelists_directory, "-G", cmake_generator_name, "-T", "host=x64", "-A", "x64"]
+                if not run_process("cmake", args, generated_context.cmakelists_directory) == 0:
+                    exit(1)
         
         # Build
-        console.print_step("CMake build...")
+        console.print_step("🏗️ CMake build...")
         match self.config:
             case Config.debug:
                 cmake_config = "Debug"
@@ -67,6 +67,9 @@ class BuilderCMake(BaseBuilder):
                 cmake_config = "Release"
 
         args = ["--build", ".", "--config", cmake_config]
+        context = CMakeContext(project_directory=build_context.directory, 
+                               platform_target=build_context.platform_target, 
+                               project=build_context.project)
         run_process("cmake", args, context.cmakelists_directory)
 
     def build(self, build_context: BuildContext):

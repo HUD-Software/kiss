@@ -6,7 +6,7 @@ from semver import Version
 from enum import Enum
 
 import console
-from yaml_project import YamlBinProject, YamlDependency, YamlDynProject, YamlLibProject, YamlProject, YamlProjectType
+from yaml_file import YamlBinProject, YamlDependency, YamlDynProject, YamlLibProject, YamlProject, YamlProjectType
 
 # Enumeration of the project type that is supported
 class ProjectType(str, Enum):

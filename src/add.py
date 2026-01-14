@@ -1,6 +1,6 @@
 import cli
 import console
-from yaml_project import PROJECT_FILE_NAME, YamlFile
+from yaml_file import PROJECT_FILE_NAME, YamlFile
 
 
 def cmd_add(add_params: cli.KissParser):

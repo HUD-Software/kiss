@@ -3,7 +3,7 @@ from typing import Self
 import cli
 import console
 from context import Context
-from yaml_project import YamlFile, YamlGitDependency, YamlPathDependency, YamlProjectType
+from yaml_file import YamlFile, YamlGitDependency, YamlPathDependency, YamlProjectType
 
 
 class ListContext(Context):

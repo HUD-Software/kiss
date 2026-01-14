@@ -4,7 +4,7 @@
 from pathlib import Path
 import console
 from project import Project
-from yaml_project import YamlFile, YamlProject
+from yaml_file import YamlFile, YamlProject
 
 class ProjectRegistry:
     def __init__(self):

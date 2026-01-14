@@ -5,7 +5,7 @@ import cli
 import console
 from context import Context
 from project import BinProject, DynProject, LibProject, Project, ProjectType
-from yaml_project import PROJECT_FILE_NAME, YamlFile
+from yaml_file import PROJECT_FILE_NAME, YamlFile
 
 
 class NewContext(Context):

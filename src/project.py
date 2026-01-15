@@ -286,7 +286,8 @@ class DynProject(Project):
             name=yaml_project.name,
             description=yaml_project.description,
             version = yaml_project.version,
-            sources=yaml_project.sources
+            sources=yaml_project.sources,
+            interface_directories=yaml_project.interface_directories
         )
     
     def to_yaml_project(self) -> YamlDynProject:

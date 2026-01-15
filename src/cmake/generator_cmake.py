@@ -185,7 +185,9 @@ set_target_properties({project.name} PROPERTIES OUTPUT_NAME {project.name})
             # Write dependencies
             for cmake_dep_context in context.dependencies_context:
                 f.write(f"""\n# Add {cmake_dep_context.project.name} dependency 
-add_subdirectory("{cmake_dep_context.cmakelists_directory.resolve().as_posix()}" "{cmake_dep_context.cmakelists_directory.resolve().as_posix()}")
+if(NOT TARGET {cmake_dep_context.project.name})
+add_subdirectory("{cmake_dep_context.cmakelists_directory.resolve().as_posix()}" "{cmake_dep_context.build_directory.resolve().as_posix()}")
+endif()
 target_link_libraries({project.name} PRIVATE {cmake_dep_context.project.name})
 target_include_directories({project.name} PRIVATE $<TARGET_PROPERTY:{cmake_dep_context.project.name},INTERFACE_INCLUDE_DIRECTORIES>)
 """)
@@ -214,7 +216,7 @@ project({project.name} LANGUAGES CXX )
             if project.interface_directories:
                 interface_str:str =""
                 for interface in project.interface_directories:
-                    interface_str += f"\n\t$<BUILD_INTERFACE:{str(interface.resolve().as_posix())}"
+                    interface_str += f"\n\t$<BUILD_INTERFACE:{str(interface.resolve().as_posix())}>"
                 f.write(f"target_include_directories({project.name} PUBLIC {interface_str})\n")
 
             # Write output name
@@ -225,7 +227,9 @@ set_target_properties({project.name} PROPERTIES OUTPUT_NAME {project.name})
             # Write dependencies
             for cmake_dep_context in context.dependencies_context:
                 f.write(f"""\n# Add {cmake_dep_context.project.name} dependency 
-add_subdirectory("{cmake_dep_context.cmakelists_directory.resolve().as_posix()}" "{cmake_dep_context.cmakelists_directory.resolve().as_posix()}")
+if(NOT TARGET {cmake_dep_context.project.name})
+add_subdirectory("{cmake_dep_context.cmakelists_directory.resolve().as_posix()}" "{cmake_dep_context.build_directory.resolve().as_posix()}")
+endif()
 target_link_libraries({project.name} PRIVATE {cmake_dep_context.project.name})
 target_include_directories({project.name} PRIVATE $<TARGET_PROPERTY:{cmake_dep_context.project.name},INTERFACE_INCLUDE_DIRECTORIES>)
 """)       
@@ -255,18 +259,21 @@ project({project.name} LANGUAGES CXX )
             if project.interface_directories:
                 interface_str:str =""
                 for interface in project.interface_directories:
-                    interface_str += f"\n\t$<BUILD_INTERFACE:{str(interface.resolve().as_posix())}"
+                    interface_str += f"\n\t$<BUILD_INTERFACE:{str(interface.resolve().as_posix())}>"
                 f.write(f"target_include_directories({project.name} PUBLIC {interface_str})\n")
 
             # Write output name
             f.write(f"""                    
 # {project.name} output name
 set_target_properties({project.name} PROPERTIES OUTPUT_NAME {project.name})
+target_compile_definitions({project.name} PRIVATE KISS_EXPORTS)
 """)
             # Write dependencies
             for cmake_dep_context in context.dependencies_context:
                 f.write(f"""\n# Add {cmake_dep_context.project.name} dependency 
-add_subdirectory("{cmake_dep_context.cmakelists_directory.resolve().as_posix()}" "{cmake_dep_context.cmakelists_directory.resolve().as_posix()}")
+if(NOT TARGET {cmake_dep_context.project.name})
+add_subdirectory("{cmake_dep_context.cmakelists_directory.resolve().as_posix()}" "{cmake_dep_context.build_directory.resolve().as_posix()}")
+endif()
 target_link_libraries({project.name} PRIVATE {cmake_dep_context.project.name})
 target_include_directories({project.name} PRIVATE $<TARGET_PROPERTY:{cmake_dep_context.project.name},INTERFACE_INCLUDE_DIRECTORIES>)
 """)        
@@ -332,7 +339,7 @@ target_include_directories({project.name} PRIVATE $<TARGET_PROPERTY:{cmake_dep_c
 
 
 
-        # generate all unfresh project in order
+        # Generate all unfresh project in order
         if unfreshlist:
             console.print_step("⚙️  Generate CMakeLists.txt...")
             for ctx in unfreshlist:

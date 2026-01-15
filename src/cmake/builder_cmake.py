@@ -7,6 +7,7 @@ from cmake.generator_cmake import GeneratorCMake
 from compiler import Compiler
 from config import Config
 import console
+import context
 from generate import GenerateContext
 from generator import GeneratorRegistry
 from platform_target import PlatformTarget
@@ -57,26 +58,34 @@ class BuilderCMake(BaseBuilder):
                 if not year:
                     year = int(toolset.product_line_version)
                 cmake_generator_name = f"{toolset.product_name} {toolset.major_version} {year}"
-                configure_args = ["--no-warn-unused-cli", "-S", context.cmakelists_directory, "-G", cmake_generator_name, "-T", "host=x64", "-A", "x64"]
+                configure_args = ["--no-warn-unused-cli", "-S", str(context.cmakelists_directory), "-G", cmake_generator_name, "-T", "host=x64", "-A", "x64"]
             case PlatformTarget.x86_64_unkwown_linux_gnu:
                 cmake_generator_name = "Unix Makefiles"
                 cmake_generator_c_arch = "-DCMAKE_C_FLAGS=\"-m64\""
                 cmake_generator_cxx_arch = "-DCMAKE_CXX_FLAGS=\"-m64\""
                 cmake_generator_c_compiler = "-DCMAKE_C_COMPILER=gcc"
                 cmake_generator_cxx_compiler = "-DCMAKE_C_COMPILER=g++"
-                configure_args = ["--no-warn-unused-cli", "-S", context.cmakelists_directory, "-G", cmake_generator_name, cmake_generator_c_compiler, cmake_generator_cxx_compiler, cmake_generator_c_arch, cmake_generator_cxx_arch]
+                configure_args = ["--no-warn-unused-cli", "-S", str(context.cmakelists_directory), "-G", cmake_generator_name, cmake_generator_c_compiler, cmake_generator_cxx_compiler, cmake_generator_c_arch, cmake_generator_cxx_arch]
             case _ : 
                 console.print_error(f"Unknown target {context.platform_target}")
                 exit(1)
         
 
-        # Configure only if we change the CMakeLists.txt
-        console.print_step(f"🛠️  CMake configure with {cmake_generator_name}")
-        if not run_process("cmake", configure_args, context.cmakelists_directory) == 0:
-            # If the generation failed delete the CMakeLists.txt to force regeneration if we try again
-            os.remove(context.cmakelists_directory / "CMakeCache.txt")
-            exit(1)
 
+        # # Configure only if we change the CMakeLists.txt
+        # for generated_context in generated_context_list:
+        #     if (generated_context.build_directory / "CMakeCache.txt").exists():
+        #         os.remove(generated_context.build_directory / "CMakeCache.txt")
+        os.makedirs(context.build_directory, exist_ok=True)
+        if generated_context_list:
+            console.print_step(f"🛠️  CMake configure with {cmake_generator_name}")
+            if not run_process("cmake", configure_args, context.build_directory) == 0:
+                # If the generation failed delete the CMakeLists.txt to force regeneration if we try again
+                # if (generated_context.cmakelists_directory / "CMakeLists.txt").exists():
+                #     os.remove(generated_context.cmakelists_directory / "CMakeLists.txt")
+                exit(1)
+        else:            
+            console.print_step(f"✔️  No CMake configure required") 
         # if generated_context_list:
         #     for generated_context in generated_context_list:
         #         console.print_step(f"🛠️ CMake configure with {cmake_generator_name}")
@@ -95,7 +104,7 @@ class BuilderCMake(BaseBuilder):
                 cmake_config = "Release"
 
         args = ["--build", ".", "--config", cmake_config]
-        run_process("cmake", args, context.cmakelists_directory)
+        run_process("cmake", args, context.build_directory)
 
     def build(self, build_context: BuildContext):
         self.build_project(build_context=build_context)

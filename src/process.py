@@ -26,7 +26,7 @@ def run_process(program: Path, args: list[str] = [], working_dir= Path(os.curdir
 
 async def __run_process(program: Path, args: list[str], working_dir= Path(os.curdir), env: dict[str, str] = {}):
     if not os.path.exists(working_dir):
-        console.print_error(f"  | Error: Working directory is invalid : {working_dir}")
+        console.print_error(f"  | Error: Working directory does not exist: {working_dir}")
         console.print_error(f"  | Current directory {Path(os.curdir)}")
         console.print_error(f"  | Command: {program} {args}")
         sys.exit(2)

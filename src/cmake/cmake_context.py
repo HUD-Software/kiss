@@ -14,12 +14,14 @@ class CMakeContext:
 
     def __init__(self, project_directory: Path, platform_target: PlatformTarget, project: Project):
         self._project_directory = project_directory
-        self._build_directory = self.resolveBuildDirectory(project_directory=project_directory, platform_target=platform_target)
+        root_build_directory = self.resolveBuildDirectory(project_directory=project_directory, platform_target=platform_target)
         h = int.from_bytes(hashlib.sha256(str(project.file).encode()).digest()[:4], "little" )& 0xFFFFFFFF
-        self._cmakelists_directory =  self.build_directory / f"{project.name}_{h:08x}"
+        self._build_directory = root_build_directory / "build" /  f"{project.name}_{h:08x}"
+        self._cmakelists_directory =  root_build_directory / "CMakeLists" / f"{project.name}_{h:08x}"
         self._project = project
         self._platform_target = platform_target
         self._cmakefile = self.cmakelists_directory / "CMakeLists.txt"
+        self._cmakecache = self._build_directory / "CMakeCache.txt"
         self._dependencies_context : list[Self] = []
     
     @staticmethod
@@ -41,7 +43,9 @@ class CMakeContext:
     @property
     def cmakefile(self) -> Path:
         return self._cmakefile
-    
+    @property
+    def cmakecache(self) -> Path:
+        return self._cmakecache
     @property
     def project(self) -> Path:
         return self._project

@@ -38,7 +38,7 @@ async def __run_process(program: Path, args: list[str], working_dir= Path(os.cur
             *args, 
             stdout=asyncio.subprocess.PIPE, 
             stderr=asyncio.subprocess.PIPE, 
-            cwd=working_dir, 
+            cwd=str(working_dir), 
             env=environ
         )
     except FileNotFoundError:

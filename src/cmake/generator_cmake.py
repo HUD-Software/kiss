@@ -312,19 +312,25 @@ target_include_directories({project.name} PRIVATE $<TARGET_PROPERTY:{cmake_dep_c
             context = CMakeContext(project_directory=generate_context.directory, 
                                    platform_target=generate_context.platform_target, 
                                    project=project)
+            is_unfresh_context = False
             # If the project is not fresh anymore add it to refresh
             if not (fingerprint.is_fresh_file(context.cmakefile) and fingerprint.is_fresh_file(context.project.file)):
-                unfreshlist.append(context)
+                is_unfresh_context = True
             else:
                 # If one of the dependency of this project is unfresh, we also mark it as unfresh
-                is_one_deps_is_unfresh = False
                 for deps_project in project.dependencies:
                     for unfresh_ctx in unfreshlist:
                         if unfresh_ctx.project is deps_project:
-                            is_one_deps_is_unfresh = True
+                            is_unfresh_context = True            
                             break
-                if is_one_deps_is_unfresh:
-                    unfreshlist.append(context)
+            if is_unfresh_context:
+                unfreshlist.append(context)
+                for deps_project in project.dependencies:
+                    for unfresh_ctx in unfreshlist:
+                        if unfresh_ctx.project is deps_project:
+                            context.dependencies_context.append(unfresh_ctx)
+
+
 
         # generate all unfresh project in order
         if unfreshlist:
@@ -336,7 +342,7 @@ target_include_directories({project.name} PRIVATE $<TARGET_PROPERTY:{cmake_dep_c
                 fingerprint.update_file(ctx.project.file)
             fingerprint.save()
         else:
-            console.print_tips(f"✔️  All CMakeLists.txt are up-to-date")
+            console.print_step(f"✔️  All CMakeLists.txt are up-to-date")
         return unfreshlist
 
     def generate(self, generate_context: GenerateContext)-> list[CMakeContext]:

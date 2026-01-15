@@ -7,7 +7,7 @@ class PlatformTarget(str, Enum):
     # <architecture>-<vendor>-<os>-<abi>
     x86_64_pc_windows_msvc = "x86_64-pc-windows-msvc" # Windows x86_64
     x86_64_unkwown_linux_gnu  = "x86_64-unknown-linux-gnu" # Linux x86_64
-    x86_64_pc_windows_gnu = "x86_64-pc-windows-gnu" # Windows GNU / MinGW
+    x86_64_pc_windows_gnu = "x86_64-pc-windows-gnu" # WindowsGNU / MinGW
 
 
     @classmethod

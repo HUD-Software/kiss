@@ -1,3 +1,4 @@
+import os
 from build import BuildContext
 from builder import BaseBuilder
 from cli import KissParser
@@ -42,24 +43,51 @@ class BuilderCMake(BaseBuilder):
                                                             platform_target=build_context.platform_target))
        
         # Get Visual studio CMake Generator
-        toolset = get_windows_latest_toolset(self.compiler)
-        year = toolset.product_year
-        if toolset.major_version == 18:
-            year = 2026
-        if not year:
-            year = int(toolset.product_line_version)
-        cmake_generator_name = f"{toolset.product_name} {toolset.major_version} {year}"
+        context = CMakeContext(project_directory=build_context.directory, 
+                            platform_target=build_context.platform_target, 
+                            project=build_context.project)
+
+        configure_args = None
+        match context.platform_target:
+            case PlatformTarget.x86_64_pc_windows_msvc:
+                toolset = get_windows_latest_toolset(self.compiler)
+                year = toolset.product_year
+                if toolset.major_version == 18:
+                    year = 2026
+                if not year:
+                    year = int(toolset.product_line_version)
+                cmake_generator_name = f"{toolset.product_name} {toolset.major_version} {year}"
+                configure_args = ["--no-warn-unused-cli", "-S", context.cmakelists_directory, "-G", cmake_generator_name, "-T", "host=x64", "-A", "x64"]
+            case PlatformTarget.x86_64_unkwown_linux_gnu:
+                cmake_generator_name = "Unix Makefiles"
+                cmake_generator_c_arch = "-DCMAKE_C_FLAGS=\"-m64\""
+                cmake_generator_cxx_arch = "-DCMAKE_CXX_FLAGS=\"-m64\""
+                cmake_generator_c_compiler = "-DCMAKE_C_COMPILER=gcc"
+                cmake_generator_cxx_compiler = "-DCMAKE_C_COMPILER=g++"
+                configure_args = ["--no-warn-unused-cli", "-S", context.cmakelists_directory, "-G", cmake_generator_name, cmake_generator_c_compiler, cmake_generator_cxx_compiler, cmake_generator_c_arch, cmake_generator_cxx_arch]
+            case _ : 
+                console.print_error(f"Unknown target {context.platform_target}")
+                exit(1)
+        
 
         # Configure only if we change the CMakeLists.txt
-        if generated_context_list:
-            for generated_context in generated_context_list:
-                console.print_step(f"🛠️ CMake configure with {cmake_generator_name} ...")
-                args = ["--no-warn-unused-cli", "-S", generated_context.cmakelists_directory, "-G", cmake_generator_name, "-T", "host=x64", "-A", "x64"]
-                if not run_process("cmake", args, generated_context.cmakelists_directory) == 0:
-                    exit(1)
+        console.print_step(f"🛠️  CMake configure with {cmake_generator_name}")
+        if not run_process("cmake", configure_args, context.cmakelists_directory) == 0:
+            # If the generation failed delete the CMakeLists.txt to force regeneration if we try again
+            os.remove(context.cmakelists_directory / "CMakeCache.txt")
+            exit(1)
+
+        # if generated_context_list:
+        #     for generated_context in generated_context_list:
+        #         console.print_step(f"🛠️ CMake configure with {cmake_generator_name}")
+        #         args = ["--no-warn-unused-cli", "-S", generated_context.cmakelists_directory, "-G", cmake_generator_name, "-T", "host=x64", "-A", "x64"]
+        #         if not run_process("cmake", args, generated_context.cmakelists_directory) == 0:
+        #             exit(1)
+        # else:
+        #     console.print_step(f"✔️  No CMake configure required")
         
         # Build
-        console.print_step("🏗️ CMake build...")
+        console.print_step("🏗️  CMake build...")
         match self.config:
             case Config.debug:
                 cmake_config = "Debug"
@@ -67,9 +95,6 @@ class BuilderCMake(BaseBuilder):
                 cmake_config = "Release"
 
         args = ["--build", ".", "--config", cmake_config]
-        context = CMakeContext(project_directory=build_context.directory, 
-                               platform_target=build_context.platform_target, 
-                               project=build_context.project)
         run_process("cmake", args, context.cmakelists_directory)
 
     def build(self, build_context: BuildContext):

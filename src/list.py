@@ -45,17 +45,17 @@ def cmd_list(list_params: cli.KissParser):
                             console.print(f"  - dyn")
                     console.print(f"    - name : {project.name}")
                     console.print(f"    - description : {project.description}")
-                    console.print(f"    - path : {project.directory}")
+                    console.print(f"    - path : {project.path}")
                     if project.dependencies:
                         console.print(f"    - dependencies : ")
                         for dep in  project.dependencies:
                             console.print(f"      - name : {dep.name}")
                             match dep:
                                 case YamlPathDependency():
-                                    console.print(f"      - path : {dep.directory}")
+                                    console.print(f"        path : {dep.path}")
                                 case YamlGitDependency():
-                                    console.print(f"      - git : {dep.git}")
-                                    console.print(f"      - branch : {dep.branch}")
+                                    console.print(f"        git : {dep.git}")
+                                    console.print(f"        branch : {dep.branch}")
                     else:
                         console.print(f"    - dependencies : []")
                     match project.type:

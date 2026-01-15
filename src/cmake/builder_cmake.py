@@ -71,30 +71,14 @@ class BuilderCMake(BaseBuilder):
                 exit(1)
         
 
-
-        # # Configure only if we change the CMakeLists.txt
-        # for generated_context in generated_context_list:
-        #     if (generated_context.build_directory / "CMakeCache.txt").exists():
-        #         os.remove(generated_context.build_directory / "CMakeCache.txt")
         os.makedirs(context.build_directory, exist_ok=True)
         if generated_context_list:
             console.print_step(f"🛠️  CMake configure with {cmake_generator_name}")
             if not run_process("cmake", configure_args, context.build_directory) == 0:
-                # If the generation failed delete the CMakeLists.txt to force regeneration if we try again
-                # if (generated_context.cmakelists_directory / "CMakeLists.txt").exists():
-                #     os.remove(generated_context.cmakelists_directory / "CMakeLists.txt")
                 exit(1)
         else:            
             console.print_step(f"✔️  No CMake configure required") 
-        # if generated_context_list:
-        #     for generated_context in generated_context_list:
-        #         console.print_step(f"🛠️ CMake configure with {cmake_generator_name}")
-        #         args = ["--no-warn-unused-cli", "-S", generated_context.cmakelists_directory, "-G", cmake_generator_name, "-T", "host=x64", "-A", "x64"]
-        #         if not run_process("cmake", args, generated_context.cmakelists_directory) == 0:
-        #             exit(1)
-        # else:
-        #     console.print_step(f"✔️  No CMake configure required")
-        
+
         # Build
         console.print_step("🏗️  CMake build...")
         match self.config:
@@ -104,7 +88,14 @@ class BuilderCMake(BaseBuilder):
                 cmake_config = "Release"
 
         args = ["--build", ".", "--config", cmake_config]
-        run_process("cmake", args, context.build_directory)
+        if not run_process("cmake", args, context.build_directory) == 0:
+            exit(1)
+
+        # Install
+        console.print_step("🏗️  CMake install...")
+        args = ["--install", ".", "--config", cmake_config, "--prefix", context.install_directory]
+        if not run_process("cmake", args, context.build_directory) == 0:
+            exit(1)
 
     def build(self, build_context: BuildContext):
         self.build_project(build_context=build_context)

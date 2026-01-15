@@ -22,6 +22,7 @@ class CMakeContext:
         self._platform_target = platform_target
         self._cmakefile = self.cmakelists_directory / "CMakeLists.txt"
         self._cmakecache = self._build_directory / "CMakeCache.txt"
+        self._install_directory = root_build_directory / "install"
         self._dependencies_context : list[Self] = []
     
     @staticmethod
@@ -47,6 +48,10 @@ class CMakeContext:
     @property
     def cmakecache(self) -> Path:
         return self._cmakecache
+    
+    @property
+    def install_directory(self) -> Path:
+        return self._install_directory
     
     @property
     def project(self) -> Path:

@@ -1,5 +1,7 @@
 
 from collections import defaultdict, deque
+from multiprocessing import context
+from multiprocessing import context
 import os
 from pathlib import Path
 from typing import Optional
@@ -216,7 +218,7 @@ project({project.name} LANGUAGES CXX )
             if project.interface_directories:
                 interface_str:str =""
                 for interface in project.interface_directories:
-                    interface_str += f"\n\t$<BUILD_INTERFACE:{str(interface.resolve().as_posix())}>"
+                    interface_str += f"\n\t$<BUILD_INTERFACE:{str(interface.resolve().as_posix())}> $<INSTALL_INTERFACE:{interface.name}>"
                 f.write(f"target_include_directories({project.name} PUBLIC {interface_str})\n")
 
             # Write output name
@@ -233,8 +235,55 @@ endif()
 target_link_libraries({project.name} PRIVATE {cmake_dep_context.project.name})
 target_include_directories({project.name} PRIVATE $<TARGET_PROPERTY:{cmake_dep_context.project.name},INTERFACE_INCLUDE_DIRECTORIES>)
 """)       
-       
-    
+            # Write package
+            f.write(f"""
+# Create alias
+add_library({project.name}::{project.name} ALIAS {project.name})
+include(CMakePackageConfigHelpers)
+# Version file
+write_basic_package_version_file(
+    "${{CMAKE_CURRENT_BINARY_DIR}}/{project.name}ConfigVersion.cmake"
+    VERSION 1.0.0
+    COMPATIBILITY AnyNewerVersion
+)
+
+# Config file
+configure_package_config_file(
+    "${{CMAKE_CURRENT_LIST_DIR}}/{project.name}Config.cmake.in"
+    "${{CMAKE_CURRENT_BINARY_DIR}}/{project.name}Config.cmake"
+    INSTALL_DESTINATION lib/cmake/{project.name}
+)
+# Installation
+install(TARGETS {project.name}
+    EXPORT {project.name}Targets
+    RUNTIME DESTINATION {project.name}
+    ARCHIVE DESTINATION {project.name}
+    LIBRARY DESTINATION {project.name}
+)
+""")
+            if project.interface_directories:
+                for interface in project.interface_directories:
+                    f.write(f"install(DIRECTORY {str(interface.resolve().as_posix())} DESTINATION {project.name})\n")
+
+            f.write(f"""
+install(EXPORT {project.name}Targets
+    FILE {project.name}Targets.cmake
+    NAMESPACE {project.name}::
+    DESTINATION {project.name}/cmake
+)
+install(FILES
+    "${{CMAKE_CURRENT_BINARY_DIR}}/{project.name}Config.cmake"
+    "${{CMAKE_CURRENT_BINARY_DIR}}/{project.name}ConfigVersion.cmake"
+    DESTINATION {project.name}/cmake
+)
+""")
+        
+        with open(context.cmakelists_directory / f"{project.name}Config.cmake.in", "w", encoding="utf-8") as f:
+            f.write(f"""@PACKAGE_INIT@
+
+include("${{CMAKE_CURRENT_LIST_DIR}}/{project.name}Targets.cmake")
+""")
+                
     def _generateDynCMakeLists(self, context:CMakeContext, project: LibProject):
         os.makedirs(context.cmakelists_directory, exist_ok=True)
         # Write the CMakeLists.txt file
@@ -259,7 +308,7 @@ project({project.name} LANGUAGES CXX )
             if project.interface_directories:
                 interface_str:str =""
                 for interface in project.interface_directories:
-                    interface_str += f"\n\t$<BUILD_INTERFACE:{str(interface.resolve().as_posix())}>"
+                    interface_str += f"\n\t$<BUILD_INTERFACE:{str(interface.resolve().as_posix())}> $<INSTALL_INTERFACE:{interface.name}>"
                 f.write(f"target_include_directories({project.name} PUBLIC {interface_str})\n")
 
             # Write output name
@@ -277,7 +326,55 @@ endif()
 target_link_libraries({project.name} PRIVATE {cmake_dep_context.project.name})
 target_include_directories({project.name} PRIVATE $<TARGET_PROPERTY:{cmake_dep_context.project.name},INTERFACE_INCLUDE_DIRECTORIES>)
 """)        
+            # Write package
+            f.write(f"""
+# Create alias
+add_library({project.name}::{project.name} ALIAS {project.name})
+include(CMakePackageConfigHelpers)
+# Version file
+write_basic_package_version_file(
+    "${{CMAKE_CURRENT_BINARY_DIR}}/{project.name}ConfigVersion.cmake"
+    VERSION 1.0.0
+    COMPATIBILITY AnyNewerVersion
+)
 
+# Config file
+configure_package_config_file(
+    "${{CMAKE_CURRENT_LIST_DIR}}/{project.name}Config.cmake.in"
+    "${{CMAKE_CURRENT_BINARY_DIR}}/{project.name}Config.cmake"
+    INSTALL_DESTINATION {project.name}
+)
+# Installation
+install(TARGETS {project.name}
+    EXPORT {project.name}Targets
+    RUNTIME DESTINATION {project.name}
+    ARCHIVE DESTINATION {project.name}
+    LIBRARY DESTINATION {project.name}
+)
+""")
+            if project.interface_directories:
+                for interface in project.interface_directories:
+                    f.write(f"install(DIRECTORY {str(interface.resolve().as_posix())} DESTINATION {project.name})\n")
+
+            f.write(f"""
+install(EXPORT {project.name}Targets
+    FILE {project.name}Targets.cmake
+    NAMESPACE {project.name}::
+    DESTINATION {project.name}/cmake
+)
+install(FILES
+    "${{CMAKE_CURRENT_BINARY_DIR}}/{project.name}Config.cmake"
+    "${{CMAKE_CURRENT_BINARY_DIR}}/{project.name}ConfigVersion.cmake"
+    DESTINATION {project.name}/cmake
+)
+""")
+        
+        with open(context.cmakelists_directory / f"{project.name}Config.cmake.in", "w", encoding="utf-8") as f:
+            f.write(f"""@PACKAGE_INIT@
+
+include("${{CMAKE_CURRENT_LIST_DIR}}/{project.name}Targets.cmake")
+""")
+            
     @staticmethod
     def print_generated(context):
         stack = [(context, 0)]

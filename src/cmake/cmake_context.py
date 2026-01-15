@@ -43,9 +43,11 @@ class CMakeContext:
     @property
     def cmakefile(self) -> Path:
         return self._cmakefile
+    
     @property
     def cmakecache(self) -> Path:
         return self._cmakecache
+    
     @property
     def project(self) -> Path:
         return self._project

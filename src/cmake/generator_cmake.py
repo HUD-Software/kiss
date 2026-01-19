@@ -118,7 +118,7 @@ set_target_properties({project.name} PROPERTIES OUTPUT_NAME {project.name})
 """)
             # Write dependencies
             for dep_project in project.dependencies:
-                dep_ctx = CMakeContext(project_directory=context.project_directory, 
+                dep_ctx = CMakeContext(current_directory=context.current_directory, 
                             platform_target=context.platform_target, 
                             project=dep_project)
                 f.write(f"""\n# Add {dep_project.name} dependency 
@@ -163,7 +163,7 @@ set_target_properties({project.name} PROPERTIES OUTPUT_NAME {project.name})
 """)
             # Write dependencies
             for dep_project in project.dependencies:
-                dep_ctx = CMakeContext(project_directory=context.project_directory, 
+                dep_ctx = CMakeContext(current_directory=context.current_directory, 
                             platform_target=context.platform_target, 
                             project=dep_project)
                 f.write(f"""\n# Add {dep_project.name} dependency 
@@ -346,48 +346,44 @@ include("${{CMAKE_CURRENT_LIST_DIR}}/{project.name}Targets.cmake")
             new_prefix = prefix + ("│  " if not is_last else "")
             GeneratorCMake.print_tree(child, new_prefix, i == len(children) - 1, is_root=False)
 
-    def generate_project(self, generate_context: GenerateContext) -> list[CMakeContext]:
+    def generate_project(self, generate_context: GenerateContext) -> list[Project]:
         # Create the finger print and load it
-        fingerprint = Fingerprint(CMakeContext.resolveBuildDirectory(generate_context.directory, generate_context.platform_target))
+        fingerprint = Fingerprint(CMakeContext.resolveRootBuildDirectory(generate_context.directory, generate_context.platform_target))
         fingerprint.load_or_create()
 
         # List flatten projet to generate
         project_list_to_generate = generate_context.project._topologicalSortProjects()
 
         # Create a CMakeContext list that keep the same order as the topoligical sort
-        unfreshlist : list[CMakeContext] = list()
-        for project in project_list_to_generate:
-            context = CMakeContext(project_directory=generate_context.directory, 
-                                   platform_target=generate_context.platform_target, 
-                                   project=project)
-            is_unfresh_context = False
+        # Example:
+        # project_list_to_generate is  A < B < C < D < E
+        # if A, C, E are unfresh (order is the same as project_list_to_generate)
+        # unfreshlist is A < C < E 
+        unfreshlist : list[Project] = list()
+        unfreshflags: list[bool] = [False] * len(project_list_to_generate)
+        for i, project in enumerate(project_list_to_generate):
             # If the project is not fresh anymore add it to refresh
-            if not (fingerprint.is_fresh_file(context.cmakefile) and fingerprint.is_fresh_file(context.project.file)):
-                is_unfresh_context = True
+            if not (fingerprint.is_fresh_file(CMakeContext.resolveCMakefile(current_directory=generate_context.directory, platform_target=generate_context.platform_target, project=project)) and fingerprint.is_fresh_file(project.file)):
+                unfreshflags[i] = True
             else:
                 # If one of the dependency of this project is unfresh, we also mark it as unfresh
                 for deps_project in project.dependencies:
-                    for unfresh_ctx in unfreshlist:
-                        if unfresh_ctx.project is deps_project:
-                            is_unfresh_context = True            
+                    for unfresh_project in unfreshlist:
+                        if unfresh_project is deps_project:
+                            unfreshflags[i] = True
                             break
-            if is_unfresh_context:
-                unfreshlist.append(context)
-                for deps_project in project.dependencies:
-                    for unfresh_ctx in unfreshlist:
-                        if unfresh_ctx.project is deps_project:
-                            context.dependencies_context.append(unfresh_ctx)
-
-
+            if unfreshflags[i] == True:
+                unfreshlist.append(project)
 
         # Generate all unfresh project in order
         if unfreshlist:
             console.print_step("⚙️  Generate CMakeLists.txt...")
-            for ctx in unfreshlist:
-                console.print_tips(f"  📝 {ctx.project.name}")
+            for project in unfreshlist:
+                console.print_tips(f"  📝 {project.name}")
+                ctx = CMakeContext(current_directory=generate_context.directory, platform_target=generate_context.platform_target, project=project)
                 self._generateProject(ctx)
                 fingerprint.update_file(ctx.cmakefile)
-                fingerprint.update_file(ctx.project.file)
+                fingerprint.update_file(project.file)
             fingerprint.save()
         else:
             console.print_step(f"✔️  All CMakeLists.txt are up-to-date")

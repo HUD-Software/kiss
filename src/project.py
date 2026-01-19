@@ -1,12 +1,13 @@
 from abc import abstractmethod
 from collections import defaultdict, deque
+import hashlib
 from pathlib import Path
 from typing import Self
 from semver import Version
 from enum import Enum
 
 import console
-from yaml_file import YamlBinProject, YamlDependency, YamlDynProject, YamlLibProject, YamlProject, YamlProjectType
+from yaml_file import YamlBinProject, YamlDynProject, YamlLibProject, YamlProject, YamlProjectType
 
 # Enumeration of the project type that is supported
 class ProjectType(str, Enum):
@@ -34,6 +35,7 @@ class Project:
     def __init__(self, type: ProjectType, file: Path, path: Path, name: str, description :str, version: Version):
         self._type = type
         self._file = file
+        self._filehash = int.from_bytes(hashlib.sha256(str(file).encode()).digest()[:4], "little" )
         self._path = path
         self._name = name
         self._description = description
@@ -58,6 +60,16 @@ class Project:
     @property
     def file(self):
         return self._file
+    
+    # The hash of the file where the project is described
+    @property
+    def filehash(self):
+        return self._filehash
+    
+    # The short hash of the file where the project is described
+    @property
+    def filehash_short(self):
+        return self._filehash & 0xFFFFFFFF
     
     # The name of the project
     @property
@@ -111,24 +123,26 @@ class Project:
         """
         # 1. Collecte du sous-graphe (DFS)
         all_projects: set[Project] = set()
-        visiting: set[Project] = set()
+        visiting_stack: list[Project] = []
 
         def collect(project :Project, parent_project: Project):
             # Detect cyclic dependency
-            if project in visiting:
+            if project in visiting_stack:
                 console.print_error(f"⚠️ Error: Cyclic dependency between '{project.name}' and '{parent_project.name}'")
+                console.print_error(f"         {' -> '.join([p.name for p in visiting_stack] + [project.name])}")
                 exit(1)
-            visiting.add(project)
 
             # Visit the project only once
             if project in all_projects:
                 return
+            visiting_stack.append(project)
 
             # Visit dependency
             for dep_project in project.dependencies:
                 collect(dep_project, project)
-                
-            visiting.remove(project)
+            
+            # Remove visited project
+            visiting_stack.pop()
             all_projects.add(project)
         collect(self,  None)
 

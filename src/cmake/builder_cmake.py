@@ -44,7 +44,7 @@ class BuilderCMake(BaseBuilder):
                                                             platform_target=build_context.platform_target))
        
         # Get Visual studio CMake Generator
-        context = CMakeContext(project_directory=build_context.directory, 
+        context = CMakeContext(current_directory=build_context.directory, 
                             platform_target=build_context.platform_target, 
                             project=build_context.project)
 

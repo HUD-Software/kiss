@@ -1,6 +1,5 @@
 from pathlib import Path
 from typing import Optional
-import cli
 import console
 from project import Project
 from projectregistry import ProjectRegistry

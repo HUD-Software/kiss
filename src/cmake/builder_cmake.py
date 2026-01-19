@@ -7,7 +7,6 @@ from cmake.generator_cmake import GeneratorCMake
 from compiler import Compiler
 from config import Config
 import console
-import context
 from generate import GenerateContext
 from generator import GeneratorRegistry
 from platform_target import PlatformTarget
@@ -36,18 +35,17 @@ class BuilderCMake(BaseBuilder):
         # Generate the project
         cmake_generator : GeneratorCMake = GeneratorRegistry.generators.get(build_context.builder_name)
         if not cmake_generator:
-            console.print_error(f"Generator {build_context.builder_name} not found")
+            console.print_error(f"Generator {build_context.name} not found")
             exit(1)
         generated_context_list = cmake_generator.generate(GenerateContext.create(directory=build_context.directory,
                                                             project_name=build_context.project.name,
                                                             generator_name=build_context.builder_name,
                                                             platform_target=build_context.platform_target))
        
-        # Get Visual studio CMake Generator
+        # Get CMake Generator
         context = CMakeContext(current_directory=build_context.directory, 
                             platform_target=build_context.platform_target, 
                             project=build_context.project)
-
         configure_args = None
         match context.platform_target:
             case PlatformTarget.x86_64_pc_windows_msvc:

@@ -4,6 +4,7 @@ from new import cmd_new
 from generate import cmd_generate
 from build import cmd_build
 import cli
+from run import cmd_run
 
 def main():
     args = cli.UserParams.from_args()
@@ -23,8 +24,8 @@ def main():
     elif args.option == "build": 
         cmd_build(build_params=args)
     
-    # elif args.option == "run": 
-    #     commands.run.cmd_run(run_params=args)
+    elif args.option == "run": 
+        cmd_run(run_params=args)
             
 if __name__ == "__main__":
     main()

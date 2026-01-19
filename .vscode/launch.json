@@ -110,7 +110,7 @@
                 "-p",
                 "my_bin"
             ],
-            // "args": [    
+            // "args": [
             //     "-d",
             //     "tests/my_bin",
             //     "run"

@@ -7,6 +7,7 @@ import console
 from generator import GeneratorRegistry
 from platform_target import PlatformTarget
 from project import ProjectType
+from runner import RunnerRegistry
 
 _NAME_REGEX = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
@@ -89,7 +90,7 @@ def _add_generate_command(parser : argparse.ArgumentParser):
     GeneratorRegistry.register(GeneratorCMake())
     
     generate_parser = parser.add_parser("generate", description="generate files used to build the project")
-    generate_parser.add_argument("-p", "--project", help="name of the project.py to generate", dest="project_name", required=False, type=valid_project_name)
+    generate_parser.add_argument("-p", "--project", help="name of the project to generate", dest="project_name", required=False, type=valid_project_name)
     generate_parser.add_argument("-t", "--target", help="specify the target platform", dest="platform_target", default=PlatformTarget.default_target(), required=False)
 
     # Create the help string that contains list of all registered generators  
@@ -112,7 +113,7 @@ def _add_build_command(parser : argparse.ArgumentParser):
     BuilderRegistry.register(BuilderCMake())
     
     build_parser = parser.add_parser("build", description="build files used to build the project")
-    build_parser.add_argument("-p", "--project", help="name of the project.py to build", dest="project_name", required=False, type=valid_project_name)
+    build_parser.add_argument("-p", "--project", help="name of the project to build", dest="project_name", required=False, type=valid_project_name)
     build_parser.add_argument("-t", "--target", help="specify the target platform", dest="platform_target", default=PlatformTarget.default_target(), required=False)
 
     # Create the help string that contains list of all registered builders
@@ -129,6 +130,30 @@ def _add_build_command(parser : argparse.ArgumentParser):
     for builder in BuilderRegistry.builders.values():
         builder_parser = builder_subparser.add_parser(builder.name, description=builder.description)
         builder.add_cli_argument_to_parser(parser=builder_parser)
+
+def _add_run_command(parser : argparse.ArgumentParser):
+    from cmake.runner_cmake import RunnerCMake
+    RunnerRegistry.register(RunnerCMake())
+
+    run_parser = parser.add_parser("run", description="run the project")
+    run_parser.add_argument("-p", "--project", help="name of the project.py to run", dest="project_name", required=False, type=valid_project_name)
+    run_parser.add_argument("-t", "--target", help="specify the target platform", dest="platform_target", default=PlatformTarget.default_target(), required=False)
+
+    # Create the help string that contains list of all registered runners
+    runner_help_str = ""
+    for runner in RunnerRegistry.runners.values():
+        if runner_help_str:
+            runner_help_str += "\n"
+        runner_help_str += f"'{runner.name}' {runner.description}"
+    runner_subparser = run_parser.add_subparsers(title="choose one of the following runner",
+                                                 dest="runner",
+                                                 help=runner_help_str)
+
+    # Add all runner parser
+    for runner in RunnerRegistry.runners.values():
+        runner_parser = runner_subparser.add_parser(runner.name, description=runner.description)
+        runner.add_cli_argument_to_parser(parser=runner_parser)
+
 
 class UserParams:
     def from_args():
@@ -170,6 +195,7 @@ class UserParams:
         _add_add_command(subparsers)    
         _add_generate_command(subparsers)
         _add_build_command(subparsers)
+        _add_run_command(subparsers)
         # builder_parser = subparsers.add_parser("build", description="builder used to build the project")
         # builder_parser.add_argument("-p", "--project", help="name of the project.py to generate", dest="project_name", required=False, type=Path)
         # builder_parser.add_argument("-t", "--target", help="specify the target platform", dest="platform_target", default=PlatformTarget.default_target(), required=False)

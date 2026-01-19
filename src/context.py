@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Optional
 import console
-from project import Project
+from project import Project, ProjectType
 from projectregistry import ProjectRegistry
 
 
@@ -13,7 +13,7 @@ class Context:
     def directory(self) -> Path:
         return self._directory
     
-    def find_target_project(directory: Path, project_name: str) -> Optional[Project]:
+    def find_target_project(directory: Path, project_name: str, filter: ProjectType = None) -> Optional[Project]:
         #### Find the project to generate
         ProjectRegistry.load_and_register_all_project_in_directory(directory=directory, load_dependencies=True, recursive=False)
         projects_in_directory = ProjectRegistry.projects_in_directory(directory=directory)
@@ -29,6 +29,8 @@ class Context:
             return None
         # If the user dont provide a project name, find the default project
         else:
+            if filter:
+                projects_in_directory = [project for project in projects_in_directory if project.type == filter]
             if len(projects_in_directory) > 1:
                 console.print_error(f"Multiple project found in {str(directory)}")
                 projects_in_directory_names = [project.name for project in projects_in_directory]
@@ -39,6 +41,7 @@ class Context:
                 return None
             else:
                 return projects_in_directory[0]  
+
         
 
 

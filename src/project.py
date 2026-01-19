@@ -112,7 +112,7 @@ class Project:
         console.print_error("Invalid project type")
         exit(1)
 
-    def _topologicalSortProjects(self) -> list[Self]:
+    def topological_sort_projects(self) -> list[Self]:
         """
         Kahn Algorithm
         Retourne une liste de ce projet et ses dépendances triées par ordre de priorité ( Si A dépend de B, A est après B).

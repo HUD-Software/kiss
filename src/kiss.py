@@ -1,4 +1,5 @@
 from add import cmd_add
+from clean import cmd_clean
 from list import cmd_list
 from new import cmd_new
 from generate import cmd_generate
@@ -26,6 +27,15 @@ def main():
     
     elif args.option == "run": 
         cmd_run(run_params=args)
+
+    elif args.option == "clean": 
+        cmd_clean(clean_params=args)
+
+    elif args.option == "test": 
+        pass
+
+    elif args.option == "package": 
+        pass
             
 if __name__ == "__main__":
     main()

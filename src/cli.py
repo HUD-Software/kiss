@@ -3,6 +3,8 @@ from pathlib import Path
 import re
 import sys
 from builder import BuilderRegistry
+from cleaner import CleanerRegistry
+from compiler import Compiler
 import console
 from generator import GeneratorRegistry
 from platform_target import PlatformTarget
@@ -50,7 +52,6 @@ def _add_dyn_to_parser(parser: argparse.ArgumentParser):
     parser.add_argument("-cov", "--coverage", help="enable code coverage", action="store_true")
     parser.add_argument("-san", "--sanitizer", help="enable sanitizer", action='store_true')
     parser.add_argument("-e", "--empty", help="do not create defaut source code", action='store_true')
-
 
 def _add_new_command(parser : argparse.ArgumentParser):
     new_parser = parser.add_parser("new", description="create a new project")
@@ -115,6 +116,9 @@ def _add_build_command(parser : argparse.ArgumentParser):
     build_parser = parser.add_parser("build", description="build files used to build the project")
     build_parser.add_argument("-p", "--project", help="name of the project to build", dest="project_name", required=False, type=valid_project_name)
     build_parser.add_argument("-t", "--target", help="specify the target platform", dest="platform_target", default=PlatformTarget.default_target(), required=False)
+    build_parser.add_argument("-r", "--release", action='store_const', const=True, help="release build", dest="release")
+    build_parser.add_argument("-compiler", choices=Compiler._member_names_, help="specify the compiler to use", type=Compiler)
+    build_parser.add_argument("-d", "--debug_info", action='store_const', const=True, help="enable debug information", dest="debug_info")
 
     # Create the help string that contains list of all registered builders
     builder_help_str = ""
@@ -136,8 +140,11 @@ def _add_run_command(parser : argparse.ArgumentParser):
     RunnerRegistry.register(RunnerCMake())
 
     run_parser = parser.add_parser("run", description="run the project")
-    run_parser.add_argument("-p", "--project", help="name of the project.py to run", dest="project_name", required=False, type=valid_project_name)
+    run_parser.add_argument("-p", "--project", help="name of the project to run", dest="project_name", required=False, type=valid_project_name)
     run_parser.add_argument("-t", "--target", help="specify the target platform", dest="platform_target", default=PlatformTarget.default_target(), required=False)
+    run_parser.add_argument("-r", "--release", action='store_const', const=True, help="release build", dest="release")
+    run_parser.add_argument("-compiler", choices=Compiler._member_names_, help="specify the compiler to use", type=Compiler)
+    run_parser.add_argument("-d", "--debug_info", action='store_const', const=True, help="enable debug information", dest="debug_info")
 
     # Create the help string that contains list of all registered runners
     runner_help_str = ""
@@ -154,6 +161,27 @@ def _add_run_command(parser : argparse.ArgumentParser):
         runner_parser = runner_subparser.add_parser(runner.name, description=runner.description)
         runner.add_cli_argument_to_parser(parser=runner_parser)
 
+def _add_clean_command(parser : argparse.ArgumentParser):
+    from cmake.cleaner_cmake import CleanerCMake
+    CleanerRegistry.register(CleanerCMake())
+
+    clean_parser = parser.add_parser("clean", description="clean the project")
+    clean_parser.add_argument("-p", "--project", help="name of the project to clean", dest="project_name", required=False, type=valid_project_name)
+
+    # Create the help string that contains list of all registered runners
+    cleaner_help_str = ""
+    for cleaner in CleanerRegistry.cleaners.values():
+        if cleaner_help_str:
+            cleaner_help_str += "\n"
+        cleaner_help_str += f"'{cleaner.name}' {cleaner.description}"
+    cleaner_subparser = clean_parser.add_subparsers(title="choose one of the following cleaner",
+                                                 dest="cleaner",
+                                                 help=cleaner_help_str)
+
+    # Add all cleaner parser
+    for cleaner in CleanerRegistry.cleaners.values():
+        cleaner_parser = cleaner_subparser.add_parser(cleaner.name, description=cleaner.description)
+        cleaner.add_cli_argument_to_parser(parser=cleaner_parser)
 
 class UserParams:
     def from_args():
@@ -196,43 +224,7 @@ class UserParams:
         _add_generate_command(subparsers)
         _add_build_command(subparsers)
         _add_run_command(subparsers)
-        # builder_parser = subparsers.add_parser("build", description="builder used to build the project")
-        # builder_parser.add_argument("-p", "--project", help="name of the project.py to generate", dest="project_name", required=False, type=Path)
-        # builder_parser.add_argument("-t", "--target", help="specify the target platform", dest="platform_target", default=PlatformTarget.default_target(), required=False)
-
-        # Create the help string that contains list of all registerd builders
-        # builder_help_str = ""
-        # for builder in BuilderRegistry.values():
-        #     if builder_help_str:
-        #         builder_help_str += "\n"
-        #     builder_help_str += f"'{builder.name()}' {builder.short_desc()}"
-        # builder_subparser = builder_parser.add_subparsers(title="choose one of the following builder",
-        #                                                   dest="builder",
-        #                                                   help=builder_help_str)
-        
-        # Add all builder parser
-        # for builder in BuilderRegistry.values():
-        #     builder_parser = builder_subparser.add_parser(builder.name(), description=builder.short_desc())
-        #     builder.add_cli_argument_to_parser(parser=builder_parser)
-
-
-        # Create the help string that contains list of all registerd runners
-        # run_parser = subparsers.add_parser("run", description="Run a project")
-        # run_parser.add_argument("-p", "--project", help="name of the project.py to generate", dest="project_name", required=False, type=Path)
-        # run_parser.add_argument("-t", "--target", help="specify the target platform", dest="platform_target", default=PlatformTarget.default_target(), required=False)
-        # run_help_str = ""
-        # for runner in RunnerRegistry.values():
-        #     if run_help_str:
-        #         run_help_str += "\n"
-        #     run_help_str += f"'{runner.name()}' {runner.short_desc()}"
-        # runner_subparser = run_parser.add_subparsers(title="choose one of the following runner",
-        #                                                         dest="runner",
-        #                                                         help=run_help_str)
-        
-        # Add all runner parser
-        # for runner in RunnerRegistry.values():
-        #     runner_parser = runner_subparser.add_parser(runner.name(), description=runner.short_desc())
-        #     runner.add_cli_argument_to_parser(parser=runner_parser)
+        _add_clean_command(subparsers)
 
         args = parser.parse_args()
         if args.option == "add":

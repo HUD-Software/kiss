@@ -20,12 +20,12 @@ def print_process(program: Path, args: list[str] = [], working_dir = Path(os.cur
         env_str = " ".join(f"{k}={v}" for k, v in env.items())
         console.print_step(f"  🌱 Environment: {env_str}")
         
-def run_process(program: Path, args: list[str] = [], working_dir= Path(os.curdir), env: dict[str, str] = {}):
+def run_process(program: Path, args: list[str] = [], working_dir= Path(os.curdir), env: dict[str, str] = {}, output_prefix = False):
    print_process(program, args, working_dir, env)
-   return asyncio.run(__run_process(program, args, working_dir, env))
+   return asyncio.run(__run_process(program, args, working_dir, env, output_prefix))
 
-async def __run_process(program: Path, args: list[str], working_dir= Path(os.curdir), env: dict[str, str] = {}):
-    if not os.path.exists(working_dir):
+async def __run_process(program: Path, args: list[str], working_dir= Path(os.curdir), env: dict[str, str] = {}, output_prefix = False):
+    if not working_dir.exists():
         console.print_error(f"  | Error: Working directory does not exist: {working_dir}")
         console.print_error(f"  | Current directory {Path(os.curdir)}")
         console.print_error(f"  | Command: {program} {args}")
@@ -56,11 +56,17 @@ async def __run_process(program: Path, args: list[str], working_dir= Path(os.cur
         while not proc.stdout.at_eof() :
             stdout = (await proc.stdout.readline()).decode(errors="replace")
             if stdout.strip() :
-                console.print(f"  > [{program}] {stdout}", end='')
+                if not output_prefix:
+                    console.print(f"{stdout}", end='')
+                else:
+                    console.print(f"  > [{program}] {stdout}", end='')
         while not proc.stderr.at_eof():
             stderr = (await proc.stderr.readline()).decode(errors="replace")
             if stderr.strip():
-                console.print_error(f"  > [{program}] {stderr}", end='')
+                if not output_prefix:
+                    console.print_error(f"{stderr}", end='')
+                else:
+                    console.print_error(f"  > [{program}] {stderr}", end='')
                 
     await proc.communicate()
     return proc.returncode

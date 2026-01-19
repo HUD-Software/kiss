@@ -10,19 +10,14 @@ class PlatformTarget(str, Enum):
     x86_64_pc_windows_gnu = "x86_64-pc-windows-gnu" # WindowsGNU / MinGW
 
 
+    def is_windows(self) -> bool:
+        return self in [PlatformTarget.x86_64_pc_windows_msvc, PlatformTarget.x86_64_pc_windows_gnu]    
+    
     @classmethod
     def default_target(cls):
         if hasattr(cls, "_default_target"):
             return cls._default_target
-
-        # Architecture
-        match platform.machine():
-            case "AMD64" | "x86_64":
-                arch = "x86_64"
-            case value:
-                console.print_error(f"machine type not supported: {value}")
-                raise RuntimeError
-
+ 
         # OS
         match platform.system():
             case "Windows":

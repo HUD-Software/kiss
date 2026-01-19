@@ -119,7 +119,7 @@ def __new_bin_project_in_project_file(new_context: NewContext):
         relative_src_directory = Path("src")
         absolute_src_directory = project.path / relative_src_directory
         absolute_mainfile = absolute_src_directory / "main.cpp"
-        if os.path.exists(absolute_mainfile): 
+        if absolute_mainfile.exists(): 
             console.print_error(f"The file {absolute_mainfile} already exists !")
             exit(2)
         project.sources.append(relative_src_directory / "main.cpp")
@@ -156,7 +156,7 @@ def __new_lib_project_in_project_file(new_context: NewContext):
         relative_src_directory = Path("src")
         absolute_src_directory = project.path / relative_src_directory
         absolute_libfile = absolute_src_directory / "lib.cpp"
-        if os.path.exists(absolute_libfile): 
+        if absolute_libfile.exists(): 
             console.print_error(f"The file {absolute_libfile} already exists !")
             exit(2)
         project.sources.append(relative_src_directory / "lib.cpp")
@@ -164,7 +164,7 @@ def __new_lib_project_in_project_file(new_context: NewContext):
         relative_interface_directory = Path("interface")
         absolute_interface_directory = project.path / relative_interface_directory
         absolute_header = absolute_interface_directory / project.name / "lib.h"
-        if os.path.exists(absolute_header): 
+        if absolute_header.exists(): 
             console.print_error(f"The file {absolute_header} already exists !")
             exit(2)
         project.interface_directories.append(relative_interface_directory)
@@ -205,7 +205,7 @@ def __new_dyn_project_in_project_file(new_context: NewContext):
         relative_src_directory = Path("src")
         absolute_src_directory = project.path / relative_src_directory
         absolute_dynfile = absolute_src_directory / "dyn.cpp"
-        if os.path.exists(absolute_dynfile): 
+        if absolute_dynfile.exists(): 
             console.print_error(f"The file {absolute_dynfile} already exists !")
             exit(2)
         project.sources.append(relative_src_directory / "dyn.cpp")
@@ -213,7 +213,7 @@ def __new_dyn_project_in_project_file(new_context: NewContext):
         relative_interface_directory = Path("interface")
         absolute_interface_directory = project.path / project.name /relative_interface_directory
         absolute_header = absolute_interface_directory / "dyn.h"
-        if os.path.exists(absolute_header): 
+        if absolute_header.exists(): 
             console.print_error(f"The file {absolute_header} already exists !")
             exit(2)
         project.interface_directories.append(relative_interface_directory)

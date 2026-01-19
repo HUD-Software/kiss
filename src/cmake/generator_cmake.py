@@ -1,10 +1,10 @@
 
 import os
 from pathlib import Path
-from typing import Optional
 from cli import KissParser
 from cmake.cmake_context import CMakeContext
 from cmake.fingerprint import Fingerprint
+from config import Config
 import console
 from generate import GenerateContext
 from generator import BaseGenerator
@@ -13,14 +13,15 @@ from project import  BinProject, LibProject, DynProject, Project
 class GeneratorCMake(BaseGenerator):
     @classmethod
     def add_cli_argument_to_parser(cls, parser: KissParser):
-        parser.add_argument("-cov", "--coverage", help="enable code coverage", action='store_const', const=True)
-        parser.add_argument("-san", "--sanitizer", help="enable sanitizer", action='store_const', const=True)
+        pass
+        # parser.add_argument("-cov", "--coverage", help="enable code coverage", action='store_const', const=True)
+        # parser.add_argument("-san", "--sanitizer", help="enable sanitizer", action='store_const', const=True)
 
 
     def __init__(self, parser: KissParser = None):
         super().__init__("cmake", "Generate cmake CMakeLists.txt")
-        self.coverage = getattr(parser, "coverage", False)
-        self.sanitizer = getattr(parser, "sanitizer", False)
+        # self.coverage = getattr(parser, "coverage", False)
+        # self.sanitizer = getattr(parser, "sanitizer", False)
 
     @staticmethod
     def _split_path_with_pattern(path: Path):
@@ -115,6 +116,12 @@ project({project.name} LANGUAGES CXX )
             f.write(f"""                    
 # {project.name} output name
 set_target_properties({project.name} PROPERTIES OUTPUT_NAME {project.name})
+set_target_properties({project.name} PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY_DEBUG   "{context.output_directory(Config(is_release=False, is_debug_info=False)).resolve().as_posix()}"
+    RUNTIME_OUTPUT_DIRECTORY_RELEASE "{context.output_directory(Config(is_release=True, is_debug_info=False)).resolve().as_posix()}"
+    RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO "{context.output_directory(Config(is_release=True, is_debug_info=True)).resolve().as_posix()}"
+)
+target_link_options({project.name} PRIVATE /SUBSYSTEM:CONSOLE)
 """)
             # Write dependencies
             for dep_project in project.dependencies:
@@ -160,6 +167,11 @@ project({project.name} LANGUAGES CXX )
             f.write(f"""                    
 # {project.name} output name
 set_target_properties({project.name} PROPERTIES OUTPUT_NAME {project.name})
+set_target_properties({project.name} PROPERTIES
+    ARCHIVE_OUTPUT_DIRECTORY_DEBUG   "{context.output_directory(Config(is_release=False, is_debug_info=False)).resolve().as_posix()}"
+    ARCHIVE_OUTPUT_DIRECTORY_RELEASE "{context.output_directory(Config(is_release=True, is_debug_info=False)).resolve().as_posix()}"
+    ARCHIVE_OUTPUT_DIRECTORY_RELWITHDEBINFO "{context.output_directory(Config(is_release=True, is_debug_info=True)).resolve().as_posix()}"
+)
 """)
             # Write dependencies
             for dep_project in project.dependencies:
@@ -256,6 +268,14 @@ project({project.name} LANGUAGES CXX )
 # {project.name} output name
 set_target_properties({project.name} PROPERTIES OUTPUT_NAME {project.name})
 target_compile_definitions({project.name} PRIVATE KISS_EXPORTS)
+set_target_properties({project.name} PROPERTIES
+    LIBRARY_OUTPUT_DIRECTORY_DEBUG   "{context.output_directory(Config(is_release=False, is_debug_info=False)).resolve().as_posix()}"
+    LIBRARY_OUTPUT_DIRECTORY_RELEASE "{context.output_directory(Config(is_release=True, is_debug_info=False)).resolve().as_posix()}"
+    LIBRARY_OUTPUT_DIRECTORY_RELWITHDEBINFO "{context.output_directory(Config(is_release=True, is_debug_info=True)).resolve().as_posix()}"
+    RUNTIME_OUTPUT_DIRECTORY_DEBUG   "{context.output_directory(Config(is_release=False, is_debug_info=False)).resolve().as_posix()}"
+    RUNTIME_OUTPUT_DIRECTORY_RELEASE "{context.output_directory(Config(is_release=True, is_debug_info=False)).resolve().as_posix()}"
+    RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO "{context.output_directory(Config(is_release=True, is_debug_info=True)).resolve().as_posix()}"
+)
 """)
             # Write dependencies
             for dep_project in project.dependencies:
@@ -319,40 +339,13 @@ install(FILES
 include("${{CMAKE_CURRENT_LIST_DIR}}/{project.name}Targets.cmake")
 """)
             
-    @staticmethod
-    def print_generated(context):
-        stack = [(context, 0)]
-
-        while stack:
-            ctx, depth = stack.pop()
-            indent = "  " * depth
-            console.print_success(f"{indent}- {ctx.cmakefile.relative_to(ctx.project_directory)} generated for {ctx.project.name}")
-
-            # Ajouter les enfants à la pile
-            for child in reversed(ctx.dependencies_context):
-                stack.append((child, depth + 1))
-
-    @staticmethod
-    def print_tree(node: CMakeContext, prefix: str = "", is_last: bool = True, is_root: bool = True):
-        """Affiche un arbre avec ├─, └─ et │, sans symbole pour la racine"""
-        if is_root:
-            console.print_success(f"{node.cmakefile.relative_to(node.project_directory)} generated for {node.project.name}")
-        else:
-            branch = "└─" if is_last else "├─"
-            console.print_success(f"{prefix}{branch} {node.cmakefile.relative_to(node.project_directory)} generated for {node.project.name}")
-
-        children = node.dependencies_context
-        for i, child in enumerate(children):
-            new_prefix = prefix + ("│  " if not is_last else "")
-            GeneratorCMake.print_tree(child, new_prefix, i == len(children) - 1, is_root=False)
-
     def generate_project(self, generate_context: GenerateContext) -> list[Project]:
         # Create the finger print and load it
-        fingerprint = Fingerprint(CMakeContext.resolveRootBuildDirectory(generate_context.directory, generate_context.platform_target))
+        fingerprint = Fingerprint(CMakeContext.resolveCMakeBuildDirectory(generate_context.directory, generate_context.platform_target))
         fingerprint.load_or_create()
 
         # List flatten projet to generate
-        project_list_to_generate = generate_context.project._topologicalSortProjects()
+        project_list_to_generate = generate_context.project.topological_sort_projects()
 
         # Create a CMakeContext list that keep the same order as the topoligical sort
         # Example:

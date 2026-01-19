@@ -1,7 +1,4 @@
 
-from collections import defaultdict, deque
-from multiprocessing import context
-from multiprocessing import context
 import os
 from pathlib import Path
 from typing import Optional
@@ -85,70 +82,6 @@ class GeneratorCMake(BaseGenerator):
 
         return list(all_files)
     
-    # # Create a tree of CMakeContext to generate
-    # @staticmethod
-    # def _topologicalSortProjects(project:Project) -> list[Project]:
-    #     """
-    #     Kahn Algorithm
-    #     graph : dictionnaire {u: [v1, v2, ...]}
-    #             représente les arêtes u -> v
-
-    #     retourne :
-    #     - liste des sommets dans un ordre topologique
-    #     - lève une exception si le graphe contient un cycle
-    #     """
-    #     # 1. Collecte du sous-graphe (DFS)
-    #     all_projects: set[Project] = set()
-    #     visiting: set[Project] = set()
-
-    #     def collect(project :Project, parent_project: Project):
-    #         # Detect cyclic dependency
-    #         if project in visiting:
-    #             console.print_error(f"⚠️ Error: Cyclic dependency between '{project.name}' and '{parent_project.name}'")
-    #             exit(1)
-    #         visiting.add(project)
-
-    #         # Visit the project only once
-    #         if project in all_projects:
-    #             return
-
-    #         # Visit dependency
-    #         for dep_project in project.dependencies:
-    #             collect(dep_project, project)
-                
-    #         visiting.remove(project)
-    #         all_projects.add(project)
-    #     collect(project,  None)
-
-    #     # 2. Construction du graphe inversé
-    #     graph = defaultdict(list)     # dep -> [dependants]
-    #     in_degree = defaultdict(int)  # nombre de dépendances restantes
-
-    #     for project in all_projects:
-    #         in_degree[project] = 0
-    #     for project in all_projects:
-    #         for dep_ctx in project.dependencies:
-    #             graph[dep_ctx].append(project)
-    #             in_degree[project] += 1
-
-    #     # 3. Kahn : leaf en premier
-    #     queue = deque(
-    #         project for project in all_projects if in_degree[project] == 0
-    #     )
-
-    #     ordered = []
-
-    #     while queue:
-    #         project = queue.popleft()
-    #         ordered.append(project)
-
-    #         for dependant in graph[project]:
-    #             in_degree[dependant] -= 1
-    #             if in_degree[dependant] == 0:
-    #                 queue.append(dependant)
-
-    #     return ordered
-    
     def _generateProject(self, cmake_context :CMakeContext):
         match cmake_context.project:
             case BinProject() as project:
@@ -183,15 +116,17 @@ project({project.name} LANGUAGES CXX )
 # {project.name} output name
 set_target_properties({project.name} PROPERTIES OUTPUT_NAME {project.name})
 """)
-        
             # Write dependencies
-            for cmake_dep_context in context.dependencies_context:
-                f.write(f"""\n# Add {cmake_dep_context.project.name} dependency 
-if(NOT TARGET {cmake_dep_context.project.name})
-add_subdirectory("{cmake_dep_context.cmakelists_directory.resolve().as_posix()}" "{cmake_dep_context.build_directory.resolve().as_posix()}")
+            for dep_project in project.dependencies:
+                dep_ctx = CMakeContext(project_directory=context.project_directory, 
+                            platform_target=context.platform_target, 
+                            project=dep_project)
+                f.write(f"""\n# Add {dep_project.name} dependency 
+if(NOT TARGET {dep_project.name})
+add_subdirectory("{dep_ctx.cmakelists_directory.resolve().as_posix()}" "{dep_ctx.build_directory.resolve().as_posix()}")
 endif()
-target_link_libraries({project.name} PRIVATE {cmake_dep_context.project.name})
-target_include_directories({project.name} PRIVATE $<TARGET_PROPERTY:{cmake_dep_context.project.name},INTERFACE_INCLUDE_DIRECTORIES>)
+target_link_libraries({project.name} PRIVATE {dep_project.name})
+target_include_directories({project.name} PRIVATE $<TARGET_PROPERTY:{dep_project.name},INTERFACE_INCLUDE_DIRECTORIES>)
 """)
 
     def _generateLibCMakeLists(self, context:CMakeContext, project: LibProject):
@@ -227,14 +162,19 @@ project({project.name} LANGUAGES CXX )
 set_target_properties({project.name} PROPERTIES OUTPUT_NAME {project.name})
 """)
             # Write dependencies
-            for cmake_dep_context in context.dependencies_context:
-                f.write(f"""\n# Add {cmake_dep_context.project.name} dependency 
-if(NOT TARGET {cmake_dep_context.project.name})
-add_subdirectory("{cmake_dep_context.cmakelists_directory.resolve().as_posix()}" "{cmake_dep_context.build_directory.resolve().as_posix()}")
+            for dep_project in project.dependencies:
+                dep_ctx = CMakeContext(project_directory=context.project_directory, 
+                            platform_target=context.platform_target, 
+                            project=dep_project)
+                f.write(f"""\n# Add {dep_project.name} dependency 
+if(NOT TARGET {dep_project.name})
+add_subdirectory("{dep_ctx.cmakelists_directory.resolve().as_posix()}" "{dep_ctx.build_directory.resolve().as_posix()}")
 endif()
-target_link_libraries({project.name} PRIVATE {cmake_dep_context.project.name})
-target_include_directories({project.name} PRIVATE $<TARGET_PROPERTY:{cmake_dep_context.project.name},INTERFACE_INCLUDE_DIRECTORIES>)
-""")       
+target_link_libraries({project.name} PRIVATE {dep_project.name})
+target_include_directories({project.name} PRIVATE $<TARGET_PROPERTY:{dep_project.name},INTERFACE_INCLUDE_DIRECTORIES>)
+""") 
+                
+
             # Write package
             f.write(f"""
 # Create alias
@@ -318,14 +258,18 @@ set_target_properties({project.name} PROPERTIES OUTPUT_NAME {project.name})
 target_compile_definitions({project.name} PRIVATE KISS_EXPORTS)
 """)
             # Write dependencies
-            for cmake_dep_context in context.dependencies_context:
-                f.write(f"""\n# Add {cmake_dep_context.project.name} dependency 
-if(NOT TARGET {cmake_dep_context.project.name})
-add_subdirectory("{cmake_dep_context.cmakelists_directory.resolve().as_posix()}" "{cmake_dep_context.build_directory.resolve().as_posix()}")
+            for dep_project in project.dependencies:
+                dep_ctx = CMakeContext(project_directory=context.project_directory, 
+                            platform_target=context.platform_target, 
+                            project=dep_project)
+                f.write(f"""\n# Add {dep_project.name} dependency 
+if(NOT TARGET {dep_project.name})
+add_subdirectory("{dep_ctx.cmakelists_directory.resolve().as_posix()}" "{dep_ctx.build_directory.resolve().as_posix()}")
 endif()
-target_link_libraries({project.name} PRIVATE {cmake_dep_context.project.name})
-target_include_directories({project.name} PRIVATE $<TARGET_PROPERTY:{cmake_dep_context.project.name},INTERFACE_INCLUDE_DIRECTORIES>)
+target_link_libraries({project.name} PRIVATE {dep_project.name})
+target_include_directories({project.name} PRIVATE $<TARGET_PROPERTY:{dep_project.name},INTERFACE_INCLUDE_DIRECTORIES>)
 """)        
+                
             # Write package
             f.write(f"""
 # Create alias

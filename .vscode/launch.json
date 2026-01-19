@@ -105,10 +105,10 @@
             // ]
             "args": [
                 "-d",
-                "tests/my_lib",
+                "tests/my_bin",
                 "build",
                 "-p",
-                "my_lib"
+                "my_bin"
             ],
             // "args": [    
             //     "-d",

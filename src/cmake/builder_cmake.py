@@ -72,7 +72,7 @@ class BuilderCMake(BaseBuilder):
         
 
         os.makedirs(context.build_directory, exist_ok=True)
-        if generated_context_list:
+        if generated_context_list or not context.cmakecache.exists():
             console.print_step(f"🛠️  CMake configure with {cmake_generator_name}")
             if not run_process("cmake", configure_args, context.build_directory) == 0:
                 exit(1)
@@ -92,10 +92,10 @@ class BuilderCMake(BaseBuilder):
             exit(1)
 
         # Install
-        console.print_step("🏗️  CMake install...")
-        args = ["--install", ".", "--config", cmake_config, "--prefix", context.install_directory]
-        if not run_process("cmake", args, context.build_directory) == 0:
-            exit(1)
+        # console.print_step("🏗️  CMake install...")
+        # args = ["--install", ".", "--config", cmake_config, "--prefix", context.install_directory]
+        # if not run_process("cmake", args, context.build_directory) == 0:
+        #     exit(1)
 
     def build(self, build_context: BuildContext):
         self.build_project(build_context=build_context)

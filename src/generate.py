@@ -38,18 +38,16 @@ class GenerateContext(Context):
 
 
     @classmethod
-    def from_cli_parser(cls, cli_parser: cli.KissParser) -> Self:
-        return cls.create(directory=cli_parser.directory,
-                          project_name=cli_parser.project_name,
-                          generator_name=cli_parser.generator,
-                          platform_target=PlatformTarget.default_target())
+    def from_cli_args(cls, cli_args: argparse.Namespace) -> Self:
+        return cls.create(directory=cli_args.directory,
+                          project_name=cli_args.project.name,
+                          generator_name=cli_args.generator_name,
+                          platform_target=cli_args.platform_target)
        
-    
-  
-def cmd_generate(generate_params:  argparse.ArgumentParser):
-    generate_context = GenerateContext.from_cli_parser(generate_params)
-    generator : BaseGenerator = GeneratorRegistry.generators.get(generate_context.generator_name)
+
+def cmd_generate(cli_args: argparse.Namespace):
+    generator : BaseGenerator = GeneratorRegistry.generators.get(cli_args.generator)
     if not generator:
-        console.print_error(f"Generator {generate_context.generator_name} not found")
+        console.print_error(f"Generator {cli_args.generator} not found")
         exit(1)
-    generator.generate(generate_context)
+    generator.generate(cli_args)

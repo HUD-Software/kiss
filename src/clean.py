@@ -57,29 +57,27 @@ class CleanContext(Context):
                     project_to_clean = project
                     break
         
-        cleaner_name = cleaner_name if cleaner_name is not None else "cmake"
-
         return CleanContext(directory=directory, project=project_to_clean, cleaner_name=cleaner_name, platform_target=platform_target,  config=config, compiler=compiler)
 
 
     @staticmethod
-    def from_cli_parser(cli_parser: cli.KissParser) -> Self:
-        release :bool = getattr(cli_parser, "release", False) or False
-        debug_info :bool = getattr(cli_parser, "debug_info", True) or (True if not release else False)
+    def from_cli_args(cli_args: argparse.Namespace) -> Self:
+        release :bool = getattr(cli_args, "release", False) or False
+        debug_info :bool = getattr(cli_args, "debug_info", True) or (True if not release else False)
         config : Config = Config(release, debug_info)
         platform_target: PlatformTarget = PlatformTarget.default_target()
-        compiler : Compiler = getattr(cli_parser, "compiler", None) or Compiler.default_compiler(platform_target=platform_target)
-        clean_context: CleanContext = CleanContext.create(directory=cli_parser.directory,
-                                                    project_name=cli_parser.project_name,
-                                                    cleaner_name=cli_parser.cleaner,
+        compiler : Compiler = getattr(cli_args, "compiler", None) or Compiler.default_compiler(platform_target=platform_target)
+        clean_context: CleanContext = CleanContext.create(directory=cli_args.directory,
+                                                    project_name=cli_args.project_name,
+                                                    cleaner_name=cli_args.cleaner,
                                                     platform_target=platform_target,
                                                     config=config,
                                                     compiler=compiler)
         return clean_context
 
 
-def cmd_clean(clean_params:  argparse.ArgumentParser):
-    clean_context = CleanContext.from_cli_parser(clean_params)
+def cmd_clean(cli_args: argparse.Namespace):
+    clean_context = CleanContext.from_cli_args(cli_args)
     cleaner : BaseCleaner = CleanerRegistry.cleaners.get(clean_context.cleaner_name)
     if not cleaner:
         console.print_error(f"Cleaner {clean_context.cleaner_name} not found")

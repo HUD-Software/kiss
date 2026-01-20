@@ -1,4 +1,5 @@
 
+import argparse
 import os
 from pathlib import Path
 from cli import KissParser
@@ -10,18 +11,16 @@ from generate import GenerateContext
 from generator import BaseGenerator
 from project import  BinProject, LibProject, DynProject, Project
 
-class GeneratorCMake(BaseGenerator):
+class CMakeListsGenerateContext(GenerateContext):
+    pass
+
+class CMakeListsGenerator(BaseGenerator):
     @classmethod
     def add_cli_argument_to_parser(cls, parser: KissParser):
         pass
-        # parser.add_argument("-cov", "--coverage", help="enable code coverage", action='store_const', const=True)
-        # parser.add_argument("-san", "--sanitizer", help="enable sanitizer", action='store_const', const=True)
-
-
-    def __init__(self, parser: KissParser = None):
+    
+    def __init__(self):
         super().__init__("cmake", "Generate cmake CMakeLists.txt")
-        # self.coverage = getattr(parser, "coverage", False)
-        # self.sanitizer = getattr(parser, "sanitizer", False)
 
     @staticmethod
     def _split_path_with_pattern(path: Path):
@@ -59,19 +58,19 @@ class GeneratorCMake(BaseGenerator):
             # Add the rest avec the current directory and reapply the glob
             elif f.is_dir() and rest:
                 src = f / rest
-                base_d, pattern_d, rest_d = GeneratorCMake._split_path_with_pattern(src)
-                all_files.update(GeneratorCMake._resolve_glob_source_path(base_d, pattern_d, rest_d))
+                base_d, pattern_d, rest_d = CMakeListsGenerator._split_path_with_pattern(src)
+                all_files.update(CMakeListsGenerator._resolve_glob_source_path(base_d, pattern_d, rest_d))
         return all_files
     
     @staticmethod
     def _resolve_sources(context:CMakeContext, src_list: list[Path]): 
         all_files = set()
         for src in src_list:
-            base, pattern, rest = GeneratorCMake._split_path_with_pattern(src)
+            base, pattern, rest = CMakeListsGenerator._split_path_with_pattern(src)
 
             # We have a pattern like "**", "*" or "?"
             if pattern:
-                all_files.update(GeneratorCMake._resolve_glob_source_path(base, pattern, rest))
+                all_files.update(CMakeListsGenerator._resolve_glob_source_path(base, pattern, rest))
            
             #  There is not pattern and it's a file, just add it
             else:
@@ -339,13 +338,13 @@ install(FILES
 include("${{CMAKE_CURRENT_LIST_DIR}}/{project.name}Targets.cmake")
 """)
             
-    def generate_project(self, generate_context: GenerateContext) -> list[Project]:
+    def generate_project(self, cmakelist_generate_context: CMakeListsGenerateContext) -> list[Project]:
         # Create the finger print and load it
-        fingerprint = Fingerprint(CMakeContext.resolveCMakeBuildDirectory(generate_context.directory, generate_context.platform_target))
+        fingerprint = Fingerprint(CMakeContext.resolveCMakeBuildDirectory(cmakelist_generate_context.directory, cmakelist_generate_context.platform_target))
         fingerprint.load_or_create()
 
         # List flatten projet to generate
-        project_list_to_generate = generate_context.project.topological_sort_projects()
+        project_list_to_generate = cmakelist_generate_context.project.topological_sort_projects()
 
         # Create a CMakeContext list that keep the same order as the topoligical sort
         # Example:
@@ -356,7 +355,7 @@ include("${{CMAKE_CURRENT_LIST_DIR}}/{project.name}Targets.cmake")
         unfreshflags: list[bool] = [False] * len(project_list_to_generate)
         for i, project in enumerate(project_list_to_generate):
             # If the project is not fresh anymore add it to refresh
-            if not (fingerprint.is_fresh_file(CMakeContext.resolveCMakefile(current_directory=generate_context.directory, platform_target=generate_context.platform_target, project=project)) and fingerprint.is_fresh_file(project.file)):
+            if not (fingerprint.is_fresh_file(CMakeContext.resolveCMakefile(current_directory=cmakelist_generate_context.directory, platform_target=cmakelist_generate_context.platform_target, project=project)) and fingerprint.is_fresh_file(project.file)):
                 unfreshflags[i] = True
             else:
                 # If one of the dependency of this project is unfresh, we also mark it as unfresh
@@ -373,7 +372,7 @@ include("${{CMAKE_CURRENT_LIST_DIR}}/{project.name}Targets.cmake")
             console.print_step("⚙️  Generate CMakeLists.txt...")
             for project in unfreshlist:
                 console.print_tips(f"  📝 {project.name}")
-                ctx = CMakeContext(current_directory=generate_context.directory, platform_target=generate_context.platform_target, project=project)
+                ctx = CMakeContext(current_directory=cmakelist_generate_context.directory, platform_target=cmakelist_generate_context.platform_target, project=project)
                 self._generateProject(ctx)
                 fingerprint.update_file(ctx.cmakefile)
                 fingerprint.update_file(project.file)
@@ -382,8 +381,9 @@ include("${{CMAKE_CURRENT_LIST_DIR}}/{project.name}Targets.cmake")
             console.print_step(f"✔️  All CMakeLists.txt are up-to-date")
         return unfreshlist
 
-    def generate(self, generate_context: GenerateContext)-> list[CMakeContext]:
-        return self.generate_project(generate_context=generate_context)
+    def generate(self, cli_args: argparse.Namespace)-> list[CMakeContext]:
+        cmakelist_generate_context = CMakeListsGenerateContext.from_cli_args(cli_args)
+        return self.generate_project(cmakelist_generate_context=cmakelist_generate_context)
 
         
 

@@ -1,22 +1,57 @@
+import argparse
+from pathlib import Path
+from typing import Self
 from clean import CleanContext
 from cleaner import BaseCleaner
 from cli import KissParser
 from cmake.cmake_context import CMakeContext
+from cmake.cmake_generators import CMakeGenerator
+from compiler import Compiler
+from config import Config
 import console
+from platform_target import PlatformTarget
+from project import Project
+
+class CMakeCleanContext(CleanContext):
+    def __init__(self, directory:Path, project: Project, builder_name: str, platform_target: PlatformTarget, config : Config, compiler : Compiler, generator: CMakeGenerator):
+        super().__init__(directory, project, builder_name, platform_target, config, compiler)
+        self._generator = generator
+
+    @property
+    def generator(self) -> CMakeGenerator:
+        return self._generator
+    
+    @classmethod
+    def create(cls, directory: Path, project_name: str, builder_name: str, platform_target: PlatformTarget, config : Config, compiler : Compiler, generator: CMakeGenerator) -> Self :
+        project_to_build = super().find_target_project(directory, project_name)
+        if not project_to_build:
+            console.print_error(f"No project found in {str(directory)}")
+            exit(1)
+        return CMakeCleanContext(directory=directory, project=project_to_build, builder_name=builder_name, platform_target=platform_target, config=config, compiler=compiler, generator=generator)
 
 
+    @staticmethod
+    def from_cli_args(cli_args: argparse.Namespace) -> Self:
+        clean_context = CleanContext.from_cli_args(cli_args)
+        return CMakeCleanContext(directory=clean_context.directory,
+                                 project=clean_context.project,
+                                 builder_name=clean_context.builder_name,
+                                 platform_target=clean_context.platform_target,
+                                 config=clean_context.config,
+                                 compiler=clean_context.compiler,
+                                 generator=cli_args.generator)
 
-class CleanerCMake(BaseCleaner):
+class CMakeCleaner(BaseCleaner):
     @classmethod
     def add_cli_argument_to_parser(cls, parser: KissParser):
         pass
 
-    def __init__(self, parser: KissParser = None):
+    def __init__(self):
         super().__init__("cmake", "Clean cmake CMakeLists.txt")
 
     def clean_project(self, clean_context: CleanContext):
-
-        if not clean_context.project is None:
+        # If the user specifyed a project, clean only that project
+        if clean_context.project :
             # Clean the project
             context = CMakeContext(current_directory=clean_context.directory, 
                                 platform_target=clean_context.platform_target, 
@@ -44,6 +79,7 @@ class CleanerCMake(BaseCleaner):
                 console.print_step(f"Removing empty build parent directory: {str(context.build_directory.parent)}")
                 context.build_directory.parent.rmdir()
 
+        # Else, clean the whole build directory
         else:
             if CMakeContext.resolveRootBuildDirectory(current_directory=clean_context.directory).exists():
                 console.print_step(f"Removing build directory: {str(CMakeContext.resolveRootBuildDirectory(clean_context.directory))}")

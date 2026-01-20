@@ -1,9 +1,10 @@
+import argparse
 from pathlib import Path
 from typing import Self
 import cli
 import console
 from context import Context
-from yaml_file import YamlFile, YamlGitDependency, YamlPathDependency, YamlProjectType
+from yaml_file import YamlProjectFile, YamlGitDependency, YamlPathDependency, YamlProjectType
 
 
 class ListContext(Context):
@@ -21,12 +22,12 @@ class ListContext(Context):
         return self._list_dependencies
     
     @classmethod
-    def from_cli_parser(cls, cli_parser: cli.KissParser) -> Self:
-        return cls(directory=cli_parser.directory, recursive=cli_parser.recursive, list_dependencies=cli_parser.list_dependencies)
+    def from_cli_args(cls, cli_args: argparse.Namespace) -> Self:
+        return cls(directory=cli_args.directory, recursive=cli_args.recursive, list_dependencies=cli_args.list_dependencies)
     
-def cmd_list(list_params: cli.KissParser):
-    list_context = ListContext.from_cli_parser(list_params)
-    all_yaml_projects = YamlFile.load_yaml_projects_in_directory(directory=list_context.directory, recursive=list_context.recursive, load_dependencies=list_context.list_dependencies)
+def cmd_list(cli_args: argparse.Namespace):
+    list_context = ListContext.from_cli_args(cli_args)
+    all_yaml_projects = YamlProjectFile.load_yaml_projects_in_directory(directory=list_context.directory, recursive=list_context.recursive, load_dependencies=list_context.list_dependencies)
     if not all_yaml_projects:
         console.print_success(f"No project found in '{list_context.directory}'")
     else:

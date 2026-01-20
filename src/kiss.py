@@ -1,3 +1,4 @@
+from pathlib import Path
 from add import cmd_add
 from clean import cmd_clean
 from list import cmd_list
@@ -6,8 +7,10 @@ from generate import cmd_generate
 from build import cmd_build
 import cli
 from run import cmd_run
+from target import TargetRegistry
 
 def main():
+    TargetRegistry.load_and_register_all_target_in_directory(Path("platforms"))
     args = cli.UserParams.from_args()
 
     if args.option == "list": 
@@ -20,20 +23,21 @@ def main():
         cmd_add(add_params=args)
         
     elif args.option == "generate": 
-        cmd_generate(generate_params=args)
+        cmd_generate(cli_args=args)
     
     elif args.option == "build": 
-        cmd_build(build_params=args)
+        cmd_build(cli_args=args)
     
     elif args.option == "run": 
-        cmd_run(run_params=args)
+        cmd_run(cli_args=args)
 
     elif args.option == "clean": 
-        cmd_clean(clean_params=args)
+        cmd_clean(cli_args=args)
 
     elif args.option == "test": 
         pass
-
+    elif args.option == "install":    
+        pass 
     elif args.option == "package": 
         pass
             

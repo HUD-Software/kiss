@@ -45,30 +45,28 @@ class BuildContext(Context):
         if not project_to_build:
             console.print_error(f"No project found in {str(directory)}")
             exit(1)
-        builder_name = builder_name if builder_name is not None else "cmake"
         return BuildContext(directory=directory, project=project_to_build, builder_name=builder_name, platform_target=platform_target, config=config, compiler=compiler)
 
 
     @staticmethod
-    def from_cli_parser(cli_parser: cli.KissParser) -> Self:
-        release :bool = getattr(cli_parser, "release", False) or False
-        debug_info :bool = getattr(cli_parser, "debug_info", True) or (True if not release else False)
+    def from_cli_args(cli_args: argparse.Namespace) -> Self:
+        release :bool = getattr(cli_args, "release", False) or False
+        debug_info :bool = getattr(cli_args, "debug_info", True) or (True if not release else False)
         config : Config = Config(release, debug_info)
         platform_target: PlatformTarget = PlatformTarget.default_target()
-        compiler : Compiler = getattr(cli_parser, "compiler", None) or Compiler.default_compiler(platform_target=platform_target)
-        build_context: BuildContext = BuildContext.create(directory=cli_parser.directory,
-                                                    project_name=cli_parser.project_name,
-                                                    builder_name=cli_parser.builder,
+        compiler : Compiler = getattr(cli_args, "compiler", None) or Compiler.default_compiler(platform_target=platform_target)
+        build_context: BuildContext = BuildContext.create(directory=cli_args.directory,
+                                                    project_name=cli_args.project_name,
+                                                    builder_name=cli_args.builder,
                                                     platform_target=platform_target,
                                                     config=config,
                                                     compiler=compiler)
 
         return build_context
 
-def cmd_build(build_params:  argparse.ArgumentParser):
-    build_context = BuildContext.from_cli_parser(build_params)
-    builder : BaseBuilder = BuilderRegistry.builders.get(build_context.builder_name)
+def cmd_build(cli_args: argparse.Namespace):
+    builder : BaseBuilder = BuilderRegistry.builders.get(cli_args.builder)
     if not builder:
-        console.print_error(f"Builder {build_context.builder_name} not found")
+        console.print_error(f"Builder {cli_args.builder} not found")
         exit(1)
-    builder.build(build_context)
+    builder.build(cli_args)

@@ -4,7 +4,7 @@
 from pathlib import Path
 import console
 from project import Project
-from yaml_file import YamlFile, YamlProject
+from yaml_file import YamlProjectFile, YamlProject
 
 class ProjectRegistry:
     def __init__(self):
@@ -39,7 +39,7 @@ class ProjectRegistry:
     
     def load_and_register_all_project_in_directory(self, directory: Path, load_dependencies : bool, recursive: bool ):
         # Load all yaml projects
-        list_all_yaml_project = YamlFile.load_yaml_projects_in_directory(directory, load_dependencies, recursive).values()
+        list_all_yaml_project = YamlProjectFile.load_yaml_projects_in_directory(directory, load_dependencies, recursive).values()
             
         # Create all projects
         all_projects: set[(YamlProject, Project)] = set()

@@ -1,13 +1,13 @@
 import cli
 import console
-from yaml_file import PROJECT_FILE_NAME, YamlFile
+from yaml_file import PROJECT_FILE_NAME, YamlProjectFile
 
 
 def cmd_add(add_params: cli.KissParser):
     project_name = add_params.project_name
     project_dir = add_params.directory
     project_file = project_dir / PROJECT_FILE_NAME
-    yaml_file = YamlFile(file=project_file)
+    yaml_file = YamlProjectFile(file=project_file)
     # Check that the project file exists
     if not yaml_file.load_yaml():
         console.print_warning(f"Error: Unable to load project file `{project_file}`")

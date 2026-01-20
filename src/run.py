@@ -48,20 +48,19 @@ class RunContext(Context):
         if not project_to_run:
             console.print_error(f"No project found in {str(directory)}")
             exit(1)
-        runner_name = runner_name if runner_name is not None else "cmake"
         return RunContext(directory=directory, project=project_to_run, runner_name=runner_name, platform_target=platform_target,  config=config, compiler=compiler)
 
 
     @staticmethod
-    def from_cli_parser(cli_parser: cli.KissParser) -> Self:
-        release :bool = getattr(cli_parser, "release", False) or False
-        debug_info :bool = getattr(cli_parser, "debug_info", True) or (True if not release else False)
+    def from_cli_args(cli_args: argparse.Namespace) -> Self:
+        release :bool = getattr(cli_args, "release", False) or False
+        debug_info :bool = getattr(cli_args, "debug_info", True) or (True if not release else False)
         config : Config = Config(release, debug_info)
         platform_target: PlatformTarget = PlatformTarget.default_target()
-        compiler : Compiler = getattr(cli_parser, "compiler", None) or Compiler.default_compiler(platform_target=platform_target)
-        run_context: RunContext = RunContext.create(directory=cli_parser.directory,
-                                                    project_name=cli_parser.project_name,
-                                                    runner_name=cli_parser.runner,
+        compiler : Compiler = getattr(cli_args, "compiler", None) or Compiler.default_compiler(platform_target=platform_target)
+        run_context: RunContext = RunContext.create(directory=cli_args.directory,
+                                                    project_name=cli_args.project_name,
+                                                    runner_name=cli_args.runner,
                                                     platform_target=platform_target,
                                                     config=config,
                                                     compiler=compiler)
@@ -69,8 +68,8 @@ class RunContext(Context):
 
     
 
-def cmd_run(run_params:  argparse.ArgumentParser):
-    run_context = RunContext.from_cli_parser(run_params)
+def cmd_run(cli_args: argparse.Namespace):
+    run_context = RunContext.from_cli_args(cli_args)
     runner : BaseGenerator = RunnerRegistry.runners.get(run_context.runner_name)
     if not runner:
         console.print_error(f"Runner {run_context.runner_name} not found")

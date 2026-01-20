@@ -2,26 +2,31 @@ import os
 from build import BuildContext
 from builder import BuilderRegistry
 from cli import KissParser
-from cmake.builder_cmake import BuilderCMake
+from cmake.cmake_builder import CMakeBuilder
 from cmake.cmake_context import CMakeContext
-from config import Config
 import console
 from process import run_process
+from project import ProjectType
 from run import RunContext
 from runner import BaseRunner
 
 
-class RunnerCMake(BaseRunner):
+class CMakeRunner(BaseRunner):
     @classmethod
     def add_cli_argument_to_parser(cls, parser: KissParser):
-        pass
+        pass 
 
-    def __init__(self, parser: KissParser = None):
+    def __init__(self):
         super().__init__("cmake", "Run a binary build with CMake")
 
     def run_project(self, run_context: RunContext):
+        # Ensure the the project is a binary
+        if run_context.project.type != ProjectType.bin:
+            console.print_error(f"Project {run_context.project.name} is not a binary project")
+            exit(1)
+            
         # Build the project
-        cmake_builder : BuilderCMake = BuilderRegistry.builders.get(run_context.runner_name)
+        cmake_builder : CMakeBuilder = BuilderRegistry.builders.get(run_context.runner_name)
         if not cmake_builder:
             console.print_error(f"Builder {cmake_builder.name} not found")
             exit(1)

@@ -1,9 +1,8 @@
 
 
-# YamlFile is the instanciation of one kiss.yaml file.
+# YamlProjectFile is the instanciation of one kiss.yaml file.
 # It is use to load, read, modify and save the yaml file.
 from pathlib import Path
-import traceback
 from typing import Optional, Self
 import semver
 import yaml
@@ -14,7 +13,7 @@ from yaml_file.yaml_project import PROJECT_FILE_NAME, YamlBinProject, YamlDepend
 _VALID_YAML_ROOT = [str(YamlProjectType.bin), str(YamlProjectType.dyn), str(YamlProjectType.lib), str(YamlProjectType.workspace)]
 
 
-class YamlFile:
+class YamlProjectFile:
    
     # Initialize with the project file path
     def __init__(self, file: Path):
@@ -38,7 +37,7 @@ class YamlFile:
                 self._yaml = yaml.safe_load(f)
             return True
         except (OSError, yaml.YAMLError) as e:
-            console.print_error(f"Error: When loading {self.file} file: {e}\n{traceback.format_exc()}")
+            console.print_error(f"Error: When loading {self.file} file: {e}")
             return False
         
     # Save the current yaml dictionary to the file
@@ -55,7 +54,7 @@ class YamlFile:
             return True
 
         except (OSError, yaml.YAMLError) as e:
-            console.print_error(f"Error: When saving {self.file} file: {e}\n{traceback.format_exc()}")
+            console.print_error(f"Error: When saving {self.file} file: {e}")
             return False
     
 
@@ -214,7 +213,7 @@ class YamlFile:
                                     continue
                                 
                                 # Load the yaml
-                                yaml = YamlFile(file_in_directory)
+                                yaml = YamlProjectFile(file_in_directory)
                                 if not yaml.load_yaml():
                                     console.print_warning(f"Error: Unable to load project file `{file_in_directory}`")
                                     exit(1)
@@ -242,7 +241,7 @@ class YamlFile:
         # Load dependencies if requested
         if load_dependencies:
             # Load dependencies of all projects in the file
-            yaml_dependency_projects: dict[Path, list[YamlProject]] = YamlFile._load_yaml_dependency(loaded_yaml_projects, new_yaml_projects_in_file)
+            yaml_dependency_projects: dict[Path, list[YamlProject]] = YamlProjectFile._load_yaml_dependency(loaded_yaml_projects, new_yaml_projects_in_file)
 
             while yaml_dependency_projects:
                 # Add all yaml dependencies to the set
@@ -254,7 +253,7 @@ class YamlFile:
                 yaml_dependency_projects_old = yaml_dependency_projects
                 yaml_dependency_projects = {}
                 for dependency_file, yaml_dependency in yaml_dependency_projects_old.items():
-                    for dependency_file2, yaml_dependencies in YamlFile._load_yaml_dependency(loaded_yaml_projects, yaml_dependency).items():
+                    for dependency_file2, yaml_dependencies in YamlProjectFile._load_yaml_dependency(loaded_yaml_projects, yaml_dependency).items():
                         for dep2 in yaml_dependencies:
                             yaml_dependency_projects.setdefault(dependency_file2, []).append(dep2)
 
@@ -273,12 +272,12 @@ class YamlFile:
             if file in loaded_yaml_projects:
                 continue
             # Load the yaml
-            yaml = YamlFile(file)
+            yaml = YamlProjectFile(file)
             if not yaml.load_yaml():
                 console.print_warning(f"Error: Unable to load project file `{file}`")
                 exit(1)
             # Load project in the YAML file
-            YamlFile.load_yaml_projects(yaml, loaded_yaml_projects, load_dependencies)
+            YamlProjectFile.load_yaml_projects(yaml, loaded_yaml_projects, load_dependencies)
 
         return loaded_yaml_projects
     

@@ -1,3 +1,4 @@
+import argparse
 import os
 from pathlib import Path
 from typing import Self
@@ -5,7 +6,7 @@ import cli
 import console
 from context import Context
 from project import BinProject, DynProject, LibProject, Project, ProjectType
-from yaml_file import PROJECT_FILE_NAME, YamlFile
+from yaml_file import PROJECT_FILE_NAME, YamlProjectFile
 
 
 class NewContext(Context):
@@ -19,11 +20,11 @@ class NewContext(Context):
         self._project_description = project_description
 
     @classmethod
-    def from_cli_parser(cls, cli_parser: cli.KissParser) -> Self:
-        if cli_parser.existing:
-            project_dir = cli_parser.directory / cli_parser.project_name
-            project_file =  cli_parser.directory / PROJECT_FILE_NAME
-            console.print_step(f"Creating a new {cli_parser.project_type} project named `{cli_parser.project_name}` in existing project file `{project_file}`")
+    def from_cli_args(cls, cli_args: argparse.Namespace) -> Self:
+        if cli_args.existing:
+            project_dir = cli_args.directory / cli_args.project_name
+            project_file =  cli_args.directory / PROJECT_FILE_NAME
+            console.print_step(f"Creating a new {cli_args.project_type} project named `{cli_args.project_name}` in existing project file `{project_file}`")
             if project_dir.exists():
                 console.print_error(f"Error: Project directory '{project_dir}' already exists")
                 exit(1)
@@ -33,20 +34,20 @@ class NewContext(Context):
                 exit(1)
         else:
             # Create the file PROJECT_FILE_NAME in the specified directory or add the project to this file if not exists
-            project_dir = cli_parser.directory / cli_parser.project_name
+            project_dir = cli_args.directory / cli_args.project_name
             project_file = project_dir / PROJECT_FILE_NAME
-            console.print_step(f"Creating a new {cli_parser.project_type} project named `{cli_parser.project_name}` in `{project_file}`")
+            console.print_step(f"Creating a new {cli_args.project_type} project named `{cli_args.project_name}` in `{project_file}`")
             if project_dir.exists():
                 console.print_error(f"Error: Project directory '{project_dir}' already exists")
                 exit(1)
         return cls(
             directory=project_dir, 
             project_file=project_file, 
-            existing=cli_parser.existing, 
-            populate=not cli_parser.empty,
-            project_type=cli_parser.project_type,
-            project_name=cli_parser.project_name,
-            project_description=cli_parser.description
+            existing=cli_args.existing, 
+            populate=not cli_args.empty,
+            project_type=cli_args.project_type,
+            project_name=cli_args.project_name,
+            project_description=cli_args.description
         )
 
 
@@ -76,7 +77,7 @@ class NewContext(Context):
     
     
 def __new_project_in_project_file(new_context: NewContext, project: Project):
-    yaml_file = YamlFile(file=new_context.project_file)
+    yaml_file = YamlProjectFile(file=new_context.project_file)
 
     # If the file exist load it and check that the project does not already exists or a dependency with the same name already exists
     if new_context.project_file.exists():
@@ -237,8 +238,8 @@ def __new_dyn_project_in_project_file(new_context: NewContext):
             f.write('void hello_world();\n')
             f.write('\n#endif // DYN_H\n')
 
-def cmd_new(new_params :cli.KissParser):
-    new_context = NewContext.from_cli_parser(new_params)
+def cmd_new(cli_args: argparse.Namespace):
+    new_context = NewContext.from_cli_args(cli_args)
     match new_context.project_type_to_create:
         case ProjectType.bin:
             __new_bin_project_in_project_file(new_context)

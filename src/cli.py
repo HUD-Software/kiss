@@ -87,8 +87,8 @@ def _add_add_command(parser : argparse.ArgumentParser):
     add_parser.add_argument("--branch", help="Git branch (only with --git)")
 
 def _add_generate_command(parser : argparse.ArgumentParser):
-    from cmake.generator_cmake import GeneratorCMake
-    GeneratorRegistry.register(GeneratorCMake())
+    from cmake.cmakelists_generator import CMakeListsGenerator
+    GeneratorRegistry.register(CMakeListsGenerator())
     
     generate_parser = parser.add_parser("generate", description="generate files used to build the project")
     generate_parser.add_argument("-p", "--project", help="name of the project to generate", dest="project_name", required=False, type=valid_project_name)
@@ -104,14 +104,17 @@ def _add_generate_command(parser : argparse.ArgumentParser):
                                                             dest="generator",
                                                             help=generator_help_str)
     
+    # Use "CMake" as default generator
+    generate_parser.set_defaults(generator="cmake")
+
     # Add all generator parser
     for generator in GeneratorRegistry.generators.values():
         generator_parser = generator_subparser.add_parser(generator.name, description=generator.description)
         generator.add_cli_argument_to_parser(parser=generator_parser)
 
 def _add_build_command(parser : argparse.ArgumentParser):
-    from cmake.builder_cmake import BuilderCMake
-    BuilderRegistry.register(BuilderCMake())
+    from cmake.cmake_builder import CMakeBuilder
+    BuilderRegistry.register(CMakeBuilder())
     
     build_parser = parser.add_parser("build", description="build files used to build the project")
     build_parser.add_argument("-p", "--project", help="name of the project to build", dest="project_name", required=False, type=valid_project_name)
@@ -127,17 +130,20 @@ def _add_build_command(parser : argparse.ArgumentParser):
             builder_help_str += "\n"
         builder_help_str += f"'{builder.name}' {builder.description}"
     builder_subparser = build_parser.add_subparsers(title="choose one of the following builder",
-                                                            dest="builder",
-                                                            help=builder_help_str)
-    
+                                                    dest="builder",
+                                                    help=builder_help_str)
+
     # Add all generator parser
     for builder in BuilderRegistry.builders.values():
         builder_parser = builder_subparser.add_parser(builder.name, description=builder.description)
         builder.add_cli_argument_to_parser(parser=builder_parser)
 
+    # Use "CMake" as default builder
+    build_parser.set_defaults(builder="cmake")
+
 def _add_run_command(parser : argparse.ArgumentParser):
-    from cmake.runner_cmake import RunnerCMake
-    RunnerRegistry.register(RunnerCMake())
+    from cmake.cmake_runner import CMakeRunner
+    RunnerRegistry.register(CMakeRunner())
 
     run_parser = parser.add_parser("run", description="run the project")
     run_parser.add_argument("-p", "--project", help="name of the project to run", dest="project_name", required=False, type=valid_project_name)
@@ -156,14 +162,17 @@ def _add_run_command(parser : argparse.ArgumentParser):
                                                  dest="runner",
                                                  help=runner_help_str)
 
+    # Use "CMake" as default runner
+    run_parser.set_defaults(runner="cmake")
+
     # Add all runner parser
     for runner in RunnerRegistry.runners.values():
         runner_parser = runner_subparser.add_parser(runner.name, description=runner.description)
         runner.add_cli_argument_to_parser(parser=runner_parser)
 
 def _add_clean_command(parser : argparse.ArgumentParser):
-    from cmake.cleaner_cmake import CleanerCMake
-    CleanerRegistry.register(CleanerCMake())
+    from cmake.cmake_cleaner import CMakeCleaner
+    CleanerRegistry.register(CMakeCleaner())
 
     clean_parser = parser.add_parser("clean", description="clean the project")
     clean_parser.add_argument("-p", "--project", help="name of the project to clean", dest="project_name", required=False, type=valid_project_name)
@@ -177,6 +186,9 @@ def _add_clean_command(parser : argparse.ArgumentParser):
     cleaner_subparser = clean_parser.add_subparsers(title="choose one of the following cleaner",
                                                  dest="cleaner",
                                                  help=cleaner_help_str)
+
+    # Use "CMake" as default runner
+    clean_parser.set_defaults(cleaner="cmake")
 
     # Add all cleaner parser
     for cleaner in CleanerRegistry.cleaners.values():

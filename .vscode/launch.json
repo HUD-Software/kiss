@@ -110,16 +110,16 @@
             //     "-p",
             //     "my_bin"
             // ],
-            // "args": [
-            //     "-d",
-            //     "tests/my_bin",
-            //     "run"
-            // ],
             "args": [
                 "-d",
                 "tests/my_bin",
-                "clean"
-            ]
+                "run"
+            ],
+            // "args": [
+            //     "-d",
+            //     "tests/my_bin",
+            //     "clean"
+            // ]
             // "args": [
             //     "-d",
             //     "tests",

@@ -57,7 +57,8 @@ class RunnerCMake(BaseRunner):
             binary_path = context.output_directory(run_context.config) / run_context.project.name
 
         # Run the project
-        if not run_process(binary_path, output_prefix=False) == 0:
+        console.print_step(f"▶ Run {binary_path.name}...")
+        if not run_process(binary_path, output_prefix=False, print_command=False) == 0:
             exit(1)
             
     def run(self, run_context: RunContext):

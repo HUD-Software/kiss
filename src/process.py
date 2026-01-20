@@ -20,9 +20,10 @@ def print_process(program: Path, args: list[str] = [], working_dir = Path(os.cur
         env_str = " ".join(f"{k}={v}" for k, v in env.items())
         console.print_step(f"  🌱 Environment: {env_str}")
         
-def run_process(program: Path, args: list[str] = [], working_dir= Path(os.curdir), env: dict[str, str] = {}, output_prefix = False):
-   print_process(program, args, working_dir, env)
-   return asyncio.run(__run_process(program, args, working_dir, env, output_prefix))
+def run_process(program: Path, args: list[str] = [], working_dir= Path(os.curdir), env: dict[str, str] = {}, output_prefix = False, print_command = True):
+    if print_command:
+        print_process(program, args, working_dir, env)
+    return asyncio.run(__run_process(program, args, working_dir, env, output_prefix))
 
 async def __run_process(program: Path, args: list[str], working_dir= Path(os.curdir), env: dict[str, str] = {}, output_prefix = False):
     if not working_dir.exists():

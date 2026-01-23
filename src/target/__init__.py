@@ -10,20 +10,81 @@ ConfigName = str
 CompilerFlag = str
 LinkerFlag = str
 
-class TargetFeature:
-    def __init__(self, name:FeatureName):
-        self._name = name
-    
+class TargetFeatureNode:
+    def __init__(self):
+        self._name = str()
+        self._description = str()
+        self._cxx_compiler = TargetCXXCompilerNode()
+        self._cxx_linker = TargetCXXLinkerNode()
+
+    def __hash__(self) -> int:
+        return hash(self._name)
+
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, TargetFeatureNode):
+            return NotImplemented
+        return self._name == other._name
+
     @property
     def name(self) -> FeatureName:
         return self._name
     
+    @name.setter
+    def name(self, value: FeatureName):
+         self._name = value
+
+    @property
+    def description(self) -> str:
+        return self._description
+    
+    @description.setter
+    def description(self, value: str):
+         self._description = value
+
+    @property
+    def cxx_compiler(self) -> str:
+        return self._cxx_compiler
+    
+    @cxx_compiler.setter
+    def cxx_compiler(self, value: str):
+         self._cxx_compiler = value
+ 
+    @property
+    def cxx_linker(self) -> str:
+        return self._cxx_linker
+    
+    @cxx_linker.setter
+    def cxx_linker(self, value: str):
+         self._cxx_linker = value
+
     @staticmethod
-    def from_yaml(yaml : dict) -> Self:
+    def from_yaml(target_name: str, yaml : dict) -> Optional[Self]:
+        feature_node = TargetFeatureNode()
         name = yaml.get("name")
         if not name:
-            #console.print_error(f"⚠️  Error: Project name is missing in {self.file} under '{project_type_key}'")
-            exit(1)
+            console.print_error(f"⚠️  Error: Feature name is missing in '{target_name}' target ")
+            return None
+        feature_node.name = name
+        description = yaml.get("description") or str()
+        feature_node.description = description
+        cxx_compiler = yaml.get("cxx-compiler")
+        if cxx_compiler:
+            cxx_compiler = TargetCXXCompilerNode.from_yaml(target_name=target_name, yaml=cxx_compiler)
+            if not cxx_compiler:
+                console.print_error(f"Failed to load feature '{name}' in {target_name}")
+                return None
+            feature_node.cxx_compiler = cxx_compiler
+                
+        cxx_linker = yaml.get("cxx-linker")
+        if cxx_linker:
+            cxx_linker = TargetCXXLinkerNode.from_yaml(target_name=target_name, yaml=cxx_linker)
+            if not cxx_linker:
+                console.print_error(f"Failed to load feature '{name}' in {target_name}")
+                return None
+            feature_node.cxx_linker = cxx_linker
+        return feature_node
+
+
 
 class TargetCXXCompilerNode:
     def __init__(self):
@@ -39,7 +100,7 @@ class TargetCXXCompilerNode:
         return self._flags
     
     @staticmethod
-    def from_yaml(node_name: str, yaml : dict) -> Self:
+    def from_yaml(target_name: str, yaml : dict) -> Optional[Self]:
         cxx_compiler_node = TargetCXXCompilerNode()
         for item, yaml_object in yaml.items():
             match item:
@@ -49,13 +110,13 @@ class TargetCXXCompilerNode:
                 case _:
                     parts = item.split('-')
                     if len(parts) != 2:
-                        console.print_error(f"Invalid '{item}' under '{node_name}' target")
+                        console.print_error(f"Invalid '{item}' in '{target_name}' target")
                         return None
                     config_name = parts[0]
                     if parts[1] == "flags":
                         cxx_compiler_node.flags.setdefault(config_name,[]).extend(yaml_object)
                     else:
-                        console.print_error(f"Invalid '{parts[1]}' in '{item}' item under '{node_name}' target")
+                        console.print_error(f"Invalid '{parts[1]}' in '{item}' item in '{target_name}' target")
         return cxx_compiler_node
 
 class TargetCXXLinkerNode:
@@ -72,7 +133,7 @@ class TargetCXXLinkerNode:
         return self._flags
 
     @staticmethod
-    def from_yaml(node_name: str, yaml : dict) -> Self:
+    def from_yaml(target_name: str, yaml : dict) -> Optional[Self]:
         cxx_linker_node = TargetCXXLinkerNode()
         for item, yaml_object in yaml.items():
             match item:
@@ -82,13 +143,13 @@ class TargetCXXLinkerNode:
                 case _:
                     parts = item.split('-')
                     if len(parts) != 2:
-                        console.print_error(f"Invalid '{item}' under '{node_name}' target")
+                        console.print_error(f"Invalid '{item}' in '{target_name}' target")
                         return None
                     config_name = parts[0]
                     if parts[1] == "flags":
                         cxx_linker_node.flags.setdefault(config_name,[]).extend(yaml_object)
                     else:
-                        console.print_error(f"Invalid '{parts[1]}' in '{item}' item under '{node_name}' target")
+                        console.print_error(f"Invalid '{parts[1]}' in '{item}' item in '{target_name}' target")
         return cxx_linker_node       
     
 class TargetProjectTypeNode:
@@ -118,18 +179,18 @@ class TargetProjectTypeNode:
         self._cxx_linker = value
 
     @staticmethod
-    def from_yaml(node_name: str, yaml : dict) -> Self:
-        project_type_node = TargetProjectTypeNode(node_name)
+    def from_yaml(target_name: str, yaml : dict) -> Optional[Self]:
+        project_type_node = TargetProjectTypeNode(target_name)
         for item, yaml_object in yaml.items():
             match item:
                 case "cxx-compiler":
                     if project_type_node.cxx_compiler:
-                        console.print_error(f"Multiple cxx-compiler in '{node_name}' is not supported")
-                    project_type_node.cxx_compiler= TargetCXXCompilerNode.from_yaml(node_name=node_name, yaml=yaml_object)
+                        console.print_error(f"Multiple cxx-compiler in '{target_name}' is not supported")
+                    project_type_node.cxx_compiler= TargetCXXCompilerNode.from_yaml(target_name==target_name, yaml=yaml_object)
                 case "cxx-linker":
                     if project_type_node.cxx_linker:
-                        console.print_error(f"Multiple cxx-linker in '{node_name}' is not supported")
-                    project_type_node.cxx_linker = TargetCXXLinkerNode.from_yaml(node_name=node_name, yaml=yaml_object)
+                        console.print_error(f"Multiple cxx-linker in '{target_name}' is not supported")
+                    project_type_node.cxx_linker = TargetCXXLinkerNode.from_yaml(target_name=target_name, yaml=yaml_object)
         return project_type_node  
     
 class TargetNode:
@@ -143,6 +204,7 @@ class TargetNode:
         self._cxx_compiler: Optional[TargetCXXCompilerNode] = None
         self._cxx_linker: Optional[TargetCXXLinkerNode] = None
         self._project_type: Optional[TargetProjectTypeNode] = None
+        self._features : Optional[set[TargetFeatureNode]] = None
         
     @property
     def name(self):
@@ -172,38 +234,61 @@ class TargetNode:
     def project_type(self, value: TargetProjectTypeNode):
         self._project_type = value
 
-    def _read_cxx_compiler_node(self, yaml_cxx_compiler : dict) -> TargetCXXCompilerNode:
+    @property
+    def features(self) -> set[TargetFeatureNode]:
+        return self._features
+   
+    @features.setter
+    def features(self, value: set[TargetFeatureNode]):
+        self._features = value
+
+    def _read_cxx_compiler_node(self, yaml_cxx_compiler : dict):
         if self.cxx_compiler:
             console.print_error(f"Multiple cxx-compiler in '{self.name}' is not supported")
-        return TargetCXXCompilerNode.from_yaml(node_name=self.name, yaml=yaml_cxx_compiler)
+        TargetCXXCompilerNode.from_yaml(target_name=self.name, yaml=yaml_cxx_compiler)
     
-    def _read_cxx_linker_node(self, yaml_cxx_linker : dict) -> TargetCXXLinkerNode:
+    def _read_cxx_linker_node(self, yaml_cxx_linker : dict):
         if self.cxx_linker:
             console.print_error(f"Multiple cxx-linker in '{self.name}' is not supported")
-        return TargetCXXLinkerNode.from_yaml(node_name=self.name, yaml=yaml_cxx_linker)
+        TargetCXXLinkerNode.from_yaml(target_name=self.name, yaml=yaml_cxx_linker)
    
-    def _read_project_type_node(self, node_name:str, yaml_project_type :dict) -> TargetProjectTypeNode:
+    def _read_project_type_node(self, target_name:str, yaml_project_type :dict):
         if self.project_type:
             console.print_error(f"Multiple 'project-type' in '{self.name}' is not supported")
-        return TargetProjectTypeNode.from_yaml(node_name=node_name, yaml=yaml_project_type)
+        TargetProjectTypeNode.from_yaml(target_name=target_name, yaml=yaml_project_type)
     
+    def _read_features_node(self, yaml_features_node :dict) -> TargetFeatureNode:
+        if self.features:
+            console.print_error(f"Multiple 'features' in '{self.name}' is not supported")
+        self.features = set[TargetFeatureNode]()
+        for item in yaml_features_node:
+            feature_node:Optional[TargetFeatureNode] = TargetFeatureNode.from_yaml(target_name=self.name, yaml=item)
+            if feature_node in self.features:
+                console.print_error(f"⚠️  Error: Feature with name '{feature_node.name}' already in '{self.name}'")
+                continue
+            if feature_node:
+                self.features.add(feature_node)
+          
+        
+        
 
+        
 class YamlTargetFile:
     def __init__(self, file: Path):
         self._file = file
     
-    def _read_target_node(self, name: str, yaml_target : dict) -> TargetNode:
+    def _read_target_node(self, target_name: str, yaml_target : dict) -> TargetNode:
         # Read the target name
-        parts = name.split('-')
+        parts = target_name.split('-')
         if len(parts) != 5:
-            console.print_error(f"Invalid target name in '{self._file}':\t\n'{name}'. Expected 'arch-vendor-os-env-compiler' separated by '-'")
+            console.print_error(f"Invalid target name in '{self._file}':\t\n'{target_name}'. Expected 'arch-vendor-os-env-compiler' separated by '-'")
             return None
         arch = parts[0]
         vendor = parts[1]
         os = parts[2]
         env = parts[3]
         compiler_name = parts[4]
-        target_node : TargetNode = TargetNode(name=name, arch=arch, os=os, env=env, vendor=vendor, compiler_name=compiler_name)
+        target_node : TargetNode = TargetNode(name=target_name, arch=arch, os=os, env=env, vendor=vendor, compiler_name=compiler_name)
 
         for item, yaml_object in yaml_target.items():
             match item:
@@ -212,12 +297,13 @@ class YamlTargetFile:
                 case "cxx-linker":
                     target_node._read_cxx_linker_node(yaml_cxx_linker=yaml_object)
                 case "features":
+                    target_node._read_features_node(yaml_features_node=yaml_object)
                     break
                 case "include":
                     break
                 case _:
                     if item == ProjectType.bin or item == ProjectType.dyn or item == ProjectType.lib:
-                        target_node._read_project_type_node(node_name=item, yaml_project_type=yaml_object)
+                        target_node._read_project_type_node(target_name=item, yaml_project_type=yaml_object)
 
         return target_node
             

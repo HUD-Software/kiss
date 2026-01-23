@@ -44,23 +44,23 @@ x86_64-pc-windows-msvc-all:
     - name: WARNING_LEVEL_BASE
       description: Default warning level
       cxx-compiler:
-        all: ["/W3"]
+        all-flags: ["/W3"]
     - name: WARNING_LEVEL_STRICT
       description: Strict warnings
       cxx-compiler:
-        all: ["/W4"]
+        all-flags: ["/W4"]
     - name: WARNING_ALL
       description: All warnings (very noisy)
       cxx-compiler:
-        all: ["/Wall"]
+        all-flags: ["/Wall"]
     - name: WARNING_AS_ERROR
       description: Treat warnings as errors
       cxx-compiler:
-        all: ["/WX"]
+        all-flags: ["/WX"]
     - name: NO_WARNING
       description: Disable all warnings
       cxx-compiler:
-        all: ["/W0"]
+        all-flags: ["/W0"]
 
     # Windows Runtime
     - name: RUNTIME_DLL

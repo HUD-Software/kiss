@@ -10,12 +10,71 @@ ConfigName = str
 CompilerFlag = str
 LinkerFlag = str
 
+class FeatureRuleNode:
+    def __init__(self, name: str):
+        self._name = name
+    
+    @property
+    def name(self) -> FeatureName:
+        return self._name
+    
+    @name.setter
+    def name(self, value: FeatureName):
+         self._name = value
+         
+# Only 1 rules is allowed in 'features'
+class FeatureOnlyOneRuleNode(FeatureRuleNode):
+    def __init__(self, name: str, features : list[FeatureName]):
+        super().__init__(name=name)
+        self.features=features
+
+    @staticmethod
+    def from_yaml(target_name: str, yaml : dict) -> Optional[Self]:
+        name = yaml.get("only-one")
+        if not name:
+            console.print_error(f"⚠️  Error: Feature rule name is missing in '{target_name}' target")
+            return None
+        features = yaml.get("features")
+        if not features:
+            console.print_error(f"⚠️  Error: 'features' list is required in feature-rule '{name}' in '{target_name}' target")
+            return None
+        return FeatureOnlyOneRuleNode(name, features)
+
+
+# The 'feature' is incompatible with all feature in 'with'
+class FeatureIncompatibleRuleNode(FeatureRuleNode):
+    def __init__(self, name: str, feature: FeatureName, incompatible_with:list[FeatureName]):
+        super().__init__(name=name)
+        self.feature=feature
+        self.incompatible_with=incompatible_with
+            
+    @staticmethod
+    def from_yaml(target_name: str, yaml : dict) -> Optional[Self]:
+        name = yaml.get("incompatible")
+        if not name:
+            console.print_error(f"⚠️  Error: Feature rule name is missing in '{target_name}' target")
+            return None
+
+        feature = yaml.get("feature")
+        if not feature:
+            console.print_error(f"⚠️  Error: 'feature' is required in feature-rule '{name}' in '{target_name}' target")
+            return None
+
+        incompatible_with = yaml.get("with")
+        if not incompatible_with:
+            console.print_error(f"⚠️  Error: 'with' is required in feature-rule '{name}' in '{target_name}' target")
+            return None
+
+        return FeatureIncompatibleRuleNode(name, feature, incompatible_with)
+    
+
 class TargetFeatureNode:
-    def __init__(self):
-        self._name = str()
-        self._description = str()
-        self._cxx_compiler = TargetCXXCompilerNode()
-        self._cxx_linker = TargetCXXLinkerNode()
+    def __init__(self, name: str):
+        self._name = name
+        self.description = str()
+        self.cxx_compiler = TargetCXXCompilerNode()
+        self.cxx_linker = TargetCXXLinkerNode()
+        self.enable_feature = list[FeatureName]()
 
     def __hash__(self) -> int:
         return hash(self._name)
@@ -28,43 +87,14 @@ class TargetFeatureNode:
     @property
     def name(self) -> FeatureName:
         return self._name
-    
-    @name.setter
-    def name(self, value: FeatureName):
-         self._name = value
-
-    @property
-    def description(self) -> str:
-        return self._description
-    
-    @description.setter
-    def description(self, value: str):
-         self._description = value
-
-    @property
-    def cxx_compiler(self) -> str:
-        return self._cxx_compiler
-    
-    @cxx_compiler.setter
-    def cxx_compiler(self, value: str):
-         self._cxx_compiler = value
- 
-    @property
-    def cxx_linker(self) -> str:
-        return self._cxx_linker
-    
-    @cxx_linker.setter
-    def cxx_linker(self, value: str):
-         self._cxx_linker = value
 
     @staticmethod
     def from_yaml(target_name: str, yaml : dict) -> Optional[Self]:
-        feature_node = TargetFeatureNode()
         name = yaml.get("name")
         if not name:
-            console.print_error(f"⚠️  Error: Feature name is missing in '{target_name}' target ")
+            console.print_error(f"⚠️  Error: Feature 'name' in 'features' is missing in '{target_name}' target. Feature is '{next(iter(yaml))}'")
             return None
-        feature_node.name = name
+        feature_node = TargetFeatureNode(name)
         description = yaml.get("description") or str()
         feature_node.description = description
         cxx_compiler = yaml.get("cxx-compiler")
@@ -82,6 +112,10 @@ class TargetFeatureNode:
                 console.print_error(f"Failed to load feature '{name}' in {target_name}")
                 return None
             feature_node.cxx_linker = cxx_linker
+
+        enable_feature = yaml.get("enable-feature")
+        if enable_feature:
+            feature_node.enable_feature.extend(enable_feature)
         return feature_node
 
 
@@ -205,7 +239,8 @@ class TargetNode:
         self._cxx_linker: Optional[TargetCXXLinkerNode] = None
         self._project_type: Optional[TargetProjectTypeNode] = None
         self._features : Optional[set[TargetFeatureNode]] = None
-        
+        self._feature_rules : Optional[set[FeatureRuleNode]] = None
+
     @property
     def name(self):
         return self._name
@@ -242,22 +277,30 @@ class TargetNode:
     def features(self, value: set[TargetFeatureNode]):
         self._features = value
 
+    @property
+    def feature_rules(self) -> set[TargetFeatureNode]:
+        return self._feature_rules
+   
+    @feature_rules.setter
+    def feature_rules(self, value: set[TargetFeatureNode]):
+        self._feature_rules = value
+
     def _read_cxx_compiler_node(self, yaml_cxx_compiler : dict):
         if self.cxx_compiler:
             console.print_error(f"Multiple cxx-compiler in '{self.name}' is not supported")
-        TargetCXXCompilerNode.from_yaml(target_name=self.name, yaml=yaml_cxx_compiler)
+        self.cxx_compiler = TargetCXXCompilerNode.from_yaml(target_name=self.name, yaml=yaml_cxx_compiler)
     
     def _read_cxx_linker_node(self, yaml_cxx_linker : dict):
         if self.cxx_linker:
             console.print_error(f"Multiple cxx-linker in '{self.name}' is not supported")
-        TargetCXXLinkerNode.from_yaml(target_name=self.name, yaml=yaml_cxx_linker)
+        self.cxx_linker = TargetCXXLinkerNode.from_yaml(target_name=self.name, yaml=yaml_cxx_linker)
    
     def _read_project_type_node(self, target_name:str, yaml_project_type :dict):
         if self.project_type:
             console.print_error(f"Multiple 'project-type' in '{self.name}' is not supported")
-        TargetProjectTypeNode.from_yaml(target_name=target_name, yaml=yaml_project_type)
+        self.project_type = TargetProjectTypeNode.from_yaml(target_name=target_name, yaml=yaml_project_type)
     
-    def _read_features_node(self, yaml_features_node :dict) -> TargetFeatureNode:
+    def _read_features_node(self, yaml_features_node :dict):
         if self.features:
             console.print_error(f"Multiple 'features' in '{self.name}' is not supported")
         self.features = set[TargetFeatureNode]()
@@ -268,9 +311,23 @@ class TargetNode:
                 continue
             if feature_node:
                 self.features.add(feature_node)
-          
-        
-        
+    
+    def _read_feature_rules_node(self, yaml_feature_rules_node :dict):
+        if self.feature_rules:
+            console.print_error(f"Multiple 'feature-rules' in '{self.name}' is not supported")
+        self.feature_rules = set[FeatureRuleNode]()
+        for item in yaml_feature_rules_node:
+            only_one_rule_node = item.get("only-one")
+            if only_one_rule_node:
+                only_one_rule_node = FeatureOnlyOneRuleNode.from_yaml(target_name=self.name, yaml=item)
+                self.feature_rules.add(only_one_rule_node)
+                continue
+            incompatible_rule_node = item.get("incompatible")
+            if incompatible_rule_node:
+                incompatible_rule_node = FeatureIncompatibleRuleNode.from_yaml(target_name=self.name, yaml=item)
+                self.feature_rules.add(incompatible_rule_node)
+                continue
+            console.print_error(f"⚠️  Error: Unkonw feature rules '{next(iter(item))}' in '{self.name}'") 
 
         
 class YamlTargetFile:
@@ -298,9 +355,10 @@ class YamlTargetFile:
                     target_node._read_cxx_linker_node(yaml_cxx_linker=yaml_object)
                 case "features":
                     target_node._read_features_node(yaml_features_node=yaml_object)
-                    break
+                case "feature-rules":
+                    target_node._read_feature_rules_node(yaml_feature_rules_node=yaml_object)
                 case "include":
-                    break
+                    pass
                 case _:
                     if item == ProjectType.bin or item == ProjectType.dyn or item == ProjectType.lib:
                         target_node._read_project_type_node(target_name=item, yaml_project_type=yaml_object)
@@ -310,17 +368,24 @@ class YamlTargetFile:
 
     def load_yaml(self) -> list[TargetNode] :
         try:
+            target_list = list[TargetNode]()
+
+            # Load the file
             with self._file.open() as f:
                 self._yaml = yaml.safe_load(f)
                 for item, object in self._yaml.items():
                     target = self._read_target_node(item, object)
                     if not target:
                         console.print_error(f"target '{item}' in '{self._file}' will not be available")
+                        continue
+                    target_list.append(target)
 
-            return True
+            # Resolve includes
+            return target_list
         except (OSError, yaml.YAMLError) as e:
             console.print_error(f"Error: When loading '{self._file}' file: {e}")
-            return False
+            return list()
+        
         
 
 class TargetRegistry:
@@ -347,6 +412,5 @@ class TargetRegistry:
           for file in directory.glob("*.yaml"):
             yaml_target_file = YamlTargetFile(file)
             yaml_target_file.load_yaml()
-
 
 TargetRegistry = TargetRegistry()

@@ -122,26 +122,26 @@ x86_64-pc-windows-msvc-all:
       cxx-compiler:
         all-flags: ["/EH-"]
 
-    # Features rules
-    # only-one rule : Only 1 rules is allowed in 'features'
-    # incompatible : The 'feature' is incompatible with all feature in 'with'
-    - feature-rules:
-        # Only one warning level at a time
-        - only-one: "warning"
-          features: [WARNING_LEVEL_BASE, WARNING_LEVEL_STRICT, WARNING_ALL, NO_WARNING]
-        # Only one runtime at a time
-        - only-one: "runtime"
-          features: [RUNTIME_DLL, RUNTIME_STATIC]
-        # Only one optimization level at a time
-        - only-one: "optimization"
-          features: [OPT_LEVEL_0, OPT_LEVEL_1, OPT_LEVEL_2, OPT_LEVEL_3]
-        # OPT_LEVEL_0 is incompatible with LTCG, LTO, OMIT_FRAME_POINTER
-        - incompatible: "no_opt"
-          feature: OPT_LEVEL_0
-          with: [LTCG, LTO, OMIT_FRAME_POINTER]
-        # Only one exceptions mode
-        - only-one: "exceptions"
-          features: [ENABLE_EXCEPTION, DISABLE_EXCEPTION]
+  # Features rules
+  # only-one rule : Only 1 rules is allowed in 'features'
+  # incompatible : The 'feature' is incompatible with all feature in 'with'
+  feature-rules:
+    # Only one warning level at a time
+    - only-one: "warning"
+      features: [WARNING_LEVEL_BASE, WARNING_LEVEL_STRICT, WARNING_ALL, NO_WARNING]
+    # Only one runtime at a time
+    - only-one: "runtime"
+      features: [RUNTIME_DLL, RUNTIME_STATIC]
+    # Only one optimization level at a time
+    - only-one: "optimization"
+      features: [OPT_LEVEL_0, OPT_LEVEL_1, OPT_LEVEL_2, OPT_LEVEL_3]
+    # OPT_LEVEL_0 is incompatible with LTCG, LTO, OMIT_FRAME_POINTER
+    - incompatible: "no_opt"
+      feature: OPT_LEVEL_0
+      with: [LTCG, LTO, OMIT_FRAME_POINTER]
+    # Only one exceptions mode
+    - only-one: "exceptions"
+      features: [ENABLE_EXCEPTION, DISABLE_EXCEPTION]
 
 # Target for MSVC cl.exe
 x86_64-pc-windows-msvc-cl:
@@ -164,7 +164,7 @@ x86_64-pc-windows-msvc-clangcl:
       # ASAN require to enable some features to work correctly
       enable-feature: [DEBUG_INFO, RUNTIME_DLL]
       # ASAN require to disable some features to work correctly
-    - feature-rules:
-        - incompatible: "asan"
-          feature: ASAN
-          with: [OPT_LEVEL_3, LTO, OMIT_FRAME_POINTER, LTCG]
+  feature-rules:
+    - incompatible: "asan"
+      feature: ASAN
+      with: [OPT_LEVEL_3, LTO, OMIT_FRAME_POINTER, LTCG]

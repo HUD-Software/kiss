@@ -6,25 +6,37 @@
 x86_64-pc-windows-msvc-all:
   # General compiler flags for all MSVC-based targets (cl + clangcl)
   cxx-compiler:
-    # Features that are enabled by default for all builds and project type (lib, bin, dyn)
+    # Features that are enabled by default
     default-features:
       all: [WARNING_LEVEL_STRICT, RUNTIME_DLL, ENABLE_EXCEPTION]
-      debug: [OPT_LEVEL_0, DEBUG_INFO]
+      debug: [OPT_LEVEL_0]
       release: [OPT_LEVEL_3]
-
+    # Flags used when building in all configuration
+    all-flags: []
     # Flags used when building in debug configuration
     debug-flags: []
     # Flags used when building in release configuration
     release-flags: []
-    # Flags added when building a dynamic library
-    dyn:
-      debug-flags: ["/LDd"]
-      release-flags: ["/LD"]
 
   # Linker flags for debug/release configurations
-  cxx_linker:
+  cxx-linker:
+    # Features that are enabled by default
+    default-features:
+      all: []
+      debug: []
+      release: []
+    # Flags used when building in all configuration
+    all-flags: []
+    # Flags used when building in debug configuration
     debug-flags: ["/DEBUG", "/MACHINE:X64", "/INCREMENTAL"]
+    # Flags used when building in release configuration
     release-flags: ["/MACHINE:X64", "/OPT:REF", "/OPT:ICF", "/INCREMENTAL:NO"]
+
+  # Flags added when building a dynamic library
+  dyn:
+    cxx-compiler:
+      debug-flags: ["/LDd"]
+      release-flags: ["/LD"]
 
   # Feature definitions
   features:
@@ -66,48 +78,49 @@ x86_64-pc-windows-msvc-all:
     - name: OPT_LEVEL_0
       description: No optimization (debug-like)
       cxx-compiler:
-        release-flags: ["/Od"]
+        all-flags: ["/Od"]
+      enable-feature: [DEBUG_INFO]
     - name: OPT_LEVEL_1
       description: Minimal optimization (-O1)
       cxx-compiler:
-        release-flags: ["/O1"]
+        all-flags: ["/O1"]
     - name: OPT_LEVEL_2
       description: Default optimization (-O2)
       cxx-compiler:
-        release-flags: ["/O2"]
+        all-flags: ["/O2"]
     - name: OPT_LEVEL_3
       description: Max optimization (-O2 + aggressive inline)
       cxx-compiler:
-        release-flags: ["/O2", "/Ob2", "/Oi"]
+        all-flags: ["/O2", "/Ob2", "/Oi"]
       enable-feature: [LTO, OMIT_FRAME_POINTER, LTCG]
     - name: LTCG
       description: Link-time code generation
-      cxx_linker:
-        all: ["/LTCG"]
+      cxx-linker:
+        all-flags: ["/LTCG"]
     - name: LTO
       description: Whole program optimization
       cxx-compiler:
-        all: ["/GL"]
+        all-flags: ["/GL"]
     - name: OMIT_FRAME_POINTER
       description: Omit frame pointer
       cxx-compiler:
-        all: ["/Oy"]
+        all-flags: ["/Oy"]
 
     # Debug informations
     - name: DEBUG_INFO
       description: Generate debug informations
       cxx-compiler:
-        release-flags: ["/Zi"]
+        all-flags: ["/Zi"]
 
     # Exception
     - name: ENABLE_EXCEPTION
       description: Enable C++ exception
       cxx-compiler:
-        all: ["/EHsc"]
+        all-flags: ["/EHsc"]
     - name: DISABLE_EXCEPTION
       description: Disable C++ exception
       cxx-compiler:
-        all: ["/EH-"]
+        all-flags: ["/EH-"]
 
     # Features rules
     # only-one rule : Only 1 rules is allowed in 'features'
@@ -132,22 +145,12 @@ x86_64-pc-windows-msvc-all:
 
 # Target for MSVC cl.exe
 x86_64-pc-windows-msvc-cl:
-  arch: "x86_64"
-  os: "windows"
-  env: "msvc"
-  vendor: "pc"
-  compiler: "cl"
   cxx-compiler:
     debug-flags: "/RTC1"
   include: x86_64-pc-windows-msvc-all
 
 # Target for MSVC clang-cl
 x86_64-pc-windows-msvc-clangcl:
-  arch: "x86_64"
-  os: "windows"
-  env: "msvc"
-  vendor: "pc"
-  compiler: "clangcl"
   include: x86_64-pc-windows-msvc-all
   features:
     - name: ASAN
@@ -155,11 +158,11 @@ x86_64-pc-windows-msvc-clangcl:
       cxx-compiler:
         debug-flags: ["-fsanitize=address", "-fsanitize-address-use-after-scope"]
         release-flags: ["-fsanitize=address", "-fsanitize-address-use-after-scope"]
-      cxx_linker:
+      cxx-linker:
         debug-flags: ["-fsanitize=address"]
         release-flags: ["-fsanitize=address"]
       # ASAN require to enable some features to work correctly
-      enable-feature: [DEBUG_INFO, ENABLE_EXCEPTION, RUNTIME_DLL]
+      enable-feature: [DEBUG_INFO, RUNTIME_DLL]
       # ASAN require to disable some features to work correctly
     - feature-rules:
         - incompatible: "asan"

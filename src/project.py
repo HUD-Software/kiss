@@ -115,11 +115,11 @@ class Project:
     def topological_sort_projects(self) -> list[Self]:
         """
         Kahn Algorithm
-        Retourne une liste de ce projet et ses dépendances triées par ordre de priorité ( Si A dépend de B, A est après B).
+        Returns a list of this project and its dependencies sorted by priority order (if A depends on B, A comes after B).
 
-        @return :
-        - liste des projects dans l'ordre de dépendances
-        - lève une exception si le graphe contient un cycle de dépendances
+        @return:
+        - list of projects in dependency order
+        - exit(1) if the graph contains a dependency cycle
         """
         # 1. Collecte du sous-graphe (DFS)
         all_projects: set[Project] = set()

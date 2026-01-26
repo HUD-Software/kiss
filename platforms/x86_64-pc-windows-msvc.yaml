@@ -3,7 +3,9 @@
 # and mutually exclusive categories that apply to any MSVC variant.
 # Individual targets (like cl or clangcl) will include this target to
 # inherit its configuration, avoiding duplication.
-x86_64-pc-windows-msvc-all:
+x86_64-pc-windows-msvc-generic:
+  # This target is not a target that can be used to build
+  abstract: true
   # General compiler flags for all MSVC-based targets (cl + clangcl)
   cxx-compiler:
     # Features that are enabled by default
@@ -147,11 +149,11 @@ x86_64-pc-windows-msvc-all:
 x86_64-pc-windows-msvc-cl:
   cxx-compiler:
     debug-flags: "/RTC1"
-  include: x86_64-pc-windows-msvc-all
+  include: x86_64-pc-windows-msvc-generic
 
 # Target for MSVC clang-cl
 x86_64-pc-windows-msvc-clangcl:
-  include: x86_64-pc-windows-msvc-all
+  include: x86_64-pc-windows-msvc-generic
   features:
     - name: ASAN
       description: Enable ASAN Sanitizer (Clang-cl only)

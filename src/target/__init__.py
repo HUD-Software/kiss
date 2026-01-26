@@ -9,7 +9,8 @@ class LineLoader(yaml.SafeLoader):
     pass
 
 class YamlObject:
-    def __init__(self, value, line):
+    def __init__(self, key_line, value, line):
+        self.key_line = key_line
         self.value = value
         self.line = line
         
@@ -20,6 +21,7 @@ def construct_mapping(loader, node, deep=False):
         value = loader.construct_object(value_node)
 
         mapping[key] = YamlObject(
+            key_line=key_node.start_mark.line + 1,
             value=value,
             line=value_node.start_mark.line + 1
         )
@@ -36,28 +38,38 @@ FeatureName = str
 ConfigName = str
 CompilerFlag = str
 LinkerFlag = str
+FeatureRuleName = str
 
-class FeatureRuleNode:
+class TargetFeatureRuleNode:
     def __init__(self, name: str):
         self._name = name
     
     @property
     def name(self) -> FeatureName:
         return self._name
-    
-    @name.setter
-    def name(self, value: FeatureName):
-         self._name = value
          
 # Only 1 rules is allowed in 'features'
-class FeatureOnlyOneRuleNode(FeatureRuleNode):
+class FeatureOnlyOneRuleNode(TargetFeatureRuleNode):
+    KEY = "only-one"
     def __init__(self, name: str, features : list[FeatureName]):
         super().__init__(name=name)
         self.features=features
 
+    def is_satisfied(self, enabled_features) -> list[FeatureName]:
+        all_enabled = set[FeatureName]()
+        enabled_feature_node : Optional[TargetFeatureNode] = None
+        for feature_name in self.features.value:
+            for feature_node in enabled_features:
+                if feature_node.name.value == feature_name:
+                    if enabled_feature_node:
+                        all_enabled.add(enabled_feature_node.name.value)
+                        all_enabled.add(feature_name)
+                    enabled_feature_node = feature_node
+        return list(all_enabled)
+    
     @staticmethod
     def from_yaml(target_name: str, yaml : dict) -> Optional[Self]:
-        name = yaml.get("only-one")
+        name = yaml.get(FeatureOnlyOneRuleNode.KEY)
         if not name:
             return None
         features = yaml.get("features")
@@ -68,15 +80,34 @@ class FeatureOnlyOneRuleNode(FeatureRuleNode):
 
 
 # The 'feature' is incompatible with all feature in 'with'
-class FeatureIncompatibleRuleNode(FeatureRuleNode):
-    def __init__(self, name: str, feature: FeatureName, incompatible_with:list[FeatureName]):
+class FeatureIncompatibleRuleNode(TargetFeatureRuleNode):
+    KEY = "incompatible"
+    def __init__(self, name: str, feature_name: FeatureName, incompatible_with:list[FeatureName]):
         super().__init__(name=name)
-        self.feature=feature
+        self.feature_name=feature_name
         self.incompatible_with=incompatible_with
-            
+    
+    def is_satisfied(self, enabled_features) -> list[FeatureName]:
+        list_of_incompatible_feature_in_enabled_features = list[FeatureName]()
+        # Check if the feature that is incompatible is present
+        is_feature_in_list = False
+        for feature in enabled_features:
+            if feature.name.value == self.feature_name.value:
+                is_feature_in_list = True
+                break
+
+        # If the incompatible feature is present
+        if is_feature_in_list:
+            for incompatible_feature_name in self.incompatible_with.value:
+                for feature in enabled_features:
+                    if incompatible_feature_name == feature.name.value:
+                        list_of_incompatible_feature_in_enabled_features.append(incompatible_feature_name)
+       
+        return list_of_incompatible_feature_in_enabled_features
+
     @staticmethod
     def from_yaml(target_name: str, yaml : dict) -> Optional[Self]:
-        name = yaml.get("incompatible")
+        name = yaml.get(FeatureIncompatibleRuleNode.KEY)
         if not name:
             return None
 
@@ -99,7 +130,7 @@ class TargetFeatureNode:
         self.description = str()
         self.cxx_compiler = TargetCXXCompilerNode()
         self.cxx_linker = TargetCXXLinkerNode()
-        self.enable_feature = list[FeatureName]()
+        self.enable_feature_names = list[FeatureName]()
 
     def __hash__(self) -> int:
         return hash(self._name)
@@ -117,7 +148,7 @@ class TargetFeatureNode:
     def from_yaml(target_name: str, yaml : dict) -> Optional[Self]:
         name = yaml.get("name")
         if not name:
-            console.print_error(f"⚠️  Error: Feature 'name' in 'features' is missing in '{target_name}' target. Feature is '{next(iter(yaml))}'")
+            console.print_error(f"❌ Line {next(iter(yaml.values())).line} :: Feature 'name' in 'features' is missing in '{target_name}' target. Feature is '{next(iter(yaml))}'")
             return None
         feature_node = TargetFeatureNode(name)
         description = yaml.get("description") or str()
@@ -138,9 +169,9 @@ class TargetFeatureNode:
                 return None
             feature_node.cxx_linker = cxx_linker
 
-        enable_feature = yaml.get("enable-feature")
-        if enable_feature:
-            feature_node.enable_feature.extend(enable_feature.value)
+        enable_feature_names = yaml.get("enable-feature")
+        if enable_feature_names:
+            feature_node.enable_feature_names.extend(enable_feature_names.value)
         return feature_node
 
 
@@ -214,28 +245,12 @@ class TargetCXXLinkerNode:
 class TargetProjectTypeNode:
     def __init__(self, name:str):
         self._name = name
-        self._cxx_compiler: Optional[TargetCXXCompilerNode] = None
-        self._cxx_linker: Optional[TargetCXXLinkerNode] = None
+        self.cxx_compiler: Optional[TargetCXXCompilerNode] = None
+        self.cxx_linker: Optional[TargetCXXLinkerNode] = None
     
     @property
     def name(self):
         return self._name
-    
-    @property
-    def cxx_compiler(self):
-        return self._cxx_compiler
-   
-    @cxx_compiler.setter
-    def cxx_compiler(self, value: TargetCXXCompilerNode):
-        self._cxx_compiler = value
-
-    @property
-    def cxx_linker(self):
-        return self._cxx_linker
-   
-    @cxx_linker.setter
-    def cxx_linker(self, value: TargetCXXCompilerNode):
-        self._cxx_linker = value
 
     @staticmethod
     def from_yaml(node_name: TargetName, yaml : dict) -> Optional[Self]:
@@ -260,56 +275,25 @@ class TargetNode:
         self._env = env
         self._vendor = vendor
         self._compiler_name = compiler_name
-        self._cxx_compiler: Optional[TargetCXXCompilerNode] = None
-        self._cxx_linker: Optional[TargetCXXLinkerNode] = None
-        self._project_type: Optional[TargetProjectTypeNode] = None
-        self._features : Optional[set[TargetFeatureNode]] = None
-        self._feature_rules : Optional[set[FeatureRuleNode]] = None
+        self.abstract = False
+        self.cxx_compiler : Optional[TargetCXXCompilerNode] = None
+        self.cxx_linker : Optional[TargetCXXLinkerNode] = None
+        self.project_type : Optional[TargetProjectTypeNode] = None
+        self.features = dict[FeatureName, TargetFeatureNode]()
+        self.feature_rules = dict[FeatureRuleName, TargetFeatureRuleNode]()
         self.include = TargetName()
+    
+    def __hash__(self) -> int:
+        return hash(self._name)
 
-    @property
-    def name(self):
-        return self._name
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, TargetName):
+            return NotImplemented
+        return self._name == other._name
     
     @property
-    def cxx_compiler(self) -> TargetCXXCompilerNode:
-        return self._cxx_compiler
-   
-    @cxx_compiler.setter
-    def cxx_compiler(self, value: TargetCXXCompilerNode):
-        self._cxx_compiler = value
-
-    @property
-    def cxx_linker(self) -> TargetCXXCompilerNode:
-        return self._cxx_linker
-   
-    @cxx_linker.setter
-    def cxx_linker(self, value: TargetCXXCompilerNode):
-        self._cxx_linker = value
-
-    @property
-    def project_type(self) -> TargetProjectTypeNode:
-        return self._project_type
-   
-    @project_type.setter
-    def project_type(self, value: TargetProjectTypeNode):
-        self._project_type = value
-
-    @property
-    def features(self) -> set[TargetFeatureNode]:
-        return self._features
-   
-    @features.setter
-    def features(self, value: set[TargetFeatureNode]):
-        self._features = value
-
-    @property
-    def feature_rules(self) -> set[TargetFeatureNode]:
-        return self._feature_rules
-   
-    @feature_rules.setter
-    def feature_rules(self, value: set[TargetFeatureNode]):
-        self._feature_rules = value
+    def name(self) -> str:
+        return self._name
 
     def _read_cxx_compiler_node(self, yaml_cxx_compiler : YamlObject):
         if self.cxx_compiler:
@@ -329,35 +313,32 @@ class TargetNode:
     def _read_features_node(self, yaml_features_node :YamlObject):
         if self.features:
             console.print_error(f"❌ Line {yaml_features_node.line} :Multiple 'features' in '{self.name}' is not supported")
-        self.features = set[TargetFeatureNode]()
+        self.features = dict[FeatureName, TargetFeatureNode]()
         for item in yaml_features_node.value:
             feature_node:Optional[TargetFeatureNode] = TargetFeatureNode.from_yaml(target_name=self.name, yaml=item)
             if feature_node in self.features:
                 console.print_error(f"❌ Line {yaml_features_node.line} : Feature with name '{feature_node.name}' already in '{self.name}'")
                 continue
             if feature_node:
-                self.features.add(feature_node)
+                self.features[feature_node.name.value] = feature_node
     
     def _read_feature_rules_node(self, yaml_feature_rules_node :YamlObject):
         if self.feature_rules:
             console.print_error(f"Multiple 'feature-rules' in '{self.name}' is not supported")
-        self.feature_rules = set[FeatureRuleNode]()
+        self.feature_rules = dict[FeatureRuleName, TargetFeatureRuleNode]()
         for item in yaml_feature_rules_node.value:
             only_one_rule_node = FeatureOnlyOneRuleNode.from_yaml(target_name=self.name, yaml=item)
             if only_one_rule_node:
-                self.feature_rules.add(only_one_rule_node)
+                self.feature_rules[only_one_rule_node.name.value] = only_one_rule_node
                 continue
             incompatible_rule_node =  FeatureIncompatibleRuleNode.from_yaml(target_name=self.name, yaml=item)
             if incompatible_rule_node:
-                self.feature_rules.add(incompatible_rule_node)
+                self.feature_rules[incompatible_rule_node.name.value] = incompatible_rule_node
                 continue
             console.print_error(f"❌ Line {next(iter(item.values())).line} : Unknown 'feature-rules' '{next(iter(item))}' in '{self.name}' target")
 
-
-
-class YamlTargetFile:
     
-
+class YamlTargetFile:
     def __init__(self, file: Path):
         self._file = file
     
@@ -365,7 +346,8 @@ class YamlTargetFile:
         # Read the target name
         parts = target_name.split('-')
         if len(parts) != 5:
-            console.print_error(f"Invalid target name in '{self._file}':\t\n'{target_name}'. Expected 'arch-vendor-os-env-compiler' separated by '-'")
+            console.print_error(f"❌ Line {yaml_target.key_line} : Invalid target name '{target_name}' in '{self._file}'")
+            console.print_error(f"  💡 Expected 'arch-vendor-os-env-compiler' separated by '-'")
             return None
         arch = parts[0]
         vendor = parts[1]
@@ -374,46 +356,172 @@ class YamlTargetFile:
         compiler_name = parts[4]
         target_node : TargetNode = TargetNode(name=target_name, arch=arch, os=os, env=env, vendor=vendor, compiler_name=compiler_name)
 
-        for item, yaml_object in yaml_target.value.items():
-            match item:
-                case "cxx-compiler":
-                    target_node._read_cxx_compiler_node(yaml_cxx_compiler=yaml_object)
-                case "cxx-linker":
-                    target_node._read_cxx_linker_node(yaml_cxx_linker=yaml_object)
-                case "features":
-                    target_node._read_features_node(yaml_features_node=yaml_object)
-                case "feature-rules":
-                    target_node._read_feature_rules_node(yaml_feature_rules_node=yaml_object)
-                case "include":
-                    target_node.include = yaml_object
-                case _:
-                    if item == ProjectType.bin or item == ProjectType.dyn or item == ProjectType.lib:
-                        target_node._read_project_type_node(target_name=item, yaml_project_type=yaml_object)
+        if not yaml_target.value:
+            console.print_warning(f"⚠️  Line {yaml_target.line} : target '{target_name}' in '{self._file}' is empty")
+        else:
+            for item, yaml_object in yaml_target.value.items():
+                match item:
+                    case "abstract":
+                        target_node.abstract = yaml_object.value
+                    case "cxx-compiler":
+                        target_node._read_cxx_compiler_node(yaml_cxx_compiler=yaml_object)
+                    case "cxx-linker":
+                        target_node._read_cxx_linker_node(yaml_cxx_linker=yaml_object)
+                    case "features":
+                        target_node._read_features_node(yaml_features_node=yaml_object)
+                    case "feature-rules":
+                        target_node._read_feature_rules_node(yaml_feature_rules_node=yaml_object)
+                    case "include":
+                        target_node.include = yaml_object.value
+                    case _:
+                        if item == ProjectType.bin or item == ProjectType.dyn or item == ProjectType.lib:
+                            target_node._read_project_type_node(target_name=item, yaml_project_type=yaml_object)
 
         return target_node
-            
 
-    def load_yaml(self) -> list[TargetNode] :
+    @staticmethod    
+    def _find_feature_from_name(feature_name : str, target_list: list[TargetNode]):
+        for target in target_list:
+            pass
+
+    def load_yaml(self) -> set[TargetNode] :
         try:
-            target_list = list[TargetNode]()
+            target_dict = dict[TargetName, TargetNode]()
 
             # Load the file
             with self._file.open() as f:
                 self._yaml = yaml.load(f,Loader=LineLoader)
-                for item, object in self._yaml.items():
-                    target = self._read_target_node(item, object)
+                for item, target_yaml_object in self._yaml.items():
+                    target = self._read_target_node(item, target_yaml_object)
                     if not target:
-                        console.print_error(f"target '{item}' in '{self._file}' will not be available")
+                        console.print_error(f"⚠️  Target '{item}' in '{self._file}' will not be available")
                         continue
-                    target_list.append(target)
+                    target_dict[target.name] = target
 
-            # Resolve includes
-            return target_list
+            # Flatten non abstract targets and detect cyclic dependency
+            flatten_includes_targets = list[TargetNode]()
+            for root_target in target_dict.values():
+                if not root_target.abstract:    
+                    # return a flatten list of targets inclusion order list where if A include B B is before A in the list
+                    flatten_includes_targets = YamlTargetFile._flatten_includes_targets(root_target, target_dict)
+                    console.print_tips(f"{root_target.name} : {' -> '.join([p.name for p in flatten_includes_targets])}")
+
+                    # This list contains all feature that are declared
+                    # This is used to merge all feature declared in included target
+                    # Also, it is use to detect that enable-feature only enable feature that are already declared
+                    # thank to the _flatten_includes_targets that return a inclusion order list where 
+                    # if A include B B is before A in the list
+                    all_feature_list = dict[FeatureName, TargetFeatureNode]()
+                    all_config_features = dict[ConfigName, dict[FeatureName, TargetFeatureNode]]()
+
+                    for target in flatten_includes_targets:
+                        # Add features that are enabled by the feature
+                        all_feature_list.update(target.features)
+
+                        # Check all features that are enable by 'enable-feature' exist in current or included target
+                        for feature in target.features.values():
+                            for enabled_feature_name in feature.enable_feature_names:
+                               if not enabled_feature_name in all_feature_list:
+                                    console.print_warning(f"Feature '{feature.name}' in target '{target.name}' enable a feature named {enabled_feature_name} that is not in the target or in the included target")
+                        
+                        # Resolve defaut features
+                        # For each configuration we add default feature that are enabled
+                        if target.cxx_compiler:
+                            def add_feature(target_feature_name : FeatureName) -> list[FeatureName]:
+                                # Check that feature exists
+                                default_feature = all_feature_list.get(target_feature_name)
+                                if not default_feature:
+                                    console.print_error(f"cxx-compiler default-features '{target_feature_name}' in target '{target.name}' is not found")
+                                    exit(1)
+
+                                # Add the feature for this config
+                                config_feature = all_config_features.setdefault(config_name, dict[FeatureName, TargetFeatureNode]())
+                                config_feature[default_feature.name] = default_feature
+
+                                # Return features that must be enable by this one
+                                return default_feature.enable_feature_names
+
+                            for config_name, default_feature_names in target.cxx_compiler.default_features.items():
+                                to_enable_list = list[FeatureName]()
+                                to_enable_list.extend(default_feature_names)
+                                while to_enable_list:
+                                    to_enable_list.extend(add_feature(to_enable_list.pop()))
+
+                        # Merge 'all' config features in other configurations
+                        all_features = all_config_features.pop("all", {})
+                        for features in all_config_features.values():
+                            features.update(all_features)
+
+                        # Check feature rules
+                        for feature_rule in target.feature_rules.values():
+                            match feature_rule:
+                                case FeatureOnlyOneRuleNode() as only_one_rule:
+                                    for config, config_features in all_config_features.items():
+                                        list_invalid = only_one_rule.is_satisfied(config_features.values())
+                                        if list_invalid:
+                                            console.print_error(f"❌ Feature rule '{FeatureOnlyOneRuleNode.KEY}' not satisfied in target '{target.name}'")
+                                            console.print_error(f"In '{config}' configuration features {", ".join(list_invalid)} are both enabled")
+                                            exit(1)
+                                case FeatureIncompatibleRuleNode() as incompatible_rule:
+                                    for config, config_features in all_config_features.items():
+                                        list_of_incompatible_feature =  incompatible_rule.is_satisfied(config_features.values())
+                                        if list_of_incompatible_feature:
+                                            console.print_error(f"❌ Feature rule '{FeatureIncompatibleRuleNode.KEY}' not satisfied in target '{target.name}'")
+                                            console.print_error(f"In '{config}' configuration features {", ".join(list_of_incompatible_feature)} are incompatible with {incompatible_rule.feature_name.value}")
+                                            exit(1)
+                        
+            
+            return target_dict
         except (OSError, yaml.YAMLError) as e:
             console.print_error(f"Error: When loading '{self._file}' file: {e}")
             return list()
-        
-        
+
+
+    @staticmethod
+    def _flatten_includes_targets(target_node : TargetNode, target_dict : dict[TargetName, TargetNode]) -> list[TargetNode]:
+        # 1. Collecte du sous-graphe (DFS)
+        all_targets: list[TargetNode] = list()
+        visiting_stack: list[TargetNode] = []
+        def format_stack(names: list[str]) -> str:
+            lines = []
+            for i, name in enumerate(names):
+                indent = " " * (4 * max(i-1, 0))
+                if i == 0:
+                    lines.append(name)
+                elif i == len(names) - 1:
+                    lines.append(f"{indent}└ ⟲ loop {name}")
+                else:
+                    lines.append(f"{indent}└ includes {name}")
+            return "\n".join(lines)
+        def collect(current_node : TargetNode, parent_node: TargetNode):
+            # Detect cyclic dependency
+            if current_node in visiting_stack:
+                parent_name = parent_node.name if parent_node else "<root>"
+                console.print_error(f"❌ Error: Cyclic dependency between '{current_node.name}' and '{parent_name}'")
+                console.print_error(format_stack([p.name for p in visiting_stack] + [current_node.name]))
+                exit(1)
+
+            # Visit the project only once
+            if current_node in all_targets:
+                return
+            visiting_stack.append(current_node)
+ 
+            # Visit include
+            if current_node.include:
+                include_node = target_dict.get(current_node.include)
+                if not include_node:
+                    console.print_error(f"❌ '{current_node.name}' target include unknown target '{current_node.include}'")
+                    exit(1)
+                collect(include_node, current_node)
+            
+            # Remove visited project
+            visiting_stack.pop()
+            all_targets.append(current_node)
+        collect(target_node, None)
+        return all_targets
+    
+
+
 
 class TargetRegistry:
     def __init__(self):

@@ -14,7 +14,6 @@ class ProjectType(str, Enum):
     bin = YamlProjectType.bin
     lib = YamlProjectType.lib
     dyn = YamlProjectType.dyn
-    workspace = YamlProjectType.workspace
     
     def __str__(self):
         return self.name

@@ -178,12 +178,7 @@ class TargetFeatureNode:
 
 class TargetCXXCompilerNode:
     def __init__(self):
-        self._default_features : dict[ConfigName, list[FeatureName]] = dict[ConfigName, list[FeatureName]]()
         self._flags : dict[ConfigName, list[CompilerFlag]] = dict[ConfigName, list[CompilerFlag]]()
-        
-    @property
-    def default_features(self) -> dict[ConfigName, list[FeatureName]]:
-        return self._default_features
     
     @property
     def flags(self) -> dict[ConfigName, list[CompilerFlag]]:
@@ -193,20 +188,15 @@ class TargetCXXCompilerNode:
     def from_yaml(node_name: str, yaml : dict) -> Optional[Self]:
         cxx_compiler_node = TargetCXXCompilerNode()
         for item, yaml_object in yaml.value.items():
-            match item:
-                case  "default-features":
-                    for config_name, yaml_object in yaml_object.value.items():
-                            cxx_compiler_node.default_features.setdefault(config_name, []).extend(yaml_object.value)
-                case _:
-                    parts = item.split('-')
-                    if len(parts) != 2:
-                        console.print_error(f"❌ Line {yaml_object.line} : Invalid '{item}' in '{node_name}' target")
-                        return None
-                    config_name = parts[0]
-                    if parts[1] == "flags":
-                        cxx_compiler_node.flags.setdefault(config_name,[]).extend(yaml_object.value)
-                    else:
-                        console.print_error(f"❌ Line {yaml_object.line} : Invalid '{parts[1]}' in '{item}' item in '{node_name}' target")
+            parts = item.split('-')
+            if len(parts) != 2:
+                console.print_error(f"❌ Line {yaml_object.line} : Invalid '{item}' in '{node_name}' target")
+                return None
+            config_name = parts[0]
+            if parts[1] == "flags":
+                cxx_compiler_node.flags.setdefault(config_name,[]).extend(yaml_object.value)
+            else:
+                console.print_error(f"❌ Line {yaml_object.line} : Invalid '{parts[1]}' in '{item}' item in '{node_name}' target")
         return cxx_compiler_node
 
 class TargetCXXLinkerNode:
@@ -226,20 +216,15 @@ class TargetCXXLinkerNode:
     def from_yaml(node_name: str, yaml : dict) -> Optional[Self]:
         cxx_linker_node = TargetCXXLinkerNode()
         for item, yaml_object in yaml.value.items():
-            match item:
-                case  "default-features":
-                    for config_name, yaml_object in yaml_object.value.items():
-                            cxx_linker_node.default_features.setdefault(config_name, []).extend(yaml_object.value)
-                case _:
-                    parts = item.split('-')
-                    if len(parts) != 2:
-                        console.print_error(f"❌ Line {yaml_object.line} : Invalid '{item}' in '{node_name}' target")
-                        return None
-                    config_name = parts[0]
-                    if parts[1] == "flags":
-                        cxx_linker_node.flags.setdefault(config_name,[]).extend(yaml_object.value)
-                    else:
-                        console.print_error(f"❌ Line {yaml_object.line} : Invalid '{parts[1]}' in '{item}' item in '{node_name}' target")
+            parts = item.split('-')
+            if len(parts) != 2:
+                console.print_error(f"❌ Line {yaml_object.line} : Invalid '{item}' in '{node_name}' target")
+                return None
+            config_name = parts[0]
+            if parts[1] == "flags":
+                cxx_linker_node.flags.setdefault(config_name,[]).extend(yaml_object.value)
+            else:
+                console.print_error(f"❌ Line {yaml_object.line} : Invalid '{parts[1]}' in '{item}' item in '{node_name}' target")
         return cxx_linker_node       
     
 class TargetProjectTypeNode:
@@ -275,7 +260,8 @@ class TargetNode:
         self._env = env
         self._vendor = vendor
         self._compiler_name = compiler_name
-        self.abstract = False
+        self.is_abstract = False
+        self.default_features : dict[ConfigName, list[FeatureName]] = dict[ConfigName, list[FeatureName]]()
         self.cxx_compiler : Optional[TargetCXXCompilerNode] = None
         self.cxx_linker : Optional[TargetCXXLinkerNode] = None
         self.project_type : Optional[TargetProjectTypeNode] = None
@@ -321,7 +307,11 @@ class TargetNode:
                 continue
             if feature_node:
                 self.features[feature_node.name.value] = feature_node
-    
+
+    def _read_default_features(self, yaml_default_feature_node: YamlObject):
+        for config_name, yaml_object in yaml_default_feature_node.value.items():
+            self.default_features.setdefault(config_name, []).extend(yaml_object.value)
+
     def _read_feature_rules_node(self, yaml_feature_rules_node :YamlObject):
         if self.feature_rules:
             console.print_error(f"Multiple 'feature-rules' in '{self.name}' is not supported")
@@ -361,8 +351,10 @@ class YamlTargetFile:
         else:
             for item, yaml_object in yaml_target.value.items():
                 match item:
-                    case "abstract":
-                        target_node.abstract = yaml_object.value
+                    case "is_abstract":
+                        target_node.is_abstract = yaml_object.value
+                    case "default-features":
+                        target_node._read_default_features(yaml_default_feature_node=yaml_object)
                     case "cxx-compiler":
                         target_node._read_cxx_compiler_node(yaml_cxx_compiler=yaml_object)
                     case "cxx-linker":
@@ -398,10 +390,10 @@ class YamlTargetFile:
                         continue
                     target_dict[target.name] = target
 
-            # Flatten non abstract targets and detect cyclic dependency
+            # Flatten non is_abstract targets and detect cyclic dependency
             flatten_includes_targets = list[TargetNode]()
             for root_target in target_dict.values():
-                if not root_target.abstract:    
+                if not root_target.is_abstract:
                     # return a flatten list of targets inclusion order list where if A include B B is before A in the list
                     flatten_includes_targets = YamlTargetFile._flatten_includes_targets(root_target, target_dict)
                     console.print_tips(f"{root_target.name} : {' -> '.join([p.name for p in flatten_includes_targets])}")
@@ -412,7 +404,7 @@ class YamlTargetFile:
                     # thank to the _flatten_includes_targets that return a inclusion order list where 
                     # if A include B B is before A in the list
                     all_feature_list = dict[FeatureName, TargetFeatureNode]()
-                    all_config_features = dict[ConfigName, dict[FeatureName, TargetFeatureNode]]()
+                    all_config_default_features = dict[ConfigName, dict[FeatureName, TargetFeatureNode]]()
 
                     for target in flatten_includes_targets:
                         # Add features that are enabled by the feature
@@ -424,53 +416,52 @@ class YamlTargetFile:
                                if not enabled_feature_name in all_feature_list:
                                     console.print_warning(f"Feature '{feature.name}' in target '{target.name}' enable a feature named {enabled_feature_name} that is not in the target or in the included target")
                         
-                        # Resolve defaut features
-                        # For each configuration we add default feature that are enabled
-                        if target.cxx_compiler:
-                            def add_feature(target_feature_name : FeatureName) -> list[FeatureName]:
-                                # Check that feature exists
-                                default_feature = all_feature_list.get(target_feature_name)
-                                if not default_feature:
-                                    console.print_error(f"cxx-compiler default-features '{target_feature_name}' in target '{target.name}' is not found")
-                                    exit(1)
+                        # For each configuration we add features that must be enabled by default
+                        def add_feature(target_feature_name : FeatureName) -> list[FeatureName]:
+                            # Check that feature exists
+                            default_feature = all_feature_list.get(target_feature_name)
+                            if not default_feature:
+                                console.print_error(f"default-features '{target_feature_name}' in target '{target.name}' is not found")
+                                exit(1)
 
-                                # Add the feature for this config
-                                config_feature = all_config_features.setdefault(config_name, dict[FeatureName, TargetFeatureNode]())
-                                config_feature[default_feature.name] = default_feature
+                            # Add the feature for this config
+                            config_feature = all_config_default_features.setdefault(config_name, dict[FeatureName, TargetFeatureNode]())
+                            config_feature[default_feature.name] = default_feature
 
-                                # Return features that must be enable by this one
-                                return default_feature.enable_feature_names
+                            # Return features that must be enable by this one
+                            return default_feature.enable_feature_names
 
-                            for config_name, default_feature_names in target.cxx_compiler.default_features.items():
-                                to_enable_list = list[FeatureName]()
-                                to_enable_list.extend(default_feature_names)
-                                while to_enable_list:
-                                    to_enable_list.extend(add_feature(to_enable_list.pop()))
+                        for config_name, default_feature_names in target.default_features.items():
+                            default_feature_to_enable_list = list[FeatureName]()
+                            default_feature_to_enable_list.extend(default_feature_names)
+                            while default_feature_to_enable_list:
+                                default_feature_to_enable_list.extend(add_feature(default_feature_to_enable_list.pop()))
 
-                        # Merge 'all' config features in other configurations
-                        all_features = all_config_features.pop("all", {})
-                        for features in all_config_features.values():
+                        # Add 'all' config features in other configurations and remove it
+                        all_features = all_config_default_features.pop("all", {})
+                        for features in all_config_default_features.values():
                             features.update(all_features)
 
                         # Check feature rules
                         for feature_rule in target.feature_rules.values():
                             match feature_rule:
                                 case FeatureOnlyOneRuleNode() as only_one_rule:
-                                    for config, config_features in all_config_features.items():
+                                    for config, config_features in all_config_default_features.items():
                                         list_invalid = only_one_rule.is_satisfied(config_features.values())
                                         if list_invalid:
                                             console.print_error(f"❌ Feature rule '{FeatureOnlyOneRuleNode.KEY}' not satisfied in target '{target.name}'")
                                             console.print_error(f"In '{config}' configuration features {", ".join(list_invalid)} are both enabled")
                                             exit(1)
                                 case FeatureIncompatibleRuleNode() as incompatible_rule:
-                                    for config, config_features in all_config_features.items():
+                                    for config, config_features in all_config_default_features.items():
                                         list_of_incompatible_feature =  incompatible_rule.is_satisfied(config_features.values())
                                         if list_of_incompatible_feature:
                                             console.print_error(f"❌ Feature rule '{FeatureIncompatibleRuleNode.KEY}' not satisfied in target '{target.name}'")
                                             console.print_error(f"In '{config}' configuration features {", ".join(list_of_incompatible_feature)} are incompatible with {incompatible_rule.feature_name.value}")
                                             exit(1)
-                        
-            
+
+                    
+                    root_target.default_features.update(all_config_default_features)
             return target_dict
         except (OSError, yaml.YAMLError) as e:
             console.print_error(f"Error: When loading '{self._file}' file: {e}")
@@ -546,6 +537,10 @@ class TargetRegistry:
     def load_and_register_all_target_in_directory(self, directory: Path):
           for file in directory.glob("*.yaml"):
             yaml_target_file = YamlTargetFile(file)
-            yaml_target_file.load_yaml()
+            target_dict = yaml_target_file.load_yaml()
+            for target in target_dict:
+                if target.is_abstract:
+                    pass
+
 
 TargetRegistry = TargetRegistry()

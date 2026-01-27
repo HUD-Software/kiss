@@ -5,7 +5,7 @@
 # inherit its configuration, avoiding duplication.
 x86_64-pc-windows-msvc-generic:
   # This target is not a target that can be used to build
-  abstract: true
+  is_abstract: true
   # Features that are enabled by default
   default-features:
     all: [WARNING_LEVEL_STRICT, RUNTIME_DLL, ENABLE_EXCEPTION]

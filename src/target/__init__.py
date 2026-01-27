@@ -389,7 +389,7 @@ class YamlTargetFile:
                         console.print_error(f"⚠️  Target '{item}' in '{self._file}' will not be available")
                         continue
                     target_dict[target.name] = target
-
+            
             # Flatten non is_abstract targets and detect cyclic dependency
             flatten_includes_targets = list[TargetNode]()
             for root_target in target_dict.values():
@@ -419,17 +419,17 @@ class YamlTargetFile:
                         # For each configuration we add features that must be enabled by default
                         def add_feature(target_feature_name : FeatureName) -> list[FeatureName]:
                             # Check that feature exists
-                            default_feature = all_feature_list.get(target_feature_name)
-                            if not default_feature:
+                            default_feature_to_add = all_feature_list.get(target_feature_name)
+                            if not default_feature_to_add:
                                 console.print_error(f"default-features '{target_feature_name}' in target '{target.name}' is not found")
                                 exit(1)
 
                             # Add the feature for this config
                             config_feature = all_config_default_features.setdefault(config_name, dict[FeatureName, TargetFeatureNode]())
-                            config_feature[default_feature.name] = default_feature
+                            config_feature[default_feature_to_add.name.value] = default_feature_to_add
 
                             # Return features that must be enable by this one
-                            return default_feature.enable_feature_names
+                            return default_feature_to_add.enable_feature_names
 
                         for config_name, default_feature_names in target.default_features.items():
                             default_feature_to_enable_list = list[FeatureName]()
@@ -450,14 +450,14 @@ class YamlTargetFile:
                                         list_invalid = only_one_rule.is_satisfied(config_features.values())
                                         if list_invalid:
                                             console.print_error(f"❌ Feature rule '{FeatureOnlyOneRuleNode.KEY}' not satisfied in target '{target.name}'")
-                                            console.print_error(f"In '{config}' configuration features {", ".join(list_invalid)} are both enabled")
+                                            console.print_error(f"In '{config}' configuration features {', '.join(list_invalid)} are both enabled")
                                             exit(1)
                                 case FeatureIncompatibleRuleNode() as incompatible_rule:
                                     for config, config_features in all_config_default_features.items():
                                         list_of_incompatible_feature =  incompatible_rule.is_satisfied(config_features.values())
                                         if list_of_incompatible_feature:
                                             console.print_error(f"❌ Feature rule '{FeatureIncompatibleRuleNode.KEY}' not satisfied in target '{target.name}'")
-                                            console.print_error(f"In '{config}' configuration features {", ".join(list_of_incompatible_feature)} are incompatible with {incompatible_rule.feature_name.value}")
+                                            console.print_error(f"In '{config}' configuration features {', '.join(list_of_incompatible_feature)} are incompatible with {incompatible_rule.feature_name.value}")
                                             exit(1)
 
                     
@@ -538,9 +538,11 @@ class TargetRegistry:
           for file in directory.glob("*.yaml"):
             yaml_target_file = YamlTargetFile(file)
             target_dict = yaml_target_file.load_yaml()
-            for target in target_dict:
-                if target.is_abstract:
-                    pass
-
+            for target in target_dict.values():
+                target : TargetFeatureNode = target
+                if not target.is_abstract:
+                    console.print_step(f"{target.name}:")
+                    for config_name, flags in target.cxx_compiler.flags.items():
+                        console.print_step(f"  {config_name}: {' '.join(flags)}")
 
 TargetRegistry = TargetRegistry()

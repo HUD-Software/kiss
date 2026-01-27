@@ -1,0 +1,181 @@
+# Common target for all MSVC-based compilers (cl.exe, clang-cl)
+# This target defines default compiler and linker flags, feature sets,
+# and mutually exclusive categories that apply to any MSVC variant.
+# Individual targets (like cl or clangcl) will include this target to
+# inherit its configuration, avoiding duplication.
+x86_64-pc-windows-msvc-generic:
+  # This target is not a target that can be used to build
+  is_abstract: true
+  profiles: 
+    usable: [debug, release]
+    common:
+      features: [WARNING_LEVEL_STRICT, RUNTIME_DLL, ENABLE_EXCEPTION]
+    debug: 
+      include: common
+      features: [OPT_LEVEL_0]
+      cxx-compiler-flags: []
+      cxx-linker-flags: [/MACHINE:X64, /INCREMENTAL]
+      dyn: 
+        cxx-compiler-flags: [/LDd]
+        cxx-linker-flags: []
+        features: []
+      bin: 
+        cxx-compiler-flags: []
+        cxx-linker-flags: []
+        features: []
+      lib: 
+        cxx-compiler-flags: []
+        cxx-linker-flags: []
+        features: []
+    release:
+      include: common
+      features: [OPT_LEVEL_3]
+      cxx-compiler-flags: []
+      cxx-linker-flags: [/MACHINE:X64, /OPT:REF, /OPT:ICF, /INCREMENTAL:NO]
+      dyn: 
+        cxx-compiler-flags: [/LD]
+        cxx-linker-flags: []
+        features: []
+      bin: 
+        cxx-compiler-flags: []
+        cxx-linker-flags: []
+        features: []
+      lib: 
+        cxx-compiler-flags: []
+        cxx-linker-flags: []
+        features: []
+  features:
+    # Warnings
+    - name: WARNING_LEVEL_BASE
+      description: Default warning level
+      cxx-compiler:
+        all-flags: [/W3]
+    - name: WARNING_LEVEL_STRICT
+      description: Strict warnings
+      cxx-compiler:
+        all-flags: [/W4]
+    - name: WARNING_ALL
+      description: All warnings (very noisy)
+      cxx-compiler:
+        all-flags: [/Wall]
+    - name: WARNING_AS_ERROR
+      description: Treat warnings as errors
+      cxx-compiler:
+        all-flags: [/WX]
+    - name: NO_WARNING
+      description: Disable all warnings
+      cxx-compiler:
+        all-flags: [/W0]
+
+    # Windows Runtime
+    - name: RUNTIME_DLL
+      description: Windows DLL runtime
+      cxx-compiler:
+        debug-flags: [/MDd]
+        release-flags: ["/MD"]
+    - name: RUNTIME_STATIC
+      description: Windows static runtime
+      cxx-compiler:
+        debug-flags: [/MTd]
+        release-flags: [/MT]
+
+    # Optimisations
+    - name: OPT_LEVEL_0
+      description: No optimization (debug-like)
+      cxx-compiler:
+        all-flags: [/Od]
+      cxx-linker:
+        all-flags: [/DEBUG]
+      enable-feature: [DEBUG_INFO]
+    - name: OPT_LEVEL_1
+      description: Minimal optimization (-O1)
+      cxx-compiler:
+        all-flags: [/O1]
+    - name: OPT_LEVEL_2
+      description: Default optimization (-O2)
+      cxx-compiler:
+        all-flags: [/O2]
+    - name: OPT_LEVEL_3
+      description: Max optimization (-O2 + aggressive inline)
+      cxx-compiler:
+        all-flags: [/O2, /Ob2, /Oi]
+      enable-feature: [LTO, OMIT_FRAME_POINTER, LTCG]
+    - name: LTCG
+      description: Link-time code generation
+      cxx-linker:
+        all-flags: [/LTCG]
+    - name: LTO
+      description: Whole program optimization
+      cxx-compiler:
+        all-flags: [/GL]
+    - name: OMIT_FRAME_POINTER
+      description: Omit frame pointer
+      cxx-compiler:
+        all-flags: [/Oy]
+
+    # Debug informations
+    - name: DEBUG_INFO
+      description: Generate debug informations
+      cxx-compiler:
+        all-flags: [/Zi]
+
+    # Exception
+    - name: ENABLE_EXCEPTION
+      description: Enable C++ exception
+      cxx-compiler:
+        all-flags: [/EHsc]
+    - name: DISABLE_EXCEPTION
+      description: Disable C++ exception
+      cxx-compiler:
+        all-flags: [/EH-]
+
+  # Features rules
+  # only-one rule : Only 1 rules is allowed in 'features'
+  # incompatible : The 'feature' is incompatible with all feature in 'with'
+  feature-rules:
+    # Only one warning level at a time
+    - only-one: warning
+      features: [WARNING_LEVEL_BASE, WARNING_LEVEL_STRICT, WARNING_ALL, NO_WARNING]
+    # Only one runtime at a time
+    - only-one: runtime
+      features: [RUNTIME_DLL, RUNTIME_STATIC]
+    # Only one optimization level at a time
+    - only-one: optimization
+      features: [OPT_LEVEL_0, OPT_LEVEL_1, OPT_LEVEL_2, OPT_LEVEL_3]
+    # OPT_LEVEL_0 is incompatible with LTCG, LTO, OMIT_FRAME_POINTER
+    - incompatible: no_opt
+      feature: OPT_LEVEL_0
+      with: [LTCG, LTO, OMIT_FRAME_POINTER]
+    # Only one exceptions mode
+    - only-one: exceptions
+      features: [ENABLE_EXCEPTION, DISABLE_EXCEPTION]
+
+# Target for MSVC cl.exe
+x86_64-pc-windows-msvc-cl:
+  include: x86_64-pc-windows-msvc-generic
+  profiles: 
+    debug: 
+      cxx-compiler-flags: [/RTC1]
+
+
+# Target for MSVC clang-cl
+x86_64-pc-windows-msvc-clangcl:
+  include: x86_64-pc-windows-msvc-generic
+  profiles: 
+    debug: 
+      features: [ASAN, WARNING_ALL]
+  features:
+    - name: ASAN
+      description: Enable ASAN Sanitizer (Clang-cl only)
+      cxx-compiler:
+        debug-flags: ["-fsanitize=address", "-fsanitize-address-use-after-scope"]
+        release-flags: ["-fsanitize=address", "-fsanitize-address-use-after-scope"]
+      cxx-linker:
+        debug-flags: ["-fsanitize=address"]
+        release-flags: ["-fsanitize=address"]
+      # ASAN require to enable some features to work correctly
+      enable-feature: [DEBUG_INFO, RUNTIME_DLL]
+  feature-rules:
+    - incompatible: asan
+      feature: ASAN
+      with: [OPT_LEVEL_3, LTO, OMIT_FRAME_POINTER, LTCG]

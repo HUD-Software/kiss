@@ -232,11 +232,11 @@ class YamlProjectFile:
     # Load all YamlProject in a file and add them to yaml_projects
     # When load_dependencies is True, also load YamlProject of dependencies
     @staticmethod
-    def load_yaml_projects(file: Self, loaded_yaml_projects: list[YamlProject], load_dependencies : bool):
+    def load_yaml_projects(yaml_file: Self, loaded_yaml_projects: dict[Path, list[YamlProject]], load_dependencies : bool):
         # Load yaml projects
-        new_yaml_projects_in_file: list[YamlProject] = file._read_all_projects_in_file()
+        new_yaml_projects_in_file: list[YamlProject] = yaml_file._read_all_projects_in_file()
         for yaml_project in new_yaml_projects_in_file:
-            loaded_yaml_projects.setdefault(file, []).append(yaml_project)
+            loaded_yaml_projects.setdefault(yaml_file.file, []).append(yaml_project)
 
         # Load dependencies if requested
         if load_dependencies:

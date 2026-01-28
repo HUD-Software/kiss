@@ -101,7 +101,6 @@ def __new_project_in_project_file(new_context: NewContext, project: Project):
     if not yaml_file.save_yaml():
         console.print_error(f"Error: Unable to save project file `{new_context.project_file}`")
         exit(1)
-    console.print_success(f"Project `{project.name}` created successfully in `{new_context.project_file}`")
     
 def __new_bin_project_in_project_file(new_context: NewContext):
     project = BinProject(
@@ -118,8 +117,7 @@ def __new_bin_project_in_project_file(new_context: NewContext):
     # Add them the to project sources
     if new_context.populate:
         relative_src_directory = Path("src")
-        absolute_src_directory = project.path / relative_src_directory
-        absolute_mainfile = absolute_src_directory / "main.cpp"
+        absolute_mainfile = project.path / relative_src_directory / "main.cpp"
         if absolute_mainfile.exists(): 
             console.print_error(f"The file {absolute_mainfile} already exists !")
             exit(2)
@@ -131,7 +129,7 @@ def __new_bin_project_in_project_file(new_context: NewContext):
     # Everything is ok we can create the files now
     if new_context.populate:
         project.path.mkdir(parents=True, exist_ok=True)
-        os.makedirs(absolute_src_directory, exist_ok=True)
+        os.makedirs(absolute_mainfile.parent, exist_ok=True)
         with open(absolute_mainfile, "w", encoding="utf-8") as f:
             f.write('#include <iostream>\n\n')
             f.write('int main() {\n')
@@ -155,16 +153,14 @@ def __new_lib_project_in_project_file(new_context: NewContext):
     # Add them the to project sources
     if new_context.populate:
         relative_src_directory = Path("src")
-        absolute_src_directory = project.path / relative_src_directory
-        absolute_libfile = absolute_src_directory / "lib.cpp"
+        absolute_libfile = project.path / relative_src_directory / "lib.cpp"
         if absolute_libfile.exists(): 
             console.print_error(f"The file {absolute_libfile} already exists !")
             exit(2)
         project.sources.append(relative_src_directory / "lib.cpp")
 
         relative_interface_directory = Path("interface")
-        absolute_interface_directory = project.path / relative_interface_directory
-        absolute_header = absolute_interface_directory / project.name / "lib.h"
+        absolute_header = project.path / relative_interface_directory / project.name / "lib.h"
         if absolute_header.exists(): 
             console.print_error(f"The file {absolute_header} already exists !")
             exit(2)
@@ -176,13 +172,13 @@ def __new_lib_project_in_project_file(new_context: NewContext):
      # Everything is ok we can create the files now
     if new_context.populate:
         project.path.mkdir(parents=True, exist_ok=True)
-        os.makedirs(absolute_src_directory, exist_ok=True)
+        os.makedirs(absolute_libfile.parent, exist_ok=True)
         with open(absolute_libfile, "w", encoding="utf-8") as f:
             f.write('#include <iostream>\n\n')
             f.write('void hello_world() {\n')
             f.write('    std::cout << "Hello, World!" << std::endl;\n')
             f.write('}\n')
-        os.makedirs(absolute_interface_directory, exist_ok=True)
+        os.makedirs(absolute_header.parent, exist_ok=True)
         with open(absolute_header, "w", encoding="utf-8") as f:
             f.write('#ifndef LIB_H\n')
             f.write('#define LIB_H\n\n')
@@ -204,16 +200,14 @@ def __new_dyn_project_in_project_file(new_context: NewContext):
     # Add them the to project sources
     if new_context.populate:
         relative_src_directory = Path("src")
-        absolute_src_directory = project.path / relative_src_directory
-        absolute_dynfile = absolute_src_directory / "dyn.cpp"
+        absolute_dynfile = project.path / relative_src_directory / "dyn.cpp"
         if absolute_dynfile.exists(): 
             console.print_error(f"The file {absolute_dynfile} already exists !")
             exit(2)
         project.sources.append(relative_src_directory / "dyn.cpp")
 
         relative_interface_directory = Path("interface")
-        absolute_interface_directory = project.path / project.name /relative_interface_directory
-        absolute_header = absolute_interface_directory / "dyn.h"
+        absolute_header = project.path / project.name /relative_interface_directory / "dyn.h"
         if absolute_header.exists(): 
             console.print_error(f"The file {absolute_header} already exists !")
             exit(2)
@@ -225,13 +219,13 @@ def __new_dyn_project_in_project_file(new_context: NewContext):
      # Everything is ok we can create the files now
     if new_context.populate:
         project.path.mkdir(parents=True, exist_ok=True)
-        os.makedirs(absolute_src_directory, exist_ok=True)
+        os.makedirs(absolute_dynfile.parent, exist_ok=True)
         with open(absolute_dynfile, "w", encoding="utf-8") as f:
             f.write('#include <iostream>\n\n')
             f.write('void hello_world() {\n')
             f.write('    std::cout << "Hello, World!" << std::endl;\n')
             f.write('}\n')
-        os.makedirs(absolute_interface_directory, exist_ok=True)
+        os.makedirs(absolute_header.parent, exist_ok=True)
         with open(absolute_header, "w", encoding="utf-8") as f:
             f.write('#ifndef DYN_H\n')
             f.write('#define DYN_H\n\n')
@@ -249,3 +243,5 @@ def cmd_new(cli_args: argparse.Namespace):
 
         case ProjectType.dyn:
             __new_dyn_project_in_project_file(new_context)
+
+    console.print_success(f"Project `{new_context.project_name}` created successfully in `{new_context.project_file}`")

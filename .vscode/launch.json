@@ -103,22 +103,20 @@
             //     "-p",
             //     "my_bin"
             // ]
-            "args": [
-                "-d",
-                "tests/my_bin",
-                "build",
-                "-p",
-                "my_lib2",
-                "cmake",
-            ],
             // "args": [
             //     "-d",
             //     "tests/my_bin",
-            //     "run",
-            //     "--release",
+            //     "build",
             //     "-p",
-            //     "my_bin"
+            //     "my_bin",
+            //     "cmake",
             // ],
+            "args": [
+                "-d",
+                "tests/my_bin",
+                "run",
+                "--release"
+            ],
             // "args": [
             //     "-d",
             //     "tests/my_bin",

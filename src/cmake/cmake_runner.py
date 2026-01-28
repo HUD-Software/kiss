@@ -2,7 +2,7 @@ import os
 from build import BuildContext
 from builder import BuilderRegistry
 from cli import KissParser
-from cmake.cmake_builder import CMakeBuilder
+from cmake.cmake_builder import CMakeBuildContext, CMakeBuilder
 from cmake.cmake_context import CMakeContext
 import console
 from process import run_process
@@ -30,13 +30,14 @@ class CMakeRunner(BaseRunner):
         if not cmake_builder:
             console.print_error(f"Builder {cmake_builder.name} not found")
             exit(1)
-
-        cmake_builder.build(BuildContext.create(directory=run_context.directory,
-                                                            project_name=run_context.project.name,
-                                                            builder_name=run_context.runner_name,
-                                                            platform_target=run_context.platform_target,
-                                                            config=run_context.config,
-                                                            compiler=run_context.compiler))
+        cmake_build_context = CMakeBuildContext.create(directory=run_context.directory,
+                                                        project_name=run_context.project.name,
+                                                        builder_name=run_context.runner_name,
+                                                        platform_target=run_context.platform_target,
+                                                        config=run_context.config,
+                                                        compiler=run_context.compiler,
+                                                        generator=cmake_builder.name)
+        cmake_builder.build_project(cmake_build_context)
         
         context = CMakeContext(current_directory=run_context.directory, 
                             platform_target=run_context.platform_target, 

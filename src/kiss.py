@@ -14,13 +14,13 @@ def main():
     args = cli.UserParams.from_args()
 
     if args.option == "list": 
-        cmd_list(list_params=args)
+        cmd_list(cli_args=args)
     
     elif args.option == "new":
-        cmd_new(new_params=args)
+        cmd_new(cli_args=args)
     
     elif args.option == "add": 
-        cmd_add(add_params=args)
+        cmd_add(cli_args=args)
         
     elif args.option == "generate": 
         cmd_generate(cli_args=args)

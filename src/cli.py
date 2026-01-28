@@ -101,7 +101,7 @@ def _add_generate_command(parser : argparse.ArgumentParser):
             generator_help_str += "\n"
         generator_help_str += f"'{generator.name}' {generator.description}"
     generator_subparser = generate_parser.add_subparsers(title="choose one of the following generator",
-                                                            dest="generator",
+                                                            dest="generator_name",
                                                             help=generator_help_str)
     
     # Use "CMake" as default generator

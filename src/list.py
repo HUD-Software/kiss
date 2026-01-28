@@ -31,12 +31,12 @@ def cmd_list(cli_args: argparse.Namespace):
     if not all_yaml_projects:
         console.print_success(f"No project found in '{list_context.directory}'")
     else:
-        for file, projects in all_yaml_projects.items():
-            console.print_success(f"File : {file}")
-            if not projects:
-                console.print_error(f"The file {file} does not contains any project")
+        for yaml_project_file, yaml_project_list in all_yaml_projects.items():
+            console.print_success(f"File : {str(yaml_project_file)}")
+            if not yaml_project_list:
+                console.print_error(f"The file {str(yaml_project_file)} does not contains any project")
             else:
-                for project in projects:
+                for project in yaml_project_list:
                     match project.type:
                         case YamlProjectType.bin:
                             console.print(f"  - bin")
@@ -68,5 +68,5 @@ def cmd_list(cli_args: argparse.Namespace):
                         case YamlProjectType.dyn:
                             console.print(f"    - sources : {project.sources}")
                             console.print(f"    - interface directories : {project.interface_directories}")
-                
+                    
 

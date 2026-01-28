@@ -40,7 +40,7 @@ class GenerateContext(Context):
     @classmethod
     def from_cli_args(cls, cli_args: argparse.Namespace) -> Self:
         return cls.create(directory=cli_args.directory,
-                          project_name=cli_args.project.name,
+                          project_name=cli_args.project_name,
                           generator_name=cli_args.generator_name,
                           platform_target=cli_args.platform_target)
        

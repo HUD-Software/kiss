@@ -12,6 +12,6 @@ class Compiler(str, Enum):
             match platform_target:
                 case PlatformTarget.x86_64_pc_windows_msvc:
                     cls.default_compiler_ = Compiler.cl
-                case PlatformTarget.x86_64_unkwown_linux_gnu:
+                case PlatformTarget.x86_64_unknown_linux_gnu:
                     cls.default_compiler_ = Compiler.gcc
         return cls.default_compiler_

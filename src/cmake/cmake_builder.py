@@ -7,11 +7,10 @@ from builder import BaseBuilder
 from cli import KissParser
 from cmake.cmake_context import CMakeContext
 from cmake.cmake_generators import CMakeGenerator
-from cmake.cmakelists_generator import CMakeListsGenerator
+from cmake.cmakelists_generator import CMakeListsGenerateContext, CMakeListsGenerator
 from compiler import Compiler
 from config import Config
 import console
-from generate import GenerateContext
 from generator import GeneratorRegistry
 from platform_target import PlatformTarget
 from process import run_process
@@ -38,7 +37,18 @@ class CMakeBuildContext(BuildContext):
 
     @staticmethod
     def from_cli_args(cli_args: argparse.Namespace) -> Self:
-        build_context = BuildContext.from_cli_args(cli_args)
+        release :bool = getattr(cli_args, "release", False) or False
+        debug_info :bool = getattr(cli_args, "debug_info", True) or (True if not release else False)
+        platform_target: PlatformTarget=PlatformTarget.default_target()
+        config: Config =Config(release, debug_info)
+        compiler : Compiler = getattr(cli_args, "compiler", None) or Compiler.default_compiler(platform_target=platform_target)
+        build_context = BuildContext.create(directory=cli_args.directory,
+                                            project_name=cli_args.project_name,
+                                            builder_name=cli_args.builder_name,
+                                            platform_target=platform_target,
+                                            config=config,
+                                            compilers=compiler)
+        
         generator : CMakeGenerator = getattr(cli_args, "generator", None)
         return CMakeBuildContext(directory=build_context.directory,
                                  project=build_context.project,
@@ -74,10 +84,11 @@ class CMakeBuilder(BaseBuilder):
         if not cmake_generator:
             console.print_error(f"Generator {cmake_generator.name} not found")
             exit(1)
-        generated_context_list = cmake_generator.generate(GenerateContext.create(directory=cmake_build_context.directory,
-                                                            project_name=cmake_build_context.project.name,
-                                                            generator_name=cmake_build_context.builder_name,
-                                                            platform_target=cmake_build_context.platform_target))
+        cmakelist_generate_context = CMakeListsGenerateContext.create(directory=cmake_build_context.directory,
+                                                                      project_name=cmake_build_context.project.name,
+                                                                      generator_name=cmake_build_context.builder_name,
+                                                                      platform_target=cmake_build_context.platform_target)
+        generated_context_list = cmake_generator.generate_project(cmakelist_generate_context)
        
         # Get CMake Generator
         context = CMakeContext(current_directory=cmake_build_context.directory, 

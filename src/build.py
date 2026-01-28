@@ -43,7 +43,7 @@ class BuildContext(Context):
     def create(cls, directory: Path, project_name: str, builder_name: str, platform_target: PlatformTarget, config : Config, compiler : Compiler) -> Self :
         project_to_build = super().find_target_project(directory, project_name)
         if not project_to_build:
-            console.print_error(f"No project found in {str(directory)}")
+            console.print_error(f"No project'found in {str(directory)}")
             exit(1)
         return BuildContext(directory=directory, project=project_to_build, builder_name=builder_name, platform_target=platform_target, config=config, compiler=compiler)
 
@@ -55,7 +55,7 @@ class BuildContext(Context):
         config : Config = Config(release, debug_info)
         platform_target: PlatformTarget = PlatformTarget.default_target()
         compiler : Compiler = getattr(cli_args, "compiler", None) or Compiler.default_compiler(platform_target=platform_target)
-        build_context: BuildContext = BuildContext.create(directory=cli_args.directory,
+        build_context =  BuildContext.create(directory=cli_args.directory,
                                                     project_name=cli_args.project_name,
                                                     builder_name=cli_args.builder,
                                                     platform_target=platform_target,

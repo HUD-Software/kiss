@@ -6,8 +6,8 @@ from new import cmd_new
 from generate import cmd_generate
 from build import cmd_build
 import cli
+from platforms.yaml_loader import TargetRegistry
 from run import cmd_run
-from target import TargetRegistry
 
 def main():
     TargetRegistry.load_and_register_all_target_in_directory(Path("platforms"))

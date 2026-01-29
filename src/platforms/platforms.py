@@ -1,4 +1,5 @@
 
+from pathlib import Path
 from typing import Self
 from project import ProjectType
 
@@ -15,6 +16,27 @@ class FlagList:
     def __init__(self):
         self.flags : list[str] = []
 
+    def __iter__(self):
+        return iter(self.flags)
+    
+    def __len__(self):
+        return len(self.flags)
+    
+    def __contains__(self, flag: str) -> bool:
+        return flag in self.flags
+    
+    
+    def add(self, flag:str):
+        self.flags.append(flag)
+
+    def get(self, name: str) -> str | None:
+        for f in self.flags:
+            if f == name:
+                return f
+        return None  
+    
+    
+
 ##############################################################
 # FeatureNameList are list of feature names
 # 
@@ -26,12 +48,32 @@ class FeatureNameList:
     def __init__(self):
         self.feature_names : list[str] = []
 
+    def __iter__(self):
+        return iter(self.feature_names)
+    
+    def __len__(self):
+        return len(self.feature_names)
+    
+    def __contains__(self, feature_name: str) -> bool:
+        return feature_name in self.feature_names
+        
+    def add(self, feature_name:str):
+        self.feature_names.append(feature_name)
+
+    def get(self, name: str) -> str | None:
+        for f in self.feature_names:
+            if f == name:
+                return f
+        return None  
+    
+
 ##############################################################
 # FeatureRule are base of all feature rule
 ##############################################################
 class FeatureRule:
-    def __init__(self, feature_rule_name: str):
-        self.feature_rule_name = feature_rule_name
+    def __init__(self, name: str):
+        self.name = name
+
 
 ##################################################################################
 # FeatureRuleOnlyOne ensures that only one feature can be enabled from a feature list.
@@ -56,8 +98,8 @@ class FeatureRule:
 #
 ##################################################################################
 class FeatureRuleOnlyOne(FeatureRule):
-    def __init__(self, feature_rule_name: str, features_list: FeatureNameList):
-        super().__init__(feature_rule_name)
+    def __init__(self, name: str, features_list: FeatureNameList):
+        super().__init__(name)
         self.feature_list = features_list
 
 ##################################################################################
@@ -78,8 +120,8 @@ class FeatureRuleOnlyOne(FeatureRule):
 #
 ##################################################################################
 class FeatureRuleIncompatibleWith(FeatureRule):
-    def __init__(self, feature_rule_name: str, feature_name: str, incompatible_with_feature_name_list: FeatureNameList):
-        super().__init__(feature_rule_name)
+    def __init__(self, name: str, feature_name: str, incompatible_with_feature_name_list: FeatureNameList):
+        super().__init__(name)
         self.feature_name = feature_name
         self.incompatible_with_feature_name_list = incompatible_with_feature_name_list 
 
@@ -99,27 +141,27 @@ class FeatureRuleIncompatibleWith(FeatureRule):
 #             dyn|bin|lib:             <== set of 'ProjectSpecific'
 # 
 #############################################################
-class FeatureProfile:
-    def __init__(self, name: str):
-        # Name of the profile
-        self.name = name
-        # Flags pass to the linker
-        self.cxx_linker_flags = CXXLinkerFlagList()
-        # Flags pass to the compiler
-        self.cxx_compiler_flags = CXXCompilerFlagList()
-        # List of features to enable with this feature
-        self.enable_features = FeatureNameList()
-        # List of project specific flags and features with this feature
-        self.project_specifics : set[ProjectSpecific] = {}
+# class FeatureProfile:
+#     def __init__(self, name: str):
+#         # Name of the profile
+#         self.name = name
+#         # Flags pass to the linker
+#         self.cxx_linker_flags = CXXLinkerFlagList()
+#         # Flags pass to the compiler
+#         self.cxx_compiler_flags = CXXCompilerFlagList()
+#         # List of features to enable with this feature
+#         self.enable_features = FeatureNameList()
+#         # List of project specific flags and features with this feature
+#         self.project_specifics : set[ProjectSpecific] = set()
 
-    def __hash__(self) -> int:
-        return hash(self.name)
+#     def __hash__(self) -> int:
+#         return hash(self.name)
 
-    def __eq__(self, other) -> bool:
-        if not isinstance(other, FeatureProfile):
-            return NotImplemented
-        return self.name == other.name
-    
+#     def __eq__(self, other) -> bool:
+#         if not isinstance(other, FeatureProfile):
+#             return NotImplemented
+#         return self.name == other.name
+
 ###############################################################
 # Feature with a unique name
 # It add flags and features for all profiles
@@ -134,7 +176,8 @@ class FeatureProfile:
 #           cxx-compiler-flags: []     <== 'CXXCompilerFlagList'
 #           cxx-linker-flags: []       <== 'CXXLinkerFlagList'
 #           enable-features: []        <== 'FeatureNameList'
-#           debug|release:             <== set of 'FeatureProfile'
+#           profiles:
+#             debug|release:           <== set of 'FeatureProfile'
 #
 ##############################################################
 class Feature:
@@ -144,7 +187,7 @@ class Feature:
         self.cxx_linker_flags = CXXLinkerFlagList()
         self.cxx_compiler_flags = CXXCompilerFlagList()
         self.enable_features = FeatureNameList()
-        self.profile_specifics : set[FeatureProfile] = {}
+        self.profiles = ProfileList()
 
     def __hash__(self) -> int:
         return hash(self.name)
@@ -166,7 +209,22 @@ class Feature:
 class CXXCompilerFlagList:
     def __init__(self):
         self.flags = FlagList()
+    
+    def __iter__(self):
+        return iter(self.flags)
+    
+    def __len__(self):
+        return len(self.flags)
+    
+    def __contains__(self, flag: str) -> bool:
+        return flag in self.flags
+    
+    def add(self, flag:str):
+        self.flags.append(flag)
 
+    def get(self, name: str) -> str | None:
+        return self.flags.get(name)
+    
 ###############################################################
 # CXXLinkerFlagList are flags pass to the linker
 # 
@@ -178,6 +236,21 @@ class CXXLinkerFlagList:
     def __init__(self):
         self.flags = FlagList()
 
+    def __iter__(self):
+        return iter(self.flags)
+    
+    def __len__(self):
+        return len(self.flags)
+    
+    def __contains__(self, flag: str) -> bool:
+        return flag in self.flags
+    
+    def add(self, flag:str):
+        self.flags.append(flag)
+        
+    def get(self, name: str) -> str | None:
+        return self.flags.get(name)
+    
 ###############################################################
 # ProjectSpecific add flags and features by project
 # 
@@ -193,7 +266,7 @@ class ProjectSpecific:
         self.project_type = project_type
         self.cxx_linker_flags = CXXLinkerFlagList()
         self.cxx_compiler_flags = CXXCompilerFlagList()
-        self.enable_features = FeatureNameList()
+        self.enable_features = FeatureNameList()    
     
     def __hash__(self) -> int:
         return hash(self.project_type)
@@ -229,7 +302,7 @@ class Profile:
         # The profile used extends this one
         self.extends : Profile = None
         # If this profile specific is abstract ( Not usable by the user )
-        self.abstract = False
+        self.is_abstract = False
         # Flags pass to the linker
         self.cxx_linker_flags = CXXLinkerFlagList()
         # Flags pass to the compiler
@@ -237,7 +310,7 @@ class Profile:
         # List of features to enable with this profile
         self.enable_features = FeatureNameList()
         # List of project specific flags and features with this profile
-        self.project_specifics : set[ProjectSpecific] = {}
+        self.project_specifics : set[ProjectSpecific] = set()
 
     def __hash__(self) -> int:
         return hash(self.name)
@@ -259,8 +332,33 @@ class Profile:
 ######################################################
 class ProfileList:
     def __init__(self):
-        self.profiles: set[Profile] = {}
+        self.profiles: set[Profile] = set()
+    
+    def __iter__(self):
+        return iter(self.profiles)
+    
+    def __len__(self):
+        return len(self.profiles)
+    
+    def __contains__(self, profile: Profile) -> bool:
+        return profile in self.profiles
+    
+    def __contains__(self, item) -> bool:
+        if isinstance(item, Profile):
+            return item in self.profiles
+        if isinstance(item, str):
+            return any(p.name == item for p in self.profiles)
+        return False
+    
+    def add(self, profile:Feature):
+        self.profiles.add(profile)
 
+    def get(self, name: str) -> Profile | None:
+        for p in self.profiles:
+            if p.name == name:
+                return p
+        return None  
+    
 
 ######################################################
 # FeatureList list features
@@ -273,8 +371,30 @@ class ProfileList:
 ######################################################
 class FeatureList:
     def __init__(self):
-        self.features = set(Feature)
+        self.features : set[Feature] = set()
 
+    def __iter__(self):
+        return iter(self.features)
+    
+    def __len__(self):
+        return len(self.features)
+        
+    def __contains__(self, item) -> bool:
+        if isinstance(item, Feature):
+            return item in self.features
+        if isinstance(item, str):
+            return any(f.name == item for f in self.features)
+        return False
+    
+    def add(self, feature:Feature):
+        self.features.add(feature)
+
+    def get(self, name: str) -> FeatureRule | None:
+        for f in self.features:
+            if f.name == name:
+                return f
+        return None  
+    
 ###############################################################
 # FeatureRuleList is list of FeatureRule
 #
@@ -286,8 +406,30 @@ class FeatureList:
 ###############################################################
 class FeatureRuleList:
     def __init__(self):
-        self.feature_rules : set[FeatureRule] = {}
+        self.feature_rules : set[FeatureRule] = set()
+    
+    def __iter__(self):
+        return iter(self.feature_rules)
+    
+    def __len__(self):
+        return len(self.feature_rules)
+    
+    def __contains__(self, item) -> bool:
+        if isinstance(item, FeatureRule):
+            return item in self.feature_rules
+        if isinstance(item, str):
+            return any(t.name == item for t in self.feature_rules)
+        return False
+    
+    def add(self, feature_rule:FeatureRule):
+        self.feature_rules.add(feature_rule)
         
+    def get(self, name: str) -> FeatureRule | None:
+        for f in self.feature_rules:
+            if f.name == name:
+                return f
+        return None 
+    
 ######################################################
 # Target
 #
@@ -296,11 +438,21 @@ class FeatureRuleList:
 #     target:
 ######################################################
 class Target:
-    def __init__(self, name: str):
-         # The target name
+    def __init__(self, name: str, arch:str, vendor:str, os:str, env:str, compiler_name:str):
+        # The target name
         self.name = name
-         # If this target is abstract ( Not usable by the user )
-        self.abstract = False
+        # The arch of the target
+        self.arch = arch
+        # The vendor of the target
+        self.vendor = vendor
+        # The os of the target
+        self.os = os
+        # The env of the target
+        self.env = env
+        # The compiler name of the target
+        self.compiler_name = compiler_name
+        # If this target is abstract ( Not usable by the user )
+        self.is_abstract = False
         # The target used extends this one
         self.extends : Target = None
         # List of profiles
@@ -309,4 +461,46 @@ class Target:
         self.features = FeatureList()
         # List of feature rules
         self.feature_rules = FeatureRuleList()
+        # The file where the target was loaded
+        self.file = Path()
+
+    def __hash__(self) -> int:
+        return hash(self.name)
+
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, Target):
+            return NotImplemented
+        return self.name == other.name
+
+
+
+################################################
+# List of targets
+################################################
+class TargetList:
+    def __init__(self):
+        self.targets : set[Target] = set()
+
+    def __iter__(self):
+        return iter(self.targets)
+    
+    def __len__(self):
+        return len(self.targets)
+    
+    def __contains__(self, item) -> bool:
+        if isinstance(item, Target):
+            return item in self.targets
+        if isinstance(item, str):
+            return any(t.name == item for t in self.targets)
+        return False
+
+    def add(self, target:Target):
+        self.targets.add(target)
+
+    def get(self, name: str) -> Target | None:
+        for t in self.targets:
+            if t.name == name:
+                return t
+        return None
+
 

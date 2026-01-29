@@ -114,8 +114,7 @@
             "args": [
                 "-d",
                 "tests/my_bin",
-                "run",
-                "--release"
+                "run"
             ],
             // "args": [
             //     "-d",

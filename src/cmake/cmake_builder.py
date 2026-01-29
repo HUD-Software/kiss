@@ -87,7 +87,8 @@ class CMakeBuilder(BaseBuilder):
         cmakelist_generate_context = CMakeListsGenerateContext.create(directory=cmake_build_context.directory,
                                                                       project_name=cmake_build_context.project.name,
                                                                       generator_name=cmake_build_context.builder_name,
-                                                                      platform_target=cmake_build_context.platform_target)
+                                                                      platform_target=cmake_build_context.platform_target,
+                                                                      config=cmake_build_context.config)
         generated_context_list = cmake_generator.generate_project(cmakelist_generate_context)
        
         # Get CMake Generator

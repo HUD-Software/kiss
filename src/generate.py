@@ -1,7 +1,8 @@
 import argparse
 from pathlib import Path
-from typing import Self
+from typing import Optional, Self
 import cli
+from config import Config
 import console
 from context import Context
 from generator import BaseGenerator, GeneratorRegistry

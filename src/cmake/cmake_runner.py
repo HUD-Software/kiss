@@ -1,5 +1,5 @@
 import os
-from build import BuildContext
+import platform
 from builder import BuilderRegistry
 from cli import KissParser
 from cmake.cmake_builder import CMakeBuildContext, CMakeBuilder
@@ -43,24 +43,25 @@ class CMakeRunner(BaseRunner):
                             platform_target=run_context.platform_target, 
                             project=run_context.project)
         
-        # Add DLL path to PATH on Windows
-        if run_context.platform_target.is_windows():
-            project_list = context.project.topological_sort_projects()
-            dll_paths = []
-            for proj_context in project_list:
-                proj_context = CMakeContext(current_directory=run_context.directory, 
-                                            platform_target=run_context.platform_target, 
-                                            project=proj_context)
-                dll_paths.append(str(proj_context.output_directory(run_context.config).resolve()))  
+        if platform.system() == "Windows":
+            # Add DLL path to PATH on Windows
+            if run_context.platform_target.is_windows():
+                project_list = context.project.topological_sort_projects()
+                dll_paths = []
+                for proj_context in project_list:
+                    proj_context = CMakeContext(current_directory=run_context.directory, 
+                                                platform_target=run_context.platform_target, 
+                                                project=proj_context)
+                    dll_paths.append(str(proj_context.output_directory(run_context.config).resolve()))  
 
-            existing_path = os.environ.get("PATH", "")
-            os.environ["PATH"] = ";".join(dll_paths + [existing_path])
-        
+                existing_path = os.environ.get("PATH", "")
+                os.environ["PATH"] = ";".join(dll_paths + [existing_path])
+            
         # Get binary path
         if context.platform_target.is_windows():
-            binary_path = context.output_directory(run_context.config) / f"{run_context.project.name}.exe"
+            binary_path = context.target_output_directory(run_context.config) / f"{run_context.project.name}.exe"
         else:
-            binary_path = context.output_directory(run_context.config) / run_context.project.name
+            binary_path = context.target_output_directory(run_context.config) / run_context.project.name
 
         # Run the project
         console.print_step(f"▶ Run {binary_path.name}...")

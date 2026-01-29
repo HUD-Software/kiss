@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Self
+from typing import Optional
 from config import Config
 from platform_target import PlatformTarget
 from project import Project
@@ -7,14 +7,14 @@ from project import Project
 class CMakeContext:
     def __init__(self, current_directory: Path, platform_target: PlatformTarget, project: Project):
         self._current_directory = current_directory
-        root_build_directory = self.resolveCMakeBuildDirectory(current_directory=current_directory, platform_target=platform_target)
+        self._root_build_directory = self.resolveRootBuildDirectory(current_directory=current_directory)
         self._build_directory = self.resolveProjectBuildDirectory(current_directory=current_directory, platform_target=platform_target, project=project)
         self._cmakelists_directory =  self.resolveCMakeListsDirectory(current_directory=current_directory, platform_target=platform_target, project=project)
         self._project = project
         self._platform_target = platform_target
-        self._cmakefile = self.resolveCMakefile(current_directory=current_directory, platform_target=platform_target, project=project)
+        self._cmakefile = self._cmakelists_directory / "CMakeLists.txt"
         self._cmakecache = self._build_directory / "CMakeCache.txt"
-        self._install_directory = root_build_directory / "install"
+        self._install_directory = self._root_build_directory / "install"
     
     @staticmethod
     def resolveRootBuildDirectory(current_directory: Path) -> Path:
@@ -22,7 +22,7 @@ class CMakeContext:
         
     @staticmethod
     def resolveCMakeBuildDirectory(current_directory: Path, platform_target: PlatformTarget) -> Path:
-        return  current_directory / "build" / platform_target.name / "cmake"
+        return CMakeContext.resolveRootBuildDirectory(current_directory=current_directory) / platform_target.name / "cmake"
     
     @staticmethod
     def resolveProjectBuildDirectory(current_directory: Path, platform_target: PlatformTarget, project: Project) -> Path:
@@ -36,14 +36,13 @@ class CMakeContext:
     def resolveCMakefile(current_directory: Path, platform_target: PlatformTarget, project: Project) -> Path:
         return CMakeContext.resolveCMakeListsDirectory(current_directory=current_directory, platform_target=platform_target, project=project) / "CMakeLists.txt"
     
-    def output_directory(self, config: Config) -> Path:
-        if config.is_release:
-            if config.is_debug_info:
-                return self.cmakelists_directory / "relwithdebinfo"
-            else:
-                return self.cmakelists_directory / "release"
-        else:    
-            return self.cmakelists_directory / "debug"
+    @staticmethod
+    def resolveCMakeCacheDirectory(current_directory: Path, platform_target: PlatformTarget, project: Project):
+        return CMakeContext.resolveProjectBuildDirectory(current_directory=current_directory, platform_target=platform_target, project=project) / "CMakeCache.txt"
+    
+    @property
+    def cmake_root_build_directory(self) -> Path:
+        return self._root_build_directory
     
     @property
     def current_directory(self) -> Path:
@@ -76,3 +75,12 @@ class CMakeContext:
     @property
     def platform_target(self) -> PlatformTarget:
         return self._platform_target
+
+    def target_output_directory(self, config: Config) -> Path:
+        if config.is_release:
+            if config.is_debug_info:
+                return self.cmakelists_directory / "relwithdebinfo"
+            else:
+                return self.cmakelists_directory / "release"
+        else:    
+            return self.cmakelists_directory / "debug"

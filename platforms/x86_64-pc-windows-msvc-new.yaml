@@ -9,125 +9,133 @@ x86_64-pc-windows-msvc-generic:
   profiles:
     common:
       is_abstract: true
-      features: [WARNING_LEVEL_STRICT, RUNTIME_DLL, ENABLE_EXCEPTION]
+      enable-features: [WARNING_LEVEL_STRICT, RUNTIME_DLL, ENABLE_EXCEPTION]
+      cxx-compiler-flags: []
+      cxx-linker-flags: []
+      dyn:
+        cxx-compiler-flags: []
+        cxx-linker-flags: []
+        enable-features: []
+      bin:
+        cxx-compiler-flags: []
+        cxx-linker-flags: []
+        enable-features: []
+      lib:
+        cxx-compiler-flags: []
+        cxx-linker-flags: []
+        enable-features: []
     debug:
       extends: common
-      features: [OPT_LEVEL_0]
+      enable-features: [OPT_LEVEL_0]
       cxx-compiler-flags: []
       cxx-linker-flags: [/MACHINE:X64, /INCREMENTAL]
       dyn:
         cxx-compiler-flags: [/LDd]
         cxx-linker-flags: []
-        features: []
+        enable-features: []
       bin:
         cxx-compiler-flags: []
         cxx-linker-flags: []
-        features: []
+        enable-features: []
       lib:
         cxx-compiler-flags: []
         cxx-linker-flags: []
-        features: []
+        enable-features: []
     release:
       extends: common
-      features: [OPT_LEVEL_3]
+      enable-features: [OPT_LEVEL_3]
       cxx-compiler-flags: []
       cxx-linker-flags: [/MACHINE:X64, /OPT:REF, /OPT:ICF, /INCREMENTAL:NO]
       dyn:
         cxx-compiler-flags: [/LD]
         cxx-linker-flags: []
-        features: []
+        enable-features: []
       bin:
         cxx-compiler-flags: []
         cxx-linker-flags: []
-        features: []
+        enable-features: []
       lib:
         cxx-compiler-flags: []
         cxx-linker-flags: []
-        features: []
+        enable-features: []
   features:
     # Warnings
     - name: WARNING_LEVEL_BASE
       description: Default warning level
-      cxx-compiler:
-        all-flags: [/W3]
+      cxx-compiler-flags: [/W3]
     - name: WARNING_LEVEL_STRICT
       description: Strict warnings
-      cxx-compiler:
-        all-flags: [/W4]
+      cxx-compiler-flags: [/W4]
     - name: WARNING_ALL
       description: All warnings (very noisy)
-      cxx-compiler:
-        all-flags: [/Wall]
+      cxx-compiler-flags: [/Wall]
     - name: WARNING_AS_ERROR
       description: Treat warnings as errors
-      cxx-compiler:
-        all-flags: [/WX]
+      cxx-compiler-flags: [/WX]
     - name: NO_WARNING
       description: Disable all warnings
-      cxx-compiler:
-        all-flags: [/W0]
+      cxx-compiler-flags: [/W0]
 
     # Windows Runtime
     - name: RUNTIME_DLL
       description: Windows DLL runtime
-      cxx-compiler:
-        debug-flags: [/MDd]
-        release-flags: ["/MD"]
+      debug:
+        cxx-compiler-flags: [/MTd]
+      release:
+        cxx-compiler-flags: ["/MD"]
     - name: RUNTIME_STATIC
       description: Windows static runtime
-      cxx-compiler:
-        debug-flags: [/MTd]
-        release-flags: [/MT]
+      # Apply to all configuration
+      cxx-compiler-flags: []
+      cxx-linker-flags: []
+      enable-features: []
+      # Apply to debug configuration only
+      debug:
+        cxx-compiler-flags: [/MTd]
+        cxx-linker-flags: []
+      # Apply to release configuration onlye
+      release:
+        cxx-compiler-flags: [/MT]
+        cxx-linker-flags: []
 
     # Optimisations
     - name: OPT_LEVEL_0
       description: No optimization (debug-like)
-      cxx-compiler:
-        all-flags: [/Od]
-      cxx-linker:
-        all-flags: [/DEBUG]
-      enable-feature: [DEBUG_INFO]
+      cxx-compiler-flags: [/Od]
+      cxx-linker-flags: [/DEBUG]
+      enable-features: [DEBUG_INFO]
     - name: OPT_LEVEL_1
       description: Minimal optimization (-O1)
-      cxx-compiler:
-        all-flags: [/O1]
+      cxx-compiler-flags: [/O1]
     - name: OPT_LEVEL_2
       description: Default optimization (-O2)
-      cxx-compiler:
-        all-flags: [/O2]
+      cxx-compiler-flags: [/O2]
     - name: OPT_LEVEL_3
       description: Max optimization (-O2 + aggressive inline)
-      cxx-compiler:
-        all-flags: [/O2, /Ob2, /Oi]
-      enable-feature: [LTO, OMIT_FRAME_POINTER, LTCG]
+      cxx-compiler-flags: [/O2, /Ob2, /Oi]
+      enable-features: [LTO, OMIT_FRAME_POINTER, LTCG]
     - name: LTCG
       description: Link-time code generation
-      cxx-linker:
-        all-flags: [/LTCG]
+      cxx-linker-flags: [/LTCG]
     - name: LTO
       description: Whole program optimization
-      cxx-compiler:
-        all-flags: [/GL]
+      cxx-compiler-flags: [/GL]
     - name: OMIT_FRAME_POINTER
       description: Omit frame pointer
-      cxx-compiler:
-        all-flags: [/Oy]
+      cxx-compiler-flags: [/Oy]
 
     # Debug informations
     - name: DEBUG_INFO
       description: Generate debug informations
-      cxx-compiler:
-        all-flags: [/Zi]
+      cxx-compiler-flags: [/Zi]
 
     # Exception
     - name: ENABLE_EXCEPTION
       description: Enable C++ exception
-      cxx-compiler:
-        all-flags: [/EHsc]
+      cxx-compiler-flags: [/EHsc]
     - name: DISABLE_EXCEPTION
       description: Disable C++ exception
-      cxx-compiler:
-        all-flags: [/EH-]
+      cxx-compiler-flags: [/EH-]
 
   # Features rules
   # only-one rule : Only 1 rules is allowed in 'features'
@@ -166,12 +174,8 @@ x86_64-pc-windows-msvc-clangcl:
   features:
     - name: ASAN
       description: Enable ASAN Sanitizer (Clang-cl only)
-      cxx-compiler:
-        debug-flags: ["-fsanitize=address", "-fsanitize-address-use-after-scope"]
-        release-flags: ["-fsanitize=address", "-fsanitize-address-use-after-scope"]
-      cxx-linker:
-        debug-flags: ["-fsanitize=address"]
-        release-flags: ["-fsanitize=address"]
+      cxx-compiler-flags: ["-fsanitize=address", "-fsanitize-address-use-after-scope"]
+      cxx-linker-flags: ["-fsanitize=address"]
       # ASAN require to enable some features to work correctly
       enable-feature: [DEBUG_INFO, RUNTIME_DLL]
   feature-rules:

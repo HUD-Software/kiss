@@ -1,0 +1,312 @@
+
+from typing import Self
+from project import ProjectType
+
+
+
+#####################################################################
+# FlagList represent a list of flags used by the compiler or linker
+# 
+# Yaml:
+#  cxx-compiler-flags|cxx-linker-flags : []
+#
+#####################################################################
+class FlagList:
+    def __init__(self):
+        self.flags : list[str] = []
+
+##############################################################
+# FeatureNameList are list of feature names
+# 
+# Yaml:
+#   features: []
+#
+##############################################################
+class FeatureNameList:
+    def __init__(self):
+        self.feature_names : list[str] = []
+
+##############################################################
+# FeatureRule are base of all feature rule
+##############################################################
+class FeatureRule:
+    def __init__(self, feature_rule_name: str):
+        self.feature_rule_name = feature_rule_name
+
+##################################################################################
+# FeatureRuleOnlyOne ensures that only one feature can be enabled from a feature list.
+#
+# Enabling more than one feature in the same target raises an error.
+# Enabling a feature in a derived target overrides the feature enabled in the base target.
+# 
+# Yaml :
+#  - only-one: warning       <== 'FeatureRuleOnlyOne'
+#    features: [WARNING_LEVEL_BASE, WARNING_LEVEL_STRICT, WARNING_ALL, NO_WARNING]
+#
+# Example:
+#  - If target 'common' enables both 'WARNING_LEVEL_BASE' and 'WARNING_LEVEL_STRICT',
+#    an error is raised.
+#
+#  - If target 'common' enables 'WARNING_LEVEL_BASE' and a target 'msvc' extending
+#    'common' enables 'WARNING_LEVEL_STRICT', the only enabled feature will be
+#    'WARNING_LEVEL_STRICT'.
+#
+#    Note: if target 'msvc' enables both 'WARNING_LEVEL_STRICT' and
+#    'WARNING_LEVEL_BASE', an error is raised.
+#
+##################################################################################
+class FeatureRuleOnlyOne(FeatureRule):
+    def __init__(self, feature_rule_name: str, features_list: FeatureNameList):
+        super().__init__(feature_rule_name)
+        self.feature_list = features_list
+
+##################################################################################
+# FeatureRuleIncompatibleWith
+#
+# Defines a feature that is incompatible with one or more other features.
+# If the feature and at least one incompatible feature are enabled in any target,
+# an error is raised.
+#
+# YAML:
+#  - incompatible: no_opt      <== 'FeatureRuleIncompatibleWith'
+#    feature: OPT_LEVEL_0
+#    with: [LTCG, LTO, OMIT_FRAME_POINTER]
+#
+# Example:
+#  - If the feature 'OPT_LEVEL_0' is enabled in any target and at least one feature
+#    from the 'with' list is also enabled (in any target), an error is raised.
+#
+##################################################################################
+class FeatureRuleIncompatibleWith(FeatureRule):
+    def __init__(self, feature_rule_name: str, feature_name: str, incompatible_with_feature_name_list: FeatureNameList):
+        super().__init__(feature_rule_name)
+        self.feature_name = feature_name
+        self.incompatible_with_feature_name_list = incompatible_with_feature_name_list 
+
+#############################################################
+# FeatureProfile add flags and features to enable for a feature.
+# It also add project specific flags and features for the feature
+#
+# Yaml :
+#   <root>
+#     target:
+#       features:
+#         - name:                      <== 'Feature'
+#           debug|release:             <== 'FeatureProfile'
+#             cxx-compiler-flags: []   <== 'CXXCompilerFlagList'
+#             cxx-linker-flags: []     <== 'CXXLinkerFlagList'
+#             enable-features: []      <== 'FeatureNameList'
+#             dyn|bin|lib:             <== set of 'ProjectSpecific'
+# 
+#############################################################
+class FeatureProfile:
+    def __init__(self, name: str):
+        # Name of the profile
+        self.name = name
+        # Flags pass to the linker
+        self.cxx_linker_flags = CXXLinkerFlagList()
+        # Flags pass to the compiler
+        self.cxx_compiler_flags = CXXCompilerFlagList()
+        # List of features to enable with this feature
+        self.enable_features = FeatureNameList()
+        # List of project specific flags and features with this feature
+        self.project_specifics : set[ProjectSpecific] = {}
+
+    def __hash__(self) -> int:
+        return hash(self.name)
+
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, FeatureProfile):
+            return NotImplemented
+        return self.name == other.name
+    
+###############################################################
+# Feature with a unique name
+# It add flags and features for all profiles
+# It also add project specific flags and features
+#
+# Yaml : 
+#   <root>
+#     target:
+#       features:
+#         - name:                      <== 'Feature'
+#           description:
+#           cxx-compiler-flags: []     <== 'CXXCompilerFlagList'
+#           cxx-linker-flags: []       <== 'CXXLinkerFlagList'
+#           enable-features: []        <== 'FeatureNameList'
+#           debug|release:             <== set of 'FeatureProfile'
+#
+##############################################################
+class Feature:
+    def __init__(self, name: str):
+        self.name = name
+        self.description: str = ""
+        self.cxx_linker_flags = CXXLinkerFlagList()
+        self.cxx_compiler_flags = CXXCompilerFlagList()
+        self.enable_features = FeatureNameList()
+        self.profile_specifics : set[FeatureProfile] = {}
+
+    def __hash__(self) -> int:
+        return hash(self.name)
+
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, Feature):
+            return NotImplemented
+        return self.name == other.name
+
+
+
+###############################################################
+# CXXCompilerFlagList are flags pass to the compiler
+# 
+# Yaml :
+#   cxx-compiler-flags: []
+#
+##############################################################
+class CXXCompilerFlagList:
+    def __init__(self):
+        self.flags = FlagList()
+
+###############################################################
+# CXXLinkerFlagList are flags pass to the linker
+# 
+# Yaml :
+#   cxx-linker-flags: []
+#
+##############################################################
+class CXXLinkerFlagList:
+    def __init__(self):
+        self.flags = FlagList()
+
+###############################################################
+# ProjectSpecific add flags and features by project
+# 
+# Yaml :
+#   dyn|bin|lib:                   <== 'ProjectSpecific'
+#     cxx-compiler-flags: []       <== 'CXXCompilerFlagList'
+#     cxx-linker-flags: []         <== 'CXXLinkerFlagList'
+#     enable-features: []          <== 'FeatureNameList'
+#
+##############################################################
+class ProjectSpecific:
+    def __init__(self, project_type: ProjectType):
+        self.project_type = project_type
+        self.cxx_linker_flags = CXXLinkerFlagList()
+        self.cxx_compiler_flags = CXXCompilerFlagList()
+        self.enable_features = FeatureNameList()
+    
+    def __hash__(self) -> int:
+        return hash(self.project_type)
+
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, ProjectSpecific):
+            return NotImplemented
+        return self.project_type == other.project_type
+
+    
+#############################################################
+# Profile add flags and features by profile.
+# It also add project specific flags and features for the profile
+# Extending it with 'extends' merge all flags and features of the extended into this one
+#
+# Yaml :
+#   <root>
+#     target:
+#       profiles:
+#         debug|release:                <== 'Profile'
+#           extends: common             <== 'Profile'
+#           is_abstract: false
+#           enable-features: []         <== 'FeatureNameList'
+#           cxx-compiler-flags: []      <== 'CXXCompilerFlagList'
+#           cxx-linker-flags: []        <== 'CXXLinkerFlagList'
+#           dyn|bin|lib:                <== set of 'ProjectSpecific'
+# 
+#############################################################
+class Profile:
+    def __init__(self, name: str):
+        # The profile name
+        self.name = name
+        # The profile used extends this one
+        self.extends : Profile = None
+        # If this profile specific is abstract ( Not usable by the user )
+        self.abstract = False
+        # Flags pass to the linker
+        self.cxx_linker_flags = CXXLinkerFlagList()
+        # Flags pass to the compiler
+        self.cxx_compiler_flags = CXXCompilerFlagList()
+        # List of features to enable with this profile
+        self.enable_features = FeatureNameList()
+        # List of project specific flags and features with this profile
+        self.project_specifics : set[ProjectSpecific] = {}
+
+    def __hash__(self) -> int:
+        return hash(self.name)
+
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, Profile):
+            return NotImplemented
+        return self.name == other.name
+
+
+######################################################
+# ProfileList list profile
+#
+# Yaml:
+#   <root>
+#     target:
+#       profiles:       <== 'ProfileList', set of 'Profile'
+#
+######################################################
+class ProfileList:
+    def __init__(self):
+        self.profiles: set[Profile] = {}
+
+
+######################################################
+# FeatureList list features
+#
+# Yaml:
+#   <root>
+#     target:
+#       features:       <== 'FeatureList', set of 'Feature'
+#
+######################################################
+class FeatureList:
+    def __init__(self):
+        self.features = set(Feature)
+
+###############################################################
+# FeatureRuleList is list of FeatureRule
+#
+# Yaml:
+#   <root>
+#     target:
+#       feature-rules:      <== 'FeatureRuleList', set of 'FeatureRule'
+#
+###############################################################
+class FeatureRuleList:
+    def __init__(self):
+        self.feature_rules : set[FeatureRule] = {}
+        
+######################################################
+# Target
+#
+# Yaml:
+#   <root>
+#     target:
+######################################################
+class Target:
+    def __init__(self, name: str):
+         # The target name
+        self.name = name
+         # If this target is abstract ( Not usable by the user )
+        self.abstract = False
+        # The target used extends this one
+        self.extends : Target = None
+        # List of profiles
+        self.profiles = ProfileList()
+        # List of features
+        self.features = FeatureList()
+        # List of feature rules
+        self.feature_rules = FeatureRuleList()
+

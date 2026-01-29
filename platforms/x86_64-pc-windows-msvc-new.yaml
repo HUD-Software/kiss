@@ -6,41 +6,41 @@
 x86_64-pc-windows-msvc-generic:
   # This target is not a target that can be used to build
   is_abstract: true
-  profiles: 
-    usable: [debug, release]
+  profiles:
     common:
+      is_abstract: true
       features: [WARNING_LEVEL_STRICT, RUNTIME_DLL, ENABLE_EXCEPTION]
-    debug: 
-      include: common
+    debug:
+      extends: common
       features: [OPT_LEVEL_0]
       cxx-compiler-flags: []
       cxx-linker-flags: [/MACHINE:X64, /INCREMENTAL]
-      dyn: 
+      dyn:
         cxx-compiler-flags: [/LDd]
         cxx-linker-flags: []
         features: []
-      bin: 
+      bin:
         cxx-compiler-flags: []
         cxx-linker-flags: []
         features: []
-      lib: 
+      lib:
         cxx-compiler-flags: []
         cxx-linker-flags: []
         features: []
     release:
-      include: common
+      extends: common
       features: [OPT_LEVEL_3]
       cxx-compiler-flags: []
       cxx-linker-flags: [/MACHINE:X64, /OPT:REF, /OPT:ICF, /INCREMENTAL:NO]
-      dyn: 
+      dyn:
         cxx-compiler-flags: [/LD]
         cxx-linker-flags: []
         features: []
-      bin: 
+      bin:
         cxx-compiler-flags: []
         cxx-linker-flags: []
         features: []
-      lib: 
+      lib:
         cxx-compiler-flags: []
         cxx-linker-flags: []
         features: []
@@ -152,17 +152,16 @@ x86_64-pc-windows-msvc-generic:
 
 # Target for MSVC cl.exe
 x86_64-pc-windows-msvc-cl:
-  include: x86_64-pc-windows-msvc-generic
-  profiles: 
-    debug: 
+  extends: x86_64-pc-windows-msvc-generic
+  profiles:
+    debug:
       cxx-compiler-flags: [/RTC1]
-
 
 # Target for MSVC clang-cl
 x86_64-pc-windows-msvc-clangcl:
-  include: x86_64-pc-windows-msvc-generic
-  profiles: 
-    debug: 
+  extends: x86_64-pc-windows-msvc-generic
+  profiles:
+    debug:
       features: [ASAN, WARNING_ALL]
   features:
     - name: ASAN

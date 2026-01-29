@@ -52,7 +52,7 @@ class CMakeRunner(BaseRunner):
                     proj_context = CMakeContext(current_directory=run_context.directory, 
                                                 platform_target=run_context.platform_target, 
                                                 project=proj_context)
-                    dll_paths.append(str(proj_context.output_directory(run_context.config).resolve()))  
+                    dll_paths.append(str(proj_context.target_output_directory(run_context.config).resolve()))  
 
                 existing_path = os.environ.get("PATH", "")
                 os.environ["PATH"] = ";".join(dll_paths + [existing_path])

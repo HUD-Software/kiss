@@ -11,7 +11,7 @@ import console
 from generate import GenerateContext
 from generator import BaseGenerator
 from platform_target import PlatformTarget
-from project import  BinProject, LibProject, DynProject, Project
+from project import  BinProject, LibProject, DynProject, Project, ProjectType
 
 class CMakeListsGenerateContext(GenerateContext):
     def __init__(self, directory:Path, project: Project, generator_name: str, platform_target: PlatformTarget, config: Optional[Config]):
@@ -47,9 +47,12 @@ class CMakeListsGenerateContext(GenerateContext):
     def project(self, value):
         self._cmake_context = CMakeContext(current_directory=self._cmake_context.current_directory, platform_target=self._cmake_context.platform_target, project=value)
     
+    def target_output_directory_for_config(self, config: Config) -> Path:
+        return self._cmake_context.target_output_directory(config)
+    
     def target_output_directory(self) -> Path:
-        return self._cmake_context.target_output_directory(self.config)
-        
+        return self.target_output_directory_for_config(self.config)
+    
     @classmethod
     def create(cls, directory: Path, project_name: str, generator_name: str, platform_target: PlatformTarget, config: Optional[Config]) -> Self :
         project_to_generate = super().find_target_project(directory, project_name)
@@ -130,15 +133,16 @@ class CMakeListsGenerator(BaseGenerator):
         return list(all_files)
     
     def _generateMultiConfigProject(self, cmakelist_generate_context: CMakeListsGenerateContext):
-        match cmakelist_generate_context.project:
-            case BinProject() as project:
-                self._generateMultiConfigBinCMakeLists(cmakelist_generate_context, project)
-            case LibProject() as project:
-                self._generateMultiConfigLibCMakeLists(cmakelist_generate_context, project)
-            case DynProject() as project:
-                self._generateMultiConfigDynCMakeLists(cmakelist_generate_context, project)       
+        match cmakelist_generate_context.project.type:
+            case ProjectType.bin:
+                self._generateMultiConfigBinCMakeLists(cmakelist_generate_context)
+            case ProjectType.lib:
+                self._generateMultiConfigLibCMakeLists(cmakelist_generate_context)
+            case ProjectType.dyn:
+                self._generateMultiConfigDynCMakeLists(cmakelist_generate_context)       
 
-    def _generateMultiConfigBinCMakeLists(self, cmakelist_generate_context: CMakeListsGenerateContext, project: BinProject):
+    def _generateMultiConfigBinCMakeLists(self, cmakelist_generate_context: CMakeListsGenerateContext):
+        project: BinProject = cmakelist_generate_context.project
         os.makedirs(cmakelist_generate_context.cmakelists_directory, exist_ok=True)
         # Write the CMakeLists.txt file
         with open(cmakelist_generate_context.cmakefile, "w", encoding="utf-8") as f:
@@ -163,26 +167,32 @@ project({project.name} LANGUAGES CXX )
 # {project.name} output name
 set_target_properties({project.name} PROPERTIES OUTPUT_NAME {project.name})
 set_target_properties({project.name} PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY_DEBUG   "{cmakelist_generate_context.target_output_directory(Config(is_release=False, is_debug_info=False)).resolve().as_posix()}"
-    RUNTIME_OUTPUT_DIRECTORY_RELEASE "{cmakelist_generate_context.target_output_directory(Config(is_release=True, is_debug_info=False)).resolve().as_posix()}"
-    RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO "{cmakelist_generate_context.target_output_directory(Config(is_release=True, is_debug_info=True)).resolve().as_posix()}"
+    RUNTIME_OUTPUT_DIRECTORY_DEBUG   "{cmakelist_generate_context.target_output_directory_for_config(Config(is_release=False, is_debug_info=False)).resolve().as_posix()}"
+    RUNTIME_OUTPUT_DIRECTORY_RELEASE "{cmakelist_generate_context.target_output_directory_for_config(Config(is_release=True, is_debug_info=False)).resolve().as_posix()}"
+    RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO "{cmakelist_generate_context.target_output_directory_for_config(Config(is_release=True, is_debug_info=True)).resolve().as_posix()}"
 )
 """)
             # Write dependencies
             for dep_project in project.dependencies:
-                cmakelist_generate_context.project = dep_project
+                dep_cmakelist_dir = CMakeContext.resolveCMakeListsDirectory(current_directory=cmakelist_generate_context.current_directory,
+                                                                        platform_target=cmakelist_generate_context.platform_target,
+                                                                        project=dep_project)
+                dep_build_dir = CMakeContext.resolveProjectBuildDirectory(current_directory=cmakelist_generate_context.current_directory,
+                                                                        platform_target=cmakelist_generate_context.platform_target,
+                                                                        project=dep_project)
                 f.write(f"""\n# Add {dep_project.name} dependency 
 if(NOT TARGET {dep_project.name})
-add_subdirectory("{cmakelist_generate_context.cmakelists_directory.resolve().as_posix()}" "{cmakelist_generate_context.build_directory.resolve().as_posix()}")
+add_subdirectory("{dep_cmakelist_dir.resolve().as_posix()}" "{dep_build_dir.resolve().as_posix()}")
 endif()
 target_link_libraries({project.name} PRIVATE {dep_project.name})
 target_include_directories({project.name} PRIVATE $<TARGET_PROPERTY:{dep_project.name},INTERFACE_INCLUDE_DIRECTORIES>)
 """)
 
-    def _generateMultiConfigLibCMakeLists(self, context:CMakeContext, project: LibProject):
-        os.makedirs(context.cmakelists_directory, exist_ok=True)
+    def _generateMultiConfigLibCMakeLists(self, cmakelist_generate_context: CMakeListsGenerateContext):
+        project: LibProject = cmakelist_generate_context.project
+        os.makedirs(cmakelist_generate_context.cmakelists_directory, exist_ok=True)
         # Write the CMakeLists.txt file
-        with open(context.cmakefile, "w", encoding="utf-8") as f:
+        with open(cmakelist_generate_context.cmakefile, "w", encoding="utf-8") as f:
             # Write CMake common
             f.write("cmake_minimum_required(VERSION 3.18)\n")
 
@@ -211,19 +221,22 @@ project({project.name} LANGUAGES CXX )
 # {project.name} output name
 set_target_properties({project.name} PROPERTIES OUTPUT_NAME {project.name})
 set_target_properties({project.name} PROPERTIES
-    ARCHIVE_OUTPUT_DIRECTORY_DEBUG   "{context.output_directory(Config(is_release=False, is_debug_info=False)).resolve().as_posix()}"
-    ARCHIVE_OUTPUT_DIRECTORY_RELEASE "{context.output_directory(Config(is_release=True, is_debug_info=False)).resolve().as_posix()}"
-    ARCHIVE_OUTPUT_DIRECTORY_RELWITHDEBINFO "{context.output_directory(Config(is_release=True, is_debug_info=True)).resolve().as_posix()}"
+    ARCHIVE_OUTPUT_DIRECTORY_DEBUG   "{cmakelist_generate_context.target_output_directory_for_config(Config(is_release=False, is_debug_info=False)).resolve().as_posix()}"
+    ARCHIVE_OUTPUT_DIRECTORY_RELEASE "{cmakelist_generate_context.target_output_directory_for_config(Config(is_release=True, is_debug_info=False)).resolve().as_posix()}"
+    ARCHIVE_OUTPUT_DIRECTORY_RELWITHDEBINFO "{cmakelist_generate_context.target_output_directory_for_config(Config(is_release=True, is_debug_info=True)).resolve().as_posix()}"
 )
 """)
             # Write dependencies
             for dep_project in project.dependencies:
-                dep_ctx = CMakeContext(current_directory=context.current_directory, 
-                            platform_target=context.platform_target, 
-                            project=dep_project)
+                dep_cmakelist_dir = CMakeContext.resolveCMakeListsDirectory(current_directory=cmakelist_generate_context.current_directory,
+                                                                        platform_target=cmakelist_generate_context.platform_target,
+                                                                        project=dep_project)
+                dep_build_dir = CMakeContext.resolveProjectBuildDirectory(current_directory=cmakelist_generate_context.current_directory,
+                                                                        platform_target=cmakelist_generate_context.platform_target,
+                                                                        project=dep_project)
                 f.write(f"""\n# Add {dep_project.name} dependency 
 if(NOT TARGET {dep_project.name})
-add_subdirectory("{dep_ctx.cmakelists_directory.resolve().as_posix()}" "{dep_ctx.build_directory.resolve().as_posix()}")
+add_subdirectory("{dep_cmakelist_dir.resolve().as_posix()}" "{dep_build_dir.resolve().as_posix()}")
 endif()
 target_link_libraries({project.name} PRIVATE {dep_project.name})
 target_include_directories({project.name} PRIVATE $<TARGET_PROPERTY:{dep_project.name},INTERFACE_INCLUDE_DIRECTORIES>)
@@ -273,16 +286,17 @@ install(FILES
 )
 """)
         
-        with open(context.cmakelists_directory / f"{project.name}Config.cmake.in", "w", encoding="utf-8") as f:
+        with open(cmakelist_generate_context.cmakelists_directory / f"{project.name}Config.cmake.in", "w", encoding="utf-8") as f:
             f.write(f"""@PACKAGE_INIT@
 
 include("${{CMAKE_CURRENT_LIST_DIR}}/{project.name}Targets.cmake")
 """)
                 
-    def _generateMultiConfigDynCMakeLists(self, context:CMakeContext, project: DynProject):
-        os.makedirs(context.cmakelists_directory, exist_ok=True)
+    def _generateMultiConfigDynCMakeLists(self, cmakelist_generate_context: CMakeListsGenerateContext):
+        project: DynProject = cmakelist_generate_context.project
+        os.makedirs(cmakelist_generate_context.cmakelists_directory, exist_ok=True)
         # Write the CMakeLists.txt file
-        with open(context.cmakefile, "w", encoding="utf-8") as f:
+        with open(cmakelist_generate_context.cmakefile, "w", encoding="utf-8") as f:
             # Write CMake common
             f.write("cmake_minimum_required(VERSION 3.18)\n")
 
@@ -312,22 +326,25 @@ project({project.name} LANGUAGES CXX )
 set_target_properties({project.name} PROPERTIES OUTPUT_NAME {project.name})
 target_compile_definitions({project.name} PRIVATE KISS_EXPORTS)
 set_target_properties({project.name} PROPERTIES
-    LIBRARY_OUTPUT_DIRECTORY_DEBUG   "{context.output_directory(Config(is_release=False, is_debug_info=False)).resolve().as_posix()}"
-    LIBRARY_OUTPUT_DIRECTORY_RELEASE "{context.output_directory(Config(is_release=True, is_debug_info=False)).resolve().as_posix()}"
-    LIBRARY_OUTPUT_DIRECTORY_RELWITHDEBINFO "{context.output_directory(Config(is_release=True, is_debug_info=True)).resolve().as_posix()}"
-    RUNTIME_OUTPUT_DIRECTORY_DEBUG   "{context.output_directory(Config(is_release=False, is_debug_info=False)).resolve().as_posix()}"
-    RUNTIME_OUTPUT_DIRECTORY_RELEASE "{context.output_directory(Config(is_release=True, is_debug_info=False)).resolve().as_posix()}"
-    RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO "{context.output_directory(Config(is_release=True, is_debug_info=True)).resolve().as_posix()}"
+    LIBRARY_OUTPUT_DIRECTORY_DEBUG   "{cmakelist_generate_context.target_output_directory_for_config(Config(is_release=False, is_debug_info=False)).resolve().as_posix()}"
+    LIBRARY_OUTPUT_DIRECTORY_RELEASE "{cmakelist_generate_context.target_output_directory_for_config(Config(is_release=True, is_debug_info=False)).resolve().as_posix()}"
+    LIBRARY_OUTPUT_DIRECTORY_RELWITHDEBINFO "{cmakelist_generate_context.target_output_directory_for_config(Config(is_release=True, is_debug_info=True)).resolve().as_posix()}"
+    RUNTIME_OUTPUT_DIRECTORY_DEBUG   "{cmakelist_generate_context.target_output_directory_for_config(Config(is_release=False, is_debug_info=False)).resolve().as_posix()}"
+    RUNTIME_OUTPUT_DIRECTORY_RELEASE "{cmakelist_generate_context.target_output_directory_for_config(Config(is_release=True, is_debug_info=False)).resolve().as_posix()}"
+    RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO "{cmakelist_generate_context.target_output_directory_for_config(Config(is_release=True, is_debug_info=True)).resolve().as_posix()}"
 )
 """)
             # Write dependencies
             for dep_project in project.dependencies:
-                dep_ctx = CMakeContext(project_directory=context.project_directory, 
-                            platform_target=context.platform_target, 
-                            project=dep_project)
+                dep_cmakelist_dir = CMakeContext.resolveCMakeListsDirectory(current_directory=cmakelist_generate_context.current_directory,
+                                                                        platform_target=cmakelist_generate_context.platform_target,
+                                                                        project=dep_project)
+                dep_build_dir = CMakeContext.resolveProjectBuildDirectory(current_directory=cmakelist_generate_context.current_directory,
+                                                                        platform_target=cmakelist_generate_context.platform_target,
+                                                                        project=dep_project)
                 f.write(f"""\n# Add {dep_project.name} dependency 
 if(NOT TARGET {dep_project.name})
-add_subdirectory("{dep_ctx.cmakelists_directory.resolve().as_posix()}" "{dep_ctx.build_directory.resolve().as_posix()}")
+add_subdirectory("{dep_cmakelist_dir.resolve().as_posix()}" "{dep_build_dir.resolve().as_posix()}")
 endif()
 target_link_libraries({project.name} PRIVATE {dep_project.name})
 target_include_directories({project.name} PRIVATE $<TARGET_PROPERTY:{dep_project.name},INTERFACE_INCLUDE_DIRECTORIES>)
@@ -376,7 +393,7 @@ install(FILES
 )
 """)
         
-        with open(context.cmakelists_directory / f"{project.name}Config.cmake.in", "w", encoding="utf-8") as f:
+        with open(cmakelist_generate_context.cmakelists_directory / f"{project.name}Config.cmake.in", "w", encoding="utf-8") as f:
             f.write(f"""@PACKAGE_INIT@
 
 include("${{CMAKE_CURRENT_LIST_DIR}}/{project.name}Targets.cmake")
@@ -384,11 +401,11 @@ include("${{CMAKE_CURRENT_LIST_DIR}}/{project.name}Targets.cmake")
 
     def _generateSingleConfigProject(self, cmakelist_generate_context: CMakeListsGenerateContext):
         match cmakelist_generate_context.project:
-            case BinProject() as project:
+            case ProjectType.bin:
                 self._generateSingleConfigBinCMakeLists(cmakelist_generate_context)
-            case LibProject() as project:
+            case ProjectType.lib:
                 self._generateSingleConfigLibCMakeLists(cmakelist_generate_context)
-            case DynProject() as project:
+            case ProjectType.dyn:
                 self._generateSingleConfigDynCMakeLists(cmakelist_generate_context)       
 
     def _generateSingleConfigBinCMakeLists(self, cmakelist_generate_context: CMakeListsGenerateContext):
@@ -677,7 +694,8 @@ include("${{CMAKE_CURRENT_LIST_DIR}}/{project.name}Targets.cmake")
             for project in unfreshlist:
                 console.print_tips(f"  📝 {project.name}")
                 cmakelist_generate_context.project = project
-                if not cmakelist_generate_context.config:
+                is_multi_config = cmakelist_generate_context.platform_target == PlatformTarget.x86_64_pc_windows_msvc
+                if is_multi_config:
                     self._generateMultiConfigProject(cmakelist_generate_context)
                 else:
                     self._generateSingleConfigProject(cmakelist_generate_context)

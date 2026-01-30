@@ -1,7 +1,7 @@
 from pathlib import Path
 import yaml
 import console
-from platforms.platforms import Feature, FeatureList, FeatureNameList, FeatureRuleIncompatibleWith, FeatureRuleList, FeatureRuleOnlyOne, Profile, ProfileList, ProjectSpecific, Target, TargetList
+from platforms.platforms import Feature, FeatureList, FeatureNameList, FeatureRuleIncompatibleWith, FeatureRuleList, FeatureRuleOnlyOne, Profile, ProfileCyclicError, ProfileList, ProjectSpecific, Target, TargetList
 from project import ProjectType
 
 ############################################################
@@ -119,6 +119,7 @@ class YamlTargetFile:
                         else:
                             console.print_error(f"❌ Line {yaml_object.key_line} : Unknown key '{item}' in '{self.file}'")
                             continue
+            profiles.add(profile)
         return profiles
     
     def _read_target_features(self, yaml_object: YamlObject) -> FeatureList | None:
@@ -325,32 +326,27 @@ class YamlTargetFile:
 ###################################################################################
 class TargetRegistry:
     def __init__(self):
-        self.targets= TargetList()
+        self.targets = TargetList()
     
     def __contains__(self, name: str) -> bool:
         return name in self.targets
 
     def __iter__(self):
-        return iter(self.targets.items())
+        return iter(self.targets)
     
-    def items(self):
-        return self.targets.items()
-    
-    # def register_target(self, target: Target):
-    #     existing_target = self.targets.get(target.name)
-    #     if existing_target:
-    #         console.print_error(f"⚠️  Warning: Target already registered: {existing_target.name} in {str(existing_target.file)}")
-    #         exit(1)
-    #     self._targets[target.name] = target
+    def register_target(self, target: Target):
+        existing_target = self.targets.get(target.name)
+        if existing_target:
+            console.print_error(f"⚠️  Warning: Target already registered: {existing_target.name} in {str(existing_target.file)}")
+            exit(1)
+        self.targets.add(target)
     
     def load_and_register_all_target_in_directory(self, directory: Path):
           for file in directory.glob("*.yaml"):
             yaml_target_file = YamlTargetFile(file)
             yaml_target_file.load_yaml()
             for target in yaml_target_file.targets:
-                console.print_tips(
-f"""--> {target.name} ({'abstract' if target.is_abstract else 'usable' })
- """)
-                pass
+                TargetRegistry.register_target(target)
+
 
 TargetRegistry = TargetRegistry()

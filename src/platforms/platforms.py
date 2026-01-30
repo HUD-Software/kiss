@@ -1,6 +1,7 @@
 
 from pathlib import Path
 from typing import Self
+import console
 from project import ProjectType
 
 
@@ -321,6 +322,32 @@ class Profile:
         return self.name == other.name
 
 
+class ProfileCyclicError(Exception):
+    def __init__(self, current_node : Profile, parent_node: Profile, visiting_stack: list[Profile]):
+        super().__init__()
+        self.current_node = current_node
+        self.parent_node = parent_node
+        self.visiting_stack = visiting_stack
+
+    def __str__(self) -> str:
+        parent_name = self.parent_node.name if self.parent_node else "<root>"
+        stack = ProfileCyclicError._format_stack([p.name for p in self.visiting_stack] + [self.current_node.name])
+        return f"Error: Cyclic dependency between '{self.current_node.name}' and '{parent_name}'\n{stack}" 
+    
+    @staticmethod
+    def _format_stack(names: list[str]) -> str:
+        lines = []
+        for i, name in enumerate(names):
+            indent = " " * (4 * max(i-1, 0))
+            if i == 0:
+                lines.append(name)
+            elif i == len(names) - 1:
+                lines.append(f"{indent}└ ⟲ loop {name}")
+            else:
+                lines.append(f"{indent}└ extends: {name}")
+        return "\n".join(lines)
+
+
 ######################################################
 # ProfileList list profile
 #
@@ -357,9 +384,37 @@ class ProfileList:
         for p in self.profiles:
             if p.name == name:
                 return p
-        return None  
+        return None 
     
+    def flatten_extends_profile(self, profile : Profile) -> list[Profile]:
+        # 1. Collecte du sous-graphe (DFS)
+        all_profiles: list[Profile] = list()
+        visiting_stack: list[Profile] = []
+       
+        def collect(current_node : Profile, parent_node: Profile):
+            # Detect cyclic dependency
+            if current_node in visiting_stack:
+                raise ProfileCyclicError(current_node, parent_node, visiting_stack)
 
+            # Visit the project only once
+            if current_node in all_profiles:
+                return
+            visiting_stack.append(current_node)
+ 
+            # Visit extends
+            if current_node.extends:
+                extends_node = self.get(current_node.extends)
+                if not extends_node:
+                    console.print_error(f"❌ '{current_node.name}' profile extends unknown target '{current_node.extends}'")
+                    exit(1)
+                collect(extends_node, current_node)
+            
+            # Remove visited project
+            visiting_stack.pop()
+            all_profiles.append(current_node)
+        collect(profile, None)
+        return all_profiles
+    
 ######################################################
 # FeatureList list features
 #

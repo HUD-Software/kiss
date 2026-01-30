@@ -98,9 +98,9 @@ class FeatureRule:
 #
 ##################################################################################
 class FeatureRuleOnlyOne(FeatureRule):
-    def __init__(self, name: str, features_list: FeatureNameList):
+    def __init__(self, name: str):
         super().__init__(name)
-        self.feature_list = features_list
+        self.feature_list = FeatureNameList()
 
 ##################################################################################
 # FeatureRuleIncompatibleWith
@@ -120,10 +120,10 @@ class FeatureRuleOnlyOne(FeatureRule):
 #
 ##################################################################################
 class FeatureRuleIncompatibleWith(FeatureRule):
-    def __init__(self, name: str, feature_name: str, incompatible_with_feature_name_list: FeatureNameList):
+    def __init__(self, name: str):
         super().__init__(name)
-        self.feature_name = feature_name
-        self.incompatible_with_feature_name_list = incompatible_with_feature_name_list 
+        self.feature_name = ""
+        self.incompatible_with_feature_name_list = FeatureNameList() 
 
 #############################################################
 # FeatureProfile add flags and features to enable for a feature.

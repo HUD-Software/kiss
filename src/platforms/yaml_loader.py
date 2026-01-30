@@ -1,7 +1,7 @@
 from pathlib import Path
 import yaml
 import console
-from platforms.platforms import Feature, FeatureList, FeatureNameList, FeatureRuleList, Profile, ProfileList, ProjectSpecific, Target, TargetList
+from platforms.platforms import Feature, FeatureList, FeatureNameList, FeatureRuleIncompatibleWith, FeatureRuleList, FeatureRuleOnlyOne, Profile, ProfileList, ProjectSpecific, Target, TargetList
 from project import ProjectType
 
 ############################################################
@@ -180,18 +180,42 @@ class YamlTargetFile:
     def _read_target_feature_rules(self, yaml_object: YamlObject) -> FeatureRuleList | None:
         feature_rules_list = FeatureRuleList()
         for  yaml_object_feature_rule in yaml_object.value:
-            # Read the feature-rule name as it is required
-            feature_only_one = yaml_object_feature_rule.get("only-one")
-            if feature_only_one:
-                # Read only-one
+            # Read only-one feature rule
+            feature_only_one_name = yaml_object_feature_rule.get("only-one")
+            if feature_only_one_name:
+                if not isinstance(feature_only_one_name.value, str):
+                    console.print_error(f"❌ Line {feature_only_one_name.key_line} : 'only-one' must be a feature-rule name in'{self.file}'")
+                    return None
+                feature_only_one = FeatureRuleOnlyOne(feature_only_one_name.value)
+                features = yaml_object_feature_rule.get("features")
+                if not isinstance(features.value, list) or not all(isinstance(x, str) for x in features.value):
+                    console.print_error(f"❌ Line {yaml_object.key_line} : 'features' must contains list of feature name in'{self.file}'")
+                    return None
+                feature_only_one.feature_list = features.value
+                feature_rules_list.add(feature_only_one)
                 continue
-            feature_only_one = yaml_object_feature_rule.get("incompatible")
-            if feature_only_one:
-                # Read incompatible
+            # Read incompatible feature rule
+            feature_incompatible_name = yaml_object_feature_rule.get("incompatible")
+            if feature_incompatible_name:
+                if not isinstance(feature_incompatible_name.value, str):
+                    console.print_error(f"❌ Line {feature_incompatible_name.key_line} : 'only-one' must be a feature-rule name in'{self.file}'")
+                    return None
+                feature_incompatible = FeatureRuleIncompatibleWith(feature_incompatible_name.value)
+                feature = yaml_object_feature_rule.get("feature")
+                if not isinstance(feature.value, str):
+                    console.print_error(f"❌ Line {feature_incompatible.key_line} : 'feature' must be a feature-rule name in'{self.file}'")
+                    return None
+                feature_incompatible.feature_name = feature.value
+                with_list = yaml_object_feature_rule.get("with")
+                if not isinstance(with_list.value, list) or not all(isinstance(x, str) for x in with_list.value):
+                    console.print_error(f"❌ Line {yaml_object.key_line} : 'with' must contains list of feature name in'{self.file}'")
+                    return None
+                feature_incompatible.incompatible_with_feature_name_list = with_list
+                feature_rules_list.add(feature_incompatible)
                 continue
-            else:
-                console.print_error(f"❌ Line {yaml_object.key_line} : Unkown feature rule '{next(iter(yaml_object_feature_rule))}' in '{self.file}'")
-                return None
+           
+            console.print_error(f"❌ Line {yaml_object.key_line} : Unkown feature rule '{next(iter(yaml_object_feature_rule))}' in '{self.file}'")
+            return None
         return feature_rules_list
 
     def _read_target_node(self, target_name: str, yaml_target : YamlObject) -> Target | None:
@@ -323,5 +347,10 @@ class TargetRegistry:
           for file in directory.glob("*.yaml"):
             yaml_target_file = YamlTargetFile(file)
             yaml_target_file.load_yaml()
+            for target in yaml_target_file.targets:
+                console.print_tips(
+f"""--> {target.name} ({'abstract' if target.is_abstract else 'usable' })
+ """)
+                pass
 
 TargetRegistry = TargetRegistry()

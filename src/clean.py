@@ -2,13 +2,12 @@ import argparse
 from pathlib import Path
 from typing import Self
 from cleaner import BaseCleaner, CleanerRegistry
-import cli
 from compiler import Compiler
 from config import Config
 import console
 from context import Context
 from platform_target import PlatformTarget
-from project import Project, ProjectType
+from project import Project
 from projectregistry import ProjectRegistry
 
 class CleanContext(Context):
@@ -19,7 +18,6 @@ class CleanContext(Context):
         self._platform_target = platform_target
         self._config = config
         self._compiler = compiler
-
 
     @property
     def project(self) -> Project:

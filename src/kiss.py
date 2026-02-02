@@ -6,11 +6,12 @@ from new import cmd_new
 from generate import cmd_generate
 from build import cmd_build
 import cli
-from platforms.yaml_loader import TargetRegistry
 from run import cmd_run
+from toolchain import Toolchain
 
 def main():
-    TargetRegistry.load_and_register_all_target_in_directory(Path("platforms"))
+    Toolchain.load_all_toolchains_in_directory(Path("toolchains"))
+    toolchain = Toolchain.create("cl", "x86_64-pc-windows-msvc")
     args = cli.UserParams.from_args()
 
     if args.option == "list": 

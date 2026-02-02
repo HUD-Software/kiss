@@ -1,47 +1,16 @@
+#####################################################################
+# CompilerInfoLoader represent a yaml file that contains compilers to load
+#####################################################################
 from pathlib import Path
-import yaml
 import console
-from platforms.platforms import Feature, FeatureList, FeatureNameList, FeatureRuleIncompatibleWith, FeatureRuleList, FeatureRuleOnlyOne, Profile, ProfileCyclicError, ProfileList, ProjectSpecific, Target, TargetList
 from project import ProjectType
+from yaml_file.line_loader import YamlObject
+from toolchain.compiler.compiler_info import CompilerInfoRegistry, CompilerInfo, CompilerInfoList, Feature, FeatureList, FeatureRuleIncompatibleWith, FeatureRuleList, FeatureRuleOnlyOne, ProfileInfo, ProfileInfoList, ProjectSpecific
 
-############################################################
-# LineLoader used to keep track of line when parsing YAML
-############################################################
-class LineLoader(yaml.SafeLoader):
-    pass
-
-class YamlObject:
-    def __init__(self, key_line, value, line):
-        self.key_line = key_line
-        self.value = value
-        self.line = line
-        
-def construct_mapping(loader, node, deep=False):
-    mapping = {}
-    for key_node, value_node in node.value:
-        key = loader.construct_object(key_node)
-        value = loader.construct_object(value_node)
-
-        mapping[key] = YamlObject(
-            key_line=key_node.start_mark.line + 1,
-            value=value,
-            line=value_node.start_mark.line + 1
-        )
-
-    return mapping
-
-LineLoader.add_constructor(
-    yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
-    construct_mapping,
-)
-
-#####################################################################
-# YamlTargetFile represent a yaml file that contains targets to load
-#####################################################################
-class YamlTargetFile:
+class CompilerInfoLoader:
     def __init__(self, file: Path):
         self.file = file
-        self.targets = TargetList()
+        self.compilers = CompilerInfoList()
     
     def _read_project_specific(self, project_type: ProjectType, yaml_object: YamlObject) -> ProjectSpecific | None:
         project_specific = ProjectSpecific(project_type)
@@ -70,10 +39,10 @@ class YamlTargetFile:
                     continue
         return project_specific
     
-    def _read_profiles(self, yaml_object: YamlObject) -> ProfileList | None:
-        profiles = ProfileList()
+    def _read_profiles(self, yaml_object: YamlObject) -> ProfileInfoList | None:
+        profiles = ProfileInfoList()
         for profile_name, yaml_object_profile in yaml_object.value.items():
-            profile = Profile(profile_name)
+            profile = ProfileInfo(profile_name)
             for item, yaml_object in yaml_object_profile.value.items():
                 match item:
                     case "is_abstract":
@@ -122,7 +91,7 @@ class YamlTargetFile:
             profiles.add(profile)
         return profiles
     
-    def _read_target_features(self, yaml_object: YamlObject) -> FeatureList | None:
+    def _read_compiler_features(self, yaml_object: YamlObject) -> FeatureList | None:
         feature_list = FeatureList()
         for yaml_object_feature in yaml_object.value:
             # Read the name as it is required
@@ -178,7 +147,7 @@ class YamlTargetFile:
             feature_list.add(feature)
         return feature_list
     
-    def _read_target_feature_rules(self, yaml_object: YamlObject) -> FeatureRuleList | None:
+    def _read_compiler_feature_rules(self, yaml_object: YamlObject) -> FeatureRuleList | None:
         feature_rules_list = FeatureRuleList()
         for  yaml_object_feature_rule in yaml_object.value:
             # Read only-one feature rule
@@ -219,39 +188,29 @@ class YamlTargetFile:
             return None
         return feature_rules_list
 
-    def _read_target_node(self, target_name: str, yaml_target : YamlObject) -> Target | None:
-        # Read the target name
-        parts = target_name.split('-')
-        if len(parts) != 5:
-            console.print_error(f"❌ Line {yaml_target.key_line} : Invalid target name '{target_name}' in '{self.file}'")
-            console.print_error(f"  💡 Expected 'arch-vendor-os-env-compiler' separated by '-'")
-            return None
-        arch = parts[0]
-        vendor = parts[1]
-        os = parts[2]
-        env = parts[3]
-        compiler_name = parts[4]
-        target : Target = Target(target_name,arch,vendor, os, env, compiler_name)
+    def _read_compiler_node(self, compiler_name: str, yaml_compiler : YamlObject) -> CompilerInfo | None:
+       
+        compiler : CompilerInfo = CompilerInfo(compiler_name)
 
-        # If the target is empty, ignore it
-        if not yaml_target.value:
-            console.print_warning(f"⚠️  Line {yaml_target.key_line} : target '{target_name}' is empty in '{self.file}'")
+        # If the compiler is empty, ignore it
+        if not yaml_compiler.value:
+            console.print_warning(f"⚠️  Line {yaml_compiler.key_line} : compiler '{compiler_name}' is empty in '{self.file}'")
             return None
 
-        # Read target elements
-        for item, yaml_object in yaml_target.value.items():
+        # Read compiler elements
+        for item, yaml_object in yaml_compiler.value.items():
             match item:
                 case "is_abstract":
                     if not isinstance(yaml_object.value, bool):
                         console.print_error(f"❌ Line {yaml_object.key_line} : 'is_abstract' must be a boolean value (true|false) in '{self.file}'")
                         return None
-                    target.is_abstract = yaml_object.value
+                    compiler.is_abstract = yaml_object.value
                 case "extends":
                     # Check that 'extends' is a string
                     if not isinstance(yaml_object.value, str):
-                        console.print_error(f"❌ Line {yaml_object.key_line} : 'extends' in must be a target name in'{self.file}'")
+                        console.print_error(f"❌ Line {yaml_object.key_line} : 'extends' in must be a compiler name in'{self.file}'")
                         return None
-                    target.extends = yaml_object.value
+                    compiler.extends = yaml_object.value
                 case "profiles":
                     if not isinstance(yaml_object.value, dict):
                         console.print_error(f"❌ Line {yaml_object.key_line} : 'profiles' must contains profiles'{self.file}'")
@@ -259,94 +218,45 @@ class YamlTargetFile:
                     profiles = self._read_profiles(yaml_object)
                     if profiles is None:
                         return None
-                    target.profiles = profiles
+                    compiler.profiles = profiles
                 case "features":
                     if not isinstance(yaml_object.value, list):
                         console.print_error(f"❌ Line {yaml_object.key_line} : 'features' must contains list of features in'{self.file}'")
                         return None
-                    features = self._read_target_features(yaml_object)
+                    features = self._read_compiler_features(yaml_object)
                     if features is None:
                         return None
-                    target.features = features
+                    compiler.features = features
                 case "feature-rules":
                     if not isinstance(yaml_object.value, list):
                         console.print_error(f"❌ Line {yaml_object.key_line} : 'feature-rules' must contains list of feature rules in'{self.file}'")
                         return None
-                    feature_rules = self._read_target_feature_rules(yaml_object)
+                    feature_rules = self._read_compiler_feature_rules(yaml_object)
                     if feature_rules is None:
                         return None
-                    target.feature_rules = feature_rules
+                    compiler.feature_rules = feature_rules
                 case _:
                     console.print_error(f"❌ Line {yaml_object.key_line} : Unknown key '{item}' in'{self.file}'")
                     continue
 
-        return target 
-
-    # Load all targets in the file
-    def load_yaml(self) -> bool :
-        try:
-            # Load the file
-            with self.file.open() as f:
-                self._yaml = yaml.load(f, Loader=LineLoader)
-                for target_name, target_yaml_object in self._yaml.items():
-
-                    # Validate the target name in form 'arch-vendor-os-env-compiler'
-                    parts = target_name.split('-')
-                    if not len(parts) == 5:
-                        console.print_error(f"❌ Line {target_yaml_object.key_line} : Invalid target name '{target_name}' in '{self.file}'")
-                        console.print_error(f"  💡 Expected 'arch-vendor-os-env-compiler' separated by '-'")
-                        continue
-                    
-                    # Ignore if we already have a target name
-                    existing_target: Target = self.targets.get(target_name)
-                    if existing_target:
-                        console.print_error(f"❌ Line {target_yaml_object.key_line} : Target '{existing_target}' already exist in '{existing_target.file}' when loading '{self.file}'")
-                        continue
-                    
-                    # Load the target
-                    target = self._read_target_node(target_name, target_yaml_object)
-                    if target is None:
-                        console.print_error(f"⚠️ Line {target_yaml_object.key_line} : Target '{target_name}' in '{self.file}' will not be available")
-                        continue
-
-                    # Add it to the available target list
-                    self.targets.add(target)
-
-            # Resolve includes
-             #self.resolve_includes_target(targets)
-            return True
-        
-        except (OSError, yaml.YAMLError) as e:
-            console.print_error(f"Error: When loading '{self.file}' file: {e}")
-            return False
+        return compiler 
 
 
-###################################################################################
-# Target registry contains all resolved target available including abstract target
-###################################################################################
-class TargetRegistry:
-    def __init__(self):
-        self.targets = TargetList()
-    
-    def __contains__(self, name: str) -> bool:
-        return name in self.targets
+    def read_yaml_compilers(self, item_yaml_object):
+        for compiler_name, compiler_yaml_object in item_yaml_object.value.items():
+            # Ignore if we already have a compiler name
+            existing_compiler: CompilerInfo = self.compilers.get(compiler_name)
+            if existing_compiler:
+                console.print_error(f"❌ Line {compiler_yaml_object.key_line} : CompilerInfo '{existing_compiler}' already exist in '{existing_compiler.file}' when loading '{self.file}'")
+                continue
+            
+            # Load the compiler
+            compiler = self._read_compiler_node(compiler_name, compiler_yaml_object)
+            if compiler is None:
+                console.print_error(f"⚠️ Line {compiler_yaml_object.key_line} : CompilerInfo '{compiler_name}' in '{self.file}' will not be available")
+                continue
+            compiler.file = self.file
 
-    def __iter__(self):
-        return iter(self.targets)
-    
-    def register_target(self, target: Target):
-        existing_target = self.targets.get(target.name)
-        if existing_target:
-            console.print_error(f"⚠️  Warning: Target already registered: {existing_target.name} in {str(existing_target.file)}")
-            exit(1)
-        self.targets.add(target)
-    
-    def load_and_register_all_target_in_directory(self, directory: Path):
-          for file in directory.glob("*.yaml"):
-            yaml_target_file = YamlTargetFile(file)
-            yaml_target_file.load_yaml()
-            for target in yaml_target_file.targets:
-                TargetRegistry.register_target(target)
-
-
-TargetRegistry = TargetRegistry()
+            # Add it to the available compiler list
+            CompilerInfoRegistry.register_compiler(compiler)
+            self.compilers.add(compiler)

@@ -57,7 +57,7 @@ class RunContext(Context):
         debug_info :bool = getattr(cli_args, "debug_info", True) or (True if not release else False)
         config : Config = Config(release, debug_info)
         platform_target: PlatformTarget = PlatformTarget.default_target()
-        compiler : Compiler = getattr(cli_args, "compiler", None) or Compiler.default_compiler(platform_target=platform_target)
+        compiler : Compiler = "cl"
         run_context: RunContext = RunContext.create(directory=cli_args.directory,
                                                     project_name=cli_args.project_name,
                                                     runner_name=cli_args.runner,

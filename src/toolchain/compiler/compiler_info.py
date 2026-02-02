@@ -4,8 +4,6 @@ from typing import Self
 import console
 from project import ProjectType
 
-
-
 #####################################################################
 # FlagList represent a list of flags used by the compiler or linker
 # 
@@ -79,22 +77,22 @@ class FeatureRule:
 ##################################################################################
 # FeatureRuleOnlyOne ensures that only one feature can be enabled from a feature list.
 #
-# Enabling more than one feature in the same target raises an error.
-# Enabling a feature in a derived target overrides the feature enabled in the base target.
+# Enabling more than one feature in the same compiler raises an error.
+# Enabling a feature in a derived compiler overrides the feature enabled in the base compiler.
 # 
 # Yaml :
 #  - only-one: warning       <== 'FeatureRuleOnlyOne'
 #    features: [WARNING_LEVEL_BASE, WARNING_LEVEL_STRICT, WARNING_ALL, NO_WARNING]
 #
 # Example:
-#  - If target 'common' enables both 'WARNING_LEVEL_BASE' and 'WARNING_LEVEL_STRICT',
+#  - If compiler 'common' enables both 'WARNING_LEVEL_BASE' and 'WARNING_LEVEL_STRICT',
 #    an error is raised.
 #
-#  - If target 'common' enables 'WARNING_LEVEL_BASE' and a target 'msvc' extending
+#  - If compiler 'common' enables 'WARNING_LEVEL_BASE' and a compiler 'msvc' extending
 #    'common' enables 'WARNING_LEVEL_STRICT', the only enabled feature will be
 #    'WARNING_LEVEL_STRICT'.
 #
-#    Note: if target 'msvc' enables both 'WARNING_LEVEL_STRICT' and
+#    Note: if compiler 'msvc' enables both 'WARNING_LEVEL_STRICT' and
 #    'WARNING_LEVEL_BASE', an error is raised.
 #
 ##################################################################################
@@ -107,7 +105,7 @@ class FeatureRuleOnlyOne(FeatureRule):
 # FeatureRuleIncompatibleWith
 #
 # Defines a feature that is incompatible with one or more other features.
-# If the feature and at least one incompatible feature are enabled in any target,
+# If the feature and at least one incompatible feature are enabled in any compiler,
 # an error is raised.
 #
 # YAML:
@@ -116,8 +114,8 @@ class FeatureRuleOnlyOne(FeatureRule):
 #    with: [LTCG, LTO, OMIT_FRAME_POINTER]
 #
 # Example:
-#  - If the feature 'OPT_LEVEL_0' is enabled in any target and at least one feature
-#    from the 'with' list is also enabled (in any target), an error is raised.
+#  - If the feature 'OPT_LEVEL_0' is enabled in any compiler and at least one feature
+#    from the 'with' list is also enabled (in any compiler), an error is raised.
 #
 ##################################################################################
 class FeatureRuleIncompatibleWith(FeatureRule):
@@ -126,42 +124,6 @@ class FeatureRuleIncompatibleWith(FeatureRule):
         self.feature_name = ""
         self.incompatible_with_feature_name_list = FeatureNameList() 
 
-#############################################################
-# FeatureProfile add flags and features to enable for a feature.
-# It also add project specific flags and features for the feature
-#
-# Yaml :
-#   <root>
-#     target:
-#       features:
-#         - name:                      <== 'Feature'
-#           debug|release:             <== 'FeatureProfile'
-#             cxx-compiler-flags: []   <== 'CXXCompilerFlagList'
-#             cxx-linker-flags: []     <== 'CXXLinkerFlagList'
-#             enable-features: []      <== 'FeatureNameList'
-#             dyn|bin|lib:             <== set of 'ProjectSpecific'
-# 
-#############################################################
-# class FeatureProfile:
-#     def __init__(self, name: str):
-#         # Name of the profile
-#         self.name = name
-#         # Flags pass to the linker
-#         self.cxx_linker_flags = CXXLinkerFlagList()
-#         # Flags pass to the compiler
-#         self.cxx_compiler_flags = CXXCompilerFlagList()
-#         # List of features to enable with this feature
-#         self.enable_features = FeatureNameList()
-#         # List of project specific flags and features with this feature
-#         self.project_specifics : set[ProjectSpecific] = set()
-
-#     def __hash__(self) -> int:
-#         return hash(self.name)
-
-#     def __eq__(self, other) -> bool:
-#         if not isinstance(other, FeatureProfile):
-#             return NotImplemented
-#         return self.name == other.name
 
 ###############################################################
 # Feature with a unique name
@@ -170,7 +132,7 @@ class FeatureRuleIncompatibleWith(FeatureRule):
 #
 # Yaml : 
 #   <root>
-#     target:
+#     compiler:
 #       features:
 #         - name:                      <== 'Feature'
 #           description:
@@ -188,7 +150,7 @@ class Feature:
         self.cxx_linker_flags = CXXLinkerFlagList()
         self.cxx_compiler_flags = CXXCompilerFlagList()
         self.enable_features = FeatureNameList()
-        self.profiles = ProfileList()
+        self.profiles = ProfileInfoList()
 
     def __hash__(self) -> int:
         return hash(self.name)
@@ -279,16 +241,16 @@ class ProjectSpecific:
 
     
 #############################################################
-# Profile add flags and features by profile.
+# ProfileInfo add flags and features by profile.
 # It also add project specific flags and features for the profile
 # Extending it with 'extends' merge all flags and features of the extended into this one
 #
 # Yaml :
 #   <root>
-#     target:
+#     compiler:
 #       profiles:
-#         debug|release:                <== 'Profile'
-#           extends: common             <== 'Profile'
+#         debug|release:                <== 'ProfileInfo'
+#           extends: common             <== 'ProfileInfo'
 #           is_abstract: false
 #           enable-features: []         <== 'FeatureNameList'
 #           cxx-compiler-flags: []      <== 'CXXCompilerFlagList'
@@ -296,12 +258,12 @@ class ProjectSpecific:
 #           dyn|bin|lib:                <== set of 'ProjectSpecific'
 # 
 #############################################################
-class Profile:
+class ProfileInfo:
     def __init__(self, name: str):
         # The profile name
         self.name = name
         # The profile used extends this one
-        self.extends : Profile = None
+        self.extends : ProfileInfo = None
         # If this profile specific is abstract ( Not usable by the user )
         self.is_abstract = False
         # Flags pass to the linker
@@ -317,13 +279,13 @@ class Profile:
         return hash(self.name)
 
     def __eq__(self, other) -> bool:
-        if not isinstance(other, Profile):
+        if not isinstance(other, ProfileInfo):
             return NotImplemented
         return self.name == other.name
 
 
-class ProfileCyclicError(Exception):
-    def __init__(self, current_node : Profile, parent_node: Profile, visiting_stack: list[Profile]):
+class CyclicError(Exception):
+    def __init__(self, current_node, parent_node, visiting_stack):
         super().__init__()
         self.current_node = current_node
         self.parent_node = parent_node
@@ -331,8 +293,11 @@ class ProfileCyclicError(Exception):
 
     def __str__(self) -> str:
         parent_name = self.parent_node.name if self.parent_node else "<root>"
-        stack = ProfileCyclicError._format_stack([p.name for p in self.visiting_stack] + [self.current_node.name])
+        stack = CyclicError._format_stack([p.name for p in self.visiting_stack] + [self.current_node.name])
         return f"Error: Cyclic dependency between '{self.current_node.name}' and '{parent_name}'\n{stack}" 
+    
+    def stack(self) -> list[ProfileInfo]:
+        return self.visiting_stack
     
     @staticmethod
     def _format_stack(names: list[str]) -> str:
@@ -342,24 +307,24 @@ class ProfileCyclicError(Exception):
             if i == 0:
                 lines.append(name)
             elif i == len(names) - 1:
-                lines.append(f"{indent}└ ⟲ loop {name}")
+                lines.append(f"{indent}└ ⟲ loop {name}") 
             else:
                 lines.append(f"{indent}└ extends: {name}")
         return "\n".join(lines)
 
 
 ######################################################
-# ProfileList list profile
+# ProfileInfoList list profile
 #
 # Yaml:
 #   <root>
-#     target:
-#       profiles:       <== 'ProfileList', set of 'Profile'
+#     compiler:
+#       profiles:       <== 'ProfileInfoList', set of 'ProfileInfo'
 #
 ######################################################
-class ProfileList:
+class ProfileInfoList:
     def __init__(self):
-        self.profiles: set[Profile] = set()
+        self.profiles: set[ProfileInfo] = set()
     
     def __iter__(self):
         return iter(self.profiles)
@@ -367,34 +332,34 @@ class ProfileList:
     def __len__(self):
         return len(self.profiles)
     
-    def __contains__(self, profile: Profile) -> bool:
+    def __contains__(self, profile: ProfileInfo) -> bool:
         return profile in self.profiles
     
     def __contains__(self, item) -> bool:
-        if isinstance(item, Profile):
+        if isinstance(item, ProfileInfo):
             return item in self.profiles
         if isinstance(item, str):
             return any(p.name == item for p in self.profiles)
         return False
     
-    def add(self, profile:Feature):
+    def add(self, profile:ProfileInfo):
         self.profiles.add(profile)
 
-    def get(self, name: str) -> Profile | None:
+    def get(self, name: str) -> ProfileInfo | None:
         for p in self.profiles:
             if p.name == name:
                 return p
         return None 
     
-    def flatten_extends_profile(self, profile : Profile) -> list[Profile]:
+    def flatten_extends_profile(self, profile: ProfileInfo) -> list[ProfileInfo]:
         # 1. Collecte du sous-graphe (DFS)
-        all_profiles: list[Profile] = list()
-        visiting_stack: list[Profile] = []
+        all_profiles: list[ProfileInfo] = list()
+        visiting_stack: list[ProfileInfo] = []
        
-        def collect(current_node : Profile, parent_node: Profile):
+        def collect(current_node : ProfileInfo, parent_node: ProfileInfo):
             # Detect cyclic dependency
             if current_node in visiting_stack:
-                raise ProfileCyclicError(current_node, parent_node, visiting_stack)
+                raise CyclicError(current_node, parent_node, visiting_stack)
 
             # Visit the project only once
             if current_node in all_profiles:
@@ -405,7 +370,7 @@ class ProfileList:
             if current_node.extends:
                 extends_node = self.get(current_node.extends)
                 if not extends_node:
-                    console.print_error(f"❌ '{current_node.name}' profile extends unknown target '{current_node.extends}'")
+                    console.print_error(f"❌ '{current_node.name}' profile extends unknown compiler '{current_node.extends}'")
                     exit(1)
                 collect(extends_node, current_node)
             
@@ -420,7 +385,7 @@ class ProfileList:
 #
 # Yaml:
 #   <root>
-#     target:
+#     compiler:
 #       features:       <== 'FeatureList', set of 'Feature'
 #
 ######################################################
@@ -455,7 +420,7 @@ class FeatureList:
 #
 # Yaml:
 #   <root>
-#     target:
+#     compiler:
 #       feature-rules:      <== 'FeatureRuleList', set of 'FeatureRule'
 #
 ###############################################################
@@ -486,76 +451,120 @@ class FeatureRuleList:
         return None 
     
 ######################################################
-# Target
+# CompilerInfo
 #
 # Yaml:
 #   <root>
-#     target:
+#     compiler:
 ######################################################
-class Target:
-    def __init__(self, name: str, arch:str, vendor:str, os:str, env:str, compiler_name:str):
-        # The target name
+class CompilerInfo:
+    def __init__(self, name: str):
+        # The compiler name
         self.name = name
-        # The arch of the target
-        self.arch = arch
-        # The vendor of the target
-        self.vendor = vendor
-        # The os of the target
-        self.os = os
-        # The env of the target
-        self.env = env
-        # The compiler name of the target
-        self.compiler_name = compiler_name
-        # If this target is abstract ( Not usable by the user )
+        # If this compiler is abstract ( Not usable by the user )
         self.is_abstract = False
-        # The target used extends this one
-        self.extends : Target = None
+        # The compiler used extends this one
+        self.extends : CompilerInfo = None
         # List of profiles
-        self.profiles = ProfileList()
+        self.profiles = ProfileInfoList()
         # List of features
         self.features = FeatureList()
         # List of feature rules
         self.feature_rules = FeatureRuleList()
-        # The file where the target was loaded
+        # The file where the compiler was loaded
         self.file = Path()
 
     def __hash__(self) -> int:
         return hash(self.name)
 
     def __eq__(self, other) -> bool:
-        if not isinstance(other, Target):
+        if not isinstance(other, CompilerInfo):
             return NotImplemented
         return self.name == other.name
+    
+    def flatten_extends_compilers(self) -> list[Self]:
+        # 1. Collecte du sous-graphe (DFS)
+        all_profiles: list[Self] = list()
+        visiting_stack: list[Self] = []
+       
+        def collect(current_node : Self, parent_node: Self):
+            # Detect cyclic dependency
+            if current_node in visiting_stack:
+                raise CyclicError(current_node, parent_node, visiting_stack)
 
+            # Visit the project only once
+            if current_node in all_profiles:
+                return
+            visiting_stack.append(current_node)
+ 
+            # Visit extends
+            if current_node.extends:
+                extends_node = CompilerInfoRegistry.get(current_node.extends)
+                if not extends_node:
+                    console.print_error(f"❌ '{current_node.name}' profile extends unknown compiler '{current_node.extends}'")
+                    exit(1)
+                collect(extends_node, current_node)
+            
+            # Remove visited project
+            visiting_stack.pop()
+            all_profiles.append(current_node)
+        collect(self, None)
+        return all_profiles
+    
 
 
 ################################################
-# List of targets
+# List of compilers in file
 ################################################
-class TargetList:
+class CompilerInfoList:
     def __init__(self):
-        self.targets : set[Target] = set()
+        self.compilers : set[CompilerInfo] = set()
 
     def __iter__(self):
-        return iter(self.targets)
+        return iter(self.compilers)
     
     def __len__(self):
-        return len(self.targets)
+        return len(self.compilers)
     
     def __contains__(self, item) -> bool:
-        if isinstance(item, Target):
-            return item in self.targets
+        if isinstance(item, CompilerInfo):
+            return item in self.compilers
         if isinstance(item, str):
-            return any(t.name == item for t in self.targets)
+            return any(t.name == item for t in self.compilers)
         return False
 
-    def add(self, target:Target):
-        self.targets.add(target)
+    def add(self, compiler:CompilerInfo):
+        self.compilers.add(compiler)
 
-    def get(self, name: str) -> Target | None:
-        for t in self.targets:
+    def get(self, name: str) -> CompilerInfo | None:
+        for t in self.compilers:
             if t.name == name:
                 return t
         return None
 
 
+################################################
+# List of compilers loaded by files
+################################################
+class CompilerInfoRegistry:
+    def __init__(self):
+        self.compilers = CompilerInfoList()
+    
+    def __contains__(self, name: str) -> bool:
+        return name in self.compilers
+
+    def __iter__(self):
+        return iter(self.compilers)
+    
+    def get(self, name: str) -> CompilerInfo | None:
+        return self.compilers.get(name)
+
+    def register_compiler(self, compiler: CompilerInfo):
+        existing_compiler = self.compilers.get(compiler.name)
+        if existing_compiler:
+            console.print_error(f"⚠️  Warning: Compiler already registered: {existing_compiler.name} in {str(existing_compiler.file)}")
+            exit(1)
+        self.compilers.add(compiler)
+
+
+CompilerInfoRegistry = CompilerInfoRegistry()

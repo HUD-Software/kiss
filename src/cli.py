@@ -4,7 +4,6 @@ import re
 import sys
 from builder import BuilderRegistry
 from cleaner import CleanerRegistry
-from compiler import Compiler
 import console
 from generator import GeneratorRegistry
 from platform_target import PlatformTarget
@@ -120,7 +119,7 @@ def _add_build_command(parser : argparse.ArgumentParser):
     build_parser.add_argument("-p", "--project", help="name of the project to build", dest="project_name", required=False, type=valid_project_name)
     build_parser.add_argument("-t", "--target", help="specify the target platform", dest="platform_target", default=PlatformTarget.default_target(), required=False)
     build_parser.add_argument("-r", "--release", action='store_const', const=True, help="release build", dest="release")
-    build_parser.add_argument("-compiler", choices=Compiler._member_names_, help="specify the compiler to use", type=Compiler)
+    build_parser.add_argument("-compiler", help="specify the compiler to use", type=str)
     build_parser.add_argument("-d", "--debug_info", action='store_const', const=True, help="enable debug information", dest="debug_info")
 
     # Create the help string that contains list of all registered builders
@@ -149,7 +148,7 @@ def _add_run_command(parser : argparse.ArgumentParser):
     run_parser.add_argument("-p", "--project", help="name of the project to run", dest="project_name", required=False, type=valid_project_name)
     run_parser.add_argument("-t", "--target", help="specify the target platform", dest="platform_target", default=PlatformTarget.default_target(), required=False)
     run_parser.add_argument("-r", "--release", action='store_const', const=True, help="release build", dest="release")
-    run_parser.add_argument("-compiler", choices=Compiler._member_names_, help="specify the compiler to use", type=Compiler)
+    run_parser.add_argument("-compiler", help="specify the compiler to use", type=str)
     run_parser.add_argument("-d", "--debug_info", action='store_const', const=True, help="enable debug information", dest="debug_info")
 
     # Create the help string that contains list of all registered runners

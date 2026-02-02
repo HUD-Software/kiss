@@ -91,7 +91,7 @@ def get_windows_latest_toolset(compiler:Compiler) -> Optional[VSToolset] :
     json_catalog = json_object["catalog"]
     json_installation_path = Path(json_object["installationPath"])
     match compiler:
-        case Compiler.cl:
+        case "cl":
             # From https://github.com/microsoft/vswhere/wiki/Find-VC
             vctool_default_version_path = json_installation_path / "VC\\Auxiliary\\Build\\Microsoft.VCToolsVersion.default.txt"
             if vctool_default_version_path.exists():
@@ -109,7 +109,7 @@ def get_windows_latest_toolset(compiler:Compiler) -> Optional[VSToolset] :
                                 product_name=json_catalog.get('productName'),
                                 product_line_version=json_catalog.get('productLineVersion'),
                                 product_year=json_catalog.get('featureReleaseYear'))
-        case Compiler.clang:
+        case "clang-cl":
             compiler_path=json_installation_path / "VC\\Tools\\Llvm\\x64\\bin\\"
             return VSLLVMToolset(compiler=Compiler.clang,
                                     cxx_compiler_path=compiler_path / "clang-cl.exe",

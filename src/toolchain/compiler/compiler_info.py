@@ -13,7 +13,7 @@ from project import ProjectType
 #####################################################################
 class FlagList:
     def __init__(self):
-        self.flags : list[str] = []
+        self.flags = set[str]()
 
     def __iter__(self):
         return iter(self.flags)
@@ -31,7 +31,7 @@ class FlagList:
         return str(self.flags)
 
     def add(self, flag:str):
-        self.flags.append(flag)
+        self.flags.add(flag)
 
     def get(self, name: str) -> str | None:
         for f in self.flags:
@@ -39,13 +39,13 @@ class FlagList:
                 return f
         return None
     
-    def extend(self, flags: list[str]) -> None:
+    def extend_with_list(self, flags: list[str]):
         for f in flags:
             self.add(f)
 
-    def get_extended_with(self, extended : Self) -> Self:
+    def get_extended_with(self, other : Self) -> Self:
         extended = FlagList()
-        extended.flags = self.flags + extended.flags
+        extended.flags = self.flags.union(other.flags)
         return extended
     
     
@@ -59,7 +59,7 @@ class FlagList:
 ##############################################################
 class FeatureNameList:
     def __init__(self):
-        self.feature_names : list[str] = []
+        self.feature_names = set[str]()
 
     def __iter__(self):
         return iter(self.feature_names)
@@ -77,7 +77,7 @@ class FeatureNameList:
         return str(self.feature_names)  
       
     def add(self, feature_name:str):
-        self.feature_names.append(feature_name)
+        self.feature_names.add(feature_name)
 
     def get(self, name: str) -> str | None:
         for f in self.feature_names:
@@ -85,13 +85,13 @@ class FeatureNameList:
                 return f
         return None 
     
-    def extend(self, flags: list[str]) -> None:
+    def extend_with_list(self, flags: list[str]):
         for f in flags:
             self.add(f)
 
-    def get_extended_with(self, extended : Self) -> Self:
+    def get_extended_with(self, other : Self) -> Self:
         extended = FeatureNameList()
-        extended.feature_names = self.feature_names + extended.feature_names
+        extended.feature_names = self.feature_names.union(other.feature_names)
         return extended
 
 ##############################################################
@@ -102,59 +102,8 @@ class FeatureRule:
         self.name = name
 
 
-##################################################################################
-# FeatureRuleOnlyOne ensures that only one feature can be enabled from a feature list.
-#
-# Enabling more than one feature in the same compiler raises an error.
-# Enabling a feature in a derived compiler overrides the feature enabled in the base compiler.
-# 
-# Yaml :
-#  - only-one: warning       <== 'FeatureRuleOnlyOne'
-#    features: [WARNING_LEVEL_BASE, WARNING_LEVEL_STRICT, WARNING_ALL, NO_WARNING]
-#
-# Example:
-#  - If compiler 'common' enables both 'WARNING_LEVEL_BASE' and 'WARNING_LEVEL_STRICT',
-#    an error is raised.
-#
-#  - If compiler 'common' enables 'WARNING_LEVEL_BASE' and a compiler 'msvc' extending
-#    'common' enables 'WARNING_LEVEL_STRICT', the only enabled feature will be
-#    'WARNING_LEVEL_STRICT'.
-#
-#    Note: if compiler 'msvc' enables both 'WARNING_LEVEL_STRICT' and
-#    'WARNING_LEVEL_BASE', an error is raised.
-#
-##################################################################################
-class FeatureRuleOnlyOne(FeatureRule):
-    def __init__(self, name: str):
-        super().__init__(name)
-        self.feature_list = FeatureNameList()
-
-##################################################################################
-# FeatureRuleIncompatibleWith
-#
-# Defines a feature that is incompatible with one or more other features.
-# If the feature and at least one incompatible feature are enabled in any compiler,
-# an error is raised.
-#
-# YAML:
-#  - incompatible: no_opt      <== 'FeatureRuleIncompatibleWith'
-#    feature: OPT_LEVEL_0
-#    with: [LTCG, LTO, OMIT_FRAME_POINTER]
-#
-# Example:
-#  - If the feature 'OPT_LEVEL_0' is enabled in any compiler and at least one feature
-#    from the 'with' list is also enabled (in any compiler), an error is raised.
-#
-##################################################################################
-class FeatureRuleIncompatibleWith(FeatureRule):
-    def __init__(self, name: str):
-        super().__init__(name)
-        self.feature_name = ""
-        self.incompatible_with_feature_name_list = FeatureNameList() 
-
-
 ###############################################################
-# Feature with a unique name
+# FeatureInfo with a unique name
 # It add flags and features for all profiles
 # It also add project specific flags and features
 #
@@ -162,7 +111,7 @@ class FeatureRuleIncompatibleWith(FeatureRule):
 #   <root>
 #     compiler:
 #       features:
-#         - name:                      <== 'Feature'
+#         - name:                      <== 'FeatureInfo'
 #           description:
 #           cxx-compiler-flags: []     <== 'CXXCompilerFlagList'
 #           cxx-linker-flags: []       <== 'CXXLinkerFlagList'
@@ -171,7 +120,7 @@ class FeatureRuleIncompatibleWith(FeatureRule):
 #             debug|release:           <== set of 'FeatureProfile'
 #
 ##############################################################
-class Feature:
+class FeatureInfo:
     def __init__(self, name: str):
         self.name = name
         self.description: str = ""
@@ -184,9 +133,21 @@ class Feature:
         return hash(self.name)
 
     def __eq__(self, other) -> bool:
-        if not isinstance(other, Feature):
+        if not isinstance(other, FeatureInfo):
             return NotImplemented
         return self.name == other.name
+    
+    def available_profile_names(self) -> set[str]:
+        return self.profiles.available_profile_names()
+    
+    def get_extended(self) -> Self:
+        extended = FeatureInfo(self.name)
+        extended.cxx_compiler_flags = self.cxx_compiler_flags
+        extended.cxx_linker_flags = self.cxx_linker_flags
+        extended.enable_features = self.enable_features
+        extended.profiles = self.profiles.get_extended()
+        return extended
+
     
 ###############################################################
 # CXXCompilerFlagList are flags pass to the compiler
@@ -221,12 +182,12 @@ class CXXCompilerFlagList:
     def get(self, name: str) -> str | None:
         return self.flags.get(name)
     
-    def extend(self, flags: list[str]) -> None:
-        self.flags.extend(flags)
+    def extend_with_list(self, flags: list[str]):
+        self.flags.extend_with_list(flags)
 
-    def get_extended_with(self, extended : Self) -> Self:
+    def get_extended_with(self, other : Self) -> Self:
         extended = CXXCompilerFlagList()
-        extended.flags = self.flags.get_extended_with(extended)
+        extended.flags = self.flags.get_extended_with(other.flags)
         return extended
     
 ###############################################################
@@ -261,12 +222,12 @@ class CXXLinkerFlagList:
     def get(self, name: str) -> str | None:
         return self.flags.get(name)
  
-    def extend(self, flags: list[str]) -> None:
-        self.flags.extend(flags)
+    def extend_with_list(self, flags: list[str]):
+        self.flags.extend_with_list(flags)
 
-    def get_extended_with(self, extended : Self) -> Self:
+    def get_extended_with(self, other : Self) -> Self:
         extended = CXXLinkerFlagList()
-        extended.flags = self.flags.get_extended_with(extended)
+        extended.flags = self.flags.get_extended_with(other.flags)
         return extended
     
 ###############################################################
@@ -407,14 +368,49 @@ class ProfileInfo:
 
     def get_extended_with(self, other: Self) -> Self :
         extended = ProfileInfo(self.name)
-        extended.extends = other.name
         extended.cxx_compiler_flags = self.cxx_compiler_flags.get_extended_with(other.cxx_compiler_flags)
         extended.cxx_linker_flags = self.cxx_linker_flags.get_extended_with(other.cxx_linker_flags)
         extended.enable_features = self.enable_features.get_extended_with(other.enable_features)
         extended.project_specifics = self.project_specifics.get_extended_with(other.project_specifics)
         return extended
     
+    def enabled_feature_list_for_project_type(self, project_type: ProjectType)-> FeatureNameList:
+        feature_name_list = FeatureNameList()
+        feature_name_list.extend_with_list(self.enable_features)
+        project_specific = self.project_specifics.get(project_type)
+        if project_specific:
+            feature_name_list.extend_with_list(project_specific.enable_features)
+        return feature_name_list
 
+    # def flatten_extends_profile(self, profile: Self, profile_list: ProfileInfoList) -> list[Self]:
+    #     # 1. Collecte du sous-graphe (DFS)
+    #     all_profiles: list[ProfileInfo] = list()
+    #     visiting_stack: list[ProfileInfo] = []
+       
+    #     def collect(current_node : ProfileInfo, parent_node: ProfileInfo):
+    #         # Detect cyclic dependency
+    #         if current_node in visiting_stack:
+    #             raise CyclicError(current_node, parent_node, visiting_stack)
+
+    #         # Visit the project only once
+    #         if current_node in all_profiles:
+    #             return
+    #         visiting_stack.append(current_node)
+ 
+    #         # Visit extends
+    #         if current_node.extends:
+    #             extends_node = profile_list.get(current_node.extends)
+    #             if not extends_node:
+    #                 console.print_error(f"❌ '{current_node.name}' profile extends unknown compiler '{current_node.extends}'")
+    #                 exit(1)
+    #             collect(extends_node, current_node)
+            
+    #         # Remove visited project
+    #         visiting_stack.pop()
+    #         all_profiles.append(current_node)
+    #     collect(profile, None)
+    #     return all_profiles
+    
 class CyclicError(Exception):
     def __init__(self, current_node, parent_node, visiting_stack):
         super().__init__()
@@ -482,6 +478,26 @@ class ProfileInfoList:
                 return p
         return None 
     
+    # Retrieves an extended version of this list
+    # All profile that extends another profile contains the features and flags of the extended profile
+    # For exemple, we have 2 profile A and B, B extends A, we return the list A and B (Where B contains A)
+    # We also detect cyclic extends
+    def get_extended(self) -> Self:
+        extended = ProfileInfoList()
+        already_extended = set[ProfileInfo]()
+        for profile in self.profiles:
+            if profile in already_extended:
+                continue
+            flatten_profiles = self.flatten_extends_profile(profile)
+            for i, extend_profile in enumerate(flatten_profiles):
+                if extend_profile.extends:
+                    extended.add(extend_profile.get_extended_with(flatten_profiles[i-1]))
+                else:
+                    extended.add(extend_profile)
+                already_extended.add(extend_profile)
+        return extended
+
+
     def get_extended_with(self, other : Self) -> Self :
         extended = ProfileInfoList()
         # Get elements in self AND other
@@ -495,7 +511,6 @@ class ProfileInfoList:
         extended.profiles.update(non_commons)
         return extended
 
-    
     def flatten_extends_profile(self, profile: ProfileInfo) -> list[ProfileInfo]:
         # 1. Collecte du sous-graphe (DFS)
         all_profiles: list[ProfileInfo] = list()
@@ -525,18 +540,30 @@ class ProfileInfoList:
         collect(profile, None)
         return all_profiles
     
+    def available_profile_names(self) -> set[str]:
+        profiles = set[str]()
+        for profile in self.profiles:
+            profiles.add(profile.name)
+        return profiles
+    
+    def enabled_feature_list_for_profile_and_project_type(self, profile_name: str, project_type: ProjectType)-> FeatureNameList:
+        profile_info = self.get(profile_name)
+        if profile_info:
+            return profile_info.enabled_feature_list_for_project_type(project_type)
+        return FeatureNameList()
+    
 ######################################################
-# FeatureList list features
+# FeatureInfoList list features
 #
 # Yaml:
 #   <root>
 #     compiler:
-#       features:       <== 'FeatureList', set of 'Feature'
+#       features:       <== 'FeatureInfoList', set of 'FeatureInfo'
 #
 ######################################################
-class FeatureList:
+class FeatureInfoList:
     def __init__(self):
-        self.features : set[Feature] = set()
+        self.features : set[FeatureInfo] = set()
 
     def __iter__(self):
         return iter(self.features)
@@ -545,13 +572,13 @@ class FeatureList:
         return len(self.features)
         
     def __contains__(self, item) -> bool:
-        if isinstance(item, Feature):
+        if isinstance(item, FeatureInfo):
             return item in self.features
         if isinstance(item, str):
             return any(f.name == item for f in self.features)
         return False
     
-    def add(self, feature:Feature):
+    def add(self, feature:FeatureInfo):
         self.features.add(feature)
 
     def get(self, name: str) -> FeatureRule | None:
@@ -560,20 +587,104 @@ class FeatureList:
                 return f
         return None
     
-    def get_extended_with(self, other : Self) -> Self :
-        extended = FeatureList()
-        # Get elements in self AND other
-        # Extends the commons
-        commons : set[Feature] = self.features.intersection(other.features)
-        for common in commons:
-            extended.features.add(common.get_extended_with(other.get(common.name)))
-        # Get elements not in self and other
-        # Add the non common
-        non_commons : set[Feature] = self.features.symmetric_difference(other.features)
-        extended.features.update(non_commons)
+    def get_extended(self) -> Self:
+        extended = FeatureInfoList()
+        for feature in self.features:
+            extended.add(feature.get_extended())
         return extended
 
+    def get_extended_with(self, extended_feature_info_list : Self) -> Self :
+        # Note: We must validate feature rule here and don't allow multiple only-one and incompatible feature here
+        extended = FeatureInfoList()
+        # Get elements in self AND other
+        # Extends the commons
+        commons : set[FeatureInfo] = self.features.intersection(extended_feature_info_list.features)
+        for common in commons:
+            extended.features.add(common.get_extended_with(extended_feature_info_list.get(common.name)))
+        # Get elements not in self and other
+        # Add the non common
+        non_commons : set[FeatureInfo] = self.features.symmetric_difference(extended_feature_info_list.features)
+        extended.features.update(non_commons)
+        
+        # Extend feature profiles
+        extended = extended.get_extended()
+
+        return extended
     
+    def available_profile_names(self) -> set[str]:
+        profiles = set[str]()
+        for feature in self.features:
+            profiles.update(feature.available_profile_names())
+        return profiles
+    
+##################################################################################
+# FeatureRuleOnlyOne ensures that only one feature can be enabled from a feature list.
+#
+# Enabling more than one feature in the same compiler raises an error.
+# Enabling a feature in a derived compiler overrides the feature enabled in the base compiler.
+# 
+# Yaml :
+#  - only-one: warning       <== 'FeatureRuleOnlyOne'
+#    features: [WARNING_BASE, WARNING_STRICT, WARNING_ALL, NO_WARNING]
+#
+# Example:
+#  - If compiler 'common' enables both 'WARNING_BASE' and 'WARNING_STRICT',
+#    an error is raised.
+#
+#  - If compiler 'common' enables 'WARNING_BASE' and a compiler 'msvc' extending
+#    'common' enables 'WARNING_STRICT', the only enabled feature will be
+#    'WARNING_STRICT'.
+#
+#    Note: if compiler 'msvc' enables both 'WARNING_STRICT' and
+#    'WARNING_BASE', an error is raised.
+#
+##################################################################################
+class FeatureRuleOnlyOne(FeatureRule):
+    KEY = "only-one"
+
+    def __init__(self, name: str):
+        super().__init__(name)
+        self.feature_list = FeatureNameList()
+
+    def is_satisfied(self, feature_list: FeatureInfoList) -> FeatureInfoList:
+        common = self.feature_list.feature_names.intersection(feature_list)
+        if len(common) > 1:
+            return common
+        return set()
+    
+##################################################################################
+# FeatureRuleIncompatibleWith
+#
+# Defines a feature that is incompatible with one or more other features.
+# If the feature and at least one incompatible feature are enabled in any compiler,
+# an error is raised.
+#
+# YAML:
+#  - incompatible: no_opt      <== 'FeatureRuleIncompatibleWith'
+#    feature: OPT_LEVEL_0
+#    with: [LTCG, LTO, OMIT_FRAME_POINTER]
+#
+# Example:
+#  - If the feature 'OPT_LEVEL_0' is enabled in any compiler and at least one feature
+#    from the 'with' list is also enabled (in any compiler), an error is raised.
+#
+##################################################################################
+class FeatureRuleIncompatibleWith(FeatureRule):
+    KEY = "incompatible"
+
+    def __init__(self, name: str):
+        super().__init__(name)
+        self.feature_name = ""
+        self.incompatible_with = FeatureNameList() 
+
+    def is_satisfied(self, enabled_features: FeatureInfoList) -> FeatureInfoList:
+        if self.feature_name in enabled_features:
+            incompatible_features = self.incompatible_with.feature_names.intersection(enabled_features)
+            if incompatible_features:
+                return incompatible_features
+        return set()
+
+
 ###############################################################
 # FeatureRuleList is list of FeatureRule
 #
@@ -622,6 +733,22 @@ class FeatureRuleList:
         extended.feature_rules.update(non_commons)
         return extended
     
+    def is_feature_list_validate_rules(self, feature_list: FeatureInfoList) -> bool:
+        all_valid = True
+        for feature_rule in self.feature_rules:
+            match feature_rule:
+                case FeatureRuleOnlyOne() as only_one_rule:
+                    list_invalid = only_one_rule.is_satisfied(feature_list)
+                    if list_invalid:
+                        console.print_error(f"❌ Feature rule '{FeatureRuleOnlyOne.KEY}' not satisfied. {', '.join(list_invalid)} are both enabled")
+                        all_valid = False
+                case FeatureRuleIncompatibleWith() as incompatible_rule:
+                    list_of_incompatible_feature =  incompatible_rule.is_satisfied(feature_list)
+                    if list_of_incompatible_feature:
+                        console.print_error(f"❌ Feature rule '{FeatureRuleIncompatibleWith.KEY}' not satisfied. {', '.join(list_of_incompatible_feature)} are incompatible with {incompatible_rule.feature_name}")
+                        all_valid = False
+        return all_valid
+    
 ######################################################
 # CompilerInfo
 #
@@ -640,7 +767,7 @@ class CompilerInfo:
         # List of profiles
         self.profiles = ProfileInfoList()
         # List of features
-        self.features = FeatureList()
+        self.features = FeatureInfoList()
         # List of feature rules
         self.feature_rules = FeatureRuleList()
         # The file where the compiler was loaded
@@ -659,20 +786,17 @@ class CompilerInfo:
             f"Compiler : {self.name} (abstract:{self.is_abstract}, extends: {self.extends})",
             "  Profiles :",
         ]
-
         for profile in self.profiles:
             lines.append(f"    {profile.name} (extends: {profile.extends})")
             lines.append(f"      cxx_compiler_flags: {profile.cxx_compiler_flags.flags}")
             lines.append(f"      cxx_linker_flags: {profile.cxx_linker_flags.flags}")
             lines.append(f"      features: {profile.enable_features.feature_names}")
             lines.append(f"      project_specifics:")
-
             for ps in profile.project_specifics:
                 lines.append(f"        {ps.project_type}:")
                 lines.append(f"          cxx_compiler_flags: {ps.cxx_compiler_flags}")
                 lines.append(f"          cxx_linker_flags: {ps.cxx_linker_flags}")
                 lines.append(f"          features: {ps.enable_features}")
-
         return "\n".join(lines)
 
     def __repr__(self) -> str:
@@ -712,13 +836,54 @@ class CompilerInfo:
     
     def get_extended_with(self, other: Self) -> Self :
         extended = CompilerInfo(self.name)
-        extended.extends = self.extends
         extended.file = self.file
-        extended.profiles = self.profiles.get_extended_with(other.profiles)
-        extended.features = self.features.get_extended_with(other.features)
+        extended.profiles = self.profiles.get_extended().get_extended_with(other.profiles.get_extended())
+        extended.features = self.features.get_extended().get_extended_with(other.features)
         extended.feature_rules = self.feature_rules.get_extended_with(other.feature_rules)
         return extended
+    
+    def available_profile_names(self) -> set[str]:
+        profiles = set[str]()
+        profiles.update(self.profiles.available_profile_names())
+        profiles.update(self.features.available_profile_names())
+        return profiles
 
+    def get_extended(self) -> Self | None:
+        extended = CompilerInfo(self.name)
+        extended.file = self.file
+        extended.extends = self.extends
+        # Merge included target into this target
+        if self.extends:
+            # Find the included target and resolve it
+            extended_compiler_info: CompilerInfo = CompilerInfoRegistry.get(self.extends)
+            if not extended_compiler_info:
+                console.print_error(f"'{self.name}' extends an unknown target '{self.extends}'")
+                return None
+            extended.profiles = self.profiles.get_extended().get_extended_with(extended_compiler_info.profiles.get_extended())
+            extended.features = self.features.get_extended().get_extended_with(extended_compiler_info.features)
+            extended.feature_rules = self.feature_rules.get_extended_with(extended_compiler_info.feature_rules)
+        else:
+            extended.file = self.file
+            extended.profiles = self.profiles.get_extended()
+            extended.features = self.features.get_extended()
+            extended.feature_rules = self.feature_rules
+        return extended
+            
+    def validate_features(self) -> bool:
+        # Retrieves feature list for each profile and project type
+        # [debug, bin], [release, bin], [debug, lib], [custom, lib] etc...
+        # Then for all thoses pairs, validate enabled features
+        all_valid = True
+        all_profile_names : set[str] = self.available_profile_names()
+        for profile_name in all_profile_names:
+            for project_type  in ProjectType:
+                feature_list : FeatureInfoList = self.profiles.enabled_feature_list_for_profile_and_project_type(profile_name, project_type)
+                if not self.feature_rules.is_feature_list_validate_rules(feature_list):
+                    console.print_error(f"   When evaluating rules for '{project_type}' project with '{profile_name}' profile.")
+                    console.print_error(f"   Target '{self.name}' could not be extended with '{self.extends}' and will not be available.")
+                    all_valid = False
+        return all_valid
+    
 ################################################
 # List of compilers in file
 ################################################

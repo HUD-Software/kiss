@@ -1,6 +1,6 @@
 import console
 from project import ProjectType
-from toolchain.compiler.compiler_info import CompilerInfo, CompilerInfoRegistry, FeatureList
+from toolchain.compiler.compiler_info import CompilerInfo, CompilerInfoRegistry, FeatureInfoList
 
 class Flags:
     def __init__(self):
@@ -77,36 +77,34 @@ class Compiler:
 
         # Resoluve inclusions
         for target in flatten_extends_compilers:
+            
+            target = target.get_extended()
+            # # Merge included target into this target
+            # if target.extends:
+            #     # Find the included target and resolve it
+            #     extended_compiler_info: CompilerInfo = CompilerInfoRegistry.get(target.extends)
+            #     if not extended_compiler_info:
+            #         console.print_error(f"{target.name} extends an unknown target {target.extends}")
+            #         return None
+            #     extended_target : CompilerInfo= target.get_extended_with(extended_compiler_info)
+            #     target = extended_target
 
-            # compiler_info: CompilerInfo = CompilerInfoRegistry.get(name)
-            # extended_compiler_info = compiler_info.get_extended_with()
-            # pass
-            # Merge included target into this target
-            if target.extends:
-                # Find the included target and resolve it
-                extended_compiler_info: CompilerInfo = CompilerInfoRegistry.get(target.extends)
-                if not extended_compiler_info:
-                    console.print_error(f"{target.name} extends an unknown target {target.extends}")
-                    return None
-                extended : CompilerInfo= target.get_extended_with(extended_compiler_info)
-                console.print_tips(extended)
+            console.print_tips(target)
 
-                # Validate the features rules
-                empty_feature_list : list[str] = []
-
-                # Retrieves feature list for each profile and project type
-                # [debug, bin], [release, bin], [debug, lib], [custom, lib] etc...
-                # Then for all thoses paris, validate enabled features
-                all_profile_names : set[str] = extended.available_profile_names()
-                for profile_name in all_profile_names:
-                    for project_type  in ProjectType:
-                        feature_list : FeatureList = extended.feature_list_for_profile_and_project_type(profile_name, project_type)
-                        extended.validate_features(profile_name, project_type, feature_list)
-
-            else:
-                console.print_tips(target)
-            # Validate the features
-            #empty_feature_list : list[str] = []
+            target.validate_features()
+            # # Retrieves feature list for each profile and project type
+            # # [debug, bin], [release, bin], [debug, lib], [custom, lib] etc...
+            # # Then for all thoses pairs, validate enabled features
+            # all_profile_names : set[str] = target.available_profile_names()
+            # for profile_name in all_profile_names:
+            #     for project_type  in ProjectType:
+            #         feature_list : FeatureInfoList = target.enabled_feature_list_for_profile_and_project_type(profile_name, project_type)
+            #         feature_list.validate_features(profile_name)
+            #         pass
+            #         #extended.validate_features(profile_name, project_type,feature_list)
+                
+            # # Validate the features
+            # #empty_feature_list : list[str] = []
             # all_feature_set = target.default_features.get("all") or empty_feature_list
             # for config, feature_name_list in target.default_features.items():
 

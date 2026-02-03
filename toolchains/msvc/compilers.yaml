@@ -10,7 +10,7 @@ compilers:
     profiles:
       common:
         is_abstract: true
-        enable-features: [WARNING_LEVEL_STRICT, RUNTIME_DLL, ENABLE_EXCEPTION]
+        enable-features: [WARNING_STRICT, RUNTIME_DLL, ENABLE_EXCEPTION]
         cxx-compiler-flags: []
         cxx-linker-flags: []
         dyn:
@@ -61,10 +61,10 @@ compilers:
           enable-features: []
     features:
       # Warnings
-      - name: WARNING_LEVEL_BASE
+      - name: WARNING_BASE
         description: Default warning level
         cxx-compiler-flags: [/W3]
-      - name: WARNING_LEVEL_STRICT
+      - name: WARNING_STRICT
         description: Strict warnings
         cxx-compiler-flags: [/W4]
       - name: WARNING_ALL
@@ -143,12 +143,12 @@ compilers:
         cxx-linker-flags: [/MACHINE:X64]
 
     # Features rules
-    # only-one rule : Only 1 rules is allowed in 'features'
+    # only-one rule : Only 1 rules is allowed in 'features'. Multiple in the same target is not allowed.
     # incompatible : The 'feature' is incompatible with all feature in 'with'
     feature-rules:
       # Only one warning level at a time
       - only-one: warning
-        features: [WARNING_LEVEL_BASE, WARNING_LEVEL_STRICT, WARNING_ALL, NO_WARNING]
+        features: [WARNING_BASE, WARNING_STRICT, WARNING_ALL, NO_WARNING]
       # Only one runtime at a time
       - only-one: runtime
         features: [RUNTIME_DLL, RUNTIME_STATIC]

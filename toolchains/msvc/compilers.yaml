@@ -29,7 +29,7 @@ compilers:
         extends: common
         enable-features: [OPT_LEVEL_0]
         cxx-compiler-flags: []
-        cxx-linker-flags: [/MACHINE:X64, /INCREMENTAL]
+        cxx-linker-flags: [/INCREMENTAL]
         dyn:
           cxx-compiler-flags: [/LDd]
           cxx-linker-flags: []
@@ -46,7 +46,7 @@ compilers:
         extends: common
         enable-features: [OPT_LEVEL_3]
         cxx-compiler-flags: []
-        cxx-linker-flags: [/MACHINE:X64, /OPT:REF, /OPT:ICF, /INCREMENTAL:NO]
+        cxx-linker-flags: [/OPT:REF, /OPT:ICF, /INCREMENTAL:NO]
         dyn:
           cxx-compiler-flags: [/LD]
           cxx-linker-flags: []
@@ -137,6 +137,10 @@ compilers:
       - name: DISABLE_EXCEPTION
         description: Disable C++ exception
         cxx-compiler-flags: [/EH-]
+      # Target Architecture
+      - name: TARGET_X64
+        description: Enable 64 bits (AMD64 / Intel64) link
+        cxx-linker-flags: [/MACHINE:X64]
 
     # Features rules
     # only-one rule : Only 1 rules is allowed in 'features'

@@ -24,7 +24,12 @@ class FlagList:
     def __contains__(self, flag: str) -> bool:
         return flag in self.flags
     
+    def __repr__(self) -> str:
+        return repr(self.flags)
     
+    def __str__(self) -> str:
+        return str(self.flags)
+
     def add(self, flag:str):
         self.flags.append(flag)
 
@@ -32,7 +37,16 @@ class FlagList:
         for f in self.flags:
             if f == name:
                 return f
-        return None  
+        return None
+    
+    def extend(self, flags: list[str]) -> None:
+        for f in flags:
+            self.add(f)
+
+    def get_extended_with(self, extended : Self) -> Self:
+        extended = FlagList()
+        extended.flags = self.flags + extended.flags
+        return extended
     
     
 
@@ -55,7 +69,13 @@ class FeatureNameList:
     
     def __contains__(self, feature_name: str) -> bool:
         return feature_name in self.feature_names
-        
+    
+    def __repr__(self) -> str:
+        return repr(self.feature_names)
+    
+    def __str__(self) -> str:
+        return str(self.feature_names)  
+      
     def add(self, feature_name:str):
         self.feature_names.append(feature_name)
 
@@ -63,8 +83,16 @@ class FeatureNameList:
         for f in self.feature_names:
             if f == name:
                 return f
-        return None  
+        return None 
     
+    def extend(self, flags: list[str]) -> None:
+        for f in flags:
+            self.add(f)
+
+    def get_extended_with(self, extended : Self) -> Self:
+        extended = FeatureNameList()
+        extended.feature_names = self.feature_names + extended.feature_names
+        return extended
 
 ##############################################################
 # FeatureRule are base of all feature rule
@@ -159,9 +187,7 @@ class Feature:
         if not isinstance(other, Feature):
             return NotImplemented
         return self.name == other.name
-
-
-
+    
 ###############################################################
 # CXXCompilerFlagList are flags pass to the compiler
 # 
@@ -181,12 +207,27 @@ class CXXCompilerFlagList:
     
     def __contains__(self, flag: str) -> bool:
         return flag in self.flags
+        
+    def __repr__(self) -> str:
+        return repr(self.flags)
     
+    def __str__(self) -> str:
+        return str(self.flags)  
+      
+
     def add(self, flag:str):
         self.flags.append(flag)
 
     def get(self, name: str) -> str | None:
         return self.flags.get(name)
+    
+    def extend(self, flags: list[str]) -> None:
+        self.flags.extend(flags)
+
+    def get_extended_with(self, extended : Self) -> Self:
+        extended = CXXCompilerFlagList()
+        extended.flags = self.flags.get_extended_with(extended)
+        return extended
     
 ###############################################################
 # CXXLinkerFlagList are flags pass to the linker
@@ -208,11 +249,25 @@ class CXXLinkerFlagList:
     def __contains__(self, flag: str) -> bool:
         return flag in self.flags
     
+    def __repr__(self) -> str:
+        return repr(self.flags)
+    
+    def __str__(self) -> str:
+        return str(self.flags)  
+    
     def add(self, flag:str):
         self.flags.append(flag)
         
     def get(self, name: str) -> str | None:
         return self.flags.get(name)
+ 
+    def extend(self, flags: list[str]) -> None:
+        self.flags.extend(flags)
+
+    def get_extended_with(self, extended : Self) -> Self:
+        extended = CXXLinkerFlagList()
+        extended.flags = self.flags.get_extended_with(extended)
+        return extended
     
 ###############################################################
 # ProjectSpecific add flags and features by project
@@ -238,7 +293,74 @@ class ProjectSpecific:
         if not isinstance(other, ProjectSpecific):
             return NotImplemented
         return self.project_type == other.project_type
+    
+    def __repr__(self) -> str:
+        return f"""{self.project_type}:
+    cxx_linker_flags : {self.cxx_linker_flags}
+    cxx_compiler_flags : {self.cxx_compiler_flags}
+    enable_features : {self.enable_features}"""
+    
+    def __str__(self) -> str:
+        return str(self.flags)  
+    
+    def get_extended_with(self, other : Self) -> Self :
+        if self.project_type != other.project_type:
+            console.print_error(f"❌ Extend project specific {self.project_type} with different type is impossible {self.project_type} extended with {other.project_type}")
+            exit(1)
+        extended = ProjectSpecific(self.project_type)
+        extended.cxx_compiler_flags = self.cxx_compiler_flags.get_extended_with(other.cxx_compiler_flags)
+        extended.cxx_linker_flags = self.cxx_linker_flags.get_extended_with(other.cxx_linker_flags)
+        extended.enable_features = self.enable_features.get_extended_with(other.enable_features)
+        return extended
 
+###############################################################
+# CXXLinkerFlagList are flags pass to the linker
+# 
+# Yaml :
+#   cxx-linker-flags: []
+#
+##############################################################
+class ProjectSpecificList:
+    def __init__(self):
+        self.project_specifics: set[ProjectSpecific] = set()
+    
+    def __iter__(self):
+        return iter(self.project_specifics)
+    
+    def __len__(self):
+        return len(self.project_specifics)
+    
+    def __contains__(self, project_specific: ProjectSpecific) -> bool:
+        return project_specific in self.project_specifics
+    
+    def __contains__(self, item) -> bool:
+        if isinstance(item, ProjectSpecific):
+            return item in self.project_specifics
+        if isinstance(item, ProjectType):
+            return any(p.project_type == item for p in self.project_specifics)
+        return False
+
+    def add(self, profile:ProjectSpecific):
+        self.project_specifics.add(profile)
+
+    def get(self, project_type: ProjectType) -> ProjectSpecific | None:
+        for p in self.project_specifics:
+            if p.project_type == project_type:
+                return p
+        return None 
+    
+    def get_extended_with(self, other : Self) -> ProjectSpecific :
+        extended = ProjectSpecificList()
+        # Get elements in self AND other
+        # Extends the commons
+        commons : set[ProjectSpecific] = self.project_specifics.intersection(other.project_specifics)
+        for common in commons:
+            extended.project_specifics.add(common.get_extended_with(other.get(common.project_type)))
+        # Get elements not in self and other
+        # Add the non common
+        non_commons : set[ProjectSpecific] = self.project_specifics.symmetric_difference(other.project_specifics)
+        extended.project_specifics.update(non_commons)
+        return extended
     
 #############################################################
 # ProfileInfo add flags and features by profile.
@@ -262,8 +384,8 @@ class ProfileInfo:
     def __init__(self, name: str):
         # The profile name
         self.name = name
-        # The profile used extends this one
-        self.extends : ProfileInfo = None
+        # The profile used to extends this one
+        self.extends : str = None
         # If this profile specific is abstract ( Not usable by the user )
         self.is_abstract = False
         # Flags pass to the linker
@@ -273,7 +395,7 @@ class ProfileInfo:
         # List of features to enable with this profile
         self.enable_features = FeatureNameList()
         # List of project specific flags and features with this profile
-        self.project_specifics : set[ProjectSpecific] = set()
+        self.project_specifics = ProjectSpecificList()
 
     def __hash__(self) -> int:
         return hash(self.name)
@@ -283,6 +405,15 @@ class ProfileInfo:
             return NotImplemented
         return self.name == other.name
 
+    def get_extended_with(self, other: Self) -> Self :
+        extended = ProfileInfo(self.name)
+        extended.extends = other.name
+        extended.cxx_compiler_flags = self.cxx_compiler_flags.get_extended_with(other.cxx_compiler_flags)
+        extended.cxx_linker_flags = self.cxx_linker_flags.get_extended_with(other.cxx_linker_flags)
+        extended.enable_features = self.enable_features.get_extended_with(other.enable_features)
+        extended.project_specifics = self.project_specifics.get_extended_with(other.project_specifics)
+        return extended
+    
 
 class CyclicError(Exception):
     def __init__(self, current_node, parent_node, visiting_stack):
@@ -351,6 +482,20 @@ class ProfileInfoList:
                 return p
         return None 
     
+    def get_extended_with(self, other : Self) -> Self :
+        extended = ProfileInfoList()
+        # Get elements in self AND other
+        # Extends the commons
+        commons : set[ProfileInfo] = self.profiles.intersection(other.profiles)
+        for common in commons:
+            extended.profiles.add(common.get_extended_with(other.get(common.name)))
+        # Get elements not in self and other
+        # Add the non common
+        non_commons : set[ProfileInfo] = self.profiles.symmetric_difference(other.profiles)
+        extended.profiles.update(non_commons)
+        return extended
+
+    
     def flatten_extends_profile(self, profile: ProfileInfo) -> list[ProfileInfo]:
         # 1. Collecte du sous-graphe (DFS)
         all_profiles: list[ProfileInfo] = list()
@@ -413,7 +558,21 @@ class FeatureList:
         for f in self.features:
             if f.name == name:
                 return f
-        return None  
+        return None
+    
+    def get_extended_with(self, other : Self) -> Self :
+        extended = FeatureList()
+        # Get elements in self AND other
+        # Extends the commons
+        commons : set[Feature] = self.features.intersection(other.features)
+        for common in commons:
+            extended.features.add(common.get_extended_with(other.get(common.name)))
+        # Get elements not in self and other
+        # Add the non common
+        non_commons : set[Feature] = self.features.symmetric_difference(other.features)
+        extended.features.update(non_commons)
+        return extended
+
     
 ###############################################################
 # FeatureRuleList is list of FeatureRule
@@ -450,6 +609,19 @@ class FeatureRuleList:
                 return f
         return None 
     
+    def get_extended_with(self, other : Self) -> Self :
+        extended = FeatureRuleList()
+        # Get elements in self AND other
+        # Extends the commons
+        commons : set[FeatureRule] = self.feature_rules.intersection(other.feature_rules)
+        for common in commons:
+            extended.feature_rules.add(common.get_extended_with(other.get(common.name)))
+        # Get elements not in self and other
+        # Add the non common
+        non_commons : set[FeatureRule] = self.feature_rules.symmetric_difference(other.feature_rules)
+        extended.feature_rules.update(non_commons)
+        return extended
+    
 ######################################################
 # CompilerInfo
 #
@@ -464,7 +636,7 @@ class CompilerInfo:
         # If this compiler is abstract ( Not usable by the user )
         self.is_abstract = False
         # The compiler used extends this one
-        self.extends : CompilerInfo = None
+        self.extends : str = None
         # List of profiles
         self.profiles = ProfileInfoList()
         # List of features
@@ -481,6 +653,33 @@ class CompilerInfo:
         if not isinstance(other, CompilerInfo):
             return NotImplemented
         return self.name == other.name
+    
+    def _build_repr(self) -> str:
+        lines = [
+            f"Compiler : {self.name} (abstract:{self.is_abstract}, extends: {self.extends})",
+            "  Profiles :",
+        ]
+
+        for profile in self.profiles:
+            lines.append(f"    {profile.name} (extends: {profile.extends})")
+            lines.append(f"      cxx_compiler_flags: {profile.cxx_compiler_flags.flags}")
+            lines.append(f"      cxx_linker_flags: {profile.cxx_linker_flags.flags}")
+            lines.append(f"      features: {profile.enable_features.feature_names}")
+            lines.append(f"      project_specifics:")
+
+            for ps in profile.project_specifics:
+                lines.append(f"        {ps.project_type}:")
+                lines.append(f"          cxx_compiler_flags: {ps.cxx_compiler_flags}")
+                lines.append(f"          cxx_linker_flags: {ps.cxx_linker_flags}")
+                lines.append(f"          features: {ps.enable_features}")
+
+        return "\n".join(lines)
+
+    def __repr__(self) -> str:
+        return self._build_repr()
+
+    def __str__(self) -> str:
+        return self._build_repr()
     
     def flatten_extends_compilers(self) -> list[Self]:
         # 1. Collecte du sous-graphe (DFS)
@@ -511,7 +710,14 @@ class CompilerInfo:
         collect(self, None)
         return all_profiles
     
-
+    def get_extended_with(self, other: Self) -> Self :
+        extended = CompilerInfo(self.name)
+        extended.extends = self.extends
+        extended.file = self.file
+        extended.profiles = self.profiles.get_extended_with(other.profiles)
+        extended.features = self.features.get_extended_with(other.features)
+        extended.feature_rules = self.feature_rules.get_extended_with(other.feature_rules)
+        return extended
 
 ################################################
 # List of compilers in file
@@ -542,6 +748,11 @@ class CompilerInfoList:
                 return t
         return None
 
+    def get_extended(self) -> Self :
+        extended = CompilerInfoList()
+        for compiler in self.compilers:
+            extended.add(compiler.get_extended())
+        return extended
 
 ################################################
 # List of compilers loaded by files

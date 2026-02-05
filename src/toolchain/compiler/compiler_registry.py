@@ -1,6 +1,6 @@
 import console
 from project import ProjectType
-from toolchain.compiler.compiler_info import CompilerInfo, CompilerInfoRegistry, FeatureInfoList
+from toolchain.compiler.compiler_info import CompilerNode, CompilerNodeRegistry, FeatureNodeList
 
 class Flags:
     def __init__(self):
@@ -63,65 +63,35 @@ class Compiler:
     
     @staticmethod
     def create(name :str) -> Profile | None:
-        root_compiler_info: CompilerInfo = CompilerInfoRegistry.get(name)
+        root_compiler_info: CompilerNode = CompilerNodeRegistry.get(name)
         if not root_compiler_info:
-            console.print_error(f"❌  Warning: Compiler {name} not found")
+            console.print_error(f"❌ Compiler {name} not found")
             return None
         
-        # Flattening the compilers establishes a dependency order,
-        # allowing safe iteration where all included compilers are
-        # resolved before the including compiler.
-        # if A extends B, then B appears before A.
-        flatten_extends_compilers = root_compiler_info.flatten_extends_compilers()
-        console.print_tips(f"{root_compiler_info.name} : {' -> '.join([p.name for p in flatten_extends_compilers])}")
+        return root_compiler_info.get_extended()
+        # # Flattening the compilers establishes a dependency order,
+        # # allowing safe iteration where all included compilers are
+        # # resolved before the including compiler.
+        # # if A extends B, then B appears before A.
+        # flatten_extends_compilers = root_compiler_info.flatten_extends_compilers()
+        # console.print_tips(f"{root_compiler_info.name} : [ {' -> '.join([p.name for p in flatten_extends_compilers])} ]")
 
-        # Resoluve inclusions
-        for target in flatten_extends_compilers:
-            
-            target = target.get_extended()
-            # # Merge included target into this target
-            # if target.extends:
-            #     # Find the included target and resolve it
-            #     extended_compiler_info: CompilerInfo = CompilerInfoRegistry.get(target.extends)
-            #     if not extended_compiler_info:
-            #         console.print_error(f"{target.name} extends an unknown target {target.extends}")
-            #         return None
-            #     extended_target : CompilerInfo= target.get_extended_with(extended_compiler_info)
-            #     target = extended_target
+        # extended_compiler_node = 
+        # # Resoluve inclusions
+        # for target in flatten_extends_compilers:
+        #     extended_target: CompilerNode = target.get_extended()
+        #     if not extended_target:
+        #         console.print_error(f"   Target '{target.name}' could not be extended with '{target.extends}' and will not be available.")
+        #         return None
+        #     if not extended_target.validate_features():
+        #         if extended_target.extends:
+        #             console.print_error(f"   Failed to validate feature rules after extending '{extended_target.name}' with '{extended_target.extends}'.")
+        #         else:
+        #             console.print_error(f"   Failed to validate feature rules on target {extended_target.name}.")
+        #         return None
+        #     console.print_tips(extended_target)
 
-            console.print_tips(target)
-
-            target.validate_features()
-            # # Retrieves feature list for each profile and project type
-            # # [debug, bin], [release, bin], [debug, lib], [custom, lib] etc...
-            # # Then for all thoses pairs, validate enabled features
-            # all_profile_names : set[str] = target.available_profile_names()
-            # for profile_name in all_profile_names:
-            #     for project_type  in ProjectType:
-            #         feature_list : FeatureInfoList = target.enabled_feature_list_for_profile_and_project_type(profile_name, project_type)
-            #         feature_list.validate_features(profile_name)
-            #         pass
-            #         #extended.validate_features(profile_name, project_type,feature_list)
-                
-            # # Validate the features
-            # #empty_feature_list : list[str] = []
-            # all_feature_set = target.default_features.get("all") or empty_feature_list
-            # for config, feature_name_list in target.default_features.items():
-
-            #     # Skip 'all'
-            #     if config == "all":
-            #         continue
-
-            #     # Add config + all features
-            #     feature_list = set[FeatureName](feature_name_list)
-            #     feature_list.update(all_feature_set)
-
-            #     # Validate the config + all features list
-            #     target.validate_features(config, feature_list)
-
-            # # Add this target to the list of resolved target
-            # resolved_target_dict[target.name] = target
-
+        # return flatten_extends_compilers[-1]
         
 
 class CompilerList:

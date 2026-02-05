@@ -37,7 +37,7 @@ compilers:
         bin:
           cxx-compiler-flags: []
           cxx-linker-flags: []
-          enable-features: []
+          enable-features: [z]
         lib:
           cxx-compiler-flags: []
           cxx-linker-flags: []
@@ -162,23 +162,12 @@ compilers:
       # Only one exceptions mode
       - only-one: exceptions
         features: [ENABLE_EXCEPTION, DISABLE_EXCEPTION]
-
-  a:
-    extends: msvc-generic
-
-  # MSVC cl.exe compiler
-  cl:
-    extends: a
-    profiles:
-      debug:
-        cxx-compiler-flags: [/RTC1]
-
   # MSVC clang-cl compiler
   clangcl:
-    extends: a
+    extends: msvc-generic
     profiles:
       debug:
-        enable-features: [ASAN, WARNING_ALL]
+        enable-features: [ASAN, WARNING_BASE]
     features:
       - name: ASAN
         description: Enable ASAN Sanitizer (Clang-cl only)

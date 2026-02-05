@@ -69,6 +69,7 @@ class Compiler:
             return None
         
         return root_compiler_info.get_extended()
+    
         # # Flattening the compilers establishes a dependency order,
         # # allowing safe iteration where all included compilers are
         # # resolved before the including compiler.

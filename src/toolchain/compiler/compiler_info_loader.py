@@ -80,13 +80,13 @@ class CompilerInfoLoader:
                         case _:
                             if ProjectType.is_valid_str(item):
                                 # Check that 'bin|lib`|dyn' appears only one time
-                                if item in profile.bin_lib_dyn:
+                                if item in profile.bin_lib_dyn_list:
                                     console.print_error(f"❌ Line {yaml_object.key_line} : 'item' already exist in profile '{profile.name}' in'{self.file}'")
                                     return None
                                 project_specific = self._read_project_specific(ProjectType(item), yaml_object)
                                 if project_specific is None:
                                     return None
-                                profile.bin_lib_dyn.add(project_specific)
+                                profile.bin_lib_dyn_list.add(project_specific)
                             else:
                                 console.print_error(f"❌ Line {yaml_object.key_line} : Unknown key '{item}' in '{self.file}'")
                                 continue

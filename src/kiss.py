@@ -13,7 +13,7 @@ def main():
     Toolchain.load_all_toolchains_in_directory(Path("toolchains"))
     toolchain = Toolchain.create("clangcl", "x86_64-pc-windows-msvc")
     if not toolchain:
-        exit(1)
+        exit
     args = cli.UserParams.from_args()
 
     if args.option == "list": 

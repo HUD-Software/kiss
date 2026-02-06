@@ -144,12 +144,12 @@ class FeatureNode:
     def get_profile_names(self) -> set[str]:
         return self.profiles.get_profile_names()
 
-    def get_extended(self) -> Self:
+    def extends_self(self) -> Self:
         extended = FeatureNode(self.name)
-        extended.cxx_linker_flags = self.cxx_linker_flags
-        extended.cxx_compiler_flags = self.cxx_compiler_flags
-        extended.enable_features = self.enable_features
-        extended.profiles = self.profiles.get_extended()
+        extended.cxx_linker_flags = copy.deepcopy(self.cxx_linker_flags)
+        extended.cxx_compiler_flags = copy.deepcopy(self.cxx_compiler_flags)
+        extended.enable_features = copy.deepcopy(self.enable_features)
+        extended.profiles = self.profiles.extends_self()
         return extended
     
 ###############################################################
@@ -501,7 +501,7 @@ class ProfileNodeList:
     # For example, if we have two ProfileNodes A and B, where B extends A,
     # the returned list will contain A and B (with B including A's features).
     # Cyclic extensions are also detected.
-    def get_extended(self) -> Self:
+    def extends_self(self) -> Self:
         extended = ProfileNodeList()
         already_extended = ProfileNodeList()
         for profile in self.profiles:
@@ -623,10 +623,10 @@ class FeatureNodeList:
                 return f
         return None
     
-    def get_extended(self) -> Self:
+    def extends_self(self) -> Self:
         extended = FeatureNodeList()
         for feature in self.features:
-            extended.add(feature.get_extended())
+            extended.add(feature.extends_self())
         return extended
 
     def get_extended_with_base(self, base : Self) -> Self | None :
@@ -911,14 +911,16 @@ class CompilerNode:
 
     @staticmethod
     def _extend_no_base_then_validate_features(to_extend_compiler_node: Self) -> Self | None:
+        assert not to_extend_compiler_node.is_extended, f"'{to_extend_compiler_node.name}' Already extended"
+        
         if(extended := ExtendedCompilerNodeRegistry.get(to_extend_compiler_node.name)) is None:
             extended = CompilerNode(to_extend_compiler_node.name, is_extended=True)
             extended.file = to_extend_compiler_node.file
             extended.extends_name = to_extend_compiler_node.extends_name
             extended.file = to_extend_compiler_node.file
             extended.feature_rules = copy.deepcopy(to_extend_compiler_node.feature_rules)
-            extended.profiles = to_extend_compiler_node.profiles.get_extended()
-            extended.features = to_extend_compiler_node.features.get_extended()
+            extended.profiles = to_extend_compiler_node.profiles.extends_self()
+            extended.features = to_extend_compiler_node.features.extends_self()
             console.print_tips(extended)
             if not extended.validate_features():
                 if extended.extends_name:
@@ -932,7 +934,8 @@ class CompilerNode:
             
     @staticmethod
     def _extend_and_validate_features(base_compiler_node: Self, to_extend_compiler_node: Self) -> Self | None:
-        assert base_compiler_node.is_extended
+        assert base_compiler_node.is_extended, f"'Base {base_compiler_node.name}' must be extended"
+        assert not to_extend_compiler_node.is_extended, f"'{to_extend_compiler_node.name}' Already extended"
         if(extended := ExtendedCompilerNodeRegistry.get(to_extend_compiler_node.name)) is None:
             extended = CompilerNode(to_extend_compiler_node.name, is_extended=True)
             extended.file = to_extend_compiler_node.file
@@ -949,14 +952,14 @@ class CompilerNode:
                 return None
             
             # Extend profiles
-            extended_profile = to_extend_compiler_node.profiles.get_extended()
+            extended_profile = to_extend_compiler_node.profiles.extends_self()
             extended.profiles = extended_profile.get_extended_with_base(base_compiler_node.profiles)
             if not extended.profiles:
                 console.print_error(f"❌ Fail to extend '{to_extend_compiler_node.name}' with base '{to_extend_compiler_node.extends_name}'")
                 return None
             
             # Extend features
-            extended_features = to_extend_compiler_node.features.get_extended()
+            extended_features = to_extend_compiler_node.features.extends_self()
             extended.features = extended_features.get_extended_with_base(base_compiler_node.features)
             if not extended.features:
                 console.print_error(f"❌ Fail to extend '{to_extend_compiler_node.name}' with base '{to_extend_compiler_node.extends_name}'")

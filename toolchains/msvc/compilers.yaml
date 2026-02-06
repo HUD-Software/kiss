@@ -37,7 +37,7 @@ compilers:
         bin:
           cxx-compiler-flags: []
           cxx-linker-flags: []
-          enable-features: [z]
+          enable-features: []
         lib:
           cxx-compiler-flags: []
           cxx-linker-flags: []

@@ -68,7 +68,7 @@ class Compiler:
             console.print_error(f"❌ Compiler {name} not found")
             return None
         
-        return root_compiler_info.get_extended()        
+        return root_compiler_info.extends_self()        
 
 class CompilerList:
     def __init__(self):

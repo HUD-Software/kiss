@@ -93,7 +93,12 @@ class FeatureNameList:
             self.add(f)
 
     # Merge, duplicate are removed
-    def merge(self, other : Self, ) -> Self:
+    def merge(self, other : Self ) -> Self:
+        extended = FeatureNameList()
+        extended.feature_names = self.feature_names.union(other.feature_names)
+        return extended
+    
+    def merge_with_feature_rules(self, other: Self, feature_rules) -> Self:
         extended = FeatureNameList()
         extended.feature_names = self.feature_names.union(other.feature_names)
         return extended
@@ -144,12 +149,12 @@ class FeatureNode:
     def get_profile_names(self) -> set[str]:
         return self.profiles.get_profile_names()
 
-    def extends_self(self) -> Self:
+    def extends_self(self, feature_rules) -> Self:
         extended = FeatureNode(self.name)
         extended.cxx_linker_flags = copy.deepcopy(self.cxx_linker_flags)
         extended.cxx_compiler_flags = copy.deepcopy(self.cxx_compiler_flags)
         extended.enable_features = copy.deepcopy(self.enable_features)
-        extended.profiles = self.profiles.extends_self()
+        extended.profiles = self.profiles.extends_self(feature_rules)
         return extended
     
 ###############################################################
@@ -392,14 +397,14 @@ class ProfileNode:
         extended.bin_lib_dyn_list = self.bin_lib_dyn_list.merge_commons(extended.cxx_compiler_flags,extended.cxx_linker_flags, extended.enable_features)
         return extended
     
-    def extends(self, base: Self) -> Self :
+    def extends(self, base: Self, feature_rules) -> Self :
         assert base.is_extended, f"Base '{base.name}' must be extendeds"
         extended = ProfileNode(self.name, True)
         extended.extends_name = self.extends_name
         extended.is_abstract = self.is_abstract
         extended.cxx_compiler_flags = self.cxx_compiler_flags.merge(base.cxx_compiler_flags)
         extended.cxx_linker_flags = self.cxx_linker_flags.merge(base.cxx_linker_flags)
-        extended.enable_features = self.enable_features.merge(base.enable_features)
+        extended.enable_features = self.enable_features.merge_with_feature_rules(base.enable_features, feature_rules)
         extended.bin_lib_dyn_list = self.bin_lib_dyn_list.merge(base.bin_lib_dyn_list)
         extended.bin_lib_dyn_list = extended.bin_lib_dyn_list.merge_commons(extended.cxx_compiler_flags,extended.cxx_linker_flags, extended.enable_features)
         return extended
@@ -501,7 +506,7 @@ class ProfileNodeList:
     # For example, if we have two ProfileNodes A and B, where B extends A,
     # the returned list will contain A and B (with B including A's features).
     # Cyclic extensions are also detected.
-    def extends_self(self) -> Self:
+    def extends_self(self, feature_rules) -> Self:
         extended = ProfileNodeList()
         already_extended = ProfileNodeList()
         for profile in self.profiles:
@@ -524,7 +529,7 @@ class ProfileNodeList:
                 # Extend only once
                 extended_p = already_extended.get(p.name) 
                 if not extended_p:
-                    extended_p = p.extends(base)
+                    extended_p = p.extends(base, feature_rules)
                     extended.add(extended_p)
                     already_extended.add(extended_p)
                 base = extended_p
@@ -623,10 +628,10 @@ class FeatureNodeList:
                 return f
         return None
     
-    def extends_self(self) -> Self:
+    def extends_self(self,feature_rules) -> Self:
         extended = FeatureNodeList()
         for feature in self.features:
-            extended.add(feature.extends_self())
+            extended.add(feature.extends_self(feature_rules))
         return extended
 
     def get_extended_with_base(self, base : Self) -> Self | None :
@@ -919,8 +924,8 @@ class CompilerNode:
             extended.extends_name = to_extend_compiler_node.extends_name
             extended.file = to_extend_compiler_node.file
             extended.feature_rules = copy.deepcopy(to_extend_compiler_node.feature_rules)
-            extended.profiles = to_extend_compiler_node.profiles.extends_self()
-            extended.features = to_extend_compiler_node.features.extends_self()
+            extended.profiles = to_extend_compiler_node.profiles.extends_self(extended.feature_rules)
+            extended.features = to_extend_compiler_node.features.extends_self(extended.feature_rules)
             console.print_tips(extended)
             if not extended.validate_features():
                 if extended.extends_name:

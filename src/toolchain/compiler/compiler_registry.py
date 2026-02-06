@@ -68,32 +68,7 @@ class Compiler:
             console.print_error(f"❌ Compiler {name} not found")
             return None
         
-        return root_compiler_info.get_extended()
-    
-        # # Flattening the compilers establishes a dependency order,
-        # # allowing safe iteration where all included compilers are
-        # # resolved before the including compiler.
-        # # if A extends B, then B appears before A.
-        # flatten_extends_compilers = root_compiler_info.flatten_extends_compilers()
-        # console.print_tips(f"{root_compiler_info.name} : [ {' -> '.join([p.name for p in flatten_extends_compilers])} ]")
-
-        # extended_compiler_node = 
-        # # Resoluve inclusions
-        # for target in flatten_extends_compilers:
-        #     extended_target: CompilerNode = target.get_extended()
-        #     if not extended_target:
-        #         console.print_error(f"   Target '{target.name}' could not be extended with '{target.extends}' and will not be available.")
-        #         return None
-        #     if not extended_target.validate_features():
-        #         if extended_target.extends:
-        #             console.print_error(f"   Failed to validate feature rules after extending '{extended_target.name}' with '{extended_target.extends}'.")
-        #         else:
-        #             console.print_error(f"   Failed to validate feature rules on target {extended_target.name}.")
-        #         return None
-        #     console.print_tips(extended_target)
-
-        # return flatten_extends_compilers[-1]
-        
+        return root_compiler_info.get_extended()        
 
 class CompilerList:
     def __init__(self):

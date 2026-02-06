@@ -166,7 +166,11 @@ compilers:
   clangcl:
     extends: msvc-generic
     profiles:
+      common:
+        is_abstract: true
+        enable-features: [TARGET_X64]
       debug:
+        extends: common
         enable-features: [ASAN, WARNING_BASE]
     features:
       - name: ASAN

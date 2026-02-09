@@ -27,7 +27,7 @@ compilers:
           enable-features: []
       debug:
         extends: common
-        enable-features: [OPT_LEVEL_0]
+        enable-features: [OPT_LEVEL_0, WARNING_ALL]
         cxx-compiler-flags: []
         cxx-linker-flags: [/INCREMENTAL]
         dyn:
@@ -50,7 +50,7 @@ compilers:
         dyn:
           cxx-compiler-flags: [/LD]
           cxx-linker-flags: []
-          enable-features: []
+          enable-features: [WARNING_ALL]
         bin:
           cxx-compiler-flags: []
           cxx-linker-flags: []
@@ -172,6 +172,8 @@ compilers:
       debug:
         extends: common
         enable-features: [ASAN, WARNING_BASE]
+      release:
+        extends: common
     features:
       - name: ASAN
         description: Enable ASAN Sanitizer (Clang-cl only)

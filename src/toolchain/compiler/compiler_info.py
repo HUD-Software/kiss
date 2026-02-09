@@ -681,13 +681,17 @@ class FeatureNodeList:
             extended.add(feature.extends_self(compiler_node))
         return extended
 
-    def get_extended_with_base(self, base : Self) -> Self | None :
+    def get_extended_with_base(self, base : Self, feature_rules) -> Self | None :
+        if(extended_self := self.extends_self(feature_rules)) is None:
+            return None
+
         extended = FeatureNodeList()
         # Get elements in self AND base
-        common_features : set[FeatureNode] = self.features.intersection(base.features)
+        common_features : set[FeatureNode] = extended_self.features.intersection(base.features)
         # Get elements not in self and base
-        non_commons_features : set[FeatureNode] = self.features.symmetric_difference(base.features)
-        # Extends the common_feature_nodes and add the non common features
+        non_commons_features : set[FeatureNode] = extended_self.features.symmetric_difference(base.features)
+        # We don't have extension on feature
+        # We don't allow multiple same name
         if common_features:
             console.print_error(f"❌ Feature with same name both target [ {', '.join(f.name for f in common_features)} ]")
             return None
@@ -1030,15 +1034,13 @@ class CompilerNode:
                 return None
             
             # Extend profiles
-            ##extended_profile = to_extend_compiler_node.profiles.extends_self(extended.feature_rules)
             extended.profiles = to_extend_compiler_node.profiles.get_extended_with_base(base_compiler_node.profiles, extended.feature_rules)
             if not extended.profiles:
                 console.print_error(f"❌ Fail to extend '{to_extend_compiler_node.name}' with base '{to_extend_compiler_node.extends_name}'")
                 return None
             
             # Extend features
-            extended_features = to_extend_compiler_node.features.extends_self(extended.feature_rules)
-            extended.features = extended_features.get_extended_with_base(base_compiler_node.features)
+            extended.features = to_extend_compiler_node.features.get_extended_with_base(base_compiler_node.features, extended.feature_rules)
             if not extended.features:
                 console.print_error(f"❌ Fail to extend '{to_extend_compiler_node.name}' with base '{to_extend_compiler_node.extends_name}'")
                 return None

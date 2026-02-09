@@ -44,7 +44,7 @@ compilers:
           enable-features: []
       release:
         extends: common
-        enable-features: [OPT_LEVEL_3, WARNING_ALL]
+        enable-features: [OPT_LEVEL_3]
         cxx-compiler-flags: []
         cxx-linker-flags: [/OPT:REF, /OPT:ICF, /INCREMENTAL:NO]
         dyn:

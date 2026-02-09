@@ -5,7 +5,7 @@ from pathlib import Path
 import console
 from project import ProjectType
 from yaml_file.line_loader import YamlObject
-from toolchain.compiler.compiler_info import CXXLinkerFlagList, CompilerNodeRegistry, CompilerNode, CompilerNodeList, FeatureNode, FeatureNodeList, FeatureRuleNodeIncompatibleWith, FeatureRuleNodeList, FeatureRuleNodeOnlyOne, ProfileNode, ProfileNodeList, BinLibDynNode
+from toolchain.compiler.compiler_info import CompilerNodeRegistry, CompilerNode, CompilerNodeList, FeatureNode, FeatureNodeList, FeatureRuleNodeIncompatibleWith, FeatureRuleNodeList, FeatureRuleNodeOnlyOne, ProfileNode, ProfileNodeList, BinLibDynNode
 
 class CompilerInfoLoader:
     def __init__(self, file: Path):
@@ -58,19 +58,19 @@ class CompilerInfoLoader:
                             if not isinstance(yaml_object.value, list) or not all(isinstance(x, str) for x in yaml_object.value):
                                 console.print_error(f"❌ Line {yaml_object.key_line} : 'enable-features' must contains list of feature name in'{self.file}'")
                                 return None
-                            profile.enable_features.add_list(yaml_object.value)
+                            profile.common_enable_features.add_list(yaml_object.value)
                         case "cxx-compiler-flags":
                             # Check that 'cxx-compiler-flags' is a list of string
                             if not isinstance(yaml_object.value, list) or not all(isinstance(x, str) for x in yaml_object.value):
                                 console.print_error(f"❌ Line {yaml_object.key_line} : 'cxx-compiler-flags' must contains list of feature name in'{self.file}'")
                                 return None
-                            profile.cxx_compiler_flags.add_list(yaml_object.value)
+                            profile.common_cxx_compiler_flags.add_list(yaml_object.value)
                         case "cxx-linker-flags":
                             # Check that 'cxx-linker-flags' is a list of string
                             if not isinstance(yaml_object.value, list) or not all(isinstance(x, str) for x in yaml_object.value):
                                 console.print_error(f"❌ Line {yaml_object.key_line} : 'cxx-linker-flags' must contains list of feature name in'{self.file}'")
                                 return None
-                            profile.cxx_linker_flags.add_list(yaml_object.value)
+                            profile.common_cxx_linker_flags.add_list(yaml_object.value)
                         case "extends":
                             # Check that 'extends' is a string
                             if not isinstance(yaml_object.value, str):
@@ -193,8 +193,7 @@ class CompilerInfoLoader:
         return feature_rules_list
 
     def _read_compiler_node(self, compiler_name: str, yaml_compiler : YamlObject) -> CompilerNode | None:
-       
-        compiler : CompilerNode = CompilerNode(compiler_name)
+        compiler_node : CompilerNode = CompilerNode(compiler_name)
 
         # If the compiler is empty, ignore it
         if not yaml_compiler.value:
@@ -208,13 +207,13 @@ class CompilerInfoLoader:
                     if not isinstance(yaml_object.value, bool):
                         console.print_error(f"❌ Line {yaml_object.key_line} : 'is_abstract' must be a boolean value (true|false) in '{self.file}'")
                         return None
-                    compiler.is_abstract = yaml_object.value
+                    compiler_node.is_abstract = yaml_object.value
                 case "extends":
                     # Check that 'extends' is a string
                     if not isinstance(yaml_object.value, str):
                         console.print_error(f"❌ Line {yaml_object.key_line} : 'extends' in must be a compiler name in'{self.file}'")
                         return None
-                    compiler.extends_name = yaml_object.value
+                    compiler_node.extends_name = yaml_object.value
                 case "profiles":
                     if not isinstance(yaml_object.value, dict):
                         console.print_error(f"❌ Line {yaml_object.key_line} : 'profiles' must contains profiles'{self.file}'")
@@ -222,7 +221,7 @@ class CompilerInfoLoader:
                     profiles = self._read_profiles(yaml_object)
                     if profiles is None:
                         return None
-                    compiler.profiles = profiles
+                    compiler_node.profiles = profiles
                 case "features":
                     if not isinstance(yaml_object.value, list):
                         console.print_error(f"❌ Line {yaml_object.key_line} : 'features' must contains list of features in'{self.file}'")
@@ -230,7 +229,7 @@ class CompilerInfoLoader:
                     features = self._read_compiler_features(yaml_object)
                     if features is None:
                         return None
-                    compiler.features = features
+                    compiler_node.features = features
                 case "feature-rules":
                     if not isinstance(yaml_object.value, list):
                         console.print_error(f"❌ Line {yaml_object.key_line} : 'feature-rules' must contains list of feature rules in'{self.file}'")
@@ -238,12 +237,12 @@ class CompilerInfoLoader:
                     feature_rules = self._read_compiler_feature_rules(yaml_object)
                     if feature_rules is None:
                         return None
-                    compiler.feature_rules = feature_rules
+                    compiler_node.feature_rules = feature_rules
                 case _:
                     console.print_error(f"❌ Line {yaml_object.key_line} : Unknown key '{item}' in'{self.file}'")
                     continue
 
-        return compiler 
+        return compiler_node 
 
 
     def read_yaml_compilers(self, item_yaml_object):

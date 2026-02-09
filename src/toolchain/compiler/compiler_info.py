@@ -446,8 +446,12 @@ class ProfileNode:
             if not project_type in self.bin_lib_dyn_list:
                 self.bin_lib_dyn_list.add(BinLibDynNode(project_type))
         
-        extended.bin_lib_dyn_list = self.bin_lib_dyn_list.merge_commons(extended.common_cxx_compiler_flags, extended.common_cxx_linker_flags, extended.common_enable_features, feature_rules)
+        extended.bin_lib_dyn_list = self.bin_lib_dyn_list.merge_commons(self.common_cxx_compiler_flags, self.common_cxx_linker_flags, self.common_enable_features, feature_rules)
         extended.bin_lib_dyn_list = extended.bin_lib_dyn_list.extends(bin_lib_dyn_of_base=base.bin_lib_dyn_list, feature_rules=feature_rules)
+
+
+
+
         return extended
     
     def get_enabled_features_list_for_project_type(self, project_type: ProjectType)-> FeatureNameList:

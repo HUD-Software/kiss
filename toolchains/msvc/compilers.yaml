@@ -171,9 +171,14 @@ compilers:
         enable-features: [TARGET_X64]
       debug:
         extends: common
-        enable-features: [ASAN, WARNING_BASE]
+        enable-features: []
       release:
         extends: common
+        enable-features: []
+        bin:
+          cxx-compiler-flags: []
+          cxx-linker-flags: []
+          enable-features: [WARNING_BASE]
     features:
       - name: ASAN
         description: Enable ASAN Sanitizer (Clang-cl only)

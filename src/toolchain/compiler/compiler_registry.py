@@ -1,17 +1,17 @@
+from typing import Self
 import console
 from project import ProjectType
 from toolchain.compiler.compiler_info import CompilerNode, CompilerNodeRegistry, FeatureNodeList
 
 class Flags:
     def __init__(self):
-        self.compiler_flags : list[str] = []
-        self.linker_flags : list[str] = []
+        self.cxx_compiler_flags : list[str] = []
+        self.cxx_linker_flags : list[str] = []
 
 class Profile:
     def __init__(self, name: str):
         # The profile name
         self.name = name
-        self.flags = Flags()
         self.per_project_type_flags : dict[ProjectType, Flags]
 
     def __hash__(self) -> int:
@@ -23,7 +23,7 @@ class Profile:
         return self.name == other.name
     
     def flags_for_project_type(self, project_type: ProjectType) -> list[str]:
-         return [*self.flags,*self.per_project_type_flags.get(project_type, [])]
+         return self.per_project_type_flags.get(project_type, [])
     
 class ProfileList:
     def __init__(self):
@@ -62,13 +62,20 @@ class Compiler:
         self.profiles = ProfileList()
     
     @staticmethod
-    def create(name :str) -> Profile | None:
+    def create(name :str) -> Self | None:
         root_compiler_info: CompilerNode = CompilerNodeRegistry.get(name)
         if not root_compiler_info:
             console.print_error(f"❌ Compiler {name} not found")
             return None
         
-        return root_compiler_info.extends_self()        
+        if(compiler_node := root_compiler_info.extends_self()) is None:
+            return None
+        
+        new_compiler = Compiler(compiler_node.name)
+        for profile in compiler_node.profiles:
+            new_profile = Profile(profile.name)
+
+        return None
 
 class CompilerList:
     def __init__(self):

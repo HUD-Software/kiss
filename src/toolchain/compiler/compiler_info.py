@@ -469,9 +469,11 @@ class ProfileNode:
         # Add project type specific features
         project_specific = self.bin_lib_dyn_list.get(project_type)
         if project_specific:
-            feature_name_list.add_list(project_specific.enable_features)
+            feature_name_list.add_list(project_specific.common_enable_features)
         return feature_name_list
     
+    def get_cxx_compiler_flags_for_project_type(project_type: ProjectType):    
+        pass
 ##################################################################
 # ExtendsCyclicError is raised when a extends cycle is detected
 #

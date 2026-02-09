@@ -21,20 +21,20 @@ class CompilerInfoLoader:
                     if not isinstance(yaml_object.value, list) or not all(isinstance(x, str) for x in yaml_object.value):
                         console.print_error(f"❌ Line {yaml_object.key_line} : 'cxx-compiler-flags' must contains list of feature name in'{self.file}'")
                         return None
-                    project_specific.cxx_compiler_flags.add_list(yaml_object.value)
+                    project_specific.common_cxx_compiler_flags.add_list(yaml_object.value)
                 case "cxx-linker-flags":
                     # Check that 'cxx-linker-flags' is a list of string
                     if not isinstance(yaml_object.value, list) or not all(isinstance(x, str) for x in yaml_object.value):
                         console.print_error(f"❌ Line {yaml_object.key_line} : 'cxx-linker-flags' must contains list of feature name in'{self.file}'")
                         return None
                     
-                    project_specific.cxx_linker_flags.add_list(yaml_object.value)
+                    project_specific.common_cxx_linker_flags.add_list(yaml_object.value)
                 case "enable-features":
                     # Check that 'enable-features' is a list of string
                     if not isinstance(yaml_object.value, list) or not all(isinstance(x, str) for x in yaml_object.value):
                         console.print_error(f"❌ Line {yaml_object.key_line} : 'enable-features' must contains list of feature name in'{self.file}'")
                         return None
-                    project_specific.enable_features.add_list(yaml_object.value)
+                    project_specific.common_enable_features.add_list(yaml_object.value)
                 case _:
                     console.print_error(f"❌ Line {yaml_object.key_line} : Unknown key '{item}' in'{self.file}'")
                     continue

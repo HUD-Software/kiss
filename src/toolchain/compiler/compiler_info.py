@@ -91,9 +91,9 @@ class FeatureNameList:
     def add_list(self, flags: list[str]):
         for f in flags:
             self.add(f)
-
-    def merge(self, base: Self, feature_rules) -> Self:
-        return feature_rules.merge_feature_name_list(list_base=base.feature_names, list_extends=self.feature_names)
+    
+    def merge(self, base: Self, feature_rules) -> Self | None:
+        return feature_rules.merge_feature_name_list(list_base=base, list_extends=self)
     
 ##############################################################
 # FeatureRuleNode are base of all feature rule
@@ -247,9 +247,9 @@ class CXXLinkerFlagList:
 class BinLibDynNode:
     def __init__(self, project_type: ProjectType):
         self.project_type = project_type
-        self.cxx_linker_flags = CXXLinkerFlagList()
-        self.cxx_compiler_flags = CXXCompilerFlagList()
-        self.enable_features = FeatureNameList()
+        self.common_cxx_linker_flags = CXXLinkerFlagList()
+        self.common_cxx_compiler_flags = CXXCompilerFlagList()
+        self.common_enable_features = FeatureNameList()
 
     def __hash__(self) -> int:
         return hash(self.project_type)
@@ -259,20 +259,25 @@ class BinLibDynNode:
             return NotImplemented
         return self.project_type == other.project_type
     
-    def __repr__(self) -> str:
+    def _build_repr(self) -> str:
         return f""" BinLibDynNode : {self.project_type}:
-    cxx_linker_flags : {self.cxx_linker_flags}
-    cxx_compiler_flags : {self.cxx_compiler_flags}
-    enable_features : {self.enable_features}"""
+    cxx_linker_flags : {self.common_cxx_linker_flags}
+    cxx_compiler_flags : {self.common_cxx_compiler_flags}
+    enable_features : {self.common_enable_features}"""
+
+    def __repr__(self) -> str:
+        return self._build_repr()
     
     def __str__(self) -> str:
-        return str(self.flags)  
+        return self._build_repr()
     
-    def merge(self, cxx_compiler: CXXCompilerFlagList, cxx_linker : CXXLinkerFlagList, features: FeatureNameList, feature_rules) -> Self :
+    def merge(self, cxx_compiler: CXXCompilerFlagList, cxx_linker : CXXLinkerFlagList, features: FeatureNameList, feature_rules) -> Self | None :
         extended = BinLibDynNode(self.project_type)
-        extended.cxx_compiler_flags = self.cxx_compiler_flags.merge(cxx_compiler)
-        extended.cxx_linker_flags = self.cxx_linker_flags.merge(cxx_linker)
-        extended.enable_features = self.enable_features.merge(base=features, feature_rules=feature_rules)
+        extended.common_cxx_compiler_flags = self.common_cxx_compiler_flags.merge(cxx_compiler)
+        extended.common_cxx_linker_flags = self.common_cxx_linker_flags.merge(cxx_linker)
+        if(enable_feature := self.common_enable_features.merge(base=features, feature_rules=feature_rules)) is None:
+            return None
+        extended.common_enable_features = enable_feature
         return extended
 
 ###############################################################
@@ -338,7 +343,8 @@ class BinLibDynNodeList:
         for same_name_node in same_name_nodes:
             self_same_name_node = self.get(same_name_node.project_type)
             base_same_name_node = bin_lib_dyn_of_base.get(same_name_node.project_type)
-            if (extended_self_same_name_node := self_same_name_node.merge(base_same_name_node.cxx_compiler_flags, base_same_name_node.cxx_linker_flags, base_same_name_node.enable_features, feature_rules)) is None:
+            if (extended_self_same_name_node := self_same_name_node.merge(base_same_name_node.common_cxx_compiler_flags, base_same_name_node.common_cxx_linker_flags, base_same_name_node.common_enable_features, feature_rules)) is None:
+                console.print_error(f"When extending '{self_same_name_node.project_type}' with profile commons")
                 return None
             extended.bin_lib_dyn_set.add(extended_self_same_name_node)
         extended.bin_lib_dyn_set.update(non_commons)
@@ -427,7 +433,7 @@ class ProfileNode:
         extended.bin_lib_dyn_list = self.bin_lib_dyn_list.merge_commons(extended.common_cxx_linker_flags,extended.common_cxx_compiler_flags, extended.common_enable_features, feature_rules)
         return extended
     
-    def extends(self, base: Self, feature_rules) -> Self :
+    def extends(self, base: Self, feature_rules) -> Self  | None:
         assert base.is_extended, f"Base '{base.name}' must be extended"
         assert not self.is_extended, f"'{self.name} is already extended'"
         extended = ProfileNode(self.name, True)
@@ -447,11 +453,10 @@ class ProfileNode:
                 self.bin_lib_dyn_list.add(BinLibDynNode(project_type))
         
         extended.bin_lib_dyn_list = self.bin_lib_dyn_list.merge_commons(self.common_cxx_compiler_flags, self.common_cxx_linker_flags, self.common_enable_features, feature_rules)
-        extended.bin_lib_dyn_list = extended.bin_lib_dyn_list.extends(bin_lib_dyn_of_base=base.bin_lib_dyn_list, feature_rules=feature_rules)
 
-
-
-
+        if(extended_bin_lib_dyn_list := extended.bin_lib_dyn_list.extends(bin_lib_dyn_of_base=base.bin_lib_dyn_list, feature_rules=feature_rules)) is None:
+            return None
+        extended.bin_lib_dyn_list = extended_bin_lib_dyn_list
         return extended
     
     def get_enabled_features_list_for_project_type(self, project_type: ProjectType)-> FeatureNameList:
@@ -556,9 +561,8 @@ class ProfileNodeList:
             # This is the first profile in the flatten profiles list
             base = already_extended.get(flatten_profiles[0].name) 
             if not base:
-                base = flatten_profiles[0].extends_self(feature_rules)
-                if not base:
-                    console.print_error(f"   When validating rules for '{flatten_profiles[0].name}' profile.")
+                if( base := flatten_profiles[0].extends_self(feature_rules)) is None:
+                    console.print_error(f"When extending '{flatten_profiles[0].name}' profile.")
                     return None
                 extended.add(base)
                 already_extended.add(base)
@@ -567,9 +571,11 @@ class ProfileNodeList:
                 # Extend only once
                 extended_p = already_extended.get(p.name) 
                 if not extended_p:
-                    extended_p = p.extends(base, feature_rules)
+                    if( extended_p := p.extends(base, feature_rules)) is None:
+                        console.print_error(f"When extending '{p.name}' profile with '{base.name}' base profile.")
+                        return None
                     if not extended_p.is_feature_rules_valid(feature_rules):
-                        console.print_error(f"   When validating rules for '{p.name}' profile.")
+                        console.print_error(f"When validating rules for '{p.name}' profile.")
                         return None
                     extended.add(extended_p)
                     already_extended.add(extended_p)
@@ -697,7 +703,7 @@ class FeatureNodeList:
         # We don't have extension on feature
         # We don't allow multiple same name
         if common_features:
-            console.print_error(f"❌ Feature with same name both target [ {', '.join(f.name for f in common_features)} ]")
+            console.print_error(f"❌ Feature with same name both target [{', '.join(f.name for f in common_features)}]")
             return None
         extended.features.update(common_features)
         extended.features.update(non_commons_features)
@@ -834,7 +840,7 @@ class FeatureRuleNodeList:
         non_commons_feature_rules : set[FeatureNode] = self.feature_rules.symmetric_difference(base.feature_rules)
         # Extends the common_feature_nodes and add the non common feature rules
         if common_feature_rules:
-             console.print_error(f"❌ Feature rule with same name both target [ {', '.join(f.name for f in common_feature_rules)} ]")
+             console.print_error(f"❌ Feature rule with same name both target [{', '.join(f.name for f in common_feature_rules)}]")
              return None
         extended.feature_rules.update(common_feature_rules)
         extended.feature_rules.update(non_commons_feature_rules)
@@ -847,12 +853,12 @@ class FeatureRuleNodeList:
                     result = only_one_rule.evaluate(feature_list)
                     match result:
                         case FeatureNameList() as mutliple_feature:
-                            console.print_error(f"❌ Feature rule '{FeatureRuleNodeOnlyOne.KEY}' not satisfied. [ {', '.join(list(mutliple_feature))} ] are enabled but only one in allowed.")
+                            console.print_error(f"❌ Feature rule '{FeatureRuleNodeOnlyOne.KEY}' not satisfied. [{', '.join(list(mutliple_feature))}] are enabled but only one in allowed.")
                             return False
                 case FeatureRuleNodeIncompatibleWith() as incompatible_rule:
                     list_of_incompatible_feature =  incompatible_rule.is_satisfied(feature_list)
                     if list_of_incompatible_feature:
-                        console.print_error(f"❌ Feature rule '{FeatureRuleNodeIncompatibleWith.KEY}' not satisfied. [ {', '.join(list_of_incompatible_feature)} ] are incompatible with '{incompatible_rule.feature_name}' ")
+                        console.print_error(f"❌ Feature rule '{FeatureRuleNodeIncompatibleWith.KEY}' not satisfied. [{', '.join(list_of_incompatible_feature)}] are incompatible with '{incompatible_rule.feature_name}' ")
                         return False
         return True
     
@@ -862,11 +868,11 @@ class FeatureRuleNodeList:
     #   Error when 'list_base' contains more that 1 elements on 'only-one', same for 'list_extends'
     # - If 'list_base' and 'list_extends' contains feature name that exists in a 'incompatible' rule
     #   Error
-    def merge_feature_name_list(self, list_base: FeatureNameList, list_extends: FeatureNameList) -> FeatureNameList:
+    def merge_feature_name_list(self, list_base: FeatureNameList, list_extends: FeatureNameList) -> FeatureNameList | None:
         # Check that list_extends validate feature-rules before merging
         # We check list_base after that
         if not self.is_feature_list_validate_rules(list_extends):
-            console.print_error(f"Rule '{FeatureRuleNodeOnlyOne.KEY}' invalidate feature list '{' , '.join(list_extends.feature_names)}' ")
+            console.print_error(f"Rule invalidate feature list '{', '.join(list(list_extends.feature_names))}' ")
             return None
         
         only_one_rules = [
@@ -885,20 +891,20 @@ class FeatureRuleNodeList:
                     result = FeatureRuleNodeOnlyOne.ResultOnlyOne = only_one_rule.evaluate(list_extends)
                     match result:
                         # One feature name is present in list_extends that is also present in list_base and 'only-one' rule
-                        case str() as extends_feature_name:
+                        case str():
                             # We have one feature name in list_base and one in list_extends
                             # We keep the one in list_extends
-                            cleaned_list_base.remove(base_feature_name)
+                            cleaned_list_base.feature_names.remove(base_feature_name)
                 # Multiple feature name is present in list_base that is also present in 'only-one' rule
                 case FeatureNameList() as mutliple_feature:
-                    console.print_error(f"Rule '{FeatureRuleNodeOnlyOne.KEY}' invalidate feature list '{' , '.join(list(mutliple_feature.feature_names))}' ")
+                    console.print_error(f"Rule '{FeatureRuleNodeOnlyOne.KEY}' invalidate feature list '{', '.join(list(mutliple_feature.feature_names))}' ")
                 # No feature name is present in list_base that is also present in 'only-one' rule
                 case None:
                     pass
 
         # Merge cleaned_list_base and list_extends    
         result = FeatureNameList()
-        result.feature_names = cleaned_list_base.union(list_extends)
+        result.feature_names = cleaned_list_base.feature_names.union(list_extends.feature_names)
         return result
 
 ######################################################
@@ -949,9 +955,9 @@ class CompilerNode:
             lines.append(f"      bin_lib_dyn:")
             for ps in profile.bin_lib_dyn_list:
                 lines.append(f"        {ps.project_type}:")
-                lines.append(f"          cxx_compiler_flags: {ps.cxx_compiler_flags}")
-                lines.append(f"          cxx_linker_flags: {ps.cxx_linker_flags}")
-                lines.append(f"          features: {ps.enable_features}")
+                lines.append(f"          cxx_compiler_flags: {ps.common_cxx_compiler_flags}")
+                lines.append(f"          cxx_linker_flags: {ps.common_cxx_linker_flags}")
+                lines.append(f"          features: {ps.common_enable_features}")
         return "\n".join(lines)
 
     def __repr__(self) -> str:
@@ -1008,7 +1014,7 @@ class CompilerNode:
             extended.feature_rules = copy.deepcopy(to_extend_compiler_node.feature_rules)
             extended.features = to_extend_compiler_node.features.extends_self(extended.feature_rules)
             if (extended_profiles := to_extend_compiler_node.profiles.extends_self(extended.feature_rules)) is None:
-                console.print_error(f"   When extending '{to_extend_compiler_node.name}' compiler")
+                console.print_error(f"When extending '{to_extend_compiler_node.name}' compiler")
                 return None
             extended.profiles = extended_profiles
 
@@ -1070,7 +1076,7 @@ class CompilerNode:
         # resolved before the compiler that extends them.
         # In other words, if compiler A extends B, then B appears before A.
         flatten_compiler_extends = self.flatten_extends_compilers()
-        console.print_tips(f"{self.name} : [ {' -> '.join([p.name for p in flatten_compiler_extends])} ]")
+        console.print_tips(f"{self.name} : [{' -> '.join([p.name for p in flatten_compiler_extends])}]")
 
         # Start by extending the top-most base compiler and validate features
         # at each level until we reach the target compiler.

@@ -21,6 +21,9 @@ class Toolchain:
         if not compiler:
             console.print_error(f"❌ Fail to create toolchain with compiler {compiler_name} and target {target_name}")
             return None
+        
+        console.print_success(compiler)
+
         # Find the target
         target = TargetInfoRegistry.get(target_name)
 

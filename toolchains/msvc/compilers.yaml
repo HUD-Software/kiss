@@ -11,20 +11,6 @@ compilers:
       common:
         is_abstract: true
         enable-features: [WARNING_STRICT, RUNTIME_DLL, ENABLE_EXCEPTION]
-        cxx-compiler-flags: []
-        cxx-linker-flags: []
-        dyn:
-          cxx-compiler-flags: []
-          cxx-linker-flags: []
-          enable-features: []
-        bin:
-          cxx-compiler-flags: []
-          cxx-linker-flags: []
-          enable-features: []
-        lib:
-          cxx-compiler-flags: []
-          cxx-linker-flags: []
-          enable-features: []
       debug:
         extends: common
         enable-features: [OPT_LEVEL_0, WARNING_ALL]
@@ -32,33 +18,13 @@ compilers:
         cxx-linker-flags: [/INCREMENTAL]
         dyn:
           cxx-compiler-flags: [/LDd]
-          cxx-linker-flags: []
-          enable-features: []
-        bin:
-          cxx-compiler-flags: []
-          cxx-linker-flags: []
-          enable-features: []
-        lib:
-          cxx-compiler-flags: []
-          cxx-linker-flags: []
-          enable-features: []
       release:
         extends: common
         enable-features: [OPT_LEVEL_3]
-        cxx-compiler-flags: []
         cxx-linker-flags: [/OPT:REF, /OPT:ICF, /INCREMENTAL:NO]
         dyn:
           cxx-compiler-flags: [/LD]
-          cxx-linker-flags: []
           enable-features: [WARNING_ALL]
-        bin:
-          cxx-compiler-flags: []
-          cxx-linker-flags: []
-          enable-features: []
-        lib:
-          cxx-compiler-flags: []
-          cxx-linker-flags: []
-          enable-features: []
     features:
       # Warnings
       - name: WARNING_BASE
@@ -171,13 +137,10 @@ compilers:
         enable-features: [TARGET_X64]
       debug:
         extends: common
-        enable-features: []
+        enable-features: [ASAN]
       release:
         extends: common
-        enable-features: []
         bin:
-          cxx-compiler-flags: []
-          cxx-linker-flags: []
           enable-features: [WARNING_BASE]
     features:
       - name: ASAN

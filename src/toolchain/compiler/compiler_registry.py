@@ -1,7 +1,7 @@
 from typing import Self
 import console
 from project import ProjectType
-from toolchain.compiler.compiler_info import CompilerNode, CompilerNodeRegistry, FeatureNodeList
+from toolchain.compiler.compiler_info import CompilerNode, CompilerNodeRegistry, FeatureNode, FeatureNodeList
 
 class Flags:
     def __init__(self):
@@ -12,7 +12,7 @@ class Profile:
     def __init__(self, name: str):
         # The profile name
         self.name = name
-        self.per_project_type_flags : dict[ProjectType, Flags]
+        self.per_project_type_flags : dict[ProjectType, Flags] = {}
 
     def __hash__(self) -> int:
         return hash(self.name)
@@ -61,6 +61,24 @@ class Compiler:
         # List of profiles
         self.profiles = ProfileList()
     
+    def _build_repr(self) -> str:
+        lines = [
+            f"Compiler : {self.name}",
+        ]
+        for profile in self.profiles:
+            lines.append(f"  - {profile.name}")
+            for project_type, flags in profile.per_project_type_flags.items():
+                lines.append(f"    - {project_type}:")
+                lines.append(f"      cxx_compiler_flags: {flags.cxx_compiler_flags}")
+                lines.append(f"      cxx_linker_flags: {flags.cxx_linker_flags}")
+        return "\n".join(lines)
+
+    def __repr__(self) -> str:
+        return self._build_repr()
+
+    def __str__(self) -> str:
+        return self._build_repr()
+    
     @staticmethod
     def create(name :str) -> Self | None:
         root_compiler_info: CompilerNode = CompilerNodeRegistry.get(name)
@@ -73,9 +91,37 @@ class Compiler:
         
         new_compiler = Compiler(compiler_node.name)
         for profile in compiler_node.profiles:
-            new_profile = Profile(profile.name)
+            if not profile.is_abstract:
+                assert profile.is_extended, f"Profile {profile.name} must be extended"
+                new_profile = Profile(profile.name)
+                for bin_lib_dyn in profile.bin_lib_dyn_list:
+                    flags = Flags()
+                    flags.cxx_compiler_flags.extend(bin_lib_dyn.cxx_compiler_flags)
+                    flags.cxx_linker_flags.extend(bin_lib_dyn.cxx_linker_flags)
 
-        return None
+                    # Retrieves features of this profile
+                    features = FeatureNodeList()
+                    for feature_name in bin_lib_dyn.enable_features:
+                        if(feature := compiler_node.get_feature(feature_name)) is None:
+                            console.print_error(f"❌ Feature {name} not found")
+                            return None
+                        features.add(feature)
+                        for feature_name in feature.enable_features:
+                            if(feature := compiler_node.get_feature(feature_name)) is None:
+                                console.print_error(f"❌ Feature {name} not found")
+                                return None
+                            features.add(feature)
+
+                    # Add feature flags
+                    for feature in features:
+                        flags.cxx_compiler_flags.extend(feature.cxx_compiler_flags)
+                        flags.cxx_linker_flags.extend(feature.cxx_linker_flags)
+                        for feature_profile in feature.profiles:
+                            feature_profile.
+                    new_profile.per_project_type_flags[bin_lib_dyn.project_type] = flags
+                new_compiler.profiles.add(new_profile)
+
+        return new_compiler
 
 class CompilerList:
     def __init__(self):

@@ -405,9 +405,9 @@ class ProfileNode:
         lines.append(f"      bin_lib_dyn:")
         for ps in self.bin_lib_dyn_list:
             lines.append(f"        {ps.project_type}:")
-            lines.append(f"          cxx_compiler_flags: {ps.cxx_compiler_flags}")
-            lines.append(f"          cxx_linker_flags: {ps.cxx_linker_flags}")
-            lines.append(f"          features: {ps.enable_features}")
+            lines.append(f"          cxx_compiler_flags: {ps.common_cxx_compiler_flags}")
+            lines.append(f"          cxx_linker_flags: {ps.common_cxx_linker_flags}")
+            lines.append(f"          features: {ps.common_enable_features}")
         return "\n".join(lines)
 
     def __repr__(self) -> str:
@@ -441,7 +441,10 @@ class ProfileNode:
         extended.is_abstract = self.is_abstract
         extended.common_cxx_compiler_flags = self.common_cxx_compiler_flags.merge(base.common_cxx_compiler_flags)
         extended.common_cxx_linker_flags = self.common_cxx_linker_flags.merge(base.common_cxx_linker_flags)
-        extended.common_enable_features = self.common_enable_features.merge(base.common_enable_features, feature_rules)
+
+        if (extended_common_enable_feature := self.common_enable_features.merge(base.common_enable_features, feature_rules)) is None:
+            return None
+        extended.common_enable_features = extended_common_enable_feature
 
         # Add project type that does not exists in the project to extends first
         # Merge commons in all project type specifics
@@ -600,6 +603,7 @@ class ProfileNodeList:
             # At this point, profile is only extends with itself, mark it a not extended to extends with a base after
             self_common_profile.is_extended = False
             if (extended_profile := self_common_profile.extends(base_profile, feature_rules)) is None:
+                console.print_error(f"When extending '{self_common_profile.name}' profile with '{base_profile.name}' base profile.")
                 return None
             extended.profiles.add(extended_profile)
 
@@ -874,7 +878,7 @@ class FeatureRuleNodeList:
         if not self.is_feature_list_validate_rules(list_extends):
             console.print_error(f"Rule invalidate feature list '{', '.join(list(list_extends.feature_names))}' ")
             return None
-        
+
         only_one_rules = [
             rule
             for rule in self.feature_rules
@@ -905,6 +909,10 @@ class FeatureRuleNodeList:
         # Merge cleaned_list_base and list_extends    
         result = FeatureNameList()
         result.feature_names = cleaned_list_base.feature_names.union(list_extends.feature_names)
+        # Check that merge feature_names validate feature-rules before merging
+        if not self.is_feature_list_validate_rules(result.feature_names):
+            console.print_error(f"Rule invalidate feature list '{', '.join(list(result.feature_names))}' ")
+            return None
         return result
 
 ######################################################
@@ -1056,13 +1064,13 @@ class CompilerNode:
                 return None
             
             # Validate features
-            console.print_tips(extended)
-            if not extended.validate_features():
-                if extended.extends_name:
-                    console.print_error(f"   Failed to validate feature rules after extending '{extended.name}' with '{extended.extends_name}'.")
-                else:
-                    console.print_error(f"   Failed to validate feature rules on target {extended.name}.")
-                return None
+            # console.print_tips(extended)
+            # if not extended.validate_features():
+            #     if extended.extends_name:
+            #         console.print_error(f"   Failed to validate feature rules after extending '{extended.name}' with '{extended.extends_name}'.")
+            #     else:
+            #         console.print_error(f"   Failed to validate feature rules on target {extended.name}.")
+            #     return None
             
             # Register for futur use
             ExtendedCompilerNodeRegistry.register_extended_compiler(extended)

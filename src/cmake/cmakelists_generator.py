@@ -709,9 +709,3 @@ include("${{CMAKE_CURRENT_LIST_DIR}}/{project.name}Targets.cmake")
     def generate(self, cli_args: argparse.Namespace)-> list[CMakeContext]:
         cmakelist_generate_context = CMakeListsGenerateContext.from_cli_args(cli_args)
         return self.generate_project(cmakelist_generate_context=cmakelist_generate_context)
-
-        
-
-                
-            
-    

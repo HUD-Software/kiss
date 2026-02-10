@@ -14,7 +14,6 @@ compilers:
       debug:
         extends: common
         enable-features: [OPT_LEVEL_0, WARNING_ALL]
-        cxx-compiler-flags: []
         cxx-linker-flags: [/INCREMENTAL]
         dyn:
           cxx-compiler-flags: [/LDd]
@@ -54,16 +53,11 @@ compilers:
       - name: RUNTIME_STATIC
         description: Windows static runtime
         # Apply to all configuration
-        cxx-compiler-flags: []
-        cxx-linker-flags: []
-        enable-features: []
         profiles:
           debug:
             cxx-compiler-flags: [/MTd]
-            cxx-linker-flags: []
           release:
             cxx-compiler-flags: [/MT]
-            cxx-linker-flags: []
 
       # Optimisations
       - name: OPT_LEVEL_0
@@ -108,6 +102,9 @@ compilers:
       - name: TARGET_X64
         description: Enable 64 bits (AMD64 / Intel64) link
         cxx-linker-flags: [/MACHINE:X64]
+      - name: TARGET_X86
+        description: Enable 32 bits (x86) link
+        cxx-linker-flags: [/MACHINE:X86]
 
     # Features rules
     # only-one rule : Only 1 rules is allowed in 'features'. Multiple in the same target is not allowed.
@@ -129,6 +126,10 @@ compilers:
       # Only one exceptions mode
       - only-one: exceptions
         features: [ENABLE_EXCEPTION, DISABLE_EXCEPTION]
+      # Only one target mode
+      - only-one: target
+        features: [TARGET_X64, TARGET_X86]
+
   # MSVC clang-cl compiler
   clangcl:
     extends: msvc-generic

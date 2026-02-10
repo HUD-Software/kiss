@@ -436,7 +436,10 @@ class BinLibDynNodeList:
         extended = BinLibDynNodeList()
         extended.common_cxx_compiler = self.common_cxx_compiler
         extended.common_cxx_linker = self.common_cxx_linker
-        extended.common_enable_features = self.common_enable_features.extend_self(compiler_features, compiler_feature_rules=compiler_feature_rules)
+        
+        if (extended_common_enable_features := self.common_enable_features.extend_self(compiler_features=compiler_features, compiler_feature_rules=compiler_feature_rules)) is None:
+            return None
+        extended.common_enable_features = extended_common_enable_features
 
          # Add project type that does not exists in the project to extends first
         for project_type in ProjectType:

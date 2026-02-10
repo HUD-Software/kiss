@@ -58,19 +58,19 @@ class CompilerInfoLoader:
                             if not isinstance(yaml_object.value, list) or not all(isinstance(x, str) for x in yaml_object.value):
                                 console.print_error(f"❌ Line {yaml_object.key_line} : 'enable-features' must contains list of feature name in'{self.file}'")
                                 return None
-                            profile.common_enable_features.add_list(yaml_object.value)
+                            profile.bin_lib_dyn_list.common_enable_features.add_list(yaml_object.value)
                         case "cxx-compiler-flags":
                             # Check that 'cxx-compiler-flags' is a list of string
                             if not isinstance(yaml_object.value, list) or not all(isinstance(x, str) for x in yaml_object.value):
                                 console.print_error(f"❌ Line {yaml_object.key_line} : 'cxx-compiler-flags' must contains list of feature name in'{self.file}'")
                                 return None
-                            profile.common_cxx_compiler_flags.add_list(yaml_object.value)
+                            profile.bin_lib_dyn_list.common_cxx_compiler.add_list(yaml_object.value)
                         case "cxx-linker-flags":
                             # Check that 'cxx-linker-flags' is a list of string
                             if not isinstance(yaml_object.value, list) or not all(isinstance(x, str) for x in yaml_object.value):
                                 console.print_error(f"❌ Line {yaml_object.key_line} : 'cxx-linker-flags' must contains list of feature name in'{self.file}'")
                                 return None
-                            profile.common_cxx_linker_flags.add_list(yaml_object.value)
+                            profile.bin_lib_dyn_list.common_cxx_linker.add_list(yaml_object.value)
                         case "extends":
                             # Check that 'extends' is a string
                             if not isinstance(yaml_object.value, str):

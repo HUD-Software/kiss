@@ -142,6 +142,7 @@ compilers:
         extends: common
         bin:
           enable-features: [WARNING_BASE]
+          cxx-compiler-flags: []
     features:
       - name: ASAN
         description: Enable ASAN Sanitizer (Clang-cl only)

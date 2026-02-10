@@ -4,10 +4,11 @@ from project import ProjectType
 from toolchain.compiler.compiler_info import CompilerNode, CompilerNodeRegistry, FeatureNode, FeatureNodeList
 
 class Flags:
-    def __init__(self):
+    def __init__(self): 
         self.cxx_compiler_flags : list[str] = []
         self.cxx_linker_flags : list[str] = []
-
+        self.enabled_features : list[str] = []
+        
 class Profile:
     def __init__(self, name: str):
         # The profile name
@@ -71,6 +72,7 @@ class Compiler:
                 lines.append(f"    - {project_type}:")
                 lines.append(f"      cxx_compiler_flags: {flags.cxx_compiler_flags}")
                 lines.append(f"      cxx_linker_flags: {flags.cxx_linker_flags}")
+                lines.append(f"      enable_features: {flags.enabled_features}")
         return "\n".join(lines)
 
     def __repr__(self) -> str:
@@ -86,7 +88,7 @@ class Compiler:
             console.print_error(f"❌ Compiler {name} not found")
             return None
         
-        if(compiler_node := root_compiler_info.extends_self()) is None:
+        if(compiler_node := root_compiler_info.extend_self()) is None:
             return None
         
         new_compiler = Compiler(compiler_node.name)
@@ -98,26 +100,7 @@ class Compiler:
                     flags = Flags()
                     flags.cxx_compiler_flags.extend(bin_lib_dyn.cxx_compiler_flags)
                     flags.cxx_linker_flags.extend(bin_lib_dyn.cxx_linker_flags)
-
-                    # Retrieves features of this profile
-                    features = FeatureNodeList()
-                    for feature_name in bin_lib_dyn.enable_features:
-                        if(feature := compiler_node.get_feature(feature_name)) is None:
-                            console.print_error(f"❌ Feature {name} not found")
-                            return None
-                        features.add(feature)
-                        for feature_name in feature.enable_features:
-                            if(feature := compiler_node.get_feature(feature_name)) is None:
-                                console.print_error(f"❌ Feature {name} not found")
-                                return None
-                            features.add(feature)
-
-                    # Add feature flags
-                    for feature in features:
-                        flags.cxx_compiler_flags.extend(feature.cxx_compiler_flags)
-                        flags.cxx_linker_flags.extend(feature.cxx_linker_flags)
-                        for feature_profile in feature.profiles:
-                            feature_profile.
+                    flags.enabled_features.extend(bin_lib_dyn.enable_features)
                     new_profile.per_project_type_flags[bin_lib_dyn.project_type] = flags
                 new_compiler.profiles.add(new_profile)
 

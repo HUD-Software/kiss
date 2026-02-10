@@ -1,6 +1,5 @@
 from pathlib import Path
 import console
-from enum import Enum
 
 class TargetInfo:
     def __init__(self, name: str, arch:str, vendor:str, os:str, env:str):
@@ -18,8 +17,6 @@ class TargetInfo:
         self.pointer_width = int
         # Endianness ( little or big )
         self.endianness = str
-        # The file where the target was loaded
-        self.file = Path()
 
     def __hash__(self) -> int:
         return hash(self.name)
@@ -28,7 +25,25 @@ class TargetInfo:
         if not isinstance(other, TargetInfo):
             return NotImplemented
         return self.name == other.name
+ 
+    def _build_repr(self) -> str:
+        lines = [
+            f"{self.__class__.__name__} : {self.name}",
+            f"  - arch : {self.arch}",
+            f"  - vendor : {self.vendor}",
+            f"  - os : {self.os}",
+            f"  - env : {self.env}",
+            f"  - pointer_width : {self.pointer_width}",
+            f"  - endianness : {self.endianness}"
+        ]
+        return "\n".join(lines)
 
+    def __repr__(self) -> str:
+        return self._build_repr()
+
+    def __str__(self) -> str:
+        return self._build_repr()
+    
 class TargetInfoList:
     def __init__(self):
         self.targets : set[TargetInfo] = set()

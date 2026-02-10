@@ -103,6 +103,7 @@ compilers:
       - name: DISABLE_EXCEPTION
         description: Disable C++ exception
         cxx-compiler-flags: [/EH-]
+
       # Target Architecture
       - name: TARGET_X64
         description: Enable 64 bits (AMD64 / Intel64) link
@@ -138,11 +139,8 @@ compilers:
       debug:
         extends: common
         enable-features: [ASAN]
-      release:
-        extends: common
-        bin:
-          enable-features: [WARNING_BASE]
-          cxx-compiler-flags: []
+      custom:
+        extends: release
     features:
       - name: ASAN
         description: Enable ASAN Sanitizer (Clang-cl only)

@@ -209,12 +209,12 @@ class FeatureNode:
     def get_profile_names(self) -> set[str]:
         return self.profiles.get_profile_names()
 
-    def extend_self(self, features, feature_rules) -> Self:
+    def extend_self(self, compiler_features, compiler_feature_rules) -> Self:
         extended = FeatureNode(self.name)
         extended.cxx_linker_flags = copy.deepcopy(self.cxx_linker_flags)
         extended.cxx_compiler_flags = copy.deepcopy(self.cxx_compiler_flags)
         extended.enable_features = copy.deepcopy(self.enable_features)
-        extended.profiles = self.profiles.extend_self(features, feature_rules)
+        extended.profiles = self.profiles.extend_self(compiler_features=compiler_features, compiler_feature_rules=compiler_feature_rules, profiles_of_base=None)
         return extended
     
 ###############################################################
@@ -525,7 +525,9 @@ class ProfileNode:
     
     def extend(self, base_profile: Self, compiler_features,compiler_feature_rules) -> Self  | None:
         assert base_profile.is_extended, f"Base '{base_profile.name}' must be extended"
-        assert not self.is_extended, f"'{self.name} is already extended'"
+        if self.is_extended:
+            return self
+        
         extended = ProfileNode(self.name, True)
         extended.extends_name = self.extends_name
         extended.is_abstract = self.is_abstract
@@ -637,9 +639,19 @@ class ProfileNodeList:
     # For example, if we have two ProfileNodes A and B, where B extends A,
     # the returned list will contain A and B (with B including A's features).
     # Cyclic extensions are also detected.
-    def extend_self(self, compiler_features, compiler_feature_rules) -> Self | None:
+    def extend_self(self, compiler_features, compiler_feature_rules, profiles_of_base: Self) -> Self | None:
         extended = ProfileNodeList()
         already_extended = ProfileNodeList()
+
+        # If profile in base in not present in self, we add it the self profile list
+        # This will allow other profile that extends this one to also extends with profile at the top
+        # Copy it, we don't want to modify the base profile
+        if profiles_of_base:
+            for profile_of_base in profiles_of_base:
+                if not profile_of_base in self.profiles:
+                    self.add(copy.deepcopy(profile_of_base))
+        
+        # Then we extends all profiles in self
         for profile in self.profiles:
             if profile in already_extended:
                 continue
@@ -679,7 +691,8 @@ class ProfileNodeList:
 
     def get_extended_with_base(self, profiles_of_base : Self, compiler_features, compiler_feature_rules) -> Self | None :
         if(self_extended := self.extend_self(compiler_features=compiler_features,
-                                             compiler_feature_rules=compiler_feature_rules)) is None:
+                                             compiler_feature_rules=compiler_feature_rules,
+                                             profiles_of_base=profiles_of_base)) is None:
             return None
         
         extended = ProfileNodeList()
@@ -695,8 +708,8 @@ class ProfileNodeList:
             # At this point, profile is only extends with itself, mark it a not extended to extends with a base after
             self_common_profile.is_extended = False
             if (extended_profile := self_common_profile.extend(base_profile=base_profile, 
-                                                               compiler_features=compiler_features, 
-                                                               compiler_feature_rules=compiler_feature_rules)) is None:
+                                                            compiler_features=compiler_features, 
+                                                            compiler_feature_rules=compiler_feature_rules)) is None:
                 console.print_error(f"When extending '{self_common_profile.name}' profile with '{base_profile.name}' base profile.")
                 return None
             extended.profiles.add(extended_profile)
@@ -1059,9 +1072,10 @@ class CompilerNode:
             extended.extends_name = to_extend_compiler_node.extends_name
             extended.file = to_extend_compiler_node.file
             extended.feature_rules = copy.deepcopy(to_extend_compiler_node.feature_rules)
-            extended.features = to_extend_compiler_node.features.extend_self(extended.feature_rules)
+            extended.features = to_extend_compiler_node.features.extend_self(compiler_feature_rules=extended.feature_rules)
             if (extended_profiles := to_extend_compiler_node.profiles.extend_self(compiler_features=extended.features, 
-                                                                                  compiler_feature_rules=extended.feature_rules)) is None:
+                                                                                  compiler_feature_rules=extended.feature_rules,
+                                                                                  profiles_of_base=None)) is None:
                 console.print_error(f"When extending '{to_extend_compiler_node.name}' compiler")
                 return None
             extended.profiles = extended_profiles

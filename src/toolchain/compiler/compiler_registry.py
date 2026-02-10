@@ -101,6 +101,15 @@ class Compiler:
                     flags.cxx_compiler_flags.extend(bin_lib_dyn.cxx_compiler_flags)
                     flags.cxx_linker_flags.extend(bin_lib_dyn.cxx_linker_flags)
                     flags.enabled_features.extend(bin_lib_dyn.enable_features)
+                    # Add flags of features
+                    for feature_name in bin_lib_dyn.enable_features:
+                        feature_node = compiler_node.get_feature(feature_name)
+                        if not feature_node:
+                            console.print_error(f"❌ Feature {feature_name} not found for profile {profile.name} in compiler {new_compiler.name}")
+                            return None
+                        flags.cxx_compiler_flags.extend(feature_node.cxx_compiler_flags)
+                        flags.cxx_linker_flags.extend(feature_node.cxx_linker_flags)
+                        
                     new_profile.per_project_type_flags[bin_lib_dyn.project_type] = flags
                 new_compiler.profiles.add(new_profile)
 

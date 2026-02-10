@@ -27,6 +27,8 @@ class Toolchain:
         # Find the target
         target = TargetInfoRegistry.get(target_name)
 
+        console.print_success(target)
+        
         return Toolchain(compiler, target)
 
     @staticmethod

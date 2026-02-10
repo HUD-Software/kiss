@@ -93,6 +93,9 @@ class FeatureNameList:
         for f in flags:
             self.add(f)
     
+    # Extend this feature name list
+    # This is similar to extend but we don't merge with a base, we just add enabled features by the features in this list
+    # and check that the result validate feature rules
     def extend_self(self, compiler_features, compiler_feature_rules) -> Self | None:
         return self.extend(base_enable_features=FeatureNameList(is_extended=True), 
                            compiler_features=compiler_features, 
@@ -215,15 +218,20 @@ class FeatureNode:
             return NotImplemented
         return self.name == other.name
     
+    # Retrieves all profile names of the profiles that are in this feature
     def get_profile_names(self) -> set[str]:
         return self.profiles.get_profile_names()
 
+    # Extend this feature node.
+    # This will basically extends all profiles in this feature and check that the result validate feature rules
     def extend_self(self, compiler_features, compiler_feature_rules) -> Self:
         extended = FeatureNode(self.name)
         extended.cxx_linker_flags = copy.deepcopy(self.cxx_linker_flags)
         extended.cxx_compiler_flags = copy.deepcopy(self.cxx_compiler_flags)
         extended.enable_features = copy.deepcopy(self.enable_features)
-        extended.profiles = self.profiles.extend_self(compiler_features=compiler_features, compiler_feature_rules=compiler_feature_rules, profiles_of_base=None)
+        extended.profiles = self.profiles.extend_self(compiler_features=compiler_features,
+                                                      compiler_feature_rules=compiler_feature_rules, 
+                                                      profiles_of_base=None)
         return extended
     
 ###############################################################
@@ -348,6 +356,8 @@ class BinLibDynNode:
     def __str__(self) -> str:
         return self._build_repr()
     
+    # Extends the BinLibDynNode with common flags and features of the profile.
+    # This will merge compiler and linker flags and extends features and validate feature rules.
     def extends_with_profile_commons(self, common_cxx_compiler: CXXCompilerFlagList, common_cxx_linker : CXXLinkerFlagList, common_enable_features: FeatureNameList, compiler_features, compiler_feature_rules) -> Self | None :
         extended = BinLibDynNode(self.project_type)
         extended.cxx_compiler_flags = self.cxx_compiler_flags.merge(common_cxx_compiler)
@@ -392,20 +402,22 @@ class BinLibDynNodeList:
 
     def add(self, profile:BinLibDynNode):
         self.bin_lib_dyn_set.add(profile)
-
+    
+    # Retrieves the project specific with the given project type, if not found return None
     def get(self, project_type: ProjectType) -> BinLibDynNode | None:
         for p in self.bin_lib_dyn_set:
             if p.project_type == project_type:
                 return p
         return None 
     
-    def get_project_type_names(self) -> set[ProjectType]:
-        bin_lib_dyn_names = set[ProjectType]()
-        for bin_lib_dyn in self.bin_lib_dyn_set:
-            bin_lib_dyn_names.add(bin_lib_dyn.project_type)
-        return bin_lib_dyn_names
-    
+    # Extend every project specific with common flags and features of the profile.
+    # This will merge compiler and linker flags and extends features and validate feature rules.
     def extend_commons(self, common_cxx_compiler: CXXCompilerFlagList, common_cxx_linker : CXXLinkerFlagList, common_enable_features: FeatureNameList, compiler_features, compiler_feature_rules):
+        # Add project type that does not exists in the project to extends first
+        for project_type in ProjectType:
+            if not project_type in self:
+                self.add(BinLibDynNode(project_type))
+
         extended = BinLibDynNodeList()
         for bin_lib_dyn in self.bin_lib_dyn_set:
             extended.add(bin_lib_dyn.extends_with_profile_commons(common_cxx_compiler=common_cxx_compiler, 
@@ -415,6 +427,7 @@ class BinLibDynNodeList:
                                                                   compiler_feature_rules=compiler_feature_rules))
         return extended
 
+    # Extend this project specific list with another project specific list from a extends profile.
     def extend(self, bin_lib_dyn_of_base : Self, compiler_features, compiler_feature_rules) -> Self :
         extended = BinLibDynNodeList()
         # Get elements in self AND other
@@ -518,17 +531,6 @@ class ProfileNode:
         if(extended_enable_features := self.common_enable_features.extend_self(compiler_features, compiler_feature_rules=compiler_feature_rules)) is None:
             return None
         extended.common_enable_features =  extended_enable_features
-
-
-        # Add project type that does not exists in the project to extends first
-        # Merge commons in all project type specifics
-        # Then Extends with the base
-        # Keep this order, we want to first extends self before adding base, 
-        # because we want to override feature in base with feature in self if only-one feature is concerned by this feature
-        for project_type in ProjectType:
-            if not project_type in self.bin_lib_dyn_list:
-                self.bin_lib_dyn_list.add(BinLibDynNode(project_type))
-
         extended.bin_lib_dyn_list = self.bin_lib_dyn_list.extend_commons(common_cxx_compiler=extended.common_cxx_compiler_flags, 
                                                                          common_cxx_linker=extended.common_cxx_linker_flags, 
                                                                          common_enable_features=extended.common_enable_features, 
@@ -546,22 +548,11 @@ class ProfileNode:
         extended.is_abstract = self.is_abstract
         extended.common_cxx_compiler_flags = self.common_cxx_compiler_flags.merge(base_profile.common_cxx_compiler_flags)
         extended.common_cxx_linker_flags = self.common_cxx_linker_flags.merge(base_profile.common_cxx_linker_flags)
-
         if (extended_common_enable_feature := self.common_enable_features.extend(base_enable_features=base_profile.common_enable_features, 
                                                                                  compiler_features=compiler_features, 
                                                                                  compiler_feature_rules=compiler_feature_rules)) is None:
             return None
         extended.common_enable_features = extended_common_enable_feature
-
-        # Add project type that does not exists in the project to extends first
-        # Merge commons in all project type specifics
-        # Then Extends with the base
-        # Keep this order, we want to first extends self before adding base, 
-        # because we want to override feature in base with feature in self if only-one feature is concerned by this feature
-        for project_type in ProjectType:
-            if not project_type in self.bin_lib_dyn_list:
-                self.bin_lib_dyn_list.add(BinLibDynNode(project_type))
-        
         extended.bin_lib_dyn_list = self.bin_lib_dyn_list.extend_commons(common_cxx_compiler=extended.common_cxx_compiler_flags, 
                                                                          common_cxx_linker=extended.common_cxx_linker_flags, 
                                                                          common_enable_features=self.common_enable_features, 
@@ -709,12 +700,13 @@ class ProfileNodeList:
             return None
         
         extended = ProfileNodeList()
+        
         # Get elements in self AND profiles_of_base
         common_profiles : set[ProfileNode] = self_extended.profiles.intersection(profiles_of_base.profiles)
         # Get elements not in self and profiles_of_base
         non_common_profiles : set[ProfileNode] = self_extended.profiles.symmetric_difference(profiles_of_base.profiles)
 
-        # Extends the common profiles with the base profiles
+        # Extends the common profiles with the base profiles first
         for common_profile in common_profiles:
             self_common_profile = self_extended.get(common_profile.name)
             base_profile = profiles_of_base.get(self_common_profile.name)
@@ -727,8 +719,21 @@ class ProfileNodeList:
                 return None
             extended.profiles.add(extended_profile)
 
-        # juste add non common profiles
-        extended.profiles.update(non_common_profiles)
+        # If the profile is in self but not in base
+        for non_common_profile in non_common_profiles:
+            self_non_common_profile = self_extended.get(non_common_profile.name)
+            if(base_profile := extended.get(non_common_profile.extends_name)) is None:
+                if(base_profile := profiles_of_base.get(self_common_profile.name)) is None:
+                    console.print_error(f"❌ Base profile '{self_common_profile.extends_name}' not found '{self_common_profile.name}'")
+                    return None
+            # At this point, profile is only extends with itself, mark it a not extended to extends with a base after
+            self_non_common_profile.is_extended = False
+            if (extended_profile := self_non_common_profile.extend(base_profile=base_profile, 
+                                                            compiler_features=compiler_features, 
+                                                            compiler_feature_rules=compiler_feature_rules)) is None:
+                console.print_error(f"When extending '{self_non_common_profile.name}' profile with '{base_profile.name}' base profile.")
+                return None
+            extended.profiles.add(extended_profile)
 
         return extended
 

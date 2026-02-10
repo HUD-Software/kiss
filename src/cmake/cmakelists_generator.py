@@ -400,7 +400,7 @@ include("${{CMAKE_CURRENT_LIST_DIR}}/{project.name}Targets.cmake")
 """)
 
     def _generateSingleConfigProject(self, cmakelist_generate_context: CMakeListsGenerateContext):
-        match cmakelist_generate_context.project:
+        match cmakelist_generate_context.project.type:
             case ProjectType.bin:
                 self._generateSingleConfigBinCMakeLists(cmakelist_generate_context)
             case ProjectType.lib:

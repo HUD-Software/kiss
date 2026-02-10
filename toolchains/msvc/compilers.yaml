@@ -133,25 +133,15 @@ compilers:
   clangcl:
     extends: msvc-generic
     profiles:
-      common:
-        is_abstract: true
-        enable-features: [TARGET_X64]
       debug:
-        extends: common
         enable-features: [ASAN]
-      release:
-        extends: common
-        bin:
-          enable-features: [WARNING_BASE]
-      custom:
-        extends: release
     features:
       - name: ASAN
         description: Enable ASAN Sanitizer (Clang-cl only)
         cxx-compiler-flags: ["-fsanitize=address", "-fsanitize-address-use-after-scope"]
         cxx-linker-flags: ["-fsanitize=address"]
         # ASAN require to enable some features to work correctly
-        enable-features: [DEBUG_INFO, RUNTIME_DLL]
+        enable-features: [DEBUG_INFO, RUNTIME_DLL, OPT_LEVEL_2]
     feature-rules:
       - incompatible: asan
         feature: ASAN

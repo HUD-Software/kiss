@@ -533,7 +533,8 @@ class ProfileNode:
         return compiler_feature_rules.is_feature_list_validate_rules(self.bin_lib_dyn_list.common_enable_features)
         
     def extend_self(self, compiler_features, compiler_feature_rules) -> Self | None:
-        assert not self.is_extended, f"'{self.name} is already extended'"
+        if self.is_extended:
+            return self
         extended = ProfileNode(self.name, True)
         extended.extends_name = self.extends_name
         extended.is_abstract = self.is_abstract

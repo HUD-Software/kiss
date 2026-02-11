@@ -12,12 +12,12 @@ compilers:
         is_abstract: true
         enable-features: [WARNING_STRICT, RUNTIME_DLL, ENABLE_EXCEPTION]
       debug:
-        extends: msvc-generic-commmon-profile
+        extends: msvc-generic
         enable-features: [OPT_LEVEL_0, ENABLE_INCREMENTAL_LINK]
         dyn:
           enable-features: [DYNAMIC_LIBRARY_DEBUG]
       release:
-        extends: msvc-generic-commmon-profile
+        extends: msvc-generic
         enable-features: [OPT_LEVEL_3, REMOVE_DEAD_CODE, DISABLE_INCREMENTAL_LINK]
         dyn:
           enable-features: [DYNAMIC_LIBRARY]

@@ -1,3 +1,4 @@
+from pathlib import Path
 import platform
 from typing import Self
 import console
@@ -14,6 +15,7 @@ class Profile:
     def __init__(self, name: str):
         # The profile name
         self.name = name
+        # Per project type flags
         self.per_project_type_flags : dict[ProjectType, Flags] = {}
 
     def __hash__(self) -> int:
@@ -57,15 +59,21 @@ class ProfileList:
         return None 
 
 class Compiler:
-    def __init__(self, name: str):
+    def __init__(self, name: str, cxx_path: Path, c_path: Path):
         # The compiler name
         self.name = name
         # List of profiles
         self.profiles = ProfileList()
-    
+        # Path of the C++ compiler
+        self.cxx_path = cxx_path
+        # Path of the C compiler
+        self.c_path = c_path
+
     def _build_repr(self) -> str:
         lines = [
-            f"Compiler : {self.name}",
+            f"Compiler: {self.name}",
+            f"  -  cxx_path: {self.cxx_path}",
+            f"  -  c_path: {self.c_path}"
         ]
         for profile in self.profiles:
             lines.append(f"  - {profile.name}")
@@ -91,7 +99,10 @@ class Compiler:
         if(compiler_node := root_compiler_info.extend_self()) is None:
             return None
         
-        new_compiler = Compiler(compiler_node.name)
+        new_compiler = Compiler(name=compiler_node.name,
+                                cxx_path=compiler_node.cxx_path,
+                                c_path=compiler_node.c_path)
+        
         for profile in compiler_node.profiles:
             if not profile.is_abstract:
                 assert profile.is_extended, f"Profile {profile.name} must be extended"

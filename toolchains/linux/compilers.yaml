@@ -123,7 +123,11 @@ compilers:
   # GCC compiler
   gcc:
     extends: gnu-generic
+    cxx_path: g++
+    c_path: gcc
 
   # Clang compiler
   clang:
     extends: gnu-generic
+    cxx_path: clang++
+    c_path: clang

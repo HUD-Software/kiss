@@ -20,7 +20,7 @@ class ProjectType(str, Enum):
     
     @staticmethod
     def is_valid_str(type_name: str) -> bool:
-        return type_name == ProjectType.bin or type_name == ProjectType.lib or type_name == ProjectType.dyn;
+        return type_name == ProjectType.bin or type_name == ProjectType.lib or type_name == ProjectType.dyn
 
 # A Project is an instanciation of a project that is describe in the 'kiss.yaml' file
 # This is the base class of different project type like binary, library or dynamic library

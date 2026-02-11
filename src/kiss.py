@@ -15,7 +15,6 @@ def main():
         Toolchain.load_all_toolchains_in_directory(Path("toolchains/windows"))
     else:
         Toolchain.load_all_toolchains_in_directory(Path("toolchains/linux"))
-    toolchain = Toolchain.create("gcc", "x86_64-unknown-linux-gnu")
     
     # if not toolchain:
     #     exit

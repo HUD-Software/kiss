@@ -97,6 +97,23 @@ class Target:
 
             cls._default_target_name = target_name
         return cls._default_target_name
+    def _build_repr(self) -> str:
+        lines = [
+            f"Target: {self.name}",
+            f"  - arch: {self.arch}",
+            f"  - vendor: {self.vendor}",
+            f"  - os: {self.os}",
+            f"  - env: {self.env}",
+            f"  - endianness: {self.endianness}",
+            f"  - pointer width: {self.pointer_width}"
+        ]
+        return "\n".join(lines)
+
+    def __repr__(self) -> str:
+        return self._build_repr()
+
+    def __str__(self) -> str:
+        return self._build_repr()
     
 class TargetList:
     def __init__(self):

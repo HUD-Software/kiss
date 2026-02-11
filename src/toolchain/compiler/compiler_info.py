@@ -402,6 +402,7 @@ class BinLibDynNodeList:
         if isinstance(item, ProjectType):
             return any(p.project_type == item for p in self.bin_lib_dyn_set)
         return False
+    
     def _build_repr(self) -> str:
         lines = [
             f"BinLibDynNodeList :",
@@ -1010,6 +1011,10 @@ class CompilerNode:
         self.file = Path()
         # True if this node is extended
         self.is_extended = is_extended
+        # Path of the C++ compiler
+        self.cxx_path = Path()
+        # Path of the C compiler
+        self.c_path = Path()
 
     def __hash__(self) -> int:
         return hash(self.name)
@@ -1077,8 +1082,9 @@ class CompilerNode:
         if(extended := ExtendedCompilerNodeRegistry.get(to_extend_compiler_node.name)) is None:
             extended = CompilerNode(to_extend_compiler_node.name, is_extended=True)
             extended.file = to_extend_compiler_node.file
+            extended.cxx_path = to_extend_compiler_node.cxx_path
+            extended.c_path = to_extend_compiler_node.c_path
             extended.extends_name = to_extend_compiler_node.extends_name
-            extended.file = to_extend_compiler_node.file
             extended.feature_rules = copy.deepcopy(to_extend_compiler_node.feature_rules)
             extended.features = to_extend_compiler_node.features.extend_self(compiler_feature_rules=extended.feature_rules)
             if (extended_profiles := to_extend_compiler_node.profiles.extend_self(compiler_features=extended.features, 
@@ -1097,13 +1103,23 @@ class CompilerNode:
         assert base_compiler_node.is_extended, f"'Base {base_compiler_node.name}' must be extended"
         assert not to_extend_compiler_node.is_extended, f"'{to_extend_compiler_node.name}' Already extended"
         if(extended := ExtendedCompilerNodeRegistry.get(to_extend_compiler_node.name)) is None:
-            extended = CompilerNode(to_extend_compiler_node.name, is_extended=True)
-            extended.file = to_extend_compiler_node.file
-            extended.extends_name = to_extend_compiler_node.extends_name
             # Check that the base compiler node match the 'extends' 
             if to_extend_compiler_node.extends_name != base_compiler_node.name:
                 console.print_error(f"Incoherent target extends: Try to extend '{to_extend_compiler_node.name}' with '{base_compiler_node.name}' but '{to_extend_compiler_node.name}' extends '{to_extend_compiler_node.extends_name}' ")
                 exit(1)
+
+            extended = CompilerNode(to_extend_compiler_node.name, is_extended=True)
+            extended.file = to_extend_compiler_node.file
+            extended.extends_name = to_extend_compiler_node.extends_name
+            if not to_extend_compiler_node.cxx_path or str(to_extend_compiler_node.cxx_path) == ".":
+                extended.cxx_path = base_compiler_node.cxx_path
+            else:
+                extended.cxx_path = to_extend_compiler_node.cxx_path
+            if not to_extend_compiler_node.c_path or str(to_extend_compiler_node.c_path) == ".":
+                extended.c_path = base_compiler_node.c_path
+            else:
+                extended.c_path = to_extend_compiler_node.c_path
+
 
             # Extend feature rules
             extended.feature_rules = to_extend_compiler_node.feature_rules.get_extended_with(base=base_compiler_node.feature_rules)

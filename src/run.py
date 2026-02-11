@@ -51,7 +51,7 @@ class RunContext(Context):
         config : Config = Config(release, debug_info)
         target_name :Target = Target.default_target_name()
         compiler_name : Compiler = getattr(cli_args, "compiler", None) or Toolchain.default_compiler_name()
-        if( toolchain := Toolchain.create(compiler_name==compiler_name, target_name==target_name)) is None:
+        if( toolchain := Toolchain.create(compiler_name=compiler_name, target_name=target_name)) is None:
             return None
         run_context: RunContext = RunContext.create(directory=cli_args.directory,
                                                     project_name=cli_args.project_name,

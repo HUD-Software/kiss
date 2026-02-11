@@ -238,6 +238,16 @@ class CompilerInfoLoader:
                     if feature_rules is None:
                         return None
                     compiler_node.feature_rules = feature_rules
+                case "cxx_path":
+                    if not isinstance(yaml_object.value, str):
+                        console.print_error(f"Line {yaml_object.key_line} : 'cxx_path' in must be a compiler path in'{self.file}'")
+                        return None
+                    compiler_node.cxx_path = Path(yaml_object.value)
+                case "c_path":
+                    if not isinstance(yaml_object.value, str):
+                        console.print_error(f"Line {yaml_object.key_line} : 'c_path' in must be a compiler path in'{self.file}'")
+                        return None
+                    compiler_node.c_path = Path(yaml_object.value)
                 case _:
                     console.print_error(f"Line {yaml_object.key_line} : Unknown key '{item}' in'{self.file}'")
                     continue

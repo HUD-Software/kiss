@@ -2,10 +2,10 @@
 
 # Enumeration of the project type that is supported
 from enum import Enum
+import platform
+from typing import Self
 
-from platform_target import PlatformTarget
-
-
+from toolchain import Toolchain, Target
 
 class CMakeGenerator(str, Enum):
     Ninja = "Ninja"
@@ -16,24 +16,22 @@ class CMakeGenerator(str, Enum):
         return self.name
 
     @classmethod
-    def default_generator(cls, platform_target: PlatformTarget):
+    def default_generator(cls, toolchain: Toolchain):
         if not getattr(cls, "default_generator_", None):
-            match platform_target:
-                case PlatformTarget.x86_64_pc_windows_msvc:
+            match toolchain.target.name:
+                case "x86_64-pc-windows-msvc":
                     cls.default_generator_ = CMakeGenerator.VisualStudio
-                case PlatformTarget.x86_64_unknown_linux_gnu:
+                case "x86_64-unknown-linux-gnu":
                     cls.default_generator_ = CMakeGenerator.UnixMakefiles
         return cls.default_generator_
     
     @classmethod
-    def available_generator_for_platform_target(cls, platform_target: PlatformTarget) -> list[str]: 
-        return _TARGET_TO_GENERATORS[platform_target]
+    def available_generator_for_platform_target(cls, target: Target) -> list[str]: 
+        return _TARGET_TO_GENERATORS.get(target.name, [])
 
-
-_TARGET_TO_GENERATORS: dict[PlatformTarget, list[str]] = {
-    PlatformTarget.x86_64_pc_windows_msvc: [CMakeGenerator.VisualStudio, CMakeGenerator.Ninja],
-    PlatformTarget.x86_64_pc_windows_gnu: [CMakeGenerator.Ninja, CMakeGenerator.UnixMakefiles],
-    PlatformTarget.x86_64_unknown_linux_gnu: [CMakeGenerator.Ninja, CMakeGenerator.UnixMakefiles],
+_TARGET_TO_GENERATORS: dict[str, list[type]] = {
+    "x86_64-pc-windows-msvc": [CMakeGenerator.VisualStudio, CMakeGenerator.Ninja],
+    "x86_64-pc-windows-gnu": [CMakeGenerator.Ninja, CMakeGenerator.UnixMakefiles],
+    "x86_64-unknown-linux-gnu": [CMakeGenerator.Ninja, CMakeGenerator.UnixMakefiles],
 }
-    
   

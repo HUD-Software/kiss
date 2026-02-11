@@ -115,13 +115,13 @@ class FeatureNameList:
                 feature_name = to_process.pop()
 
                 if (feature := compiler_features.get(feature_name)) is None:
-                    console.print_error(f"❌ Feature {feature_name} not found")
+                    console.print_error(f"Feature {feature_name} not found")
                     return None
 
                 for new_feature in feature.enable_features:
                     if new_feature not in self:  # éviter doublons
                         if (feature2 := compiler_features.get(new_feature)) is None:
-                            console.print_error(f"❌ Feature {new_feature} not found")
+                            console.print_error(f"Feature {new_feature} not found")
                             return None
                         self.add(new_feature)
                         to_process.append(new_feature)
@@ -722,7 +722,7 @@ class ProfileNodeList:
             self_non_common_profile = self_extended.get(non_common_profile.name)
             if(base_profile := extended.get(non_common_profile.extends_name)) is None:
                 if(base_profile := profiles_of_base.get(self_common_profile.name)) is None:
-                    console.print_error(f"❌ Base profile '{self_common_profile.extends_name}' not found '{self_common_profile.name}'")
+                    console.print_error(f"Base profile '{self_common_profile.extends_name}' not found '{self_common_profile.name}'")
                     return None
             # At this point, profile is only extends with itself, mark it a not extended to extends with a base after
             self_non_common_profile.is_extended = False
@@ -754,7 +754,7 @@ class ProfileNodeList:
             if current_node.extends_name:
                 extends_node = self.get(current_node.extends_name)
                 if not extends_node:
-                    console.print_error(f"❌ '{current_node.name}' profile extends unknown compiler '{current_node.extends_name}'")
+                    console.print_error(f"'{current_node.name}' profile extends unknown compiler '{current_node.extends_name}'")
                     exit(1)
                 collect(extends_node, current_node)
             
@@ -825,7 +825,7 @@ class FeatureNodeList:
         # We don't have extension on feature
         # We don't allow multiple same name
         if common_features:
-            console.print_error(f"❌ Feature with same name both target [{', '.join(f.name for f in common_features)}]")
+            console.print_error(f"Feature with same name both target [{', '.join(f.name for f in common_features)}]")
             return None
         extended.features.update(common_features)
         extended.features.update(non_commons_features)
@@ -962,7 +962,7 @@ class FeatureRuleNodeList:
         non_commons_feature_rules : set[FeatureNode] = self.feature_rules.symmetric_difference(base.feature_rules)
         # Extends the common_feature_nodes and add the non common feature rules
         if common_feature_rules:
-             console.print_error(f"❌ Feature rule with same name both target [{', '.join(f.name for f in common_feature_rules)}]")
+             console.print_error(f"Feature rule with same name both target [{', '.join(f.name for f in common_feature_rules)}]")
              return None
         extended.feature_rules.update(common_feature_rules)
         extended.feature_rules.update(non_commons_feature_rules)
@@ -975,12 +975,12 @@ class FeatureRuleNodeList:
                     result = only_one_rule.evaluate(feature_list)
                     match result:
                         case FeatureNameList() as mutliple_feature:
-                            console.print_error(f"❌ Feature rule '{FeatureRuleNodeOnlyOne.KEY}' not satisfied. [{', '.join(list(mutliple_feature))}] are enabled but only one in allowed.")
+                            console.print_error(f"Feature rule '{FeatureRuleNodeOnlyOne.KEY}' not satisfied. [{', '.join(list(mutliple_feature))}] are enabled but only one in allowed.")
                             return False
                 case FeatureRuleNodeIncompatibleWith() as incompatible_rule:
                     list_of_incompatible_feature =  incompatible_rule.is_satisfied(feature_list)
                     if list_of_incompatible_feature:
-                        console.print_error(f"❌ Feature rule '{FeatureRuleNodeIncompatibleWith.KEY}' not satisfied. [{', '.join(list_of_incompatible_feature)}] are incompatible with '{incompatible_rule.feature_name}' ")
+                        console.print_error(f"Feature rule '{FeatureRuleNodeIncompatibleWith.KEY}' not satisfied. [{', '.join(list_of_incompatible_feature)}] are incompatible with '{incompatible_rule.feature_name}' ")
                         return False
         return True
 
@@ -1054,7 +1054,7 @@ class CompilerNode:
             if current_node.extends_name:
                 extends_node = CompilerNodeRegistry.get(current_node.extends_name)
                 if not extends_node:
-                    console.print_error(f"❌ '{current_node.name}' profile extends unknown compiler '{current_node.extends_name}'")
+                    console.print_error(f"'{current_node.name}' profile extends unknown compiler '{current_node.extends_name}'")
                     exit(1)
                 collect(extends_node, current_node)
             
@@ -1108,17 +1108,17 @@ class CompilerNode:
             # Extend feature rules
             extended.feature_rules = to_extend_compiler_node.feature_rules.get_extended_with(base=base_compiler_node.feature_rules)
             if not extended.feature_rules:
-                console.print_error(f"❌ Fail to extend '{to_extend_compiler_node.name}' with base '{to_extend_compiler_node.extends_name}'")
+                console.print_error(f"Fail to extend '{to_extend_compiler_node.name}' with base '{to_extend_compiler_node.extends_name}'")
                 return None
             # Extend features
             extended.features = to_extend_compiler_node.features.get_extended_with_base(features_of_base=base_compiler_node.features, compiler_feature_rules=extended.feature_rules)
             if not extended.features:
-                console.print_error(f"❌ Fail to extend '{to_extend_compiler_node.name}' with base '{to_extend_compiler_node.extends_name}'")
+                console.print_error(f"Fail to extend '{to_extend_compiler_node.name}' with base '{to_extend_compiler_node.extends_name}'")
                 return None
             # Extend profiles
             extended.profiles = to_extend_compiler_node.profiles.get_extended_with_base(profiles_of_base=base_compiler_node.profiles, compiler_features=extended.features, compiler_feature_rules=extended.feature_rules)
             if not extended.profiles:
-                console.print_error(f"❌ Fail to extend '{to_extend_compiler_node.name}' with base '{to_extend_compiler_node.extends_name}'")
+                console.print_error(f"Fail to extend '{to_extend_compiler_node.name}' with base '{to_extend_compiler_node.extends_name}'")
                 return None
             
        
@@ -1224,7 +1224,7 @@ class CompilerNodeRegistry:
     def register_compiler(self, compiler: CompilerNode):
         existing_compiler = self.compilers.get(compiler.name)
         if existing_compiler:
-            console.print_error(f"⚠️  Warning: Compiler node already registered: {existing_compiler.name} in {str(existing_compiler.file)}")
+            console.print_error(f"Error: Compiler node already registered: {existing_compiler.name} in {str(existing_compiler.file)}")
             exit(1)
         self.compilers.add(compiler)
 
@@ -1252,7 +1252,7 @@ class ExtendedCompilerNodeRegistry:
         assert compiler.is_extended
         existing_compiler = self.compilers.get(compiler.name)
         if existing_compiler:
-            console.print_error(f"⚠️  Warning: Extended csompiler node already registered: {existing_compiler.name} in {str(existing_compiler.file)}")
+            console.print_error(f"Error: Extended csompiler node already registered: {existing_compiler.name} in {str(existing_compiler.file)}")
             exit(1)
         self.compilers.add(compiler)
 

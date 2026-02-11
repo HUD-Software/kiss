@@ -215,7 +215,7 @@ class YamlProjectFile:
                                 # Load the yaml
                                 yaml = YamlProjectFile(file_in_directory)
                                 if not yaml.load_yaml():
-                                    console.print_warning(f"Error: Unable to load project file `{file_in_directory}`")
+                                    console.print_error(f"⚠️ Error: Unable to load project file `{file_in_directory}`")
                                     exit(1)
 
                                 # Load yaml projects and save them in the dependency set
@@ -274,7 +274,7 @@ class YamlProjectFile:
             # Load the yaml
             yaml = YamlProjectFile(file)
             if not yaml.load_yaml():
-                console.print_warning(f"Error: Unable to load project file `{file}`")
+                console.print_error(f"⚠️ Error: Unable to load project file `{file}`")
                 exit(1)
             # Load project in the YAML file
             YamlProjectFile.load_yaml_projects(yaml, loaded_yaml_projects, load_dependencies)

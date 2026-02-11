@@ -10,14 +10,14 @@ from config import Config
 import console
 from generate import GenerateContext
 from generator import BaseGenerator
-from platform_target import PlatformTarget
 from project import  BinProject, LibProject, DynProject, Project, ProjectType
+from toolchain import Toolchain
 
 class CMakeListsGenerateContext(GenerateContext):
-    def __init__(self, directory:Path, project: Project, generator_name: str, platform_target: PlatformTarget, config: Optional[Config]):
-        super().__init__(directory=directory,project=project,generator_name=generator_name,platform_target=platform_target)
+    def __init__(self, directory:Path, project: Project, generator_name: str, toolchain: Toolchain, config: Optional[Config]):
+        super().__init__(directory=directory,project=project,generator_name=generator_name,toolchain=toolchain)
         self._config = config
-        self._cmake_context = CMakeContext(current_directory=directory, platform_target=platform_target, project=project)
+        self._cmake_context = CMakeContext(current_directory=directory, toolchain=toolchain, project=project)
     
     @property
     def config(self) -> Config:
@@ -45,7 +45,7 @@ class CMakeListsGenerateContext(GenerateContext):
     
     @project.setter
     def project(self, value):
-        self._cmake_context = CMakeContext(current_directory=self._cmake_context.current_directory, platform_target=self._cmake_context.platform_target, project=value)
+        self._cmake_context = CMakeContext(current_directory=self._cmake_context.current_directory, toolchain=self._cmake_context.toolchain, project=value)
     
     def target_output_directory_for_config(self, config: Config) -> Path:
         return self._cmake_context.target_output_directory(config)
@@ -54,13 +54,13 @@ class CMakeListsGenerateContext(GenerateContext):
         return self.target_output_directory_for_config(self.config)
     
     @classmethod
-    def create(cls, directory: Path, project_name: str, generator_name: str, platform_target: PlatformTarget, config: Optional[Config]) -> Self :
+    def create(cls, directory: Path, project_name: str, generator_name: str, toolchain: Toolchain, config: Optional[Config]) -> Self :
         project_to_generate = super().find_target_project(directory, project_name)
         if not project_to_generate:
             console.print_error(f"No project found in {str(directory)}")
             exit(1)
         generator_name = generator_name if generator_name is not None else "cmake"
-        return cls(directory=directory, project=project_to_generate, generator_name=generator_name, platform_target=platform_target, config=config)
+        return cls(directory=directory, project=project_to_generate, generator_name=generator_name, toolchain=toolchain, config=config)
 
 
 
@@ -440,10 +440,10 @@ set_target_properties({project.name} PROPERTIES
             # Write dependencies
             for dep_project in project.dependencies:
                 dep_cmakelist_dir = CMakeContext.resolveCMakeListsDirectory(current_directory=cmakelist_generate_context.current_directory,
-                                                                        platform_target=cmakelist_generate_context.platform_target,
+                                                                        toolchain=cmakelist_generate_context.toolchain,
                                                                         project=dep_project)
                 dep_build_dir = CMakeContext.resolveProjectBuildDirectory(current_directory=cmakelist_generate_context.current_directory,
-                                                                        platform_target=cmakelist_generate_context.platform_target,
+                                                                        toolchain=cmakelist_generate_context.toolchain,
                                                                         project=dep_project)
                 f.write(f"""\n# Add {dep_project.name} dependency 
 if(NOT TARGET {dep_project.name})
@@ -676,7 +676,7 @@ include("${{CMAKE_CURRENT_LIST_DIR}}/{project.name}Targets.cmake")
         unfreshflags: list[bool] = [False] * len(project_list_to_generate)
         for i, project in enumerate(project_list_to_generate):
             # If the project is not fresh anymore add it to refresh
-            if not (fingerprint.is_fresh_file(CMakeContext.resolveCMakefile(current_directory=cmakelist_generate_context.directory, platform_target=cmakelist_generate_context.platform_target, project=project)) and fingerprint.is_fresh_file(project.file)):
+            if not (fingerprint.is_fresh_file(CMakeContext.resolveCMakefile(current_directory=cmakelist_generate_context.directory, toolchain=cmakelist_generate_context.toolchain, project=project)) and fingerprint.is_fresh_file(project.file)):
                 unfreshflags[i] = True
             else:
                 # If one of the dependency of this project is unfresh, we also mark it as unfresh
@@ -694,7 +694,7 @@ include("${{CMAKE_CURRENT_LIST_DIR}}/{project.name}Targets.cmake")
             for project in unfreshlist:
                 console.print_tips(f"  📝 {project.name}")
                 cmakelist_generate_context.project = project
-                is_multi_config = cmakelist_generate_context.platform_target == PlatformTarget.x86_64_pc_windows_msvc
+                is_multi_config = cmakelist_generate_context.toolchain.target.name == "x86_64-pc-windows-msvc"
                 if is_multi_config:
                     self._generateMultiConfigProject(cmakelist_generate_context)
                 else:

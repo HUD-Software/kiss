@@ -120,7 +120,7 @@ def __new_bin_project_in_project_file(new_context: NewContext):
         absolute_mainfile = project.path / relative_src_directory / "main.cpp"
         if absolute_mainfile.exists(): 
             console.print_error(f"The file {absolute_mainfile} already exists !")
-            exit(2)
+            exit(1)
         project.sources.append(relative_src_directory / "main.cpp")
 
     # Create the project in the project file
@@ -156,14 +156,14 @@ def __new_lib_project_in_project_file(new_context: NewContext):
         absolute_libfile = project.path / relative_src_directory / "lib.cpp"
         if absolute_libfile.exists(): 
             console.print_error(f"The file {absolute_libfile} already exists !")
-            exit(2)
+            exit(1)
         project.sources.append(relative_src_directory / "lib.cpp")
 
         relative_interface_directory = Path("interface")
         absolute_header = project.path / relative_interface_directory / project.name / "lib.h"
         if absolute_header.exists(): 
             console.print_error(f"The file {absolute_header} already exists !")
-            exit(2)
+            exit(1)
         project.interface_directories.append(relative_interface_directory)
 
     # Create the project in the project file
@@ -203,14 +203,14 @@ def __new_dyn_project_in_project_file(new_context: NewContext):
         absolute_dynfile = project.path / relative_src_directory / "dyn.cpp"
         if absolute_dynfile.exists(): 
             console.print_error(f"The file {absolute_dynfile} already exists !")
-            exit(2)
+            exit(1)
         project.sources.append(relative_src_directory / "dyn.cpp")
 
         relative_interface_directory = Path("interface")
         absolute_header = project.path / relative_interface_directory / project.name / "dyn.h"
         if absolute_header.exists(): 
             console.print_error(f"The file {absolute_header} already exists !")
-            exit(2)
+            exit(1)
         project.interface_directories.append(relative_interface_directory)
 
     # Create the project in the project file

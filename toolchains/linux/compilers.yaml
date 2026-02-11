@@ -4,107 +4,93 @@
 # Individual compiler (like cl or clangcl) will extends this compiler to
 # inherit its configuration, avoiding duplication.
 compilers:
-  msvc-generic:
+  gnu-generic:
     # This compiler is not a compiler that can be used to build
     is_abstract: true
     profiles:
       common:
         is_abstract: true
-        enable-features: [WARNING_STRICT, RUNTIME_DLL, ENABLE_EXCEPTION]
+        enable-features: [WARNING_STRICT, ENABLE_EXCEPTION]
       debug:
         extends: common
         enable-features: [OPT_LEVEL_0, WARNING_ALL]
-        cxx-linker-flags: [/INCREMENTAL]
-        dyn:
-          cxx-compiler-flags: [/LDd]
       release:
         extends: common
-        enable-features: [OPT_LEVEL_3]
-        cxx-linker-flags: [/OPT:REF, /OPT:ICF, /INCREMENTAL:NO]
-        dyn:
-          cxx-compiler-flags: [/LD]
-          enable-features: [WARNING_ALL]
+        enable-features: [OPT_LEVEL_3, REMOVE_DEAD_CODE]
     features:
+      # Remove dead code
+      - name: REMOVE_DEAD_CODE
+        description: Remove dead code
+        cxx-compiler-flags: [-ffunction-sections, -fdata-sections]
+        cxx-linker-flags: [-Wl,--gc-sections]
+
       # Warnings
       - name: WARNING_BASE
         description: Default warning level
-        cxx-compiler-flags: [/W3]
+        cxx-compiler-flags: [-Wall]
       - name: WARNING_STRICT
         description: Strict warnings
-        cxx-compiler-flags: [/W4]
+        cxx-compiler-flags: [-Wextra, -Wall]
       - name: WARNING_ALL
         description: All warnings (very noisy)
-        cxx-compiler-flags: [/Wall]
+        cxx-compiler-flags: [-Weverything]
       - name: WARNING_AS_ERROR
         description: Treat warnings as errors
-        cxx-compiler-flags: [/WX]
+        cxx-compiler-flags: [-Werror]
       - name: NO_WARNING
         description: Disable all warnings
-        cxx-compiler-flags: [/W0]
-
-      # Windows Runtime
-      - name: RUNTIME_DLL
-        description: Windows DLL runtime
-        profiles:
-          debug:
-            cxx-compiler-flags: [/MTd]
-          release:
-            cxx-compiler-flags: ["/MD"]
-      - name: RUNTIME_STATIC
-        description: Windows static runtime
-        # Apply to all configuration
-        profiles:
-          debug:
-            cxx-compiler-flags: [/MTd]
-          release:
-            cxx-compiler-flags: [/MT]
+        cxx-compiler-flags: [-w]
 
       # Optimisations
       - name: OPT_LEVEL_0
         description: No optimization (debug-like)
-        cxx-compiler-flags: [/Od]
+        cxx-compiler-flags: [-O0]
         cxx-linker-flags: [/DEBUG]
         enable-features: [DEBUG_INFO]
       - name: OPT_LEVEL_1
         description: Minimal optimization (-O1)
-        cxx-compiler-flags: [/O1]
+        cxx-compiler-flags: [-O1]
       - name: OPT_LEVEL_2
         description: Default optimization (-O2)
-        cxx-compiler-flags: [/O2]
+        cxx-compiler-flags: [/-O2]
       - name: OPT_LEVEL_3
         description: Max optimization (-O2 + aggressive inline)
-        cxx-compiler-flags: [/O2, /Ob2, /Oi]
-        enable-features: [LTO, OMIT_FRAME_POINTER, LTCG]
-      - name: LTCG
-        description: Link-time code generation
-        cxx-linker-flags: [/LTCG]
+        cxx-compiler-flags: [-O3, -finline-functions, -funroll-loops]
+        enable-features: [LTO, OMIT_FRAME_POINTER]
       - name: LTO
         description: Whole program optimization
-        cxx-compiler-flags: [/GL]
+        cxx-compiler-flags: [-flto]
       - name: OMIT_FRAME_POINTER
         description: Omit frame pointer
-        cxx-compiler-flags: [/Oy]
+        cxx-compiler-flags: [-fomit-frame-pointer]
 
       # Debug informations
       - name: DEBUG_INFO
         description: Generate debug informations
-        cxx-compiler-flags: [/Zi]
+        cxx-compiler-flags: [-g]
 
       # Exception
       - name: ENABLE_EXCEPTION
         description: Enable C++ exception
-        cxx-compiler-flags: [/EHsc]
+        cxx-compiler-flags: [-fexceptions]
       - name: DISABLE_EXCEPTION
         description: Disable C++ exception
-        cxx-compiler-flags: [/EH-]
+        cxx-compiler-flags: [-fno-exceptions]
 
       # Target Architecture
       - name: TARGET_X64
         description: Enable 64 bits (AMD64 / Intel64) link
-        cxx-linker-flags: [/MACHINE:X64]
+        cxx-linker-flags: [-m64]
       - name: TARGET_X86
         description: Enable 32 bits (x86) link
-        cxx-linker-flags: [/MACHINE:X86]
+        cxx-linker-flags: [-m32]
+
+      # ASAN
+      - name: ASAN
+        description: Enable ASAN Sanitizer
+        cxx-compiler-flags: ["-fsanitize=address", "-fsanitize-address-use-after-scope"]
+        cxx-linker-flags: ["-fsanitize=address"]
+        enable-features: [DEBUG_INFO, RUNTIME_DLL, OPT_LEVEL_2]
 
     # Features rules
     # only-one rule : Only 1 rules is allowed in 'features'. Multiple in the same target is not allowed.
@@ -119,31 +105,25 @@ compilers:
       # Only one optimization level at a time
       - only-one: optimization
         features: [OPT_LEVEL_0, OPT_LEVEL_1, OPT_LEVEL_2, OPT_LEVEL_3]
-      # OPT_LEVEL_0 is incompatible with LTCG, LTO, OMIT_FRAME_POINTER
+      # OPT_LEVEL_0 is incompatible with LTO, OMIT_FRAME_POINTER
       - incompatible: no_opt
         feature: OPT_LEVEL_0
-        with: [LTCG, LTO, OMIT_FRAME_POINTER]
+        with: [LTO, OMIT_FRAME_POINTER]
       # Only one exceptions mode
       - only-one: exceptions
         features: [ENABLE_EXCEPTION, DISABLE_EXCEPTION]
       # Only one target mode
       - only-one: target
         features: [TARGET_X64, TARGET_X86]
-
-  # MSVC clang-cl compiler
-  clangcl:
-    extends: msvc-generic
-    profiles:
-      debug:
-        enable-features: [ASAN]
-    features:
-      - name: ASAN
-        description: Enable ASAN Sanitizer (Clang-cl only)
-        cxx-compiler-flags: ["-fsanitize=address", "-fsanitize-address-use-after-scope"]
-        cxx-linker-flags: ["-fsanitize=address"]
-        # ASAN require to enable some features to work correctly
-        enable-features: [DEBUG_INFO, RUNTIME_DLL, OPT_LEVEL_2]
-    feature-rules:
+      # ASAN is incompatible with OPT_LEVEL_3, LTO et OMIT_FRAME_POINTER
       - incompatible: asan
         feature: ASAN
-        with: [OPT_LEVEL_3, LTO, OMIT_FRAME_POINTER, LTCG]
+        with: [OPT_LEVEL_3, LTO, OMIT_FRAME_POINTER]
+
+  # GCC compiler
+  gcc:
+    extends: gnu-generic
+
+  # Clang compiler
+  clang:
+    extends: gnu-generic

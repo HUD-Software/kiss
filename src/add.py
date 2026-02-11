@@ -11,7 +11,7 @@ def cmd_add(cli_args: argparse.Namespace):
     yaml_file = YamlProjectFile(file=project_file)
     # Check that the project file exists
     if not yaml_file.load_yaml():
-        console.print_warning(f"Error: Unable to load project file `{project_file}`")
+        console.print_error(f"Error: Unable to load project file `{project_file}`")
         exit(1)
     # Check that the target project exists
     if cli_args.project_name is not None:
@@ -41,8 +41,8 @@ def cmd_add(cli_args: argparse.Namespace):
         if not dependency_file.exists():
             if not yaml_file.is_project_name_present(cli_args.dependency_name):
                 console.print_error(f"Error: Missing '{PROJECT_FILE_NAME}' file in '{dependency_dir}' directory. \n"+
-                                    f"       Add 'kiss.yaml' file to '{dependency_dir}' project directory.\n" + 
-                                    f"       Or add it to target project '{project_name}' in file {project_file}.")
+                                    f"          Add 'kiss.yaml' file to '{dependency_dir}' project directory.\n" + 
+                                    f"          Or add it to target project '{project_name}' in file {project_file}.")
                 exit(1)
 
         # Add the dependency to the project yaml

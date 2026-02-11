@@ -6,9 +6,9 @@ from builder import BuilderRegistry
 from cleaner import CleanerRegistry
 import console
 from generator import GeneratorRegistry
-from platform_target import PlatformTarget
 from project import ProjectType
 from runner import RunnerRegistry
+from toolchain import Compiler,Target
 
 _NAME_REGEX = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
@@ -91,7 +91,7 @@ def _add_generate_command(parser : argparse.ArgumentParser):
     
     generate_parser = parser.add_parser("generate", description="generate files used to build the project")
     generate_parser.add_argument("-p", "--project", help="name of the project to generate", dest="project_name", required=False, type=valid_project_name)
-    generate_parser.add_argument("-t", "--target", help="specify the target platform", dest="platform_target", default=PlatformTarget.default_target(), required=False)
+    generate_parser.add_argument("-t", "--target", help="specify the target platform", dest="platform_target", default=Target.default_target_name(), required=False)
 
     # Create the help string that contains list of all registered generators  
     generator_help_str = ""
@@ -117,7 +117,7 @@ def _add_build_command(parser : argparse.ArgumentParser):
     
     build_parser = parser.add_parser("build", description="build files used to build the project")
     build_parser.add_argument("-p", "--project", help="name of the project to build", dest="project_name", required=False, type=valid_project_name)
-    build_parser.add_argument("-t", "--target", help="specify the target platform", dest="platform_target", default=PlatformTarget.default_target(), required=False)
+    build_parser.add_argument("-t", "--target", help="specify the target platform", dest="platform_target", default=Target.default_target_name(), required=False)
     build_parser.add_argument("-r", "--release", action='store_const', const=True, help="release build", dest="release")
     build_parser.add_argument("-compiler", help="specify the compiler to use", type=str)
     build_parser.add_argument("-d", "--debug_info", action='store_const', const=True, help="enable debug information", dest="debug_info")
@@ -146,7 +146,7 @@ def _add_run_command(parser : argparse.ArgumentParser):
 
     run_parser = parser.add_parser("run", description="run the project")
     run_parser.add_argument("-p", "--project", help="name of the project to run", dest="project_name", required=False, type=valid_project_name)
-    run_parser.add_argument("-t", "--target", help="specify the target platform", dest="platform_target", default=PlatformTarget.default_target(), required=False)
+    run_parser.add_argument("-t", "--target", help="specify the target platform", dest="platform_target", default=Target.default_target_name(), required=False)
     run_parser.add_argument("-r", "--release", action='store_const', const=True, help="release build", dest="release")
     run_parser.add_argument("-compiler", help="specify the compiler to use", type=str)
     run_parser.add_argument("-d", "--debug_info", action='store_const', const=True, help="enable debug information", dest="debug_info")

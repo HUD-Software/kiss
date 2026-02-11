@@ -2,22 +2,20 @@ import argparse
 from pathlib import Path
 from typing import Self
 from cleaner import BaseCleaner, CleanerRegistry
-from compiler import Compiler
 from config import Config
 import console
 from context import Context
-from platform_target import PlatformTarget
 from project import Project
 from projectregistry import ProjectRegistry
+from toolchain import Toolchain, Compiler, Target
 
 class CleanContext(Context):
-    def __init__(self, directory:Path, project: Project, cleaner_name: str, platform_target: PlatformTarget, config : Config, compiler : Compiler):
+    def __init__(self, directory:Path, project: Project, cleaner_name: str, toolchain : Toolchain, config : Config):
         super().__init__(directory)
         self._project = project
         self._cleaner_name = cleaner_name
-        self._platform_target = platform_target
+        self._toolchain = toolchain
         self._config = config
-        self._compiler = compiler
 
     @property
     def project(self) -> Project:
@@ -28,19 +26,15 @@ class CleanContext(Context):
         return self._cleaner_name
     
     @property
-    def platform_target(self) -> PlatformTarget:
-        return self._platform_target
+    def toolchain(self) -> Toolchain:
+        return self._toolchain
     
     @property
     def config(self) -> Config:
         return self._config
     
-    @property
-    def compiler(self) -> Compiler:
-        return self._compiler
-    
     @classmethod
-    def create(cls, directory: Path, project_name: str, cleaner_name: str, platform_target: PlatformTarget, config : Config, compiler : Compiler) -> Self :
+    def create(cls, directory: Path, project_name: str, cleaner_name: str, toolchain : Toolchain, config : Config) -> Self :
         #### Find the project to generate
         ProjectRegistry.load_and_register_all_project_in_directory(directory=directory, load_dependencies=True, recursive=False)
         projects_in_directory = ProjectRegistry.projects_in_directory(directory=directory)
@@ -55,22 +49,23 @@ class CleanContext(Context):
                     project_to_clean = project
                     break
         
-        return CleanContext(directory=directory, project=project_to_clean, cleaner_name=cleaner_name, platform_target=platform_target,  config=config, compiler=compiler)
+        return CleanContext(directory=directory, project=project_to_clean, cleaner_name=cleaner_name, toolchain=toolchain,  config=config)
 
 
     @staticmethod
-    def from_cli_args(cli_args: argparse.Namespace) -> Self:
+    def from_cli_args(cli_args: argparse.Namespace) -> Self | None:
         release :bool = getattr(cli_args, "release", False) or False
         debug_info :bool = getattr(cli_args, "debug_info", True) or (True if not release else False)
         config : Config = Config(release, debug_info)
-        platform_target: PlatformTarget = PlatformTarget.default_target()
-        compiler : Compiler = getattr(cli_args, "compiler", None) or Compiler.default_compiler(platform_target=platform_target)
+        target_name :Target = Target.default_target_name()
+        compiler_name : Compiler = getattr(cli_args, "compiler", None) or Toolchain.default_compiler_name()
+        if( toolchain := Toolchain.create(compiler_name==compiler_name, target_name==target_name)) is None:
+            return None
         clean_context: CleanContext = CleanContext.create(directory=cli_args.directory,
                                                     project_name=cli_args.project_name,
                                                     cleaner_name=cli_args.cleaner,
-                                                    platform_target=platform_target,
-                                                    config=config,
-                                                    compiler=compiler)
+                                                    toolchain=toolchain,
+                                                    config=config)
         return clean_context
 
 

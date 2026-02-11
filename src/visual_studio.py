@@ -3,8 +3,8 @@ from pathlib import Path
 import platform
 import sys
 from typing import Optional
-from compiler import Compiler
 import console
+from toolchain import Compiler
 
 class Toolset:
     def __init__(self, compiler: Compiler, cxx_compiler_path:str, c_compiler_path:str):
@@ -98,8 +98,8 @@ def get_windows_latest_toolset(compiler:Compiler) -> Optional[VSToolset] :
                 vctool_default_version = open(vctool_default_version_path).readline().strip()
             else:
                 console.print_error(f"Unable to find Microsoft.VCToolsVersion.default.txt in installation files. \n \
-                                        Should be here: {vctool_default_version_path}\n \
-                                        Repair Visual studio installation")
+                                         Should be here: {vctool_default_version_path}\n \
+                                         Repair Visual studio installation")
                 sys.exit(2)
             compiler_path=json_installation_path / f"VC\\Tools\\MSVC\\{vctool_default_version}\\bin\\Hostx64\\x64\\"
             return VSToolset(compiler=Compiler.cl,

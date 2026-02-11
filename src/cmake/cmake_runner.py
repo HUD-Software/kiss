@@ -33,19 +33,18 @@ class CMakeRunner(BaseRunner):
         cmake_build_context = CMakeBuildContext.create(directory=run_context.directory,
                                                         project_name=run_context.project.name,
                                                         builder_name=run_context.runner_name,
-                                                        platform_target=run_context.platform_target,
+                                                        toolchain=run_context.toolchain,
                                                         config=run_context.config,
-                                                        compiler=run_context.compiler,
                                                         generator=cmake_builder.name)
         cmake_builder.build_project(cmake_build_context)
         
         context = CMakeContext(current_directory=run_context.directory, 
-                            platform_target=run_context.platform_target, 
+                            toolchain=run_context.toolchain, 
                             project=run_context.project)
         
         if platform.system() == "Windows":
             # Add DLL path to PATH on Windows
-            if run_context.platform_target.is_windows():
+            if run_context.toolchain.target.is_windows():
                 project_list = context.project.topological_sort_projects()
                 dll_paths = []
                 for proj_context in project_list:
@@ -58,7 +57,7 @@ class CMakeRunner(BaseRunner):
                 os.environ["PATH"] = ";".join(dll_paths + [existing_path])
             
         # Get binary path
-        if context.platform_target.is_windows():
+        if context.toolchain.target.is_windows():
             binary_path = context.target_output_directory(run_context.config) / f"{run_context.project.name}.exe"
         else:
             binary_path = context.target_output_directory(run_context.config) / run_context.project.name

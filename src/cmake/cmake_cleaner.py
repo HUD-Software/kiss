@@ -6,15 +6,14 @@ from cleaner import BaseCleaner
 from cli import KissParser
 from cmake.cmake_context import CMakeContext
 from cmake.cmake_generators import CMakeGenerator
-from compiler import Compiler
 from config import Config
 import console
-from platform_target import PlatformTarget
 from project import Project
+from toolchain.toolchain import Toolchain
 
 class CMakeCleanContext(CleanContext):
-    def __init__(self, directory:Path, project: Project, builder_name: str, platform_target: PlatformTarget, config : Config, compiler : Compiler, generator: CMakeGenerator):
-        super().__init__(directory, project, builder_name, platform_target, config, compiler)
+    def __init__(self, directory:Path, project: Project, builder_name: str, toolchain: Toolchain, config : Config, generator: CMakeGenerator):
+        super().__init__(directory, project, builder_name, toolchain, config)
         self._generator = generator
 
     @property
@@ -22,12 +21,12 @@ class CMakeCleanContext(CleanContext):
         return self._generator
     
     @classmethod
-    def create(cls, directory: Path, project_name: str, builder_name: str, platform_target: PlatformTarget, config : Config, compiler : Compiler, generator: CMakeGenerator) -> Self :
+    def create(cls, directory: Path, project_name: str, builder_name: str, toolchain: Toolchain, config : Config, generator: CMakeGenerator) -> Self :
         project_to_build = super().find_target_project(directory, project_name)
         if not project_to_build:
             console.print_error(f"No project found in {str(directory)}")
             exit(1)
-        return CMakeCleanContext(directory=directory, project=project_to_build, builder_name=builder_name, platform_target=platform_target, config=config, compiler=compiler, generator=generator)
+        return CMakeCleanContext(directory=directory, project=project_to_build, builder_name=builder_name, toolchain=toolchain, config=config, generator=generator)
 
 
     @staticmethod
@@ -36,9 +35,8 @@ class CMakeCleanContext(CleanContext):
         return CMakeCleanContext(directory=clean_context.directory,
                                  project=clean_context.project,
                                  builder_name=clean_context.builder_name,
-                                 platform_target=clean_context.platform_target,
+                                 toolchain=clean_context.toolchain,
                                  config=clean_context.config,
-                                 compiler=clean_context.compiler,
                                  generator=cli_args.generator)
 
 class CMakeCleaner(BaseCleaner):

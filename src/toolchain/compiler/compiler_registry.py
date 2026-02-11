@@ -1,7 +1,8 @@
+import platform
 from typing import Self
 import console
 from project import ProjectType
-from toolchain.compiler.compiler_info import CompilerNode, CompilerNodeRegistry, FeatureNode, FeatureNodeList
+from toolchain.compiler.compiler_info import CompilerNodeRegistry
 
 class Flags:
     def __init__(self): 
@@ -83,9 +84,8 @@ class Compiler:
     
     @staticmethod
     def create(name :str) -> Self | None:
-        root_compiler_info: CompilerNode = CompilerNodeRegistry.get(name)
-        if not root_compiler_info:
-            console.print_error(f"❌ Compiler {name} not found")
+        if (root_compiler_info := CompilerNodeRegistry.get(name)) is None:
+            console.print_error(f"Compiler {name} not found")
             return None
         
         if(compiler_node := root_compiler_info.extend_self()) is None:
@@ -103,9 +103,8 @@ class Compiler:
                     flags.enabled_features.extend(bin_lib_dyn.enable_features)
                     # Add flags of features
                     for feature_name in bin_lib_dyn.enable_features:
-                        feature_node = compiler_node.get_feature(feature_name)
-                        if not feature_node:
-                            console.print_error(f"❌ Feature {feature_name} not found for profile {profile.name} in compiler {new_compiler.name}")
+                        if (feature_node := compiler_node.get_feature(feature_name)) is None:
+                            console.print_error(f"Feature {feature_name} not found for profile {profile.name} in compiler {new_compiler.name}")
                             return None
                         flags.cxx_compiler_flags.extend(feature_node.cxx_compiler_flags)
                         flags.cxx_linker_flags.extend(feature_node.cxx_linker_flags)
@@ -114,7 +113,26 @@ class Compiler:
                 new_compiler.profiles.add(new_profile)
 
         return new_compiler
-
+    
+    @classmethod
+    def default_compiler_name(cls) -> Self:
+        if not hasattr(cls, "_default_compiler_name"):
+            system = platform.system()
+            if system == "Windows":
+                supported_compilers = ["cl", "clangcl"]
+            elif system == "Linux":
+                supported_compilers = ["gcc", "clang"]
+            elif system == "Darwin":
+                supported_compilers = ["clang", "gcc"]
+                
+            for compiler_name in supported_compilers:
+                if compiler_name in CompilerNodeRegistry:
+                    cls._default_compiler_name = compiler_name
+                    return cls._default_compiler_name
+            console.print_warning("⚠️  Warning: Default compiler not found")
+            return ""
+        return cls._default_compiler_name
+    
 class CompilerList:
     def __init__(self):
         self.compilers : set[Compiler] = set()

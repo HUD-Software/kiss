@@ -1,4 +1,5 @@
 from pathlib import Path
+import platform
 from add import cmd_add
 from clean import cmd_clean
 from list import cmd_list
@@ -10,11 +11,14 @@ from run import cmd_run
 from toolchain import Toolchain
 
 def main():
-    Toolchain.load_all_toolchains_in_directory(Path("toolchains"))
-    toolchain = Toolchain.create("clangcl", "x86_64-pc-windows-msvc")
+    if platform.system() == "Windows":
+        Toolchain.load_all_toolchains_in_directory(Path("toolchains/windows"))
+    else:
+        Toolchain.load_all_toolchains_in_directory(Path("toolchains/linux"))
+    toolchain = Toolchain.create("gcc", "x86_64-unknown-linux-gnu")
     
-    if not toolchain:
-        exit
+    # if not toolchain:
+    #     exit
     args = cli.UserParams.from_args()
 
     if args.option == "list": 

@@ -13,7 +13,7 @@ def print_process(program: Path, args: list[str] = [], working_dir = Path(os.cur
     # Construire la ligne de commande lisible
     cmd_str = " ".join([str(program)] + [str(a) for a in args])
 
-    console.print_step(f"🛠  Command: {cmd_str}")
+    console.print_step(f"🛠️  Command: {cmd_str}")
     console.print_step(f"  📂 Working directory: {working_dir.absolute()}")
     
     if env:

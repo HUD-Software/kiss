@@ -1,6 +1,3 @@
-from pathlib import Path
-import console
-
 class TargetInfo:
     def __init__(self, name: str, arch:str, vendor:str, os:str, env:str):
         # The target name
@@ -71,28 +68,3 @@ class TargetInfoList:
         return None
 
 
-################################################
-# List of targets loaded by files
-################################################
-class TargetInfoRegistry:
-    def __init__(self):
-        self.targets = TargetInfoList()
-    
-    def __contains__(self, target_name: str) -> bool:
-        return target_name in self.targets
-
-    def __iter__(self):
-        return iter(self.targets)
-    
-    def get(self, target_name: str) -> TargetInfo | None:
-        return self.targets.get(target_name)
-    
-    def register_compiler(self, target: TargetInfo):
-        existing_target = self.targets.get(target.name)
-        if existing_target:
-            console.print_error(f"⚠️  Warning: Compiler already registered: {existing_target.name} in {str(existing_target.file)}")
-            exit(1)
-        self.targets.add(target)
-
-
-TargetInfoRegistry = TargetInfoRegistry()

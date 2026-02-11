@@ -131,7 +131,7 @@ class Project:
         def collect(project :Project, parent_project: Project):
             # Detect cyclic dependency
             if project in visiting_stack:
-                console.print_error(f"⚠️ Error: Cyclic dependency between '{project.name}' and '{parent_project.name}'")
+                console.print_error(f"Error: Cyclic dependency between '{project.name}' and '{parent_project.name}'")
                 console.print_error(f"         {' -> '.join([p.name for p in visiting_stack] + [project.name])}")
                 exit(1)
 

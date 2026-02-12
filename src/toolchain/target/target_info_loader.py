@@ -16,13 +16,13 @@ class TargetInfoLoader:
         parts = target_name.split('-')
         if len(parts) != 4:
             console.print_error(f"Line {yaml_target.key_line} : Invalid target name '{target_name}' in '{self.file}'")
-            console.print_error(f"  💡 Expected 'arch-vendor-os-env' separated by '-'")
+            console.print_error(f"  💡 Expected 'arch-vendor-os-abi' separated by '-'")
             return None
         arch = parts[0]
         vendor = parts[1]
         os = parts[2]
-        env = parts[3]
-        target_file : TargetInfo = TargetInfo(target_name,arch,vendor, os, env)
+        abi = parts[3]
+        target_file : TargetInfo = TargetInfo(target_name,arch,vendor, os, abi)
 
         # If the target is empty, ignore it
         if not yaml_target.value:
@@ -49,20 +49,20 @@ class TargetInfoLoader:
                         console.print_error(f"Line {yaml_object.key_line} : 'os' must be an os name ( windows, linux, macos, none ) in'{self.file}'")
                         return None
                     target_file.os = yaml_object.value
-                case "env":
-                    # Check that 'env' is a string
+                case "abi":
+                    # Check that 'abi' is a string
                     if not isinstance(yaml_object.value, str):
-                        console.print_error(f"Line {yaml_object.key_line} : 'env' must be a environnement name ( msvc, gnu, musl, none ) in'{self.file}'")
+                        console.print_error(f"Line {yaml_object.key_line} : 'abi' must be a abi name ( msvc, gnu, musl, none ) in'{self.file}'")
                         return None
-                    target_file.env = yaml_object.value
+                    target_file.abi = yaml_object.value
                 case "pointer-width":
-                    # Check that 'env' is a string
+                    # Check that 'pointer-width' is a string
                     if not isinstance(yaml_object.value, int):
                         console.print_error(f"Line {yaml_object.key_line} : 'pointer-width' must be a integer in'{self.file}'")
                         return None
                     target_file.pointer_width = yaml_object.value
                 case "endianness":
-                    # Check that 'env' is a string
+                    # Check that 'endianness' is a string
                     if not isinstance(yaml_object.value, str):
                         console.print_error(f"Line {yaml_object.key_line} : 'endianness' must be 'big' or 'little' in'{self.file}'")
                         return None
@@ -70,13 +70,6 @@ class TargetInfoLoader:
                         console.print_error(f"Line {yaml_object.key_line} : 'endianness' must be 'big' or 'little' in'{self.file}'")
                         return None
                     target_file.endianness = yaml_object.value
-                case "supported-compilers":
-                    # Check that 'supported-compilers' is a list of string
-                    if not isinstance(yaml_object.value, list) or not all(isinstance(x, str) for x in yaml_object.value):
-                        console.print_error(f"Line {yaml_object.key_line} : 'supported-compilers' must contains list of feature name in'{self.file}'")
-                        return None
-                    target_file.suppported_compilers = yaml_object.value
-
         return target_file
         
         
@@ -98,7 +91,7 @@ class TargetInfoLoader:
                             arch=target_file.arch,
                             vendor=target_file.vendor,
                             os=target_file.os,
-                            env=target_file.env)
+                            abi=target_file.abi)
             target.endianness = target_file.endianness
             target.pointer_width = target_file.pointer_width
             TargetRegistry.register_compiler(target=target)

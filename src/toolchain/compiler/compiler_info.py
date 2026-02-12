@@ -1102,7 +1102,6 @@ class CompilerNode:
             extended.profiles = extended_profiles
             ExtendedCompilerNodeRegistry.register_extended_compiler(extended)
         assert extended.is_extended
-        console.print_tips(extended)
         return extended
             
     @staticmethod
@@ -1127,7 +1126,6 @@ class CompilerNode:
             else:
                 extended.c_path = to_extend_compiler_node.c_path
 
-
             # Extend feature rules
             extended.feature_rules = to_extend_compiler_node.feature_rules.get_extended_with(base=base_compiler_node.feature_rules)
             if not extended.feature_rules:
@@ -1146,7 +1144,6 @@ class CompilerNode:
             # Register for futur use
             ExtendedCompilerNodeRegistry.register_extended_compiler(extended)
         assert extended.is_extended
-        console.print_tips(extended)
         return extended
 
     def extend_self(self) -> Self | None:

@@ -1,5 +1,5 @@
 class TargetInfo:
-    def __init__(self, name: str, arch:str, vendor:str, os:str, env:str):
+    def __init__(self, name: str, arch:str, vendor:str, os:str, abi:str):
         # The target name
         self.name = name
         # The arch of the target
@@ -8,8 +8,8 @@ class TargetInfo:
         self.vendor = vendor
         # The os of the target
         self.os = os
-        # The env of the target
-        self.env = env
+        # The abi of the target
+        self.abi = abi
         # Size of the pointer
         self.pointer_width = int
         # Endianness ( little or big )
@@ -29,7 +29,7 @@ class TargetInfo:
             f"  - arch : {self.arch}",
             f"  - vendor : {self.vendor}",
             f"  - os : {self.os}",
-            f"  - env : {self.env}",
+            f"  - abi : {self.abi}",
             f"  - pointer_width : {self.pointer_width}",
             f"  - endianness : {self.endianness}"
         ]

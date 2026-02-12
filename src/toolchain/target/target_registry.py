@@ -5,7 +5,7 @@ import subprocess
 import console
 
 class Target:
-    def __init__(self, name: str, arch:str, vendor:str, os:str, env:str):
+    def __init__(self, name: str, arch:str, vendor:str, os:str, abi:str):
         # The compiler name
         self.name = name
         # The arch of the compiler
@@ -14,8 +14,8 @@ class Target:
         self.vendor = vendor
         # The os of the compiler
         self.os = os
-        # The env of the compiler
-        self.env = env
+        # The abi of the compiler
+        self.abi = abi
         # Size of the pointer
         self.pointer_width = int
         # Endianness ( little or big )
@@ -26,6 +26,12 @@ class Target:
     
     def is_linux_os(self) -> bool:
         return self.os == "linux"
+    
+    def is_msvc_abi(self) -> bool:
+        return self.abi == "msvc"
+    
+    def is_gnu_abi(self) -> bool: 
+        return self.abi == "gnu"
     
     def is_x86_64(self) -> bool:
         return self.arch == "x86_64"
@@ -106,7 +112,7 @@ class Target:
             f"  - arch: {self.arch}",
             f"  - vendor: {self.vendor}",
             f"  - os: {self.os}",
-            f"  - env: {self.env}",
+            f"  - abi: {self.abi}",
             f"  - endianness: {self.endianness}",
             f"  - pointer width: {self.pointer_width}"
         ]

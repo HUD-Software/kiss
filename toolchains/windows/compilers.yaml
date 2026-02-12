@@ -160,6 +160,8 @@ compilers:
     profiles:
       debug:
         enable-features: [ASAN]
+      custom:
+        extends: debug
     features:
       - name: ASAN
         description: Enable ASAN Sanitizer (Clang-cl only)

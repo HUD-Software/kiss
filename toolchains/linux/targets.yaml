@@ -3,7 +3,7 @@ targets:
     arch: x86_64 # x86_64, i686, aarch64, arm
     vendor: unknown # pc, unknown
     os: linux # windows, linux, macos, none
-    env: gnu # msvc, gnu, musl, none
+    eabiv: gnu # msvc, gnu, musl, none
     pointer-width: 64 # 32 or 64
     endianness: little # or big
     compiler-features: [TARGET_X64]
@@ -12,7 +12,7 @@ targets:
     arch: i686 # x86_64, i686, aarch64, arm
     vendor: unknown # pc, unknown
     os: linux # windows, linux, macos, none
-    env: gnu # msvc, gnu, musl, none
+    abi: gnu # msvc, gnu, musl, none
     pointer-width: 32 # 32 or 64
     endianness: little # or big
     compiler-features: [TARGET_X86]

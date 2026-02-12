@@ -352,6 +352,9 @@ class CMakeListsGenerator(BaseGenerator):
                     src_str += f"\n\t{src}"
                 f.write(f"add_library({project.name} SHARED {src_str})\n")
 
+            #Write export definition for windows
+            f.write(f"target_compile_definitions({project.name} PRIVATE {project.name.upper()}_EXPORTS)\n")
+
             # Write project interfaces
             if project.interface_directories:
                 interface_str:str =""

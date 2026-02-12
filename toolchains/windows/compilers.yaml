@@ -156,6 +156,7 @@ compilers:
   # MSVC clang-cl compiler
   clangcl:
     extends: msvc-generic
+
     profiles:
       debug:
         enable-features: [ASAN]

@@ -1018,6 +1018,11 @@ class CompilerNode:
         # Compiler extends names
         self.extends_ordered_list = list[Self]()
 
+    def is_derived_from(self, compiler_name: Self) -> bool:
+        for extends in self.extends_ordered_list:
+            if extends.name == compiler_name: return True
+        return False
+
     def __hash__(self) -> int:
         return hash(self.name)
 
@@ -1274,7 +1279,7 @@ class ExtendedCompilerNodeRegistry:
         assert compiler.is_extended
         existing_compiler = self.compilers.get(compiler.name)
         if existing_compiler:
-            console.print_error(f"Error: Extended csompiler node already registered: {existing_compiler.name} in {str(existing_compiler.file)}")
+            console.print_error(f"Error: Extended compiler node already registered: {existing_compiler.name} in {str(existing_compiler.file)}")
             exit(1)
         self.compilers.add(compiler)
 

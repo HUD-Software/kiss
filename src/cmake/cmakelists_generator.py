@@ -694,7 +694,7 @@ include("${{CMAKE_CURRENT_LIST_DIR}}/{project.name}Targets.cmake")
             for project in unfreshlist:
                 console.print_tips(f"  📝 {project.name}")
                 cmakelist_generate_context.project = project
-                is_multi_config = cmakelist_generate_context.toolchain.target.name == "x86_64-pc-windows-msvc"
+                is_multi_config = cmakelist_generate_context.toolchain.target.is_windows_os()
                 if is_multi_config:
                     self._generateMultiConfigProject(cmakelist_generate_context)
                 else:

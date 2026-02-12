@@ -52,7 +52,7 @@ class CMakeCleaner(BaseCleaner):
         if clean_context.project :
             # Clean the project
             context = CMakeContext(current_directory=clean_context.directory, 
-                                platform_target=clean_context.platform_target, 
+                                toolchain=clean_context.toolchain, 
                                 project=clean_context.project)
             
             # Delete build directory

@@ -114,7 +114,11 @@
             "args": [
                 "-d",
                 "tests/my_bin",
-                "run"
+                "run",
+                "-t",
+                "x86_64-pc-windows-msvc",
+                "-c",
+                "clangcl"
             ],
             // "args": [
             //     "-d",

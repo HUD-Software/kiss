@@ -57,8 +57,8 @@ class CleanContext(Context):
         release :bool = getattr(cli_args, "release", False) or False
         debug_info :bool = getattr(cli_args, "debug_info", True) or (True if not release else False)
         config : Config = Config(release, debug_info)
-        target_name :Target = Target.default_target_name()
-        compiler_name : Compiler = getattr(cli_args, "compiler", None) or Toolchain.default_compiler_name()
+        target_name :Target = getattr(cli_args, "target", None) or Target.default_target_name()
+        compiler_name : Compiler = getattr(cli_args, "compiler", None) or Compiler.default_compiler_name()
         if( toolchain := Toolchain.create(compiler_name=compiler_name, target_name=target_name)) is None:
             return None
         clean_context: CleanContext = CleanContext.create(directory=cli_args.directory,

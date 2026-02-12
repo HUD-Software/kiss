@@ -3,7 +3,7 @@ import platform
 from typing import Self
 import console
 from project import ProjectType
-from toolchain.compiler.compiler_info import CompilerNodeRegistry
+from toolchain.compiler.compiler_info import CompilerNode, CompilerNodeRegistry
 
 class Flags:
     def __init__(self): 
@@ -59,7 +59,7 @@ class ProfileList:
         return None 
 
 class Compiler:
-    def __init__(self, name: str, cxx_path: Path, c_path: Path):
+    def __init__(self, name: str, cxx_path: Path, c_path: Path, compiler_info: CompilerNode):
         # The compiler name
         self.name = name
         # List of profiles
@@ -68,30 +68,13 @@ class Compiler:
         self.cxx_path = cxx_path
         # Path of the C compiler
         self.c_path = c_path
-        # Compiler extends names
-        self.extends = list[str]()
-        
-    def _build_repr(self) -> str:
-        lines = [
-            f"Compiler: {self.name}",
-            f"  -  cxx_path: {self.cxx_path}",
-            f"  -  c_path: {self.c_path}"
-        ]
-        for profile in self.profiles:
-            lines.append(f"  - {profile.name}")
-            for project_type, flags in profile.per_project_type_flags.items():
-                lines.append(f"    - {project_type}:")
-                lines.append(f"      cxx_compiler_flags: {flags.cxx_compiler_flags}")
-                lines.append(f"      cxx_linker_flags: {flags.cxx_linker_flags}")
-                lines.append(f"      enable_features: {flags.enabled_features}")
-        return "\n".join(lines)
-
-    def __repr__(self) -> str:
-        return self._build_repr()
-
-    def __str__(self) -> str:
-        return self._build_repr()
+        # The extended compiler info used to create this compiler
+        assert compiler_info.is_extended, f"Compiler info '{compiler_info.name}' must be extended to create a compiler"
+        self._compiler_info = compiler_info
     
+    def is_derived_from(self, compiler_name: Self) -> bool:
+        return  self._compiler_info.is_derived_from(compiler_name)
+
     @staticmethod
     def create(name :str) -> Self | None:
         if (root_compiler_info := CompilerNodeRegistry.get(name)) is None:
@@ -103,7 +86,8 @@ class Compiler:
         
         new_compiler = Compiler(name=compiler_node.name,
                                 cxx_path=compiler_node.cxx_path,
-                                c_path=compiler_node.c_path)
+                                c_path=compiler_node.c_path,
+                                compiler_info=compiler_node)
         
         for profile in compiler_node.profiles:
             if not profile.is_abstract:
@@ -132,7 +116,7 @@ class Compiler:
         if not hasattr(cls, "_default_compiler_name"):
             system = platform.system()
             if system == "Windows":
-                supported_compilers = ["cl", "clangcl"]
+                supported_compilers = ["clangcl", "cl"]
             elif system == "Linux":
                 supported_compilers = ["gcc", "clang"]
             elif system == "Darwin":
@@ -145,6 +129,28 @@ class Compiler:
             console.print_warning("⚠️  Warning: Default compiler not found")
             return ""
         return cls._default_compiler_name
+    def _build_repr(self) -> str:
+        lines = [
+            f"Compiler: {self.name}",
+            f"  -  cxx_path: {self.cxx_path}",
+            f"  -  c_path: {self.c_path}"
+        ]
+        for profile in self.profiles:
+            lines.append(f"  - {profile.name}")
+            for project_type, flags in profile.per_project_type_flags.items():
+                lines.append(f"    - {project_type}:")
+                lines.append(f"      cxx_compiler_flags: {flags.cxx_compiler_flags}")
+                lines.append(f"      cxx_linker_flags: {flags.cxx_linker_flags}")
+                lines.append(f"      enable_features: {flags.enabled_features}")
+        return "\n".join(lines)
+
+    def __repr__(self) -> str:
+        return self._build_repr()
+
+    def __str__(self) -> str:
+        return self._build_repr()
+    
+    
     
 class CompilerList:
     def __init__(self):

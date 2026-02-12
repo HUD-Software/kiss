@@ -21,8 +21,11 @@ class Target:
         # Endianness ( little or big )
         self.endianness = str
 
-    def is_windows(self) -> bool:
+    def is_windows_os(self) -> bool:
         return self.os == "windows"
+    
+    def is_linux_os(self) -> bool:
+        return self.os == "linux"
     
     def is_x86_64(self) -> bool:
         return self.arch == "x86_64"

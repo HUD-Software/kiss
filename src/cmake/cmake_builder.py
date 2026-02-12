@@ -64,9 +64,10 @@ class CMakeBuilder(BaseBuilder):
     def __init__(self):
         super().__init__("cmake", "Build cmake CMakeLists.txt")
 
-    def _get_x86_64_pc_windows_msvc_configure_args(self, context: CMakeContext) -> list[str]:
-        # Get the -G
-        toolset = get_windows_latest_toolset(context.toolchain.compiler.name)
+    def _get_pc_windows_msvc_configure_args(self, context: CMakeContext) -> list[str] | None:
+        # Determine  -G
+        if( toolset := get_windows_latest_toolset(context.toolchain.compiler)) is None:
+            return None
         year = toolset.product_year
         if toolset.major_version == 18:
             year = 2026
@@ -74,29 +75,35 @@ class CMakeBuilder(BaseBuilder):
             year = int(toolset.product_line_version)
         cmake_generator_name = f"{toolset.product_name} {toolset.major_version} {year}"
 
-        # Get the -A
-        if context.toolchain.target.is_x86_64():
-            arch_target = "x64"
-        elif context.toolchain.target.is_i686():
-            arch_target = "Win32"
-        elif context.toolchain.target.is_aarch64():
-            arch_target = "ARM64"
-        elif context.toolchain.target.is_arm():
-            arch_target = "ARM"
-
-        # Get the -T
+        # Determine -T
         arch = os.environ.get("PROCESSOR_ARCHITECTURE", "").lower()
         arch_w6432 = os.environ.get("PROCESSOR_ARCHITEW6432", "").lower()
-        if arch_w6432 or arch in ("amd64", "x86_64"):
-            host_arch = "host=x64"
+        is_x64_host = arch_w6432 or arch in ("amd64", "x86_64")
+        if context.toolchain.compiler.is_derived_from("clangcl"):
+            host_arch = f"ClangCL,host={'x64' if is_x64_host else 'Win32'}"
         else:
-            host_arch = "host=Win32"
+            host_arch = f"host={'x64' if is_x64_host else 'Win32'}"
+
+        # Determine -A
+        arch_map = {
+            "x86_64": "x64",
+            "i686": "Win32",
+            "aarch64": "ARM64",
+            "arm": "ARM"
+        }
+        if( arch_target := arch_map.get(context.toolchain.target.arch, None)) is None:
+            console.print_error(f"Unsupported target architecture: {context.toolchain.target.arch_name()}")
+            return None
 
         # Complete x86_64-pc-windows-msvc cmake generation list
         return ["--no-warn-unused-cli", "-S", str(context.cmakelists_directory), "-G", cmake_generator_name, "-T", host_arch, "-A", arch_target]
     
     def _get_x86_64_unknown_linux_gnu_configure_args(self, context: CMakeContext) -> list[str]:
+        # Check that compiler exists
+
+        # Get the -G
         cmake_generator_name = "Unix Makefiles"
+        # Get the arch flags
         if context.toolchain.target.is_x86_64():
             cmake_generator_c_arch = "-DCMAKE_C_FLAGS=-m64"
             cmake_generator_cxx_arch = "-DCMAKE_CXX_FLAGS=-m64"
@@ -109,6 +116,7 @@ class CMakeBuilder(BaseBuilder):
         elif context.toolchain.target.is_arm():
             cmake_generator_c_arch = "-DCMAKE_C_FLAGS=-march=armv7-a"
             cmake_generator_cxx_arch = "-DCMAKE_CXX_FLAGS=-march=armv7-a"
+        # Set compiler path
         cmake_generator_c_compiler = f"-DCMAKE_C_COMPILER={context.toolchain.compiler.c_path}"
         cmake_generator_cxx_compiler = f"-DCMAKE_CXX_COMPILER={context.toolchain.compiler.cxx_path}"
         return ["--no-warn-unused-cli", "-S", str(context.cmakelists_directory), "-G", cmake_generator_name, cmake_generator_c_compiler, cmake_generator_cxx_compiler, cmake_generator_c_arch, cmake_generator_cxx_arch]
@@ -130,16 +138,15 @@ class CMakeBuilder(BaseBuilder):
         context = CMakeContext(current_directory=cmake_build_context.directory, 
                                toolchain=cmake_build_context.toolchain, 
                                project=cmake_build_context.project)
-        configure_args = None
-
-        match context.toolchain.target.name:
-            case "x86_64-pc-windows-msvc":
-                configure_args = self._get_x86_64_pc_windows_msvc_configure_args(context=context)
-            case "x86_64-unknown-linux-gnu":
-                configure_args = self._get_x86_64_unknown_linux_gnu_configure_args(context=context)
-            case _ : 
-                console.print_error(f"Unknown target {context.toolchain.target.name}")
+        if context.toolchain.target.is_windows_os():
+            if (configure_args := self._get_pc_windows_msvc_configure_args(context=context) ) is None:
                 exit(1)
+        elif context.toolchain.target.is_linux_os():
+            if (configure_args := self._get_x86_64_unknown_linux_gnu_configure_args(context=context)) is None:
+                exit(1)
+        else:
+            console.print_error(f"Unknown target {context.toolchain.target.name}")
+            exit(1)                
         
 
         os.makedirs(context.build_directory, exist_ok=True)

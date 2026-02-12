@@ -21,7 +21,7 @@ class CMakeContext:
         
     @staticmethod
     def resolveCMakeBuildDirectory(current_directory: Path, toolchain: Toolchain) -> Path:
-        return CMakeContext.resolveRootBuildDirectory(current_directory=current_directory) / toolchain.target.name / "cmake"
+        return CMakeContext.resolveRootBuildDirectory(current_directory=current_directory) / toolchain.target.name / toolchain.compiler.name / "cmake"
     
     @staticmethod
     def resolveProjectBuildDirectory(current_directory: Path, toolchain: Toolchain, project: Project) -> Path:

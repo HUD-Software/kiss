@@ -175,10 +175,10 @@ set_target_properties({project.name} PROPERTIES
             # Write dependencies
             for dep_project in project.dependencies:
                 dep_cmakelist_dir = CMakeContext.resolveCMakeListsDirectory(current_directory=cmakelist_generate_context.current_directory,
-                                                                        platform_target=cmakelist_generate_context.platform_target,
+                                                                        toolchain=cmakelist_generate_context.toolchain,
                                                                         project=dep_project)
                 dep_build_dir = CMakeContext.resolveProjectBuildDirectory(current_directory=cmakelist_generate_context.current_directory,
-                                                                        platform_target=cmakelist_generate_context.platform_target,
+                                                                        toolchain=cmakelist_generate_context.toolchain,
                                                                         project=dep_project)
                 f.write(f"""\n# Add {dep_project.name} dependency 
 if(NOT TARGET {dep_project.name})
@@ -229,10 +229,10 @@ set_target_properties({project.name} PROPERTIES
             # Write dependencies
             for dep_project in project.dependencies:
                 dep_cmakelist_dir = CMakeContext.resolveCMakeListsDirectory(current_directory=cmakelist_generate_context.current_directory,
-                                                                        platform_target=cmakelist_generate_context.platform_target,
+                                                                        toolchain=cmakelist_generate_context.toolchain,
                                                                         project=dep_project)
                 dep_build_dir = CMakeContext.resolveProjectBuildDirectory(current_directory=cmakelist_generate_context.current_directory,
-                                                                        platform_target=cmakelist_generate_context.platform_target,
+                                                                        toolchain=cmakelist_generate_context.toolchain,
                                                                         project=dep_project)
                 f.write(f"""\n# Add {dep_project.name} dependency 
 if(NOT TARGET {dep_project.name})
@@ -337,10 +337,10 @@ set_target_properties({project.name} PROPERTIES
             # Write dependencies
             for dep_project in project.dependencies:
                 dep_cmakelist_dir = CMakeContext.resolveCMakeListsDirectory(current_directory=cmakelist_generate_context.current_directory,
-                                                                        platform_target=cmakelist_generate_context.platform_target,
+                                                                        toolchain=cmakelist_generate_context.toolchain,
                                                                         project=dep_project)
                 dep_build_dir = CMakeContext.resolveProjectBuildDirectory(current_directory=cmakelist_generate_context.current_directory,
-                                                                        platform_target=cmakelist_generate_context.platform_target,
+                                                                        toolchain=cmakelist_generate_context.toolchain,
                                                                         project=dep_project)
                 f.write(f"""\n# Add {dep_project.name} dependency 
 if(NOT TARGET {dep_project.name})
@@ -492,10 +492,10 @@ set_target_properties({project.name} PROPERTIES
             # Write dependencies
             for dep_project in project.dependencies:
                 dep_cmakelist_dir = CMakeContext.resolveCMakeListsDirectory(current_directory=cmakelist_generate_context.current_directory,
-                                                                        platform_target=cmakelist_generate_context.platform_target,
+                                                                        toolchain=cmakelist_generate_context.toolchain,
                                                                         project=dep_project)
                 dep_build_dir = CMakeContext.resolveProjectBuildDirectory(current_directory=cmakelist_generate_context.current_directory,
-                                                                        platform_target=cmakelist_generate_context.platform_target,
+                                                                        toolchain=cmakelist_generate_context.toolchain,
                                                                         project=dep_project)
                 f.write(f"""\n# Add {dep_project.name} dependency 
 if(NOT TARGET {dep_project.name})
@@ -596,10 +596,10 @@ set_target_properties({project.name} PROPERTIES
             # Write dependencies
             for dep_project in project.dependencies:
                 dep_cmakelist_dir = CMakeContext.resolveCMakeListsDirectory(current_directory=cmakelist_generate_context.current_directory,
-                                                                        platform_target=cmakelist_generate_context.platform_target,
+                                                                        toolchain=cmakelist_generate_context.toolchain,
                                                                         project=dep_project)
                 dep_build_dir = CMakeContext.resolveProjectBuildDirectory(current_directory=cmakelist_generate_context.current_directory,
-                                                                        platform_target=cmakelist_generate_context.platform_target,
+                                                                        toolchain=cmakelist_generate_context.toolchain,
                                                                         project=dep_project)
                 f.write(f"""\n# Add {dep_project.name} dependency 
 if(NOT TARGET {dep_project.name})

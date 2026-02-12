@@ -258,7 +258,7 @@ class CompilerInfoLoader:
     def read_yaml_compilers(self, item_yaml_object):
         for compiler_name, compiler_yaml_object in item_yaml_object.value.items():
             # Ignore if we already have a compiler name
-            existing_compiler: CompilerNode = self.compilers.get(compiler_name)
+            existing_compiler: CompilerNode = CompilerNodeRegistry.compilers.get(compiler_name)
             if existing_compiler:
                 console.print_warning(f"⚠️ Line {compiler_yaml_object.key_line} : CompilerNode '{existing_compiler}' already exist in '{existing_compiler.file}' when loading '{self.file}'")
                 continue
@@ -273,3 +273,5 @@ class CompilerInfoLoader:
             # Add it to the available compiler list
             CompilerNodeRegistry.register_compiler(compiler)
             self.compilers.add(compiler)
+
+

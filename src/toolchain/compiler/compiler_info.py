@@ -1015,6 +1015,8 @@ class CompilerNode:
         self.cxx_path = Path()
         # Path of the C compiler
         self.c_path = Path()
+        # Compiler extends names
+        self.extends_ordered_list = list[Self]()
 
     def __hash__(self) -> int:
         return hash(self.name)
@@ -1040,7 +1042,7 @@ class CompilerNode:
     def __str__(self) -> str:
         return self._build_repr()
     
-    def flatten_extends_compilers(self) -> list[Self]:
+    def _flatten_extends_compilers(self) -> list[Self]:
         # 1. Collecte du sous-graphe (DFS)
         all_profiles: list[Self] = list()
         visiting_stack: list[Self] = []
@@ -1136,9 +1138,6 @@ class CompilerNode:
             if not extended.profiles:
                 console.print_error(f"Fail to extend '{to_extend_compiler_node.name}' with base '{to_extend_compiler_node.extends_name}'")
                 return None
-            
-       
-            
             # Register for futur use
             ExtendedCompilerNodeRegistry.register_extended_compiler(extended)
         assert extended.is_extended
@@ -1151,33 +1150,38 @@ class CompilerNode:
         # This ensures safe iteration where all included compilers are
         # resolved before the compiler that extends them.
         # In other words, if compiler A extends B, then B appears before A.
-        flatten_compiler_extends = self.flatten_extends_compilers()
-
+        flatten_compiler_extends = self._flatten_extends_compilers()
+        
         # Start by extending the top-most base compiler and validate features
         # at each level until we reach the target compiler.
         base_compiler_node: CompilerNode = CompilerNodeRegistry.get(flatten_compiler_extends[0].name)
-        to_extend_compiler_node: CompilerNode = CompilerNodeRegistry.get(flatten_compiler_extends[1].name) if len(flatten_compiler_extends) > 1 else None
-
+        
         # Extend the base
-        if (base_compiler_node := CompilerNode._extend_no_base_then_validate_features(base_compiler_node)) is None:
-            return None
-
-        # If there is no compiler to extend from the base, return the to_extend_compiler_node base directly
-        if not to_extend_compiler_node:
-           return base_compiler_node
-
-        # If there is an to_extend_compiler_node compiler, combine it with the base.
-        # The result becomes the new base for the next compiler in the extension chain.
-        if (base_compiler_node := CompilerNode._extend_and_validate_features(base_compiler_node, to_extend_compiler_node)) is None:
+        if (extended_base := CompilerNode._extend_no_base_then_validate_features(base_compiler_node)) is None:
             return None
         
+        # If there is no compiler to extend from the base, return the extended_base directly
+        if( to_extend_compiler_node := CompilerNodeRegistry.get(flatten_compiler_extends[1].name) if len(flatten_compiler_extends) > 1 else None) is None:
+           return extended_base
+
+        extends_ordered_list = list[CompilerNode]()
+        # If there is an to_extend_compiler_node compiler, combine it with the base.
+        # The result becomes the new base for the next compiler in the extension chain.
+        if (extended_base := CompilerNode._extend_and_validate_features(extended_base, to_extend_compiler_node)) is None:
+            return None
+        extends_ordered_list.insert(0,extended_base)
         # Extend the base with all subsequent compilers in the list.
         # This is analogous to: ((((A + B) + C) + D) + E)
         # where each intermediate result becomes the new 'base' for the next extension.
         for to_extend_compiler_node in flatten_compiler_extends[2:]:
-            if (base_compiler_node := CompilerNode._extend_and_validate_features(base_compiler_node, to_extend_compiler_node)) is None:
+            new_extended_base = extended_base
+            if (new_extended_base := CompilerNode._extend_and_validate_features(new_extended_base, to_extend_compiler_node)) is None:
                 return None
-        return base_compiler_node
+            extends_ordered_list.insert(0,extended_base)
+
+        # extended_base is the last node in the last taht match self.name in the flatten_compiler_extends list
+        extended_base.extends_ordered_list = extends_ordered_list
+        return extended_base
     
     def get_feature(self, feature_name: str) -> FeatureNode:
         return self.features.get(feature_name)
@@ -1222,7 +1226,8 @@ class CompilerNodeList:
         return extended
 
 ################################################
-# List of 'CompilerNode' loaded by files
+# List of all 'CompilerNode' loaded by files
+# They are non extended compilers infos
 ################################################
 class CompilerNodeRegistry:
     def __init__(self):
@@ -1249,7 +1254,8 @@ CompilerNodeRegistry = CompilerNodeRegistry()
 
 
 ################################################
-# List of 'ExtendedCompilerNode' loaded by files
+# List of 'CompilerNode' loaded by files
+# The are extended compilers infos
 ################################################
 class ExtendedCompilerNodeRegistry:
     def __init__(self):

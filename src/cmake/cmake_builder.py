@@ -13,7 +13,7 @@ import console
 from generator import GeneratorRegistry
 from process import run_process
 from project import Project
-from toolchain import Toolchain, Target, Compiler
+from toolchain import Toolchain
 from visual_studio import get_windows_latest_toolset
 
 class CMakeBuildContext(BuildContext):
@@ -66,7 +66,7 @@ class CMakeBuilder(BaseBuilder):
 
     def _get_x86_64_pc_windows_msvc_configure_args(self, context: CMakeContext) -> list[str]:
         # Get the -G
-        toolset = get_windows_latest_toolset(context.toolchain.compiler)
+        toolset = get_windows_latest_toolset(context.toolchain.compiler.name)
         year = toolset.product_year
         if toolset.major_version == 18:
             year = 2026
@@ -109,11 +109,8 @@ class CMakeBuilder(BaseBuilder):
         elif context.toolchain.target.is_arm():
             cmake_generator_c_arch = "-DCMAKE_C_FLAGS=-march=armv7-a"
             cmake_generator_cxx_arch = "-DCMAKE_CXX_FLAGS=-march=armv7-a"
-
-        # cmake_generator_c_compiler = "-DCMAKE_C_COMPILER=gcc"
-        # cmake_generator_cxx_compiler = "-DCMAKE_C_COMPILER=g++"
-        cmake_generator_c_compiler = ""
-        cmake_generator_cxx_compiler = ""
+        cmake_generator_c_compiler = f"-DCMAKE_C_COMPILER={context.toolchain.compiler.c_path}"
+        cmake_generator_cxx_compiler = f"-DCMAKE_CXX_COMPILER={context.toolchain.compiler.cxx_path}"
         return ["--no-warn-unused-cli", "-S", str(context.cmakelists_directory), "-G", cmake_generator_name, cmake_generator_c_compiler, cmake_generator_cxx_compiler, cmake_generator_c_arch, cmake_generator_cxx_arch]
         
     def build_project(self, cmake_build_context: CMakeBuildContext):

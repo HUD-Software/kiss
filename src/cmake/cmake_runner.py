@@ -49,7 +49,7 @@ class CMakeRunner(BaseRunner):
                 dll_paths = []
                 for proj_context in project_list:
                     proj_context = CMakeContext(current_directory=run_context.directory, 
-                                                platform_target=run_context.platform_target, 
+                                                toolchain=run_context.toolchain, 
                                                 project=proj_context)
                     dll_paths.append(str(proj_context.target_output_directory(run_context.config).resolve()))  
 

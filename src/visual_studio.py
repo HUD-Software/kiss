@@ -102,16 +102,16 @@ def get_windows_latest_toolset(compiler:Compiler) -> Optional[VSToolset] :
                                          Repair Visual studio installation")
                 sys.exit(2)
             compiler_path=json_installation_path / f"VC\\Tools\\MSVC\\{vctool_default_version}\\bin\\Hostx64\\x64\\"
-            return VSToolset(compiler=Compiler.cl,
+            return VSToolset(compiler=compiler,
                                 cxx_compiler_path=compiler_path / "cl.exe",
                                 c_compiler_path=compiler_path / "cl.exe",
                                 major_version=latest_major_version,
                                 product_name=json_catalog.get('productName'),
                                 product_line_version=json_catalog.get('productLineVersion'),
                                 product_year=json_catalog.get('featureReleaseYear'))
-        case "clang-cl":
+        case "clangcl":
             compiler_path=json_installation_path / "VC\\Tools\\Llvm\\x64\\bin\\"
-            return VSLLVMToolset(compiler=Compiler.clang,
+            return VSLLVMToolset(compiler=compiler,
                                     cxx_compiler_path=compiler_path / "clang-cl.exe",
                                     c_compiler_path=compiler_path / "clang-cl.exe",
                                     major_version=latest_major_version,

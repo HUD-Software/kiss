@@ -68,7 +68,9 @@ class Compiler:
         self.cxx_path = cxx_path
         # Path of the C compiler
         self.c_path = c_path
-
+        # Compiler extends names
+        self.extends = list[str]()
+        
     def _build_repr(self) -> str:
         lines = [
             f"Compiler: {self.name}",

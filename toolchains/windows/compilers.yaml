@@ -8,27 +8,27 @@ compilers:
     # This compiler is not a compiler that can be used to build
     is_abstract: true
     profiles:
-      msvc-generic-commmon-profile:
+      msvc-generic:
         is_abstract: true
-        enable-features: [WARNING_STRICT, RUNTIME_DLL, ENABLE_EXCEPTION]
+        enable-features: [WARNING_STRICT, ENABLE_EXCEPTION]
       debug:
         extends: msvc-generic
-        enable-features: [OPT_LEVEL_0, ENABLE_INCREMENTAL_LINK]
+        enable-features: [OPT_LEVEL_0, ENABLE_INCREMENTAL_LINK, RUNTIME_DLL_DEBUG]
         dyn:
           enable-features: [DYNAMIC_LIBRARY_DEBUG]
       release:
         extends: msvc-generic
-        enable-features: [OPT_LEVEL_3, REMOVE_DEAD_CODE, DISABLE_INCREMENTAL_LINK]
+        enable-features: [OPT_LEVEL_3, REMOVE_DEAD_CODE, DISABLE_INCREMENTAL_LINK, RUNTIME_DLL_RELEASE]
         dyn:
-          enable-features: [DYNAMIC_LIBRARY]
+          enable-features: [DYNAMIC_LIBRARY_RELEASE]
     features:
       # Dynmaci library
-      - name: DYNAMIC_LIBRARY
+      - name: DYNAMIC_LIBRARY_RELEASE
         description: Generate a dynamic library in release
         cxx-compiler-flags: [/LD]
       - name: DYNAMIC_LIBRARY_DEBUG
         description: Generate a dynamic library in debug
-        cxx-compiler-flags: [/LDd]              
+        cxx-compiler-flags: [/LDd]
 
       # Remove dead code
       - name: REMOVE_DEAD_CODE
@@ -53,20 +53,18 @@ compilers:
         cxx-compiler-flags: [/W0]
 
       # Windows Runtime
-      - name: RUNTIME_DLL
-        description: Windows DLL runtime 
-        profiles:
-          debug:
-            cxx-compiler-flags: [/MDd]
-          release:
-            cxx-compiler-flags: [/MD]
-      - name: RUNTIME_STATIC
-        description: Windows static runtime
-        profiles:
-          debug:
-            cxx-compiler-flags: [/MTd]
-          release:
-            cxx-compiler-flags: [/MT]
+      - name: RUNTIME_DLL_DEBUG
+        description: Windows CRT dynamic runtime in debug
+        cxx-compiler-flags: [/MDd]
+      - name: RUNTIME_DLL_RELEASE
+        description: Windows CRT dynamic runtime in release
+        cxx-compiler-flags: [/MD]
+      - name: RUNTIME_STATIC_DEBUG
+        description: Windows CRT static runtime in debug
+        cxx-compiler-flags: [/MTd]
+      - name: RUNTIME_STATIC_RELEASE
+        description: Windows CRT static runtime in release
+        cxx-compiler-flags: [/MT]
 
       # Optimisations
       - name: OPT_LEVEL_0
@@ -130,7 +128,7 @@ compilers:
         features: [WARNING_BASE, WARNING_STRICT, WARNING_ALL, NO_WARNING]
       # Only one runtime at a time
       - only-one: runtime
-        features: [RUNTIME_DLL, RUNTIME_STATIC]
+        features: [RUNTIME_DLL_DEBUG, RUNTIME_DLL_RELEASE, RUNTIME_STATIC_DEBUG, RUNTIME_STATIC_RELEASE]
       # Only one optimization level at a time
       - only-one: optimization
         features: [OPT_LEVEL_0, OPT_LEVEL_1, OPT_LEVEL_2, OPT_LEVEL_3]
@@ -149,8 +147,11 @@ compilers:
         features: [TARGET_X64, TARGET_X86]
       # Only one dynamic library mode
       - only-one: dll
-        features: [DYNAMIC_LIBRARY, DYNAMIC_LIBRARY_DEBUG]
+        features: [DYNAMIC_LIBRARY_RELEASE, DYNAMIC_LIBRARY_DEBUG]
 
+  # MSVC cl.exe compiler
+  cl:
+    extends: msvc-generic
 
   # MSVC clang-cl compiler
   clangcl:
@@ -163,7 +164,7 @@ compilers:
         description: Enable ASAN Sanitizer (Clang-cl only)
         cxx-compiler-flags: ["-fsanitize=address", "-fsanitize-address-use-after-scope"]
         cxx-linker-flags: ["-fsanitize=address"]
-        enable-features: [DEBUG_INFO, RUNTIME_DLL]
+        enable-features: [DEBUG_INFO, RUNTIME_DLL_DEBUG]
     feature-rules:
       - incompatible: asan
         feature: ASAN

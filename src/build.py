@@ -2,23 +2,26 @@ import argparse
 from pathlib import Path
 from typing import Self
 from builder import BaseBuilder, BuilderRegistry
-from config import Config
 import console
 from context import Context
 from project import Project
 from toolchain import Toolchain, Compiler, Target
 
 class BuildContext(Context):
-    def __init__(self, directory:Path, project: Project, builder_name: str, toolchain: Toolchain, config : Config):
+    def __init__(self, directory:Path, project: Project, builder_name: str, toolchain: Toolchain, profile: str):
         super().__init__(directory)
         self._project = project
         self._builder_name = builder_name
         self._toolchain = toolchain
-        self._config = config
+        self._profile = profile
 
     @property
     def project(self) -> Project:
         return self._project
+
+    @property
+    def profile(self) -> str:
+        return self._profile
 
     @property
     def builder_name(self) -> str:
@@ -28,12 +31,8 @@ class BuildContext(Context):
     def toolchain(self) -> Toolchain:
         return self._toolchain
 
-    @property
-    def config(self) -> Config:
-        return self._config
-
     @classmethod
-    def create(cls, directory: Path, project_name: str, builder_name: str, toolchain: Toolchain, config : Config) -> Self :
+    def create(cls, directory: Path, project_name: str, builder_name: str, toolchain: Toolchain, profile: str) -> Self :
         project_to_build = super().find_target_project(directory, project_name)
         if not project_to_build:
             console.print_error(f"No project'found in {str(directory)}")
@@ -41,15 +40,12 @@ class BuildContext(Context):
         return BuildContext(directory=directory, 
                             project=project_to_build, 
                             builder_name=builder_name, 
-                            toolchain=toolchain, 
-                            config=config)
+                            toolchain=toolchain,
+                            profile=profile)
 
 
     @staticmethod
     def from_cli_args(cli_args: argparse.Namespace) -> Self | None:
-        release :bool = getattr(cli_args, "release", False) or False
-        debug_info :bool = getattr(cli_args, "debug_info", True) or (True if not release else False)
-        config : Config = Config(release, debug_info)
         target_name :Target = getattr(cli_args, "target", None) or Target.default_target_name()
         compiler_name : Compiler = getattr(cli_args, "compiler", None) or Compiler.default_compiler_name()
         if( toolchain := Toolchain.create(compiler_name=compiler_name, target_name=target_name)) is None:
@@ -58,7 +54,7 @@ class BuildContext(Context):
                                              project_name=cli_args.project_name,
                                              builder_name=cli_args.builder,
                                              toolchain=toolchain,
-                                             config=config)
+                                             profile=cli_args.profile)
 
         return build_context
 

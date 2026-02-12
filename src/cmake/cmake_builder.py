@@ -7,9 +7,8 @@ from build import BuildContext
 from builder import BaseBuilder
 from cli import KissParser
 from cmake.cmake_context import CMakeContext
-from cmake.cmake_generators import CMakeGenerator
+from cmake.cmake_generator_name import CMakeGeneratorName
 from cmake.cmakelists_generator import CMakeListsGenerateContext, CMakeListsGenerator
-from config import Config
 import console
 from generator import GeneratorRegistry
 from process import run_process
@@ -18,60 +17,67 @@ from toolchain import Toolchain
 
 
 class CMakeBuildContext(BuildContext):
-    def __init__(self, directory:Path, project: Project, builder_name: str, toolchain: Toolchain, config : Config, generator: CMakeGenerator):
-        super().__init__(directory, project, builder_name, toolchain, config)
-        self._generator = generator
+    def __init__(self, directory:Path, project: Project, builder_name: str, toolchain: Toolchain, profile: str, cmake_generator_name: str):
+        super().__init__(directory=directory, 
+                         project=project, 
+                         builder_name=builder_name, 
+                         toolchain=toolchain, 
+                         profile=profile)
+        self._cmake_generator_name = cmake_generator_name
         self._cmakelist_generate_context = CMakeListsGenerateContext.create( directory=directory,
                                                                             project_name=project.name,
                                                                             generator_name=builder_name,
                                                                             toolchain=toolchain,
-                                                                            config=config)
+                                                                            profile=profile)
 
     @property
     def cmakelist_generate_context(self) -> CMakeListsGenerateContext:
         return self._cmakelist_generate_context
 
+   
     @property
-    def generator(self) -> CMakeGenerator:
-        return self._generator
-    
+    def profile(self) -> str:
+        return self._cmakelist_generate_context.profile
+
     def output_directory_for_config(self, config: str) -> str: 
         return self.cmakelist_generate_context.output_directory_for_config(config)
     
     @classmethod
-    def create(cls, directory: Path, project_name: str, builder_name: str, toolchain: Toolchain, config : Config, generator: CMakeGenerator) -> Self :
+    def create(cls, directory: Path, project_name: str, builder_name: str, toolchain: Toolchain, profile: str, cmake_generator_name: str) -> Self :
         project_to_build = super().find_target_project(directory, project_name)
         if not project_to_build:
             console.print_error(f"No project found in {str(directory)}")
             exit(1)
-        return CMakeBuildContext(directory=directory, project=project_to_build, builder_name=builder_name, toolchain=toolchain, config=config, generator=generator)
+        return CMakeBuildContext(directory=directory, project=project_to_build, builder_name=builder_name, toolchain=toolchain, profile=profile, cmake_generator_name=cmake_generator_name)
 
 
     @staticmethod
     def from_cli_args(cli_args: argparse.Namespace) -> Self:
         build_context = BuildContext.from_cli_args(cli_args=cli_args)
-        generator : CMakeGenerator = getattr(cli_args, "generator", None)
+        cmake_generator_name  = getattr(cli_args, "generator", None)
         return CMakeBuildContext(directory=build_context.directory,
                                  project=build_context.project,
                                  builder_name=build_context.builder_name,
                                  toolchain=build_context.toolchain,
-                                 config=build_context.config,
-                                 generator=generator)
+                                 profile=build_context.profile,
+                                 cmake_generator_name=cmake_generator_name)
 
     
 class CMakeBuilder(BaseBuilder):
     @classmethod
     def add_cli_argument_to_parser(cls, parser: KissParser):
+        generator_name_list = list[str]()
         def generator_help_string() -> str:
             lines = []
             for target in Toolchain.available_target_list():
-                generator_str_list = ", ".join(CMakeGenerator.available_generator_for_platform_target(target))
-                lines.append(f" - {target.name} -> {{{generator_str_list}}}")
+                list_names = CMakeGeneratorName.available_generator_for_platform_target(target)
+                generator_name_list.extend(list_names)
+                lines.append(f" - {target.name} -> {{{', '.join(list_names)}}}")
             return "\n".join(lines)
         parser.formatter_class=argparse.RawTextHelpFormatter
         parser.add_argument("-g", "--generator",
-                            type=CMakeGenerator,
-                            choices=list(CMakeGenerator),
+                            type=str,
+                            choices=generator_name_list,
                             help="Choose CMake generator based on platform:\n" + generator_help_string())
            
     def __init__(self):
@@ -156,14 +162,7 @@ class CMakeBuilder(BaseBuilder):
 
         # Build
         console.print_step("🏗️  CMake build...")
-        cmake_config = "Debug"
-        if cmake_build_context.config.is_release:
-            if cmake_build_context.config.is_debug_info:
-                cmake_config = "RelWithDebInfo"
-            else:
-                cmake_config = "Release"
-
-        args = ["--build", ".", "--config", cmake_config]
+        args = ["--build", ".", "--config", cmake_build_context.profile]
         if not run_process("cmake", args, context.build_directory) == 0:
             exit(1)
 

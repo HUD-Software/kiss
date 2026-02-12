@@ -92,6 +92,12 @@ def _add_generate_command(parser : argparse.ArgumentParser):
     generate_parser = parser.add_parser("generate", description="generate files used to build the project")
     generate_parser.add_argument("-p", "--project", help="name of the project to generate", dest="project_name", required=False, type=valid_project_name)
     generate_parser.add_argument("-t", "--target", help="specify the target platform", dest="target", default=Target.default_target_name(), required=False)
+    generate_parser.add_argument("-c", "--compiler", help="specify the compiler to use", type=str)
+    profile_group = generate_parser.add_mutually_exclusive_group()
+    profile_group.add_argument("--release",action="store_const",const="release",dest="profile",help="release build")
+    profile_group.add_argument("--debug",action="store_const",const="debug",dest="profile",help="debug build")
+    profile_group.add_argument("--profile",type=str, dest="profile", help="custom build profile")
+    generate_parser.set_defaults(profile="debug")
 
     # Create the help string that contains list of all registered generators  
     generator_help_str = ""
@@ -118,9 +124,12 @@ def _add_build_command(parser : argparse.ArgumentParser):
     build_parser = parser.add_parser("build", description="build files used to build the project")
     build_parser.add_argument("-p", "--project", help="name of the project to build", dest="project_name", required=False, type=valid_project_name)
     build_parser.add_argument("-t", "--target", help="specify the target platform", dest="target", default=Target.default_target_name(), required=False)
-    build_parser.add_argument("-r", "--release", action='store_const', const=True, help="release build", dest="release")
-    build_parser.add_argument("-compiler", help="specify the compiler to use", type=str)
-    build_parser.add_argument("-d", "--debug_info", action='store_const', const=True, help="enable debug information", dest="debug_info")
+    build_parser.add_argument("-c", "--compiler", help="specify the compiler to use", type=str)
+    profile_group = build_parser.add_mutually_exclusive_group()
+    profile_group.add_argument("--release",action="store_const",const="release",dest="profile",help="release build")
+    profile_group.add_argument("--debug",action="store_const",const="debug",dest="profile",help="debug build")
+    profile_group.add_argument("--profile",type=str, dest="profile", help="custom build profile")
+    build_parser.set_defaults(profile="debug")
 
     # Create the help string that contains list of all registered builders
     builder_help_str = ""
@@ -147,9 +156,12 @@ def _add_run_command(parser : argparse.ArgumentParser):
     run_parser = parser.add_parser("run", description="run the project")
     run_parser.add_argument("-p", "--project", help="name of the project to run", dest="project_name", required=False, type=valid_project_name)
     run_parser.add_argument("-t", "--target", help="specify the target platform", dest="target", default=Target.default_target_name(), required=False)
-    run_parser.add_argument("-r", "--release", action='store_const', const=True, help="release build", dest="release")
-    run_parser.add_argument("-compiler", help="specify the compiler to use", type=str)
-    run_parser.add_argument("-d", "--debug_info", action='store_const', const=True, help="enable debug information", dest="debug_info")
+    run_parser.add_argument("-c", "--compiler", help="specify the compiler to use", type=str)
+    profile_group = run_parser.add_mutually_exclusive_group()
+    profile_group.add_argument("--release",action="store_const",const="release",dest="profile",help="release build")
+    profile_group.add_argument("--debug",action="store_const",const="debug",dest="profile",help="debug build")
+    profile_group.add_argument("--profile",type=str, dest="profile", help="custom build profile")
+    run_parser.set_defaults(profile="debug")
 
     # Create the help string that contains list of all registered runners
     runner_help_str = ""

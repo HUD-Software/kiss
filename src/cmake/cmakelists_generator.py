@@ -2,80 +2,22 @@
 import argparse
 import os
 from pathlib import Path
-from typing import Optional, Self
+from typing import Self
 from cli import KissParser
 from cmake.cmake_context import CMakeContext
+from cmake.cmake_generator_name import CMakeGeneratorName
 from cmake.fingerprint import Fingerprint
-from config import Config
 import console
 from generate import GenerateContext
 from generator import BaseGenerator
 from project import  BinProject, LibProject, Project, ProjectType
 from toolchain import Toolchain
 
-class CMakeGeneratorName:
-    def __init__(self, name: str): 
-        self.name = name
-
-    def is_visual_studio(self) -> bool:
-        return "Visual Studio" in self.name
-    
-    def is_xcode(self) -> bool: 
-        return "Xcode" in self.name
-    
-    def is_ninja(self) -> bool:
-        return self.name == "Ninja"
-    
-    def is_ninja_multi_config(self) -> bool:
-        return self.name == "Ninja Multi-Config"
-    
-    def is_unix_makefiles(self) -> bool:
-        return self.name == "Unix Makefiles"
-    
-    def is_mingw_makefiles(self) -> bool:
-        return self.name == "MinGW Makefiles"
-
-    def is_nmakefiles(self) -> bool:
-        return self.name == "NMake Makefiles"
-    
-    def is_nmakefiles_jom(self) -> bool:
-        return self.name == "NMake Makefiles JOM"
-    
-    def is_single_profile(self) -> bool:
-        return self.is_mingw_makefiles() or self.is_nmakefiles() or self.is_nmakefiles_jom() or self.is_unix_makefiles() or self.is_ninja()
-    
-    def is_multi_profile(self) -> bool:
-        return self.is_visual_studio() or self.is_xcode() or self.is_ninja_multi_config()
-
-    @staticmethod
-    def create(toolchain: Toolchain) -> Self | None:
-        if toolchain.target.is_windows_os():
-            from visual_studio import get_windows_latest_toolset
-            if( toolset := get_windows_latest_toolset(toolchain.compiler)) is None:
-                return None
-            year = toolset.product_year
-            if toolset.major_version == 18:
-                year = 2026
-            if not year:
-                year = int(toolset.product_line_version)
-            return CMakeGeneratorName(f"{toolset.product_name} {toolset.major_version} {year}")
-        elif toolchain.target.is_linux_os():
-            return CMakeGeneratorName("Unix Makefiles")
-        else:
-            console.print_error(f"Unsupported target platform: {toolchain.target.platform}")
-            return None
-        
-
 class CMakeListsGenerateContext(GenerateContext):
-    def __init__(self, directory:Path, project: Project, generator_name: str, toolchain: Toolchain, config: Optional[Config]):
-        super().__init__(directory=directory,project=project,generator_name=generator_name,toolchain=toolchain)
-        self._config = config
+    def __init__(self, directory:Path, project: Project, generator_name: str, toolchain: Toolchain, profile: str):
+        super().__init__(directory=directory,project=project,generator_name=generator_name,toolchain=toolchain, profile=profile)
         self._cmake_context = CMakeContext(current_directory=directory, toolchain=toolchain, project=project)
         self._cmake_generator_name = CMakeGeneratorName.create(toolchain=toolchain)
-    
-    @property
-    def config(self) -> Config:
-        return self._config
     
     @property
     def cmakefile(self) -> Path:
@@ -100,7 +42,7 @@ class CMakeListsGenerateContext(GenerateContext):
     @property
     def toolchain(self) -> Toolchain:
         return self._cmake_context.toolchain
-    
+
     @property
     def cmake_generator_name(self) -> CMakeGeneratorName: 
         return self._cmake_generator_name
@@ -113,13 +55,13 @@ class CMakeListsGenerateContext(GenerateContext):
         self._cmake_context = CMakeContext(current_directory=self._cmake_context.current_directory, toolchain=self._cmake_context.toolchain, project=value)
     
     @classmethod
-    def create(cls, directory: Path, project_name: str, generator_name: str, toolchain: Toolchain, config: Optional[Config]) -> Self :
+    def create(cls, directory: Path, project_name: str, generator_name: str, toolchain: Toolchain, profile: str) -> Self :
         project_to_generate = super().find_target_project(directory, project_name)
         if not project_to_generate:
             console.print_error(f"No project found in {str(directory)}")
             exit(1)
         generator_name = generator_name if generator_name is not None else "cmake"
-        return cls(directory=directory, project=project_to_generate, generator_name=generator_name, toolchain=toolchain, config=config)
+        return cls(directory=directory, project=project_to_generate, generator_name=generator_name, toolchain=toolchain, profile=profile)
 
 
 
@@ -222,7 +164,7 @@ class CMakeListsGenerator(BaseGenerator):
                 f.write(f"set(CMAKE_CONFIGURATION_TYPES {';'.join([p[0] for p in profile_name_list])} CACHE STRING \"\" FORCE)\n")
             for profile_name, upper_profile_name in profile_name_list:
                 f.write(f"set(CMAKE_EXE_LINKER_FLAGS_{upper_profile_name} \"\" CACHE STRING \"\" FORCE)\n")
-
+            
 
             # Write project sources
             if project.sources:
@@ -231,6 +173,7 @@ class CMakeListsGenerator(BaseGenerator):
                 for src in normalized_src:
                     src_str += f"\n\t{src}"
                 f.write(f"add_executable({project.name} {src_str})\n")
+                f.write("\n")
 
             # Write output name
             f.write(f"# {project.name} output name\n")
@@ -244,7 +187,8 @@ class CMakeListsGenerator(BaseGenerator):
             else:
                 f.write(f"set_target_properties({project.name} PROPERTIES OUTPUT_NAME {project.name})\n")
                 f.write(f"set_target_properties({project.name} PROPERTIES\n")
-                f.write(f"  RUNTIME_OUTPUT_DIRECTORY   \"{cmakelist_generate_context.target_output_directory().resolve().as_posix()}\"\n")
+                output_directory = cmakelist_generate_context.output_directory_for_config(cmakelist_generate_context.profile)
+                f.write(f"  RUNTIME_OUTPUT_DIRECTORY   \"{output_directory}\"\n")
                 f.write(")\n")
             f.write("\n")
 
@@ -311,7 +255,8 @@ class CMakeListsGenerator(BaseGenerator):
             else:
                 f.write(f"set_target_properties({project.name} PROPERTIES OUTPUT_NAME {project.name})\n")
                 f.write(f"set_target_properties({project.name} PROPERTIES\n")
-                f.write(f"  ARCHIVE_OUTPUT_DIRECTORY   \"{cmakelist_generate_context.target_output_directory().resolve().as_posix()}\"\n")
+                output_directory = cmakelist_generate_context.output_directory_for_config(cmakelist_generate_context.profile)
+                f.write(f"  ARCHIVE_OUTPUT_DIRECTORY   \"{output_directory}\"\n")
                 f.write(")\n")
             f.write("\n")
 
@@ -428,8 +373,9 @@ class CMakeListsGenerator(BaseGenerator):
             else:
                 f.write(f"set_target_properties({project.name} PROPERTIES OUTPUT_NAME {project.name})\n")
                 f.write(f"set_target_properties({project.name} PROPERTIES\n")
-                f.write(f"  LIBRARY_OUTPUT_DIRECTORY   \"{cmakelist_generate_context.target_output_directory().resolve().as_posix()}\"\n")
-                f.write(f"  RUNTIME_OUTPUT_DIRECTORY   \"{cmakelist_generate_context.target_output_directory().resolve().as_posix()}\"\n")
+                output_directory = cmakelist_generate_context.output_directory_for_config(cmakelist_generate_context.profile)
+                f.write(f"  LIBRARY_OUTPUT_DIRECTORY   \"{output_directory}\"\n")
+                f.write(f"  RUNTIME_OUTPUT_DIRECTORY   \"{output_directory}\"\n")
                 f.write(")\n")
             f.write("\n")
 

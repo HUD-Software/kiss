@@ -2,7 +2,6 @@ import argparse
 from pathlib import Path
 from typing import Self
 from cleaner import BaseCleaner, CleanerRegistry
-from config import Config
 import console
 from context import Context
 from project import Project
@@ -10,12 +9,11 @@ from projectregistry import ProjectRegistry
 from toolchain import Toolchain, Compiler, Target
 
 class CleanContext(Context):
-    def __init__(self, directory:Path, project: Project, cleaner_name: str, toolchain : Toolchain, config : Config):
+    def __init__(self, directory:Path, project: Project, cleaner_name: str, toolchain : Toolchain):
         super().__init__(directory)
         self._project = project
         self._cleaner_name = cleaner_name
         self._toolchain = toolchain
-        self._config = config
 
     @property
     def project(self) -> Project:
@@ -29,12 +27,8 @@ class CleanContext(Context):
     def toolchain(self) -> Toolchain:
         return self._toolchain
     
-    @property
-    def config(self) -> Config:
-        return self._config
-    
     @classmethod
-    def create(cls, directory: Path, project_name: str, cleaner_name: str, toolchain : Toolchain, config : Config) -> Self :
+    def create(cls, directory: Path, project_name: str, cleaner_name: str, toolchain : Toolchain) -> Self :
         #### Find the project to generate
         ProjectRegistry.load_and_register_all_project_in_directory(directory=directory, load_dependencies=True, recursive=False)
         projects_in_directory = ProjectRegistry.projects_in_directory(directory=directory)
@@ -49,7 +43,7 @@ class CleanContext(Context):
                     project_to_clean = project
                     break
         
-        return CleanContext(directory=directory, project=project_to_clean, cleaner_name=cleaner_name, toolchain=toolchain,  config=config)
+        return CleanContext(directory=directory, project=project_to_clean, cleaner_name=cleaner_name, toolchain=toolchain)
 
 
     @staticmethod

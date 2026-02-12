@@ -5,28 +5,30 @@ from clean import CleanContext
 from cleaner import BaseCleaner
 from cli import KissParser
 from cmake.cmake_context import CMakeContext
-from cmake.cmake_generators import CMakeGenerator
-from config import Config
 import console
 from project import Project
 from toolchain.toolchain import Toolchain
 
 class CMakeCleanContext(CleanContext):
-    def __init__(self, directory:Path, project: Project, builder_name: str, toolchain: Toolchain, config : Config, generator: CMakeGenerator):
-        super().__init__(directory, project, builder_name, toolchain, config)
-        self._generator = generator
+    def __init__(self, directory:Path, project: Project, builder_name: str, toolchain: Toolchain, cmake_generator_name: str):
+        super().__init__(directory, project, builder_name, toolchain)
+        self._cmake_generator_name = cmake_generator_name
 
     @property
-    def generator(self) -> CMakeGenerator:
-        return self._generator
+    def cmake_generator_name(self) -> str:
+        return self._cmake_generator_name
     
     @classmethod
-    def create(cls, directory: Path, project_name: str, builder_name: str, toolchain: Toolchain, config : Config, generator: CMakeGenerator) -> Self :
+    def create(cls, directory: Path, project_name: str, builder_name: str, toolchain: Toolchain,  cmake_generator_name: str) -> Self :
         project_to_build = super().find_target_project(directory, project_name)
         if not project_to_build:
             console.print_error(f"No project found in {str(directory)}")
             exit(1)
-        return CMakeCleanContext(directory=directory, project=project_to_build, builder_name=builder_name, toolchain=toolchain, config=config, generator=generator)
+        return CMakeCleanContext(directory=directory, 
+                                 project=project_to_build, 
+                                 builder_name=builder_name, 
+                                 toolchain=toolchain, 
+                                 cmake_generator_name=cmake_generator_name)
 
 
     @staticmethod
@@ -36,8 +38,7 @@ class CMakeCleanContext(CleanContext):
                                  project=clean_context.project,
                                  builder_name=clean_context.builder_name,
                                  toolchain=clean_context.toolchain,
-                                 config=clean_context.config,
-                                 generator=cli_args.generator)
+                                 cmake_generator_name=cli_args.generator)
 
 class CMakeCleaner(BaseCleaner):
     @classmethod

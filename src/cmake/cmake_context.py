@@ -1,5 +1,4 @@
 from pathlib import Path
-from config import Config
 from project import Project
 from toolchain import Toolchain
 

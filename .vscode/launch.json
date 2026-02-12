@@ -101,7 +101,13 @@
             //     "tests/my_bin",
             //     "generate",
             //     "-p",
-            //     "my_bin"
+            //     "my_bin",
+            //     "-t",
+            //     "x86_64-pc-windows-msvc",
+            //     "-c",
+            //     "clangcl",
+            //     "--profile",
+            //     "custom"
             // ]
             // "args": [
             //     "-d",
@@ -109,6 +115,12 @@
             //     "build",
             //     "-p",
             //     "my_bin",
+            //     "-t",
+            //     "x86_64-pc-windows-msvc",
+            //     "-c",
+            //     "clangcl",
+            //     "--profile",
+            //     "custom",
             //     "cmake",
             // ],
             "args": [
@@ -118,7 +130,9 @@
                 "-t",
                 "x86_64-pc-windows-msvc",
                 "-c",
-                "clangcl"
+                "clangcl",
+                "--profile",
+                "custom"
             ],
             // "args": [
             //     "-d",

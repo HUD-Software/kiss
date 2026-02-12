@@ -35,8 +35,8 @@ class CMakeRunner(BaseRunner):
                                                         project_name=run_context.project.name,
                                                         builder_name=run_context.runner_name,
                                                         toolchain=run_context.toolchain,
-                                                        config=run_context.config,
-                                                        generator=cmake_builder.name)
+                                                        profile=run_context.profile,
+                                                        cmake_generator_name=None)
         cmake_builder.build_project(cmake_build_context)
         
         context = CMakeContext(current_directory=run_context.directory, 
@@ -53,13 +53,13 @@ class CMakeRunner(BaseRunner):
                     proj_context = CMakeContext(current_directory=run_context.directory, 
                                                 toolchain=run_context.toolchain, 
                                                 project=project)
-                    dll_paths.append(proj_context.output_directory_for_config("debug"))  
+                    dll_paths.append(proj_context.output_directory_for_config(run_context.profile))  
 
             existing_path = os.environ.get("PATH", "")
             os.environ["PATH"] = ";".join(dll_paths + [existing_path])
-            binary_path = Path(cmake_build_context.output_directory_for_config("debug")) / f"{run_context.project.name}.exe"
+            binary_path = Path(cmake_build_context.output_directory_for_config(run_context.profile)) / f"{run_context.project.name}.exe"
         else:
-            binary_path = Path(cmake_build_context.output_directory_for_config("debug")) / run_context.project.name
+            binary_path = Path(cmake_build_context.output_directory_for_config(run_context.profile)) / run_context.project.name
 
         # Run the project
         console.print_step(f"▶ Run {binary_path.name}...")

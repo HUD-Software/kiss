@@ -39,6 +39,9 @@ class CMakeContext:
     def resolveCMakeCacheDirectory(current_directory: Path, toolchain: Toolchain, project: Project):
         return CMakeContext.resolveProjectBuildDirectory(current_directory=current_directory, toolchain=toolchain, project=project) / "CMakeCache.txt"
     
+    def output_directory_for_config(self, config: str) -> str: 
+        return (self.cmakelists_directory / config).resolve().as_posix()
+    
     @property
     def cmake_root_build_directory(self) -> Path:
         return self._root_build_directory
@@ -74,12 +77,5 @@ class CMakeContext:
     @property
     def toolchain(self) -> Toolchain:
         return self._toolchain
-
-    def target_output_directory(self, config: Config) -> Path:
-        if config.is_release:
-            if config.is_debug_info:
-                return self.cmakelists_directory / "relwithdebinfo"
-            else:
-                return self.cmakelists_directory / "release"
-        else:    
-            return self.cmakelists_directory / "debug"
+    
+    

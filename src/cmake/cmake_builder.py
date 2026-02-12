@@ -1,4 +1,5 @@
 import argparse
+from multiprocessing import context
 import os
 from pathlib import Path
 from typing import Self
@@ -14,16 +15,28 @@ from generator import GeneratorRegistry
 from process import run_process
 from project import Project
 from toolchain import Toolchain
-from visual_studio import get_windows_latest_toolset
+
 
 class CMakeBuildContext(BuildContext):
     def __init__(self, directory:Path, project: Project, builder_name: str, toolchain: Toolchain, config : Config, generator: CMakeGenerator):
         super().__init__(directory, project, builder_name, toolchain, config)
         self._generator = generator
+        self._cmakelist_generate_context = CMakeListsGenerateContext.create( directory=directory,
+                                                                            project_name=project.name,
+                                                                            generator_name=builder_name,
+                                                                            toolchain=toolchain,
+                                                                            config=config)
+
+    @property
+    def cmakelist_generate_context(self) -> CMakeListsGenerateContext:
+        return self._cmakelist_generate_context
 
     @property
     def generator(self) -> CMakeGenerator:
         return self._generator
+    
+    def output_directory_for_config(self, config: str) -> str: 
+        return self.cmakelist_generate_context.output_directory_for_config(config)
     
     @classmethod
     def create(cls, directory: Path, project_name: str, builder_name: str, toolchain: Toolchain, config : Config, generator: CMakeGenerator) -> Self :
@@ -64,17 +77,7 @@ class CMakeBuilder(BaseBuilder):
     def __init__(self):
         super().__init__("cmake", "Build cmake CMakeLists.txt")
 
-    def _get_pc_windows_msvc_configure_args(self, context: CMakeContext) -> list[str] | None:
-        # Determine  -G
-        if( toolset := get_windows_latest_toolset(context.toolchain.compiler)) is None:
-            return None
-        year = toolset.product_year
-        if toolset.major_version == 18:
-            year = 2026
-        if not year:
-            year = int(toolset.product_line_version)
-        cmake_generator_name = f"{toolset.product_name} {toolset.major_version} {year}"
-
+    def _get_visual_studio_configure_args(self, cmake_generator_name: str, context: CMakeContext) -> list[str] | None:
         # Determine -T
         arch = os.environ.get("PROCESSOR_ARCHITECTURE", "").lower()
         arch_w6432 = os.environ.get("PROCESSOR_ARCHITEW6432", "").lower()
@@ -98,11 +101,7 @@ class CMakeBuilder(BaseBuilder):
         # Complete x86_64-pc-windows-msvc cmake generation list
         return ["--no-warn-unused-cli", "-S", str(context.cmakelists_directory), "-G", cmake_generator_name, "-T", host_arch, "-A", arch_target]
     
-    def _get_x86_64_unknown_linux_gnu_configure_args(self, context: CMakeContext) -> list[str]:
-        # Check that compiler exists
-
-        # Get the -G
-        cmake_generator_name = "Unix Makefiles"
+    def _get_linux_gnu_configure_args(self, cmake_generator_name: str, context: CMakeContext) -> list[str]:
         # Get the arch flags
         if context.toolchain.target.is_x86_64():
             cmake_generator_c_arch = "-DCMAKE_C_FLAGS=-m64"
@@ -123,26 +122,24 @@ class CMakeBuilder(BaseBuilder):
         
     def build_project(self, cmake_build_context: CMakeBuildContext):
         # Generate the project
-        cmake_generator : CMakeListsGenerator = GeneratorRegistry.generators.get(cmake_build_context.builder_name)
-        if not cmake_generator:
-            console.print_error(f"Generator {cmake_generator.name} not found")
+        cmakelists_generator : CMakeListsGenerator = GeneratorRegistry.generators.get(cmake_build_context.builder_name)
+        if not cmakelists_generator:
+            console.print_error(f"Generator {cmakelists_generator.name} not found")
             exit(1)
-        cmakelist_generate_context = CMakeListsGenerateContext.create(directory=cmake_build_context.directory,
-                                                                      project_name=cmake_build_context.project.name,
-                                                                      generator_name=cmake_build_context.builder_name,
-                                                                      toolchain=cmake_build_context.toolchain,
-                                                                      config=cmake_build_context.config)
-        generated_context_list = cmake_generator.generate_project(cmakelist_generate_context)
-       
-        # Get CMake Generator
+        
+        generate_context = cmake_build_context.cmakelist_generate_context
+        generated_context_list = cmakelists_generator.generate_project(generate_context)
+
+        # Configure the generated CMakelists.txt
         context = CMakeContext(current_directory=cmake_build_context.directory, 
                                toolchain=cmake_build_context.toolchain, 
                                project=cmake_build_context.project)
-        if context.toolchain.target.is_windows_os():
-            if (configure_args := self._get_pc_windows_msvc_configure_args(context=context) ) is None:
+        
+        if generate_context.cmake_generator_name.is_visual_studio():
+            if (configure_args := self._get_visual_studio_configure_args(generate_context.cmake_generator_name.name, context=context) ) is None:
                 exit(1)
-        elif context.toolchain.target.is_linux_os():
-            if (configure_args := self._get_x86_64_unknown_linux_gnu_configure_args(context=context)) is None:
+        elif generate_context.cmake_generator_name.is_unix_makefiles():
+            if (configure_args := self._get_linux_gnu_configure_args(generate_context.cmake_generator_name.name,context=context)) is None:
                 exit(1)
         else:
             console.print_error(f"Unknown target {context.toolchain.target.name}")

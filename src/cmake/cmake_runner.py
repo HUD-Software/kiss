@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 import platform
 from builder import BuilderRegistry
 from cli import KissParser
@@ -42,25 +43,23 @@ class CMakeRunner(BaseRunner):
                             toolchain=run_context.toolchain, 
                             project=run_context.project)
         
-        if platform.system() == "Windows":
-            # Add DLL path to PATH on Windows
-            if run_context.toolchain.target.is_windows_os():
-                project_list = context.project.topological_sort_projects()
-                dll_paths = []
-                for proj_context in project_list:
+  
+        # Add DLL path to PATH on Windows
+        if run_context.toolchain.target.is_windows_os():
+            project_list = context.project.topological_sort_projects()
+            dll_paths = []
+            for project in project_list:
+                if project.type == ProjectType.dyn:
                     proj_context = CMakeContext(current_directory=run_context.directory, 
                                                 toolchain=run_context.toolchain, 
-                                                project=proj_context)
-                    dll_paths.append(str(proj_context.target_output_directory(run_context.config).resolve()))  
+                                                project=project)
+                    dll_paths.append(proj_context.output_directory_for_config("debug"))  
 
-                existing_path = os.environ.get("PATH", "")
-                os.environ["PATH"] = ";".join(dll_paths + [existing_path])
-            
-        # Get binary path
-        if context.toolchain.target.is_windows_os():
-            binary_path = context.target_output_directory(run_context.config) / f"{run_context.project.name}.exe"
+            existing_path = os.environ.get("PATH", "")
+            os.environ["PATH"] = ";".join(dll_paths + [existing_path])
+            binary_path = Path(cmake_build_context.output_directory_for_config("debug")) / f"{run_context.project.name}.exe"
         else:
-            binary_path = context.target_output_directory(run_context.config) / run_context.project.name
+            binary_path = Path(cmake_build_context.output_directory_for_config("debug")) / run_context.project.name
 
         # Run the project
         console.print_step(f"▶ Run {binary_path.name}...")

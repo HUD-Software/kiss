@@ -74,7 +74,7 @@ class Compiler:
     
     def is_derived_from(self, compiler_name: Self) -> bool:
         return  self._compiler_info.is_derived_from(compiler_name)
-
+    
     @staticmethod
     def create(name :str) -> Self | None:
         if (root_compiler_info := CompilerNodeRegistry.get(name)) is None:

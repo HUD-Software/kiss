@@ -20,7 +20,7 @@ class Target:
         self.pointer_width = int
         # Endianness ( little or big )
         self.endianness = str
-
+    
     def is_windows_os(self) -> bool:
         return self.os == "windows"
     

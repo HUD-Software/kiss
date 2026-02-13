@@ -3,6 +3,7 @@ import argparse
 import os
 from pathlib import Path
 from typing import Self
+import asan
 from cli import KissParser
 from cmake.cmake_context import CMakeContext
 from cmake.cmake_generator_name import CMakeGeneratorName
@@ -42,14 +43,11 @@ class CMakeListsGenerateContext(GenerateContext):
     @property
     def toolchain(self) -> Toolchain:
         return self._cmake_context.toolchain
-
+    
     @property
     def cmake_generator_name(self) -> CMakeGeneratorName: 
         return self._cmake_generator_name
-    
-    def output_directory_for_config(self, config: str) -> str: 
-        return self._cmake_context.output_directory_for_config(config)
-    
+
     @project.setter
     def project(self, value):
         self._cmake_context = CMakeContext(current_directory=self._cmake_context.current_directory, toolchain=self._cmake_context.toolchain, project=value)
@@ -62,7 +60,15 @@ class CMakeListsGenerateContext(GenerateContext):
             exit(1)
         generator_name = generator_name if generator_name is not None else "cmake"
         return cls(directory=directory, project=project_to_generate, generator_name=generator_name, toolchain=toolchain, profile=profile)
-
+    
+    def is_feature_enabled(self, project: Project, feature_name: str) -> bool:
+        return any(profile.is_feature_enabled(project_type=project.type, feature_name=feature_name) for profile in self.toolchain.compiler.profiles)
+    
+    def is_asan_enabled(self, project: Project):
+        return self.is_feature_enabled(project, "ASAN")
+    
+    def output_directory_for_config(self, config: str) -> str: 
+        return self._cmake_context.output_directory_for_config(config)
 
 
 class CMakeListsGenerator(BaseGenerator):
@@ -145,6 +151,8 @@ class CMakeListsGenerator(BaseGenerator):
     
     def _generateBinCMakeLists(self, cmakelist_generate_context: CMakeListsGenerateContext):
         project: BinProject = cmakelist_generate_context.project
+        toolchain: Toolchain = cmakelist_generate_context.toolchain
+
         os.makedirs(cmakelist_generate_context.cmakelists_directory, exist_ok=True)
         # Write the CMakeLists.txt file
         with open(cmakelist_generate_context.cmakefile, "w", encoding="utf-8") as f:
@@ -156,15 +164,22 @@ class CMakeListsGenerator(BaseGenerator):
             f.write(f"project({project.name} LANGUAGES CXX )\n")
             f.write("\n")
             
-            # Create configuration list
+            # Create per profile configurations
             profile_name_list = list[(str,str)]()
             if cmakelist_generate_context.cmake_generator_name.is_multi_profile():
-                for profile in cmakelist_generate_context.toolchain.compiler.profiles:
+                for profile in toolchain.compiler.profiles:
                     profile_name_list.append((profile.name, profile.name.upper()))
                 f.write(f"set(CMAKE_CONFIGURATION_TYPES {';'.join([p[0] for p in profile_name_list])} CACHE STRING \"\" FORCE)\n")
+
             for profile_name, upper_profile_name in profile_name_list:
-                f.write(f"set(CMAKE_EXE_LINKER_FLAGS_{upper_profile_name} \"\" CACHE STRING \"\" FORCE)\n")
-            
+                if( profile := toolchain.get_profile(profile_name)) is None:
+                    console.print_warning(f"Profile {profile_name} not found in {self.name}")
+                    exit(1)
+                cxx_linker_flags = profile.linker_flags_for_project_type(project.type)
+                f.write(f"set(CMAKE_EXE_LINKER_FLAGS_{upper_profile_name} \"{' '.join(cxx_linker_flags)}\" CACHE STRING \"\" FORCE)\n")
+                cxx_compiler_flags = profile.compiler_flags_for_project_type(project.type)
+                f.write(f"set(CMAKE_CXX_FLAGS_{upper_profile_name} \"{' '.join(cxx_compiler_flags)}\" CACHE STRING \"\" FORCE)\n")
+                   
 
             # Write project sources
             if project.sources:
@@ -174,6 +189,15 @@ class CMakeListsGenerator(BaseGenerator):
                     src_str += f"\n\t{src}"
                 f.write(f"add_executable({project.name} {src_str})\n")
                 f.write("\n")
+            
+            # Add ASAN if activated
+            if cmakelist_generate_context.is_asan_enabled(project):
+                if toolchain.compiler.is_clangcl_based():
+                    if(asan_lib_path := asan.get_msvc_asan_dynamic_lib_path(toolchain)) is None:
+                        exit(1)
+                    f.write(f"target_link_libraries({project.name} PRIVATE \"{asan_lib_path}\")\n")
+                f.write(f"target_compile_definitions({project.name} PRIVATE _DISABLE_VECTOR_ANNOTATION)\n")
+                f.write(f"target_compile_definitions({project.name} PRIVATE _DISABLE_STRING_ANNOTATION)\n")
 
             # Write output name
             f.write(f"# {project.name} output name\n")
@@ -195,10 +219,10 @@ class CMakeListsGenerator(BaseGenerator):
             # Write dependencies
             for dep_project in project.dependencies:
                 dep_cmakelist_dir = CMakeContext.resolveCMakeListsDirectory(current_directory=cmakelist_generate_context.current_directory,
-                                                                        toolchain=cmakelist_generate_context.toolchain,
+                                                                        toolchain=toolchain,
                                                                         project=dep_project)
                 dep_build_dir = CMakeContext.resolveProjectBuildDirectory(current_directory=cmakelist_generate_context.current_directory,
-                                                                        toolchain=cmakelist_generate_context.toolchain,
+                                                                        toolchain=toolchain,
                                                                         project=dep_project)
                 f.write(f"# Add {dep_project.name} dependency\n")
                 f.write(f"if(NOT TARGET {dep_project.name})\n")
@@ -210,6 +234,8 @@ class CMakeListsGenerator(BaseGenerator):
                 
     def _generateLibCMakeLists(self, cmakelist_generate_context: CMakeListsGenerateContext):
         project: LibProject = cmakelist_generate_context.project
+        toolchain: Toolchain = cmakelist_generate_context.toolchain
+
         os.makedirs(cmakelist_generate_context.cmakelists_directory, exist_ok=True)
         # Write the CMakeLists.txt file
         with open(cmakelist_generate_context.cmakefile, "w", encoding="utf-8") as f:
@@ -221,12 +247,19 @@ class CMakeListsGenerator(BaseGenerator):
             f.write(f"project({project.name} LANGUAGES CXX )\n")
             f.write("\n")
 
-            # Create configuration list
+            # Create per profile configurations
             profile_name_list = list[(str,str)]()
             if cmakelist_generate_context.cmake_generator_name.is_multi_profile():
-                for profile in cmakelist_generate_context.toolchain.compiler.profiles:
+                for profile in toolchain.compiler.profiles:
                     profile_name_list.append((profile.name, profile.name.upper()))
                 f.write(f"set(CMAKE_CONFIGURATION_TYPES {';'.join([p[0] for p in profile_name_list])} CACHE STRING \"\" FORCE)\n")
+
+            for profile_name, upper_profile_name in profile_name_list:
+                if( profile := toolchain.get_profile(profile_name)) is None:
+                    console.print_warning(f"Profile {profile_name} not found in {self.name}")
+                    exit(1)
+                cxx_compiler_flags = profile.compiler_flags_for_project_type(project.type)
+                f.write(f"set(CMAKE_CXX_FLAGS_{upper_profile_name} \"{' '.join(cxx_compiler_flags)}\" CACHE STRING \"\" FORCE)\n")
 
             # Write project sources
             if project.sources:
@@ -263,10 +296,10 @@ class CMakeListsGenerator(BaseGenerator):
             # Write dependencies
             for dep_project in project.dependencies:
                 dep_cmakelist_dir = CMakeContext.resolveCMakeListsDirectory(current_directory=cmakelist_generate_context.current_directory,
-                                                                        toolchain=cmakelist_generate_context.toolchain,
+                                                                        toolchain=toolchain,
                                                                         project=dep_project)
                 dep_build_dir = CMakeContext.resolveProjectBuildDirectory(current_directory=cmakelist_generate_context.current_directory,
-                                                                        toolchain=cmakelist_generate_context.toolchain,
+                                                                        toolchain=toolchain,
                                                                         project=dep_project)
                 f.write(f"# Add {dep_project.name} dependency\n")
                 f.write(f"if(NOT TARGET {dep_project.name})\n")
@@ -324,6 +357,8 @@ class CMakeListsGenerator(BaseGenerator):
     
     def _generateDynCMakeLists(self, cmakelist_generate_context: CMakeListsGenerateContext):
         project: LibProject = cmakelist_generate_context.project
+        toolchain: Toolchain = cmakelist_generate_context.toolchain
+
         os.makedirs(cmakelist_generate_context.cmakelists_directory, exist_ok=True)
         # Write the CMakeLists.txt file
         with open(cmakelist_generate_context.cmakefile, "w", encoding="utf-8") as f:
@@ -335,14 +370,20 @@ class CMakeListsGenerator(BaseGenerator):
             f.write(f"project({project.name} LANGUAGES CXX )\n")
             f.write("\n")
             
-            # Create configuration list
+            # Create per profile configurations
             profile_name_list = list[(str,str)]()
             if cmakelist_generate_context.cmake_generator_name.is_multi_profile():
-                for profile in cmakelist_generate_context.toolchain.compiler.profiles:
+                for profile in toolchain.compiler.profiles:
                     profile_name_list.append((profile.name, profile.name.upper()))
                 f.write(f"set(CMAKE_CONFIGURATION_TYPES {';'.join([p[0] for p in profile_name_list])} CACHE STRING \"\" FORCE)\n")
             for profile_name, upper_profile_name in profile_name_list:
-                f.write(f"set(CMAKE_SHARED_LINKER_FLAGS_{upper_profile_name} \"\" CACHE STRING \"\" FORCE)\n")
+                if( profile := toolchain.get_profile(profile_name)) is None:
+                    console.print_warning(f"Profile {profile_name} not found in {self.name}")
+                    exit(1)
+                cxx_linker_flags = profile.linker_flags_for_project_type(project.type)
+                f.write(f"set(CMAKE_SHARED_LINKER_FLAGS_{upper_profile_name} \"{' '.join(cxx_linker_flags)}\" CACHE STRING \"\" FORCE)\n")
+                cxx_compiler_flags = profile.compiler_flags_for_project_type(project.type)
+                f.write(f"set(CMAKE_CXX_FLAGS_{upper_profile_name} \"{' '.join(cxx_compiler_flags)}\" CACHE STRING \"\" FORCE)\n")
 
             # Write project sources
             if project.sources:
@@ -351,6 +392,12 @@ class CMakeListsGenerator(BaseGenerator):
                 for src in normalized_src:
                     src_str += f"\n\t{src}"
                 f.write(f"add_library({project.name} SHARED {src_str})\n")
+
+            # Check ASAN 
+            # if cmakelist_generate_context.is_asan_enabled(project):
+            #     if(asan_lib_path := asan.get_msvc_asan_dll_thunk_lib_path(cmakelist_generate_context.toolchain.compiler)) is None:
+            #         exit(1)
+            #     f.write(f"target_link_libraries({project.name} PRIVATE \"{asan_lib_path}\")\n")
 
             #Write export definition for windows
             f.write(f"target_compile_definitions({project.name} PRIVATE {project.name.upper()}_EXPORTS)\n")
@@ -385,10 +432,10 @@ class CMakeListsGenerator(BaseGenerator):
             # Write dependencies
             for dep_project in project.dependencies:
                 dep_cmakelist_dir = CMakeContext.resolveCMakeListsDirectory(current_directory=cmakelist_generate_context.current_directory,
-                                                                        toolchain=cmakelist_generate_context.toolchain,
+                                                                        toolchain=toolchain,
                                                                         project=dep_project)
                 dep_build_dir = CMakeContext.resolveProjectBuildDirectory(current_directory=cmakelist_generate_context.current_directory,
-                                                                        toolchain=cmakelist_generate_context.toolchain,
+                                                                        toolchain=toolchain,
                                                                         project=dep_project)
                 f.write(f"# Add {dep_project.name} dependency\n")
                 f.write(f"if(NOT TARGET {dep_project.name})\n")

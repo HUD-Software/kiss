@@ -114,7 +114,7 @@
             //     "tests/my_bin",
             //     "build",
             //     "-p",
-            //     "my_bin",
+            //     "my_dyn",
             //     "-t",
             //     "x86_64-pc-windows-msvc",
             //     "-c",
@@ -130,9 +130,9 @@
                 "-t",
                 "x86_64-pc-windows-msvc",
                 "-c",
-                "clangcl",
+                "cl",
                 "--profile",
-                "custom"
+                "custom",
             ],
             // "args": [
             //     "-d",

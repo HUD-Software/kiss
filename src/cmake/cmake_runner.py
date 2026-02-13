@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-import platform
+import asan
 from builder import BuilderRegistry
 from cli import KissParser
 from cmake.cmake_builder import CMakeBuildContext, CMakeBuilder
@@ -43,26 +43,40 @@ class CMakeRunner(BaseRunner):
                             toolchain=run_context.toolchain, 
                             project=run_context.project)
         
-  
+        if run_context.toolchain.target.is_windows_os():
+            binary_path = Path(cmake_build_context.output_directory_for_config(run_context.profile)) / f"{run_context.project.name}.exe"
+        else:
+            binary_path = Path(cmake_build_context.output_directory_for_config(run_context.profile)) / run_context.project.name
+        console.print_step(f"▶ Run {Path(*binary_path.parts[-2:])}...")
+
         # Add DLL path to PATH on Windows
         if run_context.toolchain.target.is_windows_os():
             project_list = context.project.topological_sort_projects()
+            existing_path = os.environ.get("PATH", "")
+           
+            # Add ASAN path
+            cmakelist_generate_context = cmake_build_context.cmakelist_generate_context 
+            if any( cmakelist_generate_context.is_asan_enabled(project) for project in project_list ):
+                if (dll_path := asan.get_msvc_asan_dynamic_dll_path(cmakelist_generate_context.toolchain)) is None:
+                    exit(1)
+                asan_lib_path = str(Path(dll_path).parent)
+                existing_path = existing_path + f";{asan_lib_path}"
+                console.print_step(f"Add {asan_lib_path} to PATH")
+                        
             dll_paths = []
             for project in project_list:
                 if project.type == ProjectType.dyn:
+                    # Add the DLL path to PATH
                     proj_context = CMakeContext(current_directory=run_context.directory, 
                                                 toolchain=run_context.toolchain, 
                                                 project=project)
                     dll_paths.append(proj_context.output_directory_for_config(run_context.profile))  
 
-            existing_path = os.environ.get("PATH", "")
-            os.environ["PATH"] = ";".join(dll_paths + [existing_path])
-            binary_path = Path(cmake_build_context.output_directory_for_config(run_context.profile)) / f"{run_context.project.name}.exe"
-        else:
-            binary_path = Path(cmake_build_context.output_directory_for_config(run_context.profile)) / run_context.project.name
-
+            new_path = ";".join(dll_paths + [existing_path])
+            console.print_step(f"Add {';'.join(dll_paths)} to PATH")
+            os.environ["PATH"] = new_path
+  
         # Run the project
-        console.print_step(f"▶ Run {binary_path.name}...")
         if not run_process(binary_path, output_prefix=False, print_command=False) == 0:
             exit(1)
             

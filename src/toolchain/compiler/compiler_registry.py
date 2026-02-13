@@ -5,18 +5,14 @@ import console
 from project import ProjectType
 from toolchain.compiler.compiler_info import CompilerNode, CompilerNodeRegistry
 
-class Flags:
-    def __init__(self): 
-        self.cxx_compiler_flags : list[str] = []
-        self.cxx_linker_flags : list[str] = []
-        self.enabled_features : list[str] = []
-        
 class Profile:
     def __init__(self, name: str):
         # The profile name
         self.name = name
-        # Per project type flags
-        self.per_project_type_flags : dict[ProjectType, Flags] = {}
+        # Per project type flags and features
+        self.per_project_type_linker_flags : dict[ProjectType, list[str]] = {}
+        self.per_project_type_compiler_flags : dict[ProjectType, list[str]] = {}
+        self.per_project_type_feature_names : dict[ProjectType, list[str]] = {}
 
     def __hash__(self) -> int:
         return hash(self.name)
@@ -26,8 +22,16 @@ class Profile:
             return NotImplemented
         return self.name == other.name
     
-    def flags_for_project_type(self, project_type: ProjectType) -> list[str]:
-         return self.per_project_type_flags.get(project_type, [])
+    def linker_flags_for_project_type(self, project_type: ProjectType) -> list[str]:
+         return self.per_project_type_linker_flags.get(project_type, [])
+    
+    def compiler_flags_for_project_type(self, project_type: ProjectType) -> list[str]:
+         return self.per_project_type_compiler_flags.get(project_type, [])
+
+    def is_feature_enabled(self, project_type: ProjectType, feature_name: str) -> bool:
+        if( list := self.per_project_type_feature_names.get(project_type,[])) is None:
+            return False
+        return feature_name in list
     
 class ProfileList:
     def __init__(self):
@@ -58,6 +62,9 @@ class ProfileList:
                 return p
         return None 
 
+    def profile_name_list(self) -> list[str] : 
+        return [p.name for p in self.profiles]
+
 class Compiler:
     def __init__(self, name: str, cxx_path: Path, c_path: Path, compiler_info: CompilerNode):
         # The compiler name
@@ -74,7 +81,40 @@ class Compiler:
     
     def is_derived_from(self, compiler_name: Self) -> bool:
         return  self._compiler_info.is_derived_from(compiler_name)
+
+    def is_cl_based(self) -> bool:
+        return  self._compiler_info.is_derived_from("cl")
     
+    def is_clangcl_based(self) -> bool:
+        return  self._compiler_info.is_derived_from("clangcl")
+    
+    def get_profile(self, profile_name: str) -> Profile | None:
+        return self.profiles.get(profile_name)
+    
+    def is_profile_exist(self, profile_name: str) -> bool:
+        return profile_name in self.profiles
+
+    def profile_name_list(self) -> list[str] : 
+        return self.profiles.profile_name_list()
+    
+    def linker_flags_list(self, profile_name: str, project_type: ProjectType) -> list[str]:
+        if( profile := self.get_profile(profile_name)) is None:
+            console.print_warning(f"Profile {profile_name} not found in {self.name}")
+            return []
+        return profile.linker_flags_for_project_type(project_type)
+    
+    def compiler_flags_list(self, profile_name: str, project_type: ProjectType) -> list[str]: 
+        if( profile := self.get_profile(profile_name)) is None:
+            console.print_warning(f"Profile {profile_name} not found in {self.name}")
+            return []
+        return profile.compiler_flags_for_project_type(project_type)
+    
+    def is_feature_enabled(self, profile_name: str, project_type: ProjectType) -> bool:
+        if( profile := self.get_profile(profile_name)) is None:
+            console.print_warning(f"Profile {profile_name} not found in {self.name}")
+            return []
+        return profile.compiler_flags_for_project_type(project_type)
+
     @staticmethod
     def create(name :str) -> Self | None:
         if (root_compiler_info := CompilerNodeRegistry.get(name)) is None:
@@ -94,19 +134,25 @@ class Compiler:
                 assert profile.is_extended, f"Profile {profile.name} must be extended"
                 new_profile = Profile(profile.name)
                 for bin_lib_dyn in profile.bin_lib_dyn_list:
-                    flags = Flags()
-                    flags.cxx_compiler_flags.extend(bin_lib_dyn.cxx_compiler_flags)
-                    flags.cxx_linker_flags.extend(bin_lib_dyn.cxx_linker_flags)
-                    flags.enabled_features.extend(bin_lib_dyn.enable_features)
+                    cxx_compiler_flags = list()
+                    cxx_linker_flags = list()
+                    cxx_feature_flags = list()
+                    cxx_compiler_flags.extend(bin_lib_dyn.cxx_compiler_flags)
+                    cxx_linker_flags.extend(bin_lib_dyn.cxx_linker_flags)
+                    cxx_feature_flags.extend(bin_lib_dyn.enable_features)
                     # Add flags of features
                     for feature_name in bin_lib_dyn.enable_features:
                         if (feature_node := compiler_node.get_feature(feature_name)) is None:
                             console.print_error(f"Feature {feature_name} not found for profile {profile.name} in compiler {new_compiler.name}")
                             return None
-                        flags.cxx_compiler_flags.extend(feature_node.cxx_compiler_flags)
-                        flags.cxx_linker_flags.extend(feature_node.cxx_linker_flags)
-                        
-                    new_profile.per_project_type_flags[bin_lib_dyn.project_type] = flags
+                        cxx_compiler_flags.extend(feature_node.cxx_compiler_flags)
+                        cxx_linker_flags.extend(feature_node.cxx_linker_flags)
+                        cxx_feature_flags.extend(feature_node.enable_features)
+
+                    new_profile.per_project_type_compiler_flags[bin_lib_dyn.project_type] = cxx_compiler_flags
+                    new_profile.per_project_type_linker_flags[bin_lib_dyn.project_type] = cxx_linker_flags
+                    new_profile.per_project_type_feature_names[bin_lib_dyn.project_type] = cxx_feature_flags
+                    
                 new_compiler.profiles.add(new_profile)
 
         return new_compiler
@@ -137,11 +183,15 @@ class Compiler:
         ]
         for profile in self.profiles:
             lines.append(f"  - {profile.name}")
-            for project_type, flags in profile.per_project_type_flags.items():
+            for project_type, compiler_flags in profile.per_project_type_compiler_flags.items():
                 lines.append(f"    - {project_type}:")
-                lines.append(f"      cxx_compiler_flags: {flags.cxx_compiler_flags}")
-                lines.append(f"      cxx_linker_flags: {flags.cxx_linker_flags}")
-                lines.append(f"      enable_features: {flags.enabled_features}")
+                lines.append(f"      cxx_compiler_flags: {compiler_flags}")
+            for project_type, linker_flags in profile.per_project_type_linker_flags.items():
+                lines.append(f"    - {project_type}:")
+                lines.append(f"      cxx_linker_flags: {linker_flags}")
+            for project_type, features in profile.per_project_type_feature_names.items():
+                lines.append(f"    - {project_type}:")
+                lines.append(f"      features: {features}")
         return "\n".join(lines)
 
     def __repr__(self) -> str:

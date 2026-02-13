@@ -19,6 +19,13 @@ class ProjectRegistry:
     def items(self):
         return self.projects_.items()
     
+    def get_project(self, project_name: Project) -> Project | None:
+        for path, project_list in self:
+            for project in project_list:
+                if project.name == project_name:
+                    return project
+        return None
+
     @property
     def projects(self) -> dict[Path, list[Project]]:
         return self.projects_

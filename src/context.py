@@ -23,10 +23,9 @@ class Context:
 
         # If user provide a project name find it
         if project_name:
-            for project in projects_in_directory:
-                if project.name == project_name:
-                    return project
-            return None
+            if(project := ProjectRegistry.get_project(project_name)) is None:
+                return None
+            return project
         # If the user dont provide a project name, find the default project
         else:
             if filter:

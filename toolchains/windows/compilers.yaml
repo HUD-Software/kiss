@@ -13,12 +13,12 @@ compilers:
         enable-features: [WARNING_STRICT, ENABLE_EXCEPTION]
       debug:
         extends: msvc-generic
-        enable-features: [OPT_LEVEL_0, ENABLE_INCREMENTAL_LINK, RUNTIME_DLL_DEBUG]
+        enable-features: [OPT_LEVEL_0, ENABLE_INCREMENTAL_LINK, WINDOWS_DLL_RUNTIME_DEBUG]
         dyn:
           enable-features: [DYNAMIC_LIBRARY_DEBUG]
       release:
         extends: msvc-generic
-        enable-features: [OPT_LEVEL_3, REMOVE_DEAD_CODE, DISABLE_INCREMENTAL_LINK, RUNTIME_DLL_RELEASE]
+        enable-features: [OPT_LEVEL_3, REMOVE_DEAD_CODE, DISABLE_INCREMENTAL_LINK, WINDOWS_DLL_RUNTIME_RELEASE]
         dyn:
           enable-features: [DYNAMIC_LIBRARY_RELEASE]
     features:
@@ -53,17 +53,17 @@ compilers:
         cxx-compiler-flags: [/W0]
 
       # Windows Runtime
-      - name: RUNTIME_DLL_DEBUG
-        description: Windows CRT dynamic runtime in debug
+      - name: WINDOWS_DLL_RUNTIME_DEBUG
+        description: Windows CRT dynamic runtime in debug (MSVCRTD.lib)
         cxx-compiler-flags: [/MDd]
-      - name: RUNTIME_DLL_RELEASE
-        description: Windows CRT dynamic runtime in release
+      - name: WINDOWS_DLL_RUNTIME_RELEASE
+        description: Windows CRT dynamic runtime in release (MSVCRT.lib)
         cxx-compiler-flags: [/MD]
-      - name: RUNTIME_STATIC_DEBUG
-        description: Windows CRT static runtime in debug
+      - name: WINDOWS_STATIC_RUNTIME_DEBUG
+        description: Windows CRT static runtime in debug (LIBCMTD.lib)
         cxx-compiler-flags: [/MTd]
-      - name: RUNTIME_STATIC_RELEASE
-        description: Windows CRT static runtime in release
+      - name: WINDOWS_STATIC_RUNTIME_RELEASE
+        description: Windows CRT static runtime in release (LIBCMT.lib)
         cxx-compiler-flags: [/MT]
 
       # Optimisations
@@ -128,7 +128,7 @@ compilers:
         features: [WARNING_BASE, WARNING_STRICT, WARNING_ALL, NO_WARNING]
       # Only one runtime at a time
       - only-one: runtime
-        features: [RUNTIME_DLL_DEBUG, RUNTIME_DLL_RELEASE, RUNTIME_STATIC_DEBUG, RUNTIME_STATIC_RELEASE]
+        features: [WINDOWS_DLL_RUNTIME_DEBUG, WINDOWS_DLL_RUNTIME_RELEASE, WINDOWS_STATIC_RUNTIME_DEBUG, WINDOWS_STATIC_RUNTIME_RELEASE]
       # Only one optimization level at a time
       - only-one: optimization
         features: [OPT_LEVEL_0, OPT_LEVEL_1, OPT_LEVEL_2, OPT_LEVEL_3]
@@ -152,6 +152,19 @@ compilers:
   # MSVC cl.exe compiler
   cl:
     extends: msvc-generic
+    profiles:
+      custom:
+        extends: debug
+        enable-features: [ASAN]
+    features:
+      - name: ASAN
+        description: Enable ASAN Sanitizer (Clang-cl only)
+        cxx-compiler-flags: ["/fsanitize=address"]
+        enable-features: [DEBUG_INFO, WINDOWS_DLL_RUNTIME_DEBUG, DISABLE_INCREMENTAL_LINK]
+    feature-rules:
+      - incompatible: asan
+        feature: ASAN
+        with: [OPT_LEVEL_3, LTO, OMIT_FRAME_POINTER]
 
   # MSVC clang-cl compiler
   clangcl:
@@ -167,7 +180,7 @@ compilers:
         description: Enable ASAN Sanitizer (Clang-cl only)
         cxx-compiler-flags: ["-fsanitize=address", "-fsanitize-address-use-after-scope"]
         cxx-linker-flags: ["-fsanitize=address"]
-        enable-features: [DEBUG_INFO, RUNTIME_DLL_DEBUG]
+        enable-features: [DEBUG_INFO, WINDOWS_DLL_RUNTIME_DEBUG]
     feature-rules:
       - incompatible: asan
         feature: ASAN

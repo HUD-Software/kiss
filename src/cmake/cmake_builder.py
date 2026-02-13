@@ -34,7 +34,6 @@ class CMakeBuildContext(BuildContext):
     def cmakelist_generate_context(self) -> CMakeListsGenerateContext:
         return self._cmakelist_generate_context
 
-   
     @property
     def profile(self) -> str:
         return self._cmakelist_generate_context.profile
@@ -85,10 +84,8 @@ class CMakeBuilder(BaseBuilder):
 
     def _get_visual_studio_configure_args(self, cmake_generator_name: str, context: CMakeContext) -> list[str] | None:
         # Determine -T
-        arch = os.environ.get("PROCESSOR_ARCHITECTURE", "").lower()
-        arch_w6432 = os.environ.get("PROCESSOR_ARCHITEW6432", "").lower()
-        is_x64_host = arch_w6432 or arch in ("amd64", "x86_64")
-        if context.toolchain.compiler.is_derived_from("clangcl"):
+        is_x64_host = context.toolchain.is_host_x86_64()
+        if context.toolchain.compiler.is_clangcl_based():
             host_arch = f"ClangCL,host={'x64' if is_x64_host else 'Win32'}"
         else:
             host_arch = f"host={'x64' if is_x64_host else 'Win32'}"

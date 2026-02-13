@@ -47,6 +47,12 @@ class GenerateContext(Context):
         compiler_name : Compiler = getattr(cli_args, "compiler", None) or Compiler.default_compiler_name()
         if( toolchain := Toolchain.create(compiler_name=compiler_name, target_name=target_name)) is None:
             return None
+        
+        # Ensure we request a valid profile
+        if not toolchain.is_profile_exist(cli_args.profile):
+            console.print_error(f"Profile {cli_args.profile} not found in the toolchain : {{{', '.join(toolchain.profile_name_list())}}}")
+            exit(1)
+
         return cls.create(directory=cli_args.directory,
                           project_name=cli_args.project_name,
                           generator_name=cli_args.generator_name,

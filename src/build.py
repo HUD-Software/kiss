@@ -14,7 +14,7 @@ class BuildContext(Context):
         self._builder_name = builder_name
         self._toolchain = toolchain
         self._profile = profile
-
+        
     @property
     def project(self) -> Project:
         return self._project
@@ -35,7 +35,7 @@ class BuildContext(Context):
     def create(cls, directory: Path, project_name: str, builder_name: str, toolchain: Toolchain, profile: str) -> Self :
         project_to_build = super().find_target_project(directory, project_name)
         if not project_to_build:
-            console.print_error(f"No project'found in {str(directory)}")
+            console.print_error(f"No project '{project_name}' found in {str(directory)}")
             exit(1)
         return BuildContext(directory=directory, 
                             project=project_to_build, 
@@ -50,12 +50,18 @@ class BuildContext(Context):
         compiler_name : Compiler = getattr(cli_args, "compiler", None) or Compiler.default_compiler_name()
         if( toolchain := Toolchain.create(compiler_name=compiler_name, target_name=target_name)) is None:
             return None
+        
+        # Ensure we request a valid profile
+        if not toolchain.is_profile_exist(cli_args.profile):
+            console.print_error(f"Profile {cli_args.profile} not found in the toolchain : {{{', '.join(toolchain.profile_name_list())}}}")
+            exit(1)
+            
         build_context =  BuildContext.create(directory=cli_args.directory,
                                              project_name=cli_args.project_name,
                                              builder_name=cli_args.builder,
                                              toolchain=toolchain,
                                              profile=cli_args.profile)
-
+        
         return build_context
 
 def cmd_build(cli_args: argparse.Namespace):

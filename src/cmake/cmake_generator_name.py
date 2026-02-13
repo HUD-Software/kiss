@@ -93,6 +93,7 @@ class CMakeGeneratorName:
                 year = 2026
             if not year:
                 year = int(toolset.product_line_version)
+            console.print_tips(f" {toolset}")
             return CMakeGeneratorName(f"{toolset.product_name} {toolset.major_version} {year}")
         elif toolchain.target.is_linux_os():
             return CMakeGeneratorName("Unix Makefiles")

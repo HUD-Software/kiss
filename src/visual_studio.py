@@ -15,7 +15,7 @@ class Toolset:
 
 
 class VSToolset(Toolset):
-    def __init__(self, compiler: Compiler, major_version:int, product_name:str, product_line_version:int, product_year:int):
+    def __init__(self, compiler: Compiler, major_version:int, product_name:str, product_line_version:int, product_year:int, installation_path:str):
         Toolset.__init__(self=self,
                          compiler=compiler
                          )
@@ -23,15 +23,15 @@ class VSToolset(Toolset):
         self.product_name=product_name
         self.product_line_version=product_line_version
         self.product_year=product_year
+        self.installation_path=installation_path
 
     def __str__(self):
-        base_str = super().__str__()
         return f"""VSToolset(
-  {base_str},
   major_version={self.major_version},
   product_name={self.product_name},
   product_line_version={self.product_line_version}
   product_year={self.product_year}
+  installation_path={self.installation_path}
 )"""
 
 
@@ -124,14 +124,16 @@ def get_windows_latest_toolset(compiler:Compiler) -> Optional[VSToolset] :
                          major_version=latest_major_version,
                          product_name=json_catalog.get('productName'),
                          product_line_version=json_catalog.get('productLineVersion'),
-                         product_year=json_catalog.get('featureReleaseYear'))
+                         product_year=json_catalog.get('featureReleaseYear'),
+                         installation_path=latest_installation_path)
     elif compiler.is_clangcl_based():
         compiler_path=json_installation_path / "VC\\Tools\\Llvm\\x64\\bin\\"
         compiler.cxx_path = compiler_path / "clang-cl.exe"
         compiler.c_path = compiler_path / "clang-cl.exe"
         return VSToolset(compiler=compiler,
-                             major_version=latest_major_version,
-                             product_name=json_catalog.get('productName'),
-                             product_line_version=json_catalog.get('productLineVersion'),
-                             product_year=json_catalog.get('featureReleaseYear'))
+                         major_version=latest_major_version,
+                         product_name=json_catalog.get('productName'),
+                         product_line_version=json_catalog.get('productLineVersion'),
+                         product_year=json_catalog.get('featureReleaseYear'),
+                         installation_path=latest_installation_path)
     return None

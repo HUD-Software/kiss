@@ -179,8 +179,7 @@ compilers:
       - name: ASAN
         description: Enable ASAN Sanitizer (Clang-cl only)
         cxx-compiler-flags: ["-fsanitize=address", "-fsanitize-address-use-after-scope"]
-        cxx-linker-flags: ["-fsanitize=address"]
-        enable-features: [DEBUG_INFO, WINDOWS_DLL_RUNTIME_DEBUG]
+        enable-features: [DEBUG_INFO, WINDOWS_DLL_RUNTIME_RELEASE]
     feature-rules:
       - incompatible: asan
         feature: ASAN

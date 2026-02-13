@@ -62,7 +62,7 @@ class CMakeRunner(BaseRunner):
                 asan_lib_path = str(Path(dll_path).parent)
                 existing_path = existing_path + f";{asan_lib_path}"
                 console.print_step(f"Add {asan_lib_path} to PATH")
-                        
+
             dll_paths = []
             for project in project_list:
                 if project.type == ProjectType.dyn:
@@ -73,7 +73,8 @@ class CMakeRunner(BaseRunner):
                     dll_paths.append(proj_context.output_directory_for_config(run_context.profile))  
 
             new_path = ";".join(dll_paths + [existing_path])
-            console.print_step(f"Add {';'.join(dll_paths)} to PATH")
+            if dll_paths:  
+                console.print_step(f"Add {';'.join(dll_paths)} to PATH")
             os.environ["PATH"] = new_path
   
         # Run the project

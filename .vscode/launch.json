@@ -130,7 +130,7 @@
                 "-t",
                 "x86_64-pc-windows-msvc",
                 "-c",
-                "cl",
+                "clangcl",
                 "--profile",
                 "custom",
             ],

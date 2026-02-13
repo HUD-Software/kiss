@@ -195,7 +195,10 @@ class CMakeListsGenerator(BaseGenerator):
                 if toolchain.compiler.is_clangcl_based():
                     if(asan_lib_path := asan.get_msvc_asan_dynamic_lib_path(toolchain)) is None:
                         exit(1)
+                    
                     f.write(f"target_link_libraries({project.name} PRIVATE \"{asan_lib_path}\")\n")
+                    f.write(f"target_link_options({project.name} PRIVATE \"/WHOLEARCHIVE:C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/Llvm/x64/lib/clang/19/lib/windows/clang_rt.asan_dynamic_runtime_thunk-x86_64.lib\")\n")
+                    
                 f.write(f"target_compile_definitions({project.name} PRIVATE _DISABLE_VECTOR_ANNOTATION)\n")
                 f.write(f"target_compile_definitions({project.name} PRIVATE _DISABLE_STRING_ANNOTATION)\n")
 
@@ -394,10 +397,11 @@ class CMakeListsGenerator(BaseGenerator):
                 f.write(f"add_library({project.name} SHARED {src_str})\n")
 
             # Check ASAN 
-            # if cmakelist_generate_context.is_asan_enabled(project):
-            #     if(asan_lib_path := asan.get_msvc_asan_dll_thunk_lib_path(cmakelist_generate_context.toolchain.compiler)) is None:
-            #         exit(1)
-            #     f.write(f"target_link_libraries({project.name} PRIVATE \"{asan_lib_path}\")\n")
+            if cmakelist_generate_context.is_asan_enabled(project):
+                if(asan_lib_path := asan.get_msvc_asan_dll_thunk_lib_path(cmakelist_generate_context.toolchain)) is None:
+                    exit(1)
+                f.write(f"target_link_libraries({project.name} PRIVATE \"{asan_lib_path}\")\n")
+                
 
             #Write export definition for windows
             f.write(f"target_compile_definitions({project.name} PRIVATE {project.name.upper()}_EXPORTS)\n")

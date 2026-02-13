@@ -175,5 +175,7 @@ class TargetRegistry:
             exit(1)
         self.targets.add(target)
 
+    def target_name_list(self) -> list[str] : 
+        return [t.name for t in self.targets]
 
 TargetRegistry = TargetRegistry()

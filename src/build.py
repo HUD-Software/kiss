@@ -5,7 +5,7 @@ from builder import BaseBuilder, BuilderRegistry
 import console
 from context import Context
 from project import Project
-from toolchain import Toolchain, Compiler, Target
+from toolchain import Toolchain, Compiler, Target, TargetRegistry
 
 class BuildContext(Context):
     def __init__(self, directory:Path, project: Project, builder_name: str, toolchain: Toolchain, profile: str):
@@ -54,6 +54,11 @@ class BuildContext(Context):
         # Ensure we request a valid profile
         if not toolchain.is_profile_exist(cli_args.profile):
             console.print_error(f"Profile {cli_args.profile} not found in the toolchain : {{{', '.join(toolchain.profile_name_list())}}}")
+            exit(1)
+        
+        # Ensure target exists
+        if not target_name in TargetRegistry:
+            console.print_error(f"Target {target_name} not found  : {{{', '.join(TargetRegistry.target_name_list())}}}")
             exit(1)
             
         build_context =  BuildContext.create(directory=cli_args.directory,

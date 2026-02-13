@@ -6,7 +6,7 @@ from context import Context
 from generator import BaseGenerator
 from project import Project, ProjectType
 from runner import RunnerRegistry
-from toolchain import Toolchain, Compiler, Target
+from toolchain import Toolchain, Compiler, Target, TargetRegistry
 
 
 class RunContext(Context):
@@ -53,7 +53,11 @@ class RunContext(Context):
         if not toolchain.is_profile_exist(cli_args.profile):
             console.print_error(f"Profile {cli_args.profile} not found in the toolchain : {{{', '.join(toolchain.profile_name_list())}}}")
             exit(1)
-            
+        
+        # Ensure target exists
+        if not target_name in TargetRegistry:
+            console.print_error(f"Target {target_name} not found  : {{{', '.join(TargetRegistry.target_name_list())}}}")
+            exit(1)
         run_context: RunContext = RunContext.create(directory=cli_args.directory,
                                                     project_name=cli_args.project_name,
                                                     runner_name=cli_args.runner,

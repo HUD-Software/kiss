@@ -5,7 +5,7 @@ import console
 from context import Context
 from generator import BaseGenerator, GeneratorRegistry
 from project import Project
-from toolchain import Toolchain, Target, Compiler
+from toolchain import Toolchain, Target, Compiler, TargetRegistry
 
 class GenerateContext(Context):
     def __init__(self, directory:Path, project: Project, generator_name: str, toolchain: Toolchain, profile: str):
@@ -53,6 +53,11 @@ class GenerateContext(Context):
             console.print_error(f"Profile {cli_args.profile} not found in the toolchain : {{{', '.join(toolchain.profile_name_list())}}}")
             exit(1)
 
+        # Ensure target exists
+        if not target_name in TargetRegistry:
+            console.print_error(f"Target {target_name} not found  : {{{', '.join(TargetRegistry.target_name_list())}}}")
+            exit(1)
+            
         return cls.create(directory=cli_args.directory,
                           project_name=cli_args.project_name,
                           generator_name=cli_args.generator_name,

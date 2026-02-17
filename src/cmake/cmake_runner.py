@@ -76,7 +76,7 @@ class CMakeRunner(BaseRunner):
             if dll_paths:  
                 console.print_step(f"Add {';'.join(dll_paths)} to PATH")
             os.environ["PATH"] = new_path
-  
+    
         # Run the project
         if not run_process(binary_path, output_prefix=False, print_command=False) == 0:
             exit(1)

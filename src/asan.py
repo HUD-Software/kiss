@@ -2,7 +2,7 @@ from pathlib import Path
 import console
 from toolchain import Toolchain
 
-def get_msvc_asan_dynamic_dll_path(toolchain: Toolchain) -> list[str]:
+def get_msvc_asan_dynamic_dll_path(toolchain: Toolchain) -> str:
     def find_clang_rt_asan_dynamic_i386_dll(path : Path) -> str | None:
         matches = path.glob("clang_rt.asan_dynamic-i386.dll") 
         if(first_match := next(matches, None) ) is None:
@@ -40,10 +40,23 @@ def get_msvc_asan_dynamic_dll_path(toolchain: Toolchain) -> list[str]:
             return None
         return str(Path(first_match).resolve().as_posix())
     else:
-        console.print_error("clang_rt.asan_dynamic-x86_64.lib not found in LLVM directories because compiler must be a derivate of 'cl' or 'clangcl' ")
+        console.print_error("ASAN dynmic dll path 'clang_rt.asan_dynamic-*.dll' not found in LLVM directories because compiler must be a derivate of 'cl' or 'clangcl' ")
         return None
 
-def get_msvc_asan_dynamic_lib_path(toolchain: Toolchain) -> list[str]:
+
+def get_msvc_asan_lib_path(toolchain: Toolchain) -> list[str]:
+    if toolchain.compiler.is_clangcl_based():
+        base_path = toolchain.compiler.cxx_path.parent.parent 
+        matches = base_path.glob("lib/clang/*/lib/windows/clang_rt.asan-x86_64.lib") 
+        if(first_match := next(matches, None) ) is None:
+            console.print_error("clang_rt.asan-x86_64.lib not found in LLVM directories")
+            return None
+        return str(Path(first_match).resolve().as_posix())
+    else:
+        console.print_error("clang_rt.asan-x86_64.lib not found in LLVM directories because compiler must be a derivate 'clangcl' ")
+        return None
+
+def get_msvc_asan_dynamic_lib_path(toolchain: Toolchain) -> str:
     if toolchain.compiler.is_clangcl_based():
         base_path = toolchain.compiler.cxx_path.parent.parent 
         matches = base_path.glob("lib/clang/*/lib/windows/clang_rt.asan_dynamic-x86_64.lib") 
@@ -55,7 +68,7 @@ def get_msvc_asan_dynamic_lib_path(toolchain: Toolchain) -> list[str]:
         console.print_error("clang_rt.asan_dynamic-x86_64.lib not found in LLVM directories because compiler must be a derivate 'clangcl' ")
         return None
     
-def get_msvc_asan_dll_thunk_lib_path(toolchain: Toolchain) -> list[str]:
+def get_msvc_asan_dll_thunk_lib_path(toolchain: Toolchain) -> str:
     if toolchain.compiler.is_clangcl_based():
         base_path = toolchain.compiler.cxx_path.parent.parent 
         matches = base_path.glob("lib/clang/*/lib/windows/clang_rt.asan_dll_thunk-x86_64.lib") 

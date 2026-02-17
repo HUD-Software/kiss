@@ -158,7 +158,7 @@ compilers:
         enable-features: [ASAN]
     features:
       - name: ASAN
-        description: Enable ASAN Sanitizer (Clang-cl only)
+        description: Enable ASAN Sanitizer
         cxx-compiler-flags: ["/fsanitize=address"]
         enable-features: [DEBUG_INFO, WINDOWS_DLL_RUNTIME_DEBUG, DISABLE_INCREMENTAL_LINK]
     feature-rules:
@@ -172,15 +172,22 @@ compilers:
 
     profiles:
       debug:
-        enable-features: [ASAN]
+        enable-features: [ASAN_DYNAMIC]
       custom:
         extends: debug
     features:
-      - name: ASAN
-        description: Enable ASAN Sanitizer (Clang-cl only)
-        cxx-compiler-flags: ["-fsanitize=address", "-fsanitize-address-use-after-scope"]
-        enable-features: [DEBUG_INFO, WINDOWS_DLL_RUNTIME_RELEASE]
+      - name: ASAN_STATIC
+        description: Enable ASAN Sanitizer with ASAN static linking
+        cxx-compiler-flags: ["-fsanitize=address", "-fsanitize-address-use-after-scope", "-fsanitize-recover=address"]
+        enable-features: [DEBUG_INFO, WINDOWS_STATIC_RUNTIME_DEBUG, DISABLE_INCREMENTAL_LINK]
+      - name: ASAN_DYNAMIC
+        description: Enable ASAN Sanitizer with ASAN dynamic linking
+        cxx-compiler-flags: ["-fsanitize=address", "-fsanitize-address-use-after-scope", "-fsanitize-recover=address"]
+        enable-features: [DEBUG_INFO, WINDOWS_DLL_RUNTIME_DEBUG, DISABLE_INCREMENTAL_LINK]
     feature-rules:
       - incompatible: asan
-        feature: ASAN
-        with: [OPT_LEVEL_3, LTO, OMIT_FRAME_POINTER]
+        feature: ASAN_STATIC
+        with: [OPT_LEVEL_3, LTO, OMIT_FRAME_POINTER, WINDOWS_DLL_RUNTIME_DEBUG, WINDOWS_DLL_RUNTIME_RELEASE]
+      - incompatible: asan
+        feature: ASAN_DYNAMIC
+        with: [OPT_LEVEL_3, LTO, OMIT_FRAME_POINTER, WINDOWS_STATIC_RUNTIME_DEBUG, WINDOWS_STATIC_RUNTIME_RELEASE]

@@ -65,7 +65,13 @@ class CMakeListsGenerateContext(GenerateContext):
         return any(profile.is_feature_enabled(project_type=project.type, feature_name=feature_name) for profile in self.toolchain.compiler.profiles)
     
     def is_asan_enabled(self, project: Project):
-        return self.is_feature_enabled(project, "ASAN")
+        return self.is_feature_enabled(project, "ASAN") or self.is_asan_static_enabled(project) or self.is_asan_dynamic_enabled(project)
+    
+    def is_asan_static_enabled(self, project: Project):
+        return self.is_feature_enabled(project, "ASAN_STATIC")
+    
+    def is_asan_dynamic_enabled(self, project: Project):
+        return self.is_feature_enabled(project, "ASAN_DYNAMIC")
     
     def output_directory_for_config(self, config: str) -> str: 
         return self._cmake_context.output_directory_for_config(config)
@@ -193,12 +199,21 @@ class CMakeListsGenerator(BaseGenerator):
             # Add ASAN if activated
             if cmakelist_generate_context.is_asan_enabled(project):
                 if toolchain.compiler.is_clangcl_based():
-                    if(asan_lib_path := asan.get_msvc_asan_dynamic_lib_path(toolchain)) is None:
-                        exit(1)
-                    
-                    f.write(f"target_link_libraries({project.name} PRIVATE \"{asan_lib_path}\")\n")
-                    f.write(f"target_link_options({project.name} PRIVATE \"/WHOLEARCHIVE:C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/Llvm/x64/lib/clang/19/lib/windows/clang_rt.asan_dynamic_runtime_thunk-x86_64.lib\")\n")
-                    
+                    if cmakelist_generate_context.is_asan_static_enabled(project):
+                        if(asan_lib_path := asan.get_msvc_asan_lib_path(toolchain)) is None:
+                            exit(1)
+                        f.write(f"target_link_libraries({project.name} PRIVATE \"{asan_lib_path}\")\n")
+                        f.write(f"target_link_options({project.name}  PRIVATE \"/WHOLEARCHIVE:{asan_lib_path}\")\n")
+                        # f.write(f"target_link_libraries({project.name} PRIVATE \"C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/Llvm/x64/lib/clang/19/lib/windows/clang_rt.asan-x86_64.lib\")\n")
+                        # f.write(f"target_link_options({project.name}  PRIVATE \"/WHOLEARCHIVE:C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/Llvm/x64/lib/clang/19/lib/windows/clang_rt.asan-x86_64.lib\")\n")
+                    elif cmakelist_generate_context.is_asan_dynamic_enabled(project):
+                        if(asan_lib_path := asan.get_msvc_asan_dynamic_lib_path(toolchain)) is None:
+                            exit(1)
+                        f.write(f"target_link_libraries({project.name} PRIVATE \"{asan_lib_path}\")\n")
+                        if(asan_lib_path := asan.get_msvc_asan_dll_thunk_lib_path(toolchain)) is None:
+                            exit(1)
+                        f.write(f"target_link_options({project.name} PRIVATE \"/WHOLEARCHIVE:{asan_lib_path}\")\n")
+                        
                 f.write(f"target_compile_definitions({project.name} PRIVATE _DISABLE_VECTOR_ANNOTATION)\n")
                 f.write(f"target_compile_definitions({project.name} PRIVATE _DISABLE_STRING_ANNOTATION)\n")
 

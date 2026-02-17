@@ -169,25 +169,17 @@ compilers:
   # MSVC clang-cl compiler
   clangcl:
     extends: msvc-generic
-
     profiles:
       debug:
-        enable-features: [ASAN_DYNAMIC]
+        enable-features: [ASAN]
       custom:
         extends: debug
     features:
-      - name: ASAN_STATIC
+      - name: ASAN
         description: Enable ASAN Sanitizer with ASAN static linking
-        cxx-compiler-flags: ["-fsanitize=address", "-fsanitize-address-use-after-scope", "-fsanitize-recover=address"]
-        enable-features: [DEBUG_INFO, WINDOWS_STATIC_RUNTIME_DEBUG, DISABLE_INCREMENTAL_LINK]
-      - name: ASAN_DYNAMIC
-        description: Enable ASAN Sanitizer with ASAN dynamic linking
         cxx-compiler-flags: ["-fsanitize=address", "-fsanitize-address-use-after-scope", "-fsanitize-recover=address"]
         enable-features: [DEBUG_INFO, WINDOWS_DLL_RUNTIME_DEBUG, DISABLE_INCREMENTAL_LINK]
     feature-rules:
       - incompatible: asan
-        feature: ASAN_STATIC
-        with: [OPT_LEVEL_3, LTO, OMIT_FRAME_POINTER, WINDOWS_DLL_RUNTIME_DEBUG, WINDOWS_DLL_RUNTIME_RELEASE]
-      - incompatible: asan
-        feature: ASAN_DYNAMIC
-        with: [OPT_LEVEL_3, LTO, OMIT_FRAME_POINTER, WINDOWS_STATIC_RUNTIME_DEBUG, WINDOWS_STATIC_RUNTIME_RELEASE]
+        feature: ASAN
+        with: [OPT_LEVEL_3, LTO, OMIT_FRAME_POINTER]

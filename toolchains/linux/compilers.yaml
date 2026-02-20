@@ -13,7 +13,7 @@ compilers:
         enable-features: [WARNING_STRICT, ENABLE_EXCEPTION]
       debug:
         extends: common
-        enable-features: [OPT_LEVEL_0, WARNING_ALL]
+        enable-features: [OPT_LEVEL_0]
       release:
         extends: common
         enable-features: [OPT_LEVEL_3, REMOVE_DEAD_CODE]
@@ -45,14 +45,13 @@ compilers:
       - name: OPT_LEVEL_0
         description: No optimization (debug-like)
         cxx-compiler-flags: [-O0]
-        cxx-linker-flags: [/DEBUG]
         enable-features: [DEBUG_INFO]
       - name: OPT_LEVEL_1
         description: Minimal optimization (-O1)
         cxx-compiler-flags: [-O1]
       - name: OPT_LEVEL_2
         description: Default optimization (-O2)
-        cxx-compiler-flags: [/-O2]
+        cxx-compiler-flags: [-O2]
       - name: OPT_LEVEL_3
         description: Max optimization (-O2 + aggressive inline)
         cxx-compiler-flags: [-O3, -finline-functions, -funroll-loops]
@@ -90,7 +89,7 @@ compilers:
         description: Enable ASAN Sanitizer
         cxx-compiler-flags: ["-fsanitize=address", "-fsanitize-address-use-after-scope"]
         cxx-linker-flags: ["-fsanitize=address"]
-        enable-features: [DEBUG_INFO, RUNTIME_DLL, OPT_LEVEL_2]
+        enable-features: [DEBUG_INFO]
 
     # Features rules
     # only-one rule : Only 1 rules is allowed in 'features'. Multiple in the same target is not allowed.
@@ -99,9 +98,6 @@ compilers:
       # Only one warning level at a time
       - only-one: warning
         features: [WARNING_BASE, WARNING_STRICT, WARNING_ALL, NO_WARNING]
-      # Only one runtime at a time
-      - only-one: runtime
-        features: [RUNTIME_DLL, RUNTIME_STATIC]
       # Only one optimization level at a time
       - only-one: optimization
         features: [OPT_LEVEL_0, OPT_LEVEL_1, OPT_LEVEL_2, OPT_LEVEL_3]
@@ -125,9 +121,17 @@ compilers:
     extends: gnu-generic
     cxx_path: g++
     c_path: gcc
+    profiles:
+      custom:
+        extends: debug
+        enable-features: [ASAN]
 
   # Clang compiler
   clang:
     extends: gnu-generic
     cxx_path: clang++
     c_path: clang
+    profiles:
+      custom:
+        extends: debug
+        enable-features: [ASAN]

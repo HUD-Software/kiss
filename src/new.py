@@ -133,7 +133,7 @@ def __new_bin_project_in_project_file(new_context: NewContext):
         with open(absolute_mainfile, "w", encoding="utf-8") as f:
             f.write('#include <iostream>\n\n')
             f.write('int main() {\n')
-            f.write('    std::cout << "Hello, World!" << std::endl;\n')
+            f.write('    std::cout << "Hello, Bin World!" << std::endl;\n')
             f.write('    return 0;\n')
             f.write('}\n')
 
@@ -175,15 +175,19 @@ def __new_lib_project_in_project_file(new_context: NewContext):
         os.makedirs(absolute_libfile.parent, exist_ok=True)
         with open(absolute_libfile, "w", encoding="utf-8") as f:
             f.write('#include <iostream>\n\n')
+            f.write(f"namespace {project.name} {{ \n\n")
             f.write('void hello_world() {\n')
-            f.write('    std::cout << "Hello, World!" << std::endl;\n')
-            f.write('}\n')
+            f.write('    std::cout << "Hello, Lib World!" << std::endl;\n')
+            f.write('}\n\n')
+            f.write(f"}} // namespace {project.name} \n")
         os.makedirs(absolute_header.parent, exist_ok=True)
         with open(absolute_header, "w", encoding="utf-8") as f:
             f.write('#ifndef LIB_H\n')
             f.write('#define LIB_H\n\n')
-            f.write('void hello_world();\n')
-            f.write('\n#endif // LIB_H\n')
+            f.write(f"namespace {project.name} {{\n\n")
+            f.write('void hello_world();\n\n')
+            f.write(f"}} // namespace {project.name}\n\n")
+            f.write('#endif // LIB_H\n')
 
 def __new_dyn_project_in_project_file(new_context: NewContext):
     project = DynProject(
@@ -222,15 +226,19 @@ def __new_dyn_project_in_project_file(new_context: NewContext):
         os.makedirs(absolute_dynfile.parent, exist_ok=True)
         with open(absolute_dynfile, "w", encoding="utf-8") as f:
             f.write('#include <iostream>\n\n')
+            f.write(f"namespace {project.name} {{ \n\n")
             f.write('void hello_world() {\n')
-            f.write('    std::cout << "Hello, World!" << std::endl;\n')
-            f.write('}\n')
+            f.write('    std::cout << "Hello, Dyn World!" << std::endl;\n')
+            f.write('}\n\n')
+            f.write(f"}} // namespace {project.name} \n\n")
         os.makedirs(absolute_header.parent, exist_ok=True)
         with open(absolute_header, "w", encoding="utf-8") as f:
             f.write('#ifndef DYN_H\n')
             f.write('#define DYN_H\n\n')
-            f.write('void hello_world();\n')
-            f.write('\n#endif // DYN_H\n')
+            f.write(f"namespace {project.name} {{ \n\n")
+            f.write('void hello_world();\n\n')
+            f.write(f"}} // namespace {project.name}\n\n")
+            f.write('#endif // DYN_H\n')
 
 def cmd_new(cli_args: argparse.Namespace):
     new_context = NewContext.from_cli_args(cli_args)

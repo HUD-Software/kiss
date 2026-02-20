@@ -47,7 +47,7 @@ class CMakeRunner(BaseRunner):
             binary_path = Path(cmake_build_context.output_directory_for_config(run_context.profile)) / f"{run_context.project.name}.exe"
         else:
             binary_path = Path(cmake_build_context.output_directory_for_config(run_context.profile)) / run_context.project.name
-        console.print_step(f"▶ Run {Path(*binary_path.parts[-2:])}...")
+        console.print_step(f"▶ Run {Path(*binary_path.parts[-2:])} ({context.toolchain.compiler.name})...")
 
         # Add DLL path to PATH on Windows
         if run_context.toolchain.target.is_windows_os():

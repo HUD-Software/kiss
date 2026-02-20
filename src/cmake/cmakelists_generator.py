@@ -169,23 +169,7 @@ class CMakeListsGenerator(BaseGenerator):
             f.write(f"# {project.name} description\n")                   
             f.write(f"project({project.name} LANGUAGES CXX )\n")
             f.write("\n")
-            
-            # Create per profile configurations
-            profile_name_list = list[(str,str)]()
-            if cmakelist_generate_context.cmake_generator_name.is_multi_profile():
-                for profile in toolchain.compiler.profiles:
-                    profile_name_list.append((profile.name, profile.name.upper()))
-                f.write(f"set(CMAKE_CONFIGURATION_TYPES {';'.join([p[0] for p in profile_name_list])} CACHE STRING \"\" FORCE)\n")
-
-            for profile_name, upper_profile_name in profile_name_list:
-                if( profile := toolchain.get_profile(profile_name)) is None:
-                    console.print_warning(f"Profile {profile_name} not found in {self.name}")
-                    exit(1)
-                cxx_linker_flags = profile.linker_flags_for_project_type(project.type)
-                f.write(f"set(CMAKE_EXE_LINKER_FLAGS_{upper_profile_name} \"{' '.join(cxx_linker_flags)}\" CACHE STRING \"\" FORCE)\n")
-                cxx_compiler_flags = profile.compiler_flags_for_project_type(project.type)
-                f.write(f"set(CMAKE_CXX_FLAGS_{upper_profile_name} \"{' '.join(cxx_compiler_flags)}\" CACHE STRING \"\" FORCE)\n")
-                   
+          
 
             # Write project sources
             if project.sources:
@@ -196,16 +180,42 @@ class CMakeListsGenerator(BaseGenerator):
                 f.write(f"add_executable({project.name} {src_str})\n")
                 f.write("\n")
             
+            # Create per profile configurations for multiprofile generators
+            profile_name_list = list[(str,str)]()
+            if cmakelist_generate_context.cmake_generator_name.is_multi_profile():
+                for profile in toolchain.compiler.profiles:
+                    profile_name_list.append((profile.name, profile.name.upper()))
+                f.write(f"set(CMAKE_CONFIGURATION_TYPES {';'.join([p[0] for p in profile_name_list])} CACHE STRING \"\" FORCE)\n")
+
+                for profile_name, upper_profile_name in profile_name_list:
+                    if( profile := toolchain.get_profile(profile_name)) is None:
+                        console.print_warning(f"Profile {profile_name} not found in {self.name}")
+                        exit(1)
+                    cxx_compiler_flags = profile.compiler_flags_for_project_type(project.type)
+                    f.write(f"set(CMAKE_CXX_FLAGS_{upper_profile_name} \"{' '.join(cxx_compiler_flags)}\" CACHE STRING \"\" FORCE)\n")
+                    cxx_linker_flags = profile.linker_flags_for_project_type(project.type)
+                    f.write(f"set(CMAKE_EXE_LINKER_FLAGS_{upper_profile_name} \"{' '.join(cxx_linker_flags)}\" CACHE STRING \"\" FORCE)\n")                    
+            else:
+                if( profile := toolchain.get_profile(cmakelist_generate_context.profile)) is None:
+                    console.print_warning(f"Profile {cmakelist_generate_context.profile} not found in {self.name}")
+                    exit(1)
+                cxx_compiler_flags = profile.compiler_flags_for_project_type(project.type)
+                f.write(f"target_compile_options({project.name} PRIVATE {' '.join(cxx_compiler_flags)})\n")
+                cxx_linker_flags = profile.linker_flags_for_project_type(project.type)
+                f.write(f"target_link_options({project.name} PRIVATE {' '.join(cxx_linker_flags)})\n")
+                
             # Add ASAN if activated
             if cmakelist_generate_context.is_asan_enabled(project):
-                if toolchain.compiler.is_clangcl_based():
-                    if(asan_lib_path := asan.get_msvc_asan_lib_path(toolchain)) is None:
-                            exit(1)
-                    f.write(f"target_link_libraries({project.name} PRIVATE \"{asan_lib_path}\")\n")
-                    f.write(f"target_link_options({project.name}  PRIVATE \"/WHOLEARCHIVE:{asan_lib_path}\")\n")
-                        
-                f.write(f"target_compile_definitions({project.name} PRIVATE _DISABLE_VECTOR_ANNOTATION)\n")
-                f.write(f"target_compile_definitions({project.name} PRIVATE _DISABLE_STRING_ANNOTATION)\n")
+                if toolchain.target.is_msvc_abi():
+                    if toolchain.compiler.is_clangcl_based():
+                        if(asan_lib_path := asan.get_msvc_asan_lib_path(toolchain)) is None:
+                                exit(1)
+                        f.write(f"target_link_libraries({project.name} PRIVATE \"{asan_lib_path}\")\n")
+                        f.write(f"target_link_options({project.name}  PRIVATE \"/WHOLEARCHIVE:{asan_lib_path}\")\n")
+                            
+                    f.write(f"target_compile_definitions({project.name} PRIVATE _DISABLE_VECTOR_ANNOTATION)\n")
+                    f.write(f"target_compile_definitions({project.name} PRIVATE _DISABLE_STRING_ANNOTATION)\n")
+
 
             # Write output name
             f.write(f"# {project.name} output name\n")
@@ -255,20 +265,6 @@ class CMakeListsGenerator(BaseGenerator):
             f.write(f"project({project.name} LANGUAGES CXX )\n")
             f.write("\n")
 
-            # Create per profile configurations
-            profile_name_list = list[(str,str)]()
-            if cmakelist_generate_context.cmake_generator_name.is_multi_profile():
-                for profile in toolchain.compiler.profiles:
-                    profile_name_list.append((profile.name, profile.name.upper()))
-                f.write(f"set(CMAKE_CONFIGURATION_TYPES {';'.join([p[0] for p in profile_name_list])} CACHE STRING \"\" FORCE)\n")
-
-            for profile_name, upper_profile_name in profile_name_list:
-                if( profile := toolchain.get_profile(profile_name)) is None:
-                    console.print_warning(f"Profile {profile_name} not found in {self.name}")
-                    exit(1)
-                cxx_compiler_flags = profile.compiler_flags_for_project_type(project.type)
-                f.write(f"set(CMAKE_CXX_FLAGS_{upper_profile_name} \"{' '.join(cxx_compiler_flags)}\" CACHE STRING \"\" FORCE)\n")
-
             # Write project sources
             if project.sources:
                 normalized_src = self._resolve_sources(project.sources, project.name)
@@ -276,6 +272,28 @@ class CMakeListsGenerator(BaseGenerator):
                 for src in normalized_src:
                     src_str += f"\n\t{src}"
                 f.write(f"add_library({project.name} STATIC {src_str})\n")
+
+            # Create per profile configurations for multiprofile generators
+            profile_name_list = list[(str,str)]()
+            if cmakelist_generate_context.cmake_generator_name.is_multi_profile():
+                for profile in toolchain.compiler.profiles:
+                    profile_name_list.append((profile.name, profile.name.upper()))
+                f.write(f"set(CMAKE_CONFIGURATION_TYPES {';'.join([p[0] for p in profile_name_list])} CACHE STRING \"\" FORCE)\n")
+
+                for profile_name, upper_profile_name in profile_name_list:
+                    if( profile := toolchain.get_profile(profile_name)) is None:
+                        console.print_warning(f"Profile {profile_name} not found in {self.name}")
+                        exit(1)
+                    cxx_compiler_flags = profile.compiler_flags_for_project_type(project.type)
+                    f.write(f"set(CMAKE_CXX_FLAGS_{upper_profile_name} \"{' '.join(cxx_compiler_flags)}\" CACHE STRING \"\" FORCE)\n")
+            else:
+                if( profile := toolchain.get_profile(cmakelist_generate_context.profile)) is None:
+                    console.print_warning(f"Profile {cmakelist_generate_context.profile} not found in {self.name}")
+                    exit(1)
+                cxx_compiler_flags = profile.compiler_flags_for_project_type(project.type)
+                f.write(f"target_compile_options({project.name} PRIVATE {' '.join(cxx_compiler_flags)})\n")
+                cxx_linker_flags = profile.linker_flags_for_project_type(project.type)
+                f.write(f"target_link_options({project.name} PRIVATE {' '.join(cxx_linker_flags)})\n")
 
             # Write project interfaces
             if project.interface_directories:
@@ -377,21 +395,6 @@ class CMakeListsGenerator(BaseGenerator):
             f.write(f"# {project.name} description\n")                   
             f.write(f"project({project.name} LANGUAGES CXX )\n")
             f.write("\n")
-            
-            # Create per profile configurations
-            profile_name_list = list[(str,str)]()
-            if cmakelist_generate_context.cmake_generator_name.is_multi_profile():
-                for profile in toolchain.compiler.profiles:
-                    profile_name_list.append((profile.name, profile.name.upper()))
-                f.write(f"set(CMAKE_CONFIGURATION_TYPES {';'.join([p[0] for p in profile_name_list])} CACHE STRING \"\" FORCE)\n")
-            for profile_name, upper_profile_name in profile_name_list:
-                if( profile := toolchain.get_profile(profile_name)) is None:
-                    console.print_warning(f"Profile {profile_name} not found in {self.name}")
-                    exit(1)
-                cxx_linker_flags = profile.linker_flags_for_project_type(project.type)
-                f.write(f"set(CMAKE_SHARED_LINKER_FLAGS_{upper_profile_name} \"{' '.join(cxx_linker_flags)}\" CACHE STRING \"\" FORCE)\n")
-                cxx_compiler_flags = profile.compiler_flags_for_project_type(project.type)
-                f.write(f"set(CMAKE_CXX_FLAGS_{upper_profile_name} \"{' '.join(cxx_compiler_flags)}\" CACHE STRING \"\" FORCE)\n")
 
             # Write project sources
             if project.sources:
@@ -401,11 +404,35 @@ class CMakeListsGenerator(BaseGenerator):
                     src_str += f"\n\t{src}"
                 f.write(f"add_library({project.name} SHARED {src_str})\n")
 
-            # Check ASAN 
-            if cmakelist_generate_context.is_asan_enabled(project):
-                if(asan_lib_path := asan.get_msvc_asan_dll_thunk_lib_path(cmakelist_generate_context.toolchain)) is None:
+            # Create per profile configurations for multiprofile generators
+            profile_name_list = list[(str,str)]()
+            if cmakelist_generate_context.cmake_generator_name.is_multi_profile():
+                for profile in toolchain.compiler.profiles:
+                    profile_name_list.append((profile.name, profile.name.upper()))
+                f.write(f"set(CMAKE_CONFIGURATION_TYPES {';'.join([p[0] for p in profile_name_list])} CACHE STRING \"\" FORCE)\n")
+                for profile_name, upper_profile_name in profile_name_list:
+                    if( profile := toolchain.get_profile(profile_name)) is None:
+                        console.print_warning(f"Profile {profile_name} not found in {self.name}")
+                        exit(1)
+                    cxx_linker_flags = profile.linker_flags_for_project_type(project.type)
+                    f.write(f"set(CMAKE_SHARED_LINKER_FLAGS_{upper_profile_name} \"{' '.join(cxx_linker_flags)}\" CACHE STRING \"\" FORCE)\n")
+                    cxx_compiler_flags = profile.compiler_flags_for_project_type(project.type)
+                    f.write(f"set(CMAKE_CXX_FLAGS_{upper_profile_name} \"{' '.join(cxx_compiler_flags)}\" CACHE STRING \"\" FORCE)\n")
+            else:
+                if( profile := toolchain.get_profile(cmakelist_generate_context.profile)) is None:
+                    console.print_warning(f"Profile {cmakelist_generate_context.profile} not found in {self.name}")
                     exit(1)
-                f.write(f"target_link_libraries({project.name} PRIVATE \"{asan_lib_path}\")\n")
+                cxx_compiler_flags = profile.compiler_flags_for_project_type(project.type)
+                f.write(f"target_compile_options({project.name} PRIVATE {' '.join(cxx_compiler_flags)})\n")
+                cxx_linker_flags = profile.linker_flags_for_project_type(project.type)
+                f.write(f"target_link_options({project.name} PRIVATE {' '.join(cxx_linker_flags)})\n")
+
+            # Add ASAN if needed
+            if cmakelist_generate_context.is_asan_enabled(project):
+                if toolchain.target.is_msvc_abi():
+                    if(asan_lib_path := asan.get_msvc_asan_dll_thunk_lib_path(cmakelist_generate_context.toolchain)) is None:
+                        exit(1)
+                    f.write(f"target_link_libraries({project.name} PRIVATE \"{asan_lib_path}\")\n")
                 
 
             #Write export definition for windows
@@ -544,5 +571,6 @@ class CMakeListsGenerator(BaseGenerator):
         return unfreshlist
 
     def generate(self, cli_args: argparse.Namespace)-> list[CMakeContext]:
-        cmakelist_generate_context = CMakeListsGenerateContext.from_cli_args(cli_args)
+        if( cmakelist_generate_context := CMakeListsGenerateContext.from_cli_args(cli_args)) is None:
+            return []
         return self.generate_project(cmakelist_generate_context=cmakelist_generate_context)

@@ -51,12 +51,12 @@ class GenerateContext(Context):
         # Ensure we request a valid profile
         if not toolchain.is_profile_exist(cli_args.profile):
             console.print_error(f"Profile {cli_args.profile} not found in the toolchain : {{{', '.join(toolchain.profile_name_list())}}}")
-            exit(1)
+            return None
 
         # Ensure target exists
         if not target_name in TargetRegistry:
             console.print_error(f"Target {target_name} not found  : {{{', '.join(TargetRegistry.target_name_list())}}}")
-            exit(1)
+            return None
             
         return cls.create(directory=cli_args.directory,
                           project_name=cli_args.project_name,

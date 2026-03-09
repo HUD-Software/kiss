@@ -10,12 +10,12 @@ from toolchain import Toolchain, Compiler, Target, TargetRegistry
 
 
 class RunContext(Context):
-    def __init__(self, directory:Path, project: Project, runner_name: str, toolchain: Toolchain, profile: str):
+    def __init__(self, directory:Path, project: Project, runner_name: str, toolchain: Toolchain, profile_name: str):
         super().__init__(directory)
         self._project = project
         self._runner_name = runner_name
         self._toolchain = toolchain
-        self._profile = profile
+        self._profile_name = profile_name
 
     @property
     def project(self) -> Project:
@@ -30,16 +30,16 @@ class RunContext(Context):
         return self._toolchain
     
     @property 
-    def profile(self) -> str: 
-        return self._profile    
+    def profile_name(self) -> str: 
+        return self._profile_name
     
     @classmethod
-    def create(cls, directory: Path, project_name: str, runner_name: str, toolchain: Toolchain, profile: str) -> Self :
+    def create(cls, directory: Path, project_name: str, runner_name: str, toolchain: Toolchain, profile_name: str) -> Self :
         project_to_run = super().find_target_project(directory, project_name, ProjectType.bin)
         if not project_to_run:
             console.print_error(f"No project found in {str(directory)}")
             exit(1)
-        return RunContext(directory=directory, project=project_to_run, runner_name=runner_name, toolchain=toolchain, profile=profile)
+        return RunContext(directory=directory, project=project_to_run, runner_name=runner_name, toolchain=toolchain, profile_name=profile_name)
 
 
     @staticmethod
@@ -62,7 +62,7 @@ class RunContext(Context):
                                                     project_name=cli_args.project_name,
                                                     runner_name=cli_args.runner,
                                                     toolchain=toolchain,
-                                                    profile=cli_args.profile)
+                                                    profile_name=cli_args.profile)
         
         
 

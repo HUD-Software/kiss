@@ -17,37 +17,37 @@ from toolchain import Toolchain
 
 
 class CMakeBuildContext(BuildContext):
-    def __init__(self, directory:Path, project: Project, builder_name: str, toolchain: Toolchain, profile: str, cmake_generator_name: str):
+    def __init__(self, directory:Path, project: Project, builder_name: str, toolchain: Toolchain, profile_name: str, cmake_generator_name: str):
         super().__init__(directory=directory, 
                          project=project, 
                          builder_name=builder_name, 
                          toolchain=toolchain, 
-                         profile=profile)
+                         profile_name=profile_name)
         self._cmake_generator_name = cmake_generator_name
         self._cmakelist_generate_context = CMakeListsGenerateContext.create( directory=directory,
                                                                             project_name=project.name,
                                                                             generator_name=builder_name,
                                                                             toolchain=toolchain,
-                                                                            profile=profile)
+                                                                            profile_name=profile_name)
 
     @property
     def cmakelist_generate_context(self) -> CMakeListsGenerateContext:
         return self._cmakelist_generate_context
 
     @property
-    def profile(self) -> str:
-        return self._cmakelist_generate_context.profile
+    def profile_name(self) -> str:
+        return self._cmakelist_generate_context.profile_name
 
     def output_directory_for_config(self, config: str) -> str: 
         return self.cmakelist_generate_context.output_directory_for_config(config)
     
     @classmethod
-    def create(cls, directory: Path, project_name: str, builder_name: str, toolchain: Toolchain, profile: str, cmake_generator_name: str) -> Self :
+    def create(cls, directory: Path, project_name: str, builder_name: str, toolchain: Toolchain, profile_name: str, cmake_generator_name: str) -> Self :
         project_to_build = super().find_target_project(directory, project_name)
         if not project_to_build:
             console.print_error(f"No project found in {str(directory)}")
             exit(1)
-        return CMakeBuildContext(directory=directory, project=project_to_build, builder_name=builder_name, toolchain=toolchain, profile=profile, cmake_generator_name=cmake_generator_name)
+        return CMakeBuildContext(directory=directory, project=project_to_build, builder_name=builder_name, toolchain=toolchain, profile_name=profile_name, cmake_generator_name=cmake_generator_name)
 
 
     @staticmethod
@@ -136,7 +136,8 @@ class CMakeBuilder(BaseBuilder):
         # Configure the generated CMakelists.txt
         context = CMakeContext(current_directory=cmake_build_context.directory, 
                                toolchain=cmake_build_context.toolchain, 
-                               project=cmake_build_context.project)
+                               project=cmake_build_context.project,
+                               profile_name=cmake_build_context.profile_name)
         
         if generate_context.cmake_generator_name.is_visual_studio():
             if (configure_args := self._get_visual_studio_configure_args(generate_context.cmake_generator_name.name, context=context) ) is None:
@@ -159,7 +160,7 @@ class CMakeBuilder(BaseBuilder):
 
         # Build
         console.print_step("🏗️  CMake build...")
-        args = ["--build", ".", "--config", cmake_build_context.profile]
+        args = ["--build", ".", "--config", cmake_build_context.profile_name]
         if not run_process("cmake", args, context.build_directory) == 0:
             exit(1)
 

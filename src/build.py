@@ -8,20 +8,20 @@ from project import Project
 from toolchain import Toolchain, Compiler, Target, TargetRegistry
 
 class BuildContext(Context):
-    def __init__(self, directory:Path, project: Project, builder_name: str, toolchain: Toolchain, profile: str):
+    def __init__(self, directory:Path, project: Project, builder_name: str, toolchain: Toolchain, profile_name: str):
         super().__init__(directory)
         self._project = project
         self._builder_name = builder_name
         self._toolchain = toolchain
-        self._profile = profile
+        self._profile_name = profile_name
         
     @property
     def project(self) -> Project:
         return self._project
 
     @property
-    def profile(self) -> str:
-        return self._profile
+    def profile_name(self) -> str:
+        return self._profile_name
 
     @property
     def builder_name(self) -> str:
@@ -32,7 +32,7 @@ class BuildContext(Context):
         return self._toolchain
 
     @classmethod
-    def create(cls, directory: Path, project_name: str, builder_name: str, toolchain: Toolchain, profile: str) -> Self :
+    def create(cls, directory: Path, project_name: str, builder_name: str, toolchain: Toolchain, profile_name: str) -> Self :
         project_to_build = super().find_target_project(directory, project_name)
         if not project_to_build:
             console.print_error(f"No project '{project_name}' found in {str(directory)}")
@@ -41,7 +41,7 @@ class BuildContext(Context):
                             project=project_to_build, 
                             builder_name=builder_name, 
                             toolchain=toolchain,
-                            profile=profile)
+                            profile_name=profile_name)
 
 
     @staticmethod
@@ -65,7 +65,7 @@ class BuildContext(Context):
                                              project_name=cli_args.project_name,
                                              builder_name=cli_args.builder,
                                              toolchain=toolchain,
-                                             profile=cli_args.profile)
+                                             profile_name=cli_args.profile)
         
         return build_context
 

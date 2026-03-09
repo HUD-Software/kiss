@@ -80,7 +80,7 @@ class CMakeRunner(BaseRunner):
     
         # Run the project
         if not run_process(binary_path, output_prefix=False, print_command=False) == 0:
-            exit(1)
+             exit(1)
             
     def run(self, run_context: RunContext):
         self.run_project(run_context=run_context)

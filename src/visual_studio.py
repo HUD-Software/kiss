@@ -62,13 +62,16 @@ def get_windows_latest_toolset(compiler:Compiler) -> Optional[VSToolset] :
             install_path = Path(installation["installationPath"]).resolve()
             try:
                 cxx_path.relative_to(install_path)
+                
+                
                 # Found matching installation
                 return VSToolset(
                     compiler=compiler,
-                    major_version=installation.get("catalog", {}).get("productLineVersion"),
+                    major_version=int(next(iter(installation["installationVersion"].split('.')), '0')),
                     product_name=installation.get("catalog", {}).get("productName"),
                     product_line_version=installation.get("catalog", {}).get("productLineVersion"),
-                    product_year=installation.get("catalog", {}).get("featureReleaseYear")
+                    product_year=installation.get("catalog", {}).get("featureReleaseYear"),
+                    installation_path=install_path
                 )
             except ValueError:
                 continue

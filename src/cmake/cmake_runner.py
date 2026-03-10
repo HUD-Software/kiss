@@ -31,7 +31,7 @@ class CMakeRunner(BaseRunner):
         if not cmake_builder:
             console.print_error(f"Builder {cmake_builder.name} not found")
             exit(1)
-        cmake_build_context = CMakeBuildContext.create(directory=run_context.directory,
+        cmake_build_context = CMakeBuildContext.create(current_directory=run_context.current_directory,
                                                         project_name=run_context.project.name,
                                                         builder_name=run_context.runner_name,
                                                         toolchain=run_context.toolchain,
@@ -39,7 +39,7 @@ class CMakeRunner(BaseRunner):
                                                         cmake_generator_name=None)
         cmake_builder.build_project(cmake_build_context)
         
-        context = CMakeContext(current_directory=run_context.directory, 
+        context = CMakeContext(current_directory=run_context.current_directory, 
                             toolchain=run_context.toolchain, 
                             project=run_context.project,
                             profile_name=run_context.profile_name)
@@ -68,7 +68,7 @@ class CMakeRunner(BaseRunner):
             for project in project_list:
                 if project.type == ProjectType.dyn:
                     # Add the DLL path to PATH
-                    proj_context = CMakeContext(current_directory=run_context.directory, 
+                    proj_context = CMakeContext(current_directory=run_context.current_directory, 
                                                 toolchain=run_context.toolchain, 
                                                 project=project)
                     dll_paths.append(proj_context.output_directory_for_config(run_context.profile))  

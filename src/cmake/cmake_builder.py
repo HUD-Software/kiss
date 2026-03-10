@@ -3,7 +3,7 @@ from multiprocessing import context
 import os
 from pathlib import Path
 from typing import Self
-from build import BuildContext
+from build import KissBuildContext
 from builder import BaseBuilder
 from cli import KissParser
 from cmake.cmake_context import CMakeContext
@@ -16,15 +16,15 @@ from project import Project
 from toolchain import Toolchain
 
 
-class CMakeBuildContext(BuildContext):
-    def __init__(self, directory:Path, project: Project, builder_name: str, toolchain: Toolchain, profile_name: str, cmake_generator_name: str):
-        super().__init__(directory=directory, 
+class CMakeBuildContext(KissBuildContext):
+    def __init__(self, current_directory:Path, project: Project, builder_name: str, toolchain: Toolchain, profile_name: str, cmake_generator_name: str):
+        super().__init__(current_directory=current_directory, 
                          project=project, 
                          builder_name=builder_name, 
                          toolchain=toolchain, 
                          profile_name=profile_name)
         self._cmake_generator_name = cmake_generator_name
-        self._cmakelist_generate_context = CMakeListsGenerateContext.create( directory=directory,
+        self._cmakelist_generate_context = CMakeListsGenerateContext.create( current_directory=current_directory,
                                                                             project_name=project.name,
                                                                             generator_name=builder_name,
                                                                             toolchain=toolchain,
@@ -42,23 +42,23 @@ class CMakeBuildContext(BuildContext):
         return self.cmakelist_generate_context.output_directory_for_config(config)
     
     @classmethod
-    def create(cls, directory: Path, project_name: str, builder_name: str, toolchain: Toolchain, profile_name: str, cmake_generator_name: str) -> Self :
-        project_to_build = super().find_target_project(directory, project_name)
+    def create(cls, current_directory: Path, project_name: str, builder_name: str, toolchain: Toolchain, profile_name: str, cmake_generator_name: str) -> Self :
+        project_to_build = super().find_target_project(current_directory, project_name)
         if not project_to_build:
-            console.print_error(f"No project found in {str(directory)}")
+            console.print_error(f"No project found in {str(current_directory)}")
             exit(1)
-        return CMakeBuildContext(directory=directory, project=project_to_build, builder_name=builder_name, toolchain=toolchain, profile_name=profile_name, cmake_generator_name=cmake_generator_name)
+        return CMakeBuildContext(current_directory=current_directory, project=project_to_build, builder_name=builder_name, toolchain=toolchain, profile_name=profile_name, cmake_generator_name=cmake_generator_name)
 
 
     @staticmethod
     def from_cli_args(cli_args: argparse.Namespace) -> Self:
-        build_context = BuildContext.from_cli_args(cli_args=cli_args)
+        build_context = KissBuildContext.from_cli_args(cli_args=cli_args)
         cmake_generator_name  = getattr(cli_args, "generator", None)
-        return CMakeBuildContext(directory=build_context.directory,
+        return CMakeBuildContext(current_directory=build_context.current_directory,
                                  project=build_context.project,
                                  builder_name=build_context.builder_name,
                                  toolchain=build_context.toolchain,
-                                 profile=build_context.profile,
+                                 profile_name=build_context.profile_name,
                                  cmake_generator_name=cmake_generator_name)
 
     
@@ -134,7 +134,7 @@ class CMakeBuilder(BaseBuilder):
         generated_context_list = cmakelists_generator.generate_project(generate_context)
 
         # Configure the generated CMakelists.txt
-        context = CMakeContext(current_directory=cmake_build_context.directory, 
+        context = CMakeContext(current_directory=cmake_build_context.current_directory, 
                                toolchain=cmake_build_context.toolchain, 
                                project=cmake_build_context.project,
                                profile_name=cmake_build_context.profile_name)

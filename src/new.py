@@ -10,8 +10,8 @@ from yaml_file import PROJECT_FILE_NAME, YamlProjectFile
 
 
 class KissNewContext(KissBaseContext):
-    def __init__(self, directory:Path, project_file: Path, existing: bool, project_type: ProjectType, populate:bool, project_name:str, project_description:str):
-        super().__init__(directory)
+    def __init__(self, current_directory:Path, project_file: Path, existing: bool, project_type: ProjectType, populate:bool, project_name:str, project_description:str):
+        super().__init__(current_directory)
         self._existing = existing
         self._project_file = Path(project_file)
         self._project_type = ProjectType(project_type)
@@ -41,7 +41,7 @@ class KissNewContext(KissBaseContext):
                 console.print_error(f"Error: Project directory '{project_dir}' already exists")
                 exit(1)
         return cls(
-            directory=project_dir, 
+            current_directory=project_dir, 
             project_file=project_file, 
             existing=cli_args.existing, 
             populate=not cli_args.empty,
@@ -105,7 +105,7 @@ def __new_project_in_project_file(new_context: KissNewContext, project: Project)
 def __new_bin_project_in_project_file(new_context: KissNewContext):
     project = BinProject(
             file=new_context.project_file,
-            path=new_context.directory,
+            path=new_context.current_directory,
             name=new_context.project_name,
             description=new_context.project_description,
             version="0.1.0",
@@ -140,7 +140,7 @@ def __new_bin_project_in_project_file(new_context: KissNewContext):
 def __new_lib_project_in_project_file(new_context: KissNewContext):
     project = LibProject(
                 file=new_context.project_file,
-                path=new_context.directory,
+                path=new_context.current_directory,
                 name=new_context.project_name,
                 description=new_context.project_description,
                 version="0.1.0",
@@ -192,7 +192,7 @@ def __new_lib_project_in_project_file(new_context: KissNewContext):
 def __new_dyn_project_in_project_file(new_context: KissNewContext):
     project = DynProject(
                 file=new_context.project_file,
-                path=new_context.directory,
+                path=new_context.current_directory,
                 name=new_context.project_name,
                 description=new_context.project_description,
                 version="0.1.0",

@@ -10,8 +10,8 @@ from toolchain import Toolchain, Compiler, Target, TargetRegistry
 
 
 class KissRunContext(KissBaseContext):
-    def __init__(self, directory:Path, project: Project, runner_name: str, toolchain: Toolchain, profile_name: str):
-        super().__init__(directory)
+    def __init__(self, current_directory:Path, project: Project, runner_name: str, toolchain: Toolchain, profile_name: str):
+        super().__init__(current_directory)
         self._project = project
         self._runner_name = runner_name
         self._toolchain = toolchain
@@ -34,12 +34,12 @@ class KissRunContext(KissBaseContext):
         return self._profile_name
     
     @classmethod
-    def create(cls, directory: Path, project_name: str, runner_name: str, toolchain: Toolchain, profile_name: str) -> Self :
-        project_to_run = super().find_target_project(directory, project_name, ProjectType.bin)
+    def create(cls, current_directory: Path, project_name: str, runner_name: str, toolchain: Toolchain, profile_name: str) -> Self :
+        project_to_run = super().find_target_project(current_directory=current_directory, project_name=project_name, filter=ProjectType.bin)
         if not project_to_run:
-            console.print_error(f"No project found in {str(directory)}")
+            console.print_error(f"No project found in {str(current_directory)}")
             exit(1)
-        return KissRunContext(directory=directory, project=project_to_run, runner_name=runner_name, toolchain=toolchain, profile_name=profile_name)
+        return KissRunContext(current_directory=current_directory, project=project_to_run, runner_name=runner_name, toolchain=toolchain, profile_name=profile_name)
 
 
     @staticmethod
@@ -58,7 +58,7 @@ class KissRunContext(KissBaseContext):
         if not target_name in TargetRegistry:
             console.print_error(f"Target {target_name} not found  : {{{', '.join(TargetRegistry.target_name_list())}}}")
             exit(1)
-        run_context: KissRunContext = KissRunContext.create(directory=cli_args.directory,
+        run_context: KissRunContext = KissRunContext.create(current_directory=cli_args.directory,
                                                     project_name=cli_args.project_name,
                                                     runner_name=cli_args.runner,
                                                     toolchain=toolchain,

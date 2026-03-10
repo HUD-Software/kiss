@@ -2,6 +2,19 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Run KISS tests",
+            "type": "python",
+            "request": "launch",
+            "module": "pytest",
+            "args": [
+                "${workspaceFolder}/tests",  // dossier contenant tes tests
+                "-s",                        // pour voir les print()
+                "-v"                         // verbose
+            ],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}"
+        },
+        {
             "name": "Run KISS",
             "type": "python",
             "request": "launch",
@@ -123,17 +136,17 @@
             //     "custom",
             //     "cmake",
             // ],
-            "args": [
-                "-d",
-                "tests/my_bin",
-                "run",
-                "-t",
-                "x86_64-pc-windows-msvc",
-                "-c",
-                "clangcl",
-                "--profile",
-                "custom",
-            ],
+            // "args": [
+            //     "-d",
+            //     "tests/my_bin",
+            //     "run",
+            //     "-t",
+            //     "x86_64-unknown-linux-gnu",
+            //     "-c",
+            //     "gcc",
+            //     "--profile",
+            //     "custom",
+            // ],
             // "args": [
             //     "-d",
             //     "tests/my_bin",

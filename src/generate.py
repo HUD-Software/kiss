@@ -8,8 +8,8 @@ from project import Project
 from toolchain import Toolchain, Target, Compiler, TargetRegistry
 
 class KissGenerateContext(KissBaseContext):
-    def __init__(self, directory:Path, project: Project, generator_name: str, toolchain: Toolchain, profile_name: str):
-        super().__init__(directory)
+    def __init__(self, current_directory:Path, project: Project, generator_name: str, toolchain: Toolchain, profile_name: str):
+        super().__init__(current_directory)
         self._project = project
         self._generator_name = generator_name
         self._toolchain = toolchain
@@ -32,13 +32,13 @@ class KissGenerateContext(KissBaseContext):
         return self._toolchain
 
     @classmethod
-    def create(cls, directory: Path, project_name: str, generator_name: str, toolchain: Toolchain, profile_name: str) -> Self :
-        project_to_generate = super().find_target_project(directory, project_name)
+    def create(cls, current_directory: Path, project_name: str, generator_name: str, toolchain: Toolchain, profile_name: str) -> Self :
+        project_to_generate = super().find_target_project(current_directory, project_name)
         if not project_to_generate:
-            console.print_error(f"No project found in {str(directory)}")
+            console.print_error(f"No project found in {str(current_directory)}")
             exit(1)
         generator_name = generator_name if generator_name is not None else "cmake"
-        return cls(directory=directory, project=project_to_generate, generator_name=generator_name, toolchain=toolchain, profile_name=profile_name)
+        return cls(current_directory=current_directory, project=project_to_generate, generator_name=generator_name, toolchain=toolchain, profile_name=profile_name)
 
 
     @classmethod
@@ -58,7 +58,7 @@ class KissGenerateContext(KissBaseContext):
             console.print_error(f"Target {target_name} not found  : {{{', '.join(TargetRegistry.target_name_list())}}}")
             return None
             
-        return cls.create(directory=cli_args.directory,
+        return cls.create(current_directory=cli_args.directory,
                           project_name=cli_args.project_name,
                           generator_name=cli_args.generator_name,
                           toolchain=toolchain,

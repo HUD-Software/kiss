@@ -8,8 +8,8 @@ from yaml_file import YamlProjectFile, YamlGitDependency, YamlPathDependency, Ya
 
 
 class KissListContext(KissBaseContext):
-    def __init__(self, directory:Path, recursive:bool, list_dependencies:bool):
-        super().__init__(directory)
+    def __init__(self, current_directory:Path, recursive:bool, list_dependencies:bool):
+        super().__init__(current_directory)
         self._recursive = recursive
         self._list_dependencies = list_dependencies
 
@@ -23,13 +23,13 @@ class KissListContext(KissBaseContext):
     
     @classmethod
     def from_cli_args(cls, cli_args: argparse.Namespace) -> Self:
-        return cls(directory=cli_args.directory, recursive=cli_args.recursive, list_dependencies=cli_args.list_dependencies)
+        return cls(current_directory=cli_args.directory, recursive=cli_args.recursive, list_dependencies=cli_args.list_dependencies)
     
 def cmd_list(cli_args: argparse.Namespace):
     list_context = KissListContext.from_cli_args(cli_args)
-    all_yaml_projects = YamlProjectFile.load_yaml_projects_in_directory(directory=list_context.directory, recursive=list_context.recursive, load_dependencies=list_context.list_dependencies)
+    all_yaml_projects = YamlProjectFile.load_yaml_projects_in_directory(directory=list_context.current_directory, recursive=list_context.recursive, load_dependencies=list_context.list_dependencies)
     if not all_yaml_projects:
-        console.print_success(f"No project found in '{list_context.directory}'")
+        console.print_success(f"No project found in '{list_context.current_directory}'")
     else:
         for yaml_project_file, yaml_project_list in all_yaml_projects.items():
             console.print_success(f"File : {str(yaml_project_file)}")
@@ -61,12 +61,12 @@ def cmd_list(cli_args: argparse.Namespace):
                         console.print(f"    - dependencies : []")
                     match project.type:
                         case YamlProjectType.bin :
-                            console.print(f"    - sources : {project.sources}")
+                            console.print(f"    - sources : {[str(p) for p in project.sources]}")
                         case YamlProjectType.lib :
-                            console.print(f"    - sources : {project.sources}")
-                            console.print(f"    - interface directories : {project.interface_directories}")
+                            console.print(f"    - sources : {[str(p) for p in project.sources]}")
+                            console.print(f"    - interface directories : {[str(p) for p in project.interface_directories]}")
                         case YamlProjectType.dyn:
-                            console.print(f"    - sources : {project.sources}")
-                            console.print(f"    - interface directories : {project.interface_directories}")
+                            console.print(f"    - sources : {[str(p) for p in project.sources]}")
+                            console.print(f"    - interface directories : {[str(p) for p in project.interface_directories]}")
                     
 

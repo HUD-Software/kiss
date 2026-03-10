@@ -44,9 +44,9 @@ class ProjectRegistry:
     def is_file_loaded(self, filepath:Path) -> bool:
         return filepath in self.projects_
     
-    def load_and_register_all_project_in_directory(self, directory: Path, load_dependencies : bool, recursive: bool ):
+    def load_and_register_all_project_in_directory(self, current_directory: Path, load_dependencies : bool, recursive: bool ):
         # Load all yaml projects
-        list_all_yaml_project = YamlProjectFile.load_yaml_projects_in_directory(directory, load_dependencies, recursive).values()
+        list_all_yaml_project = YamlProjectFile.load_yaml_projects_in_directory(directory=current_directory, load_dependencies=load_dependencies, recursive=recursive).values()
             
         # Create all projects
         all_projects: set[(YamlProject, Project)] = set()
@@ -74,9 +74,9 @@ class ProjectRegistry:
         for _, project in all_projects:
             self.register_project(project)
         
-    def projects_in_directory(self, directory: Path) -> list[Project]:
+    def projects_in_directory(self, current_directory: Path) -> list[Project]:
         for path, project_list in self.projects.items():
-            if path.parent != directory:
+            if path.parent != current_directory:
                 continue
             return project_list
         return []

@@ -15,9 +15,9 @@ from project import  BinProject, LibProject, Project, ProjectType
 from toolchain import Toolchain
 
 class CMakeListsGenerateContext(KissGenerateContext):
-    def __init__(self, directory:Path, project: Project, generator_name: str, toolchain: Toolchain, profile_name: str):
-        super().__init__(directory=directory,project=project,generator_name=generator_name,toolchain=toolchain, profile_name=profile_name)
-        self._cmake_context = CMakeContext(current_directory=directory, toolchain=toolchain, project=project, profile_name=profile_name)
+    def __init__(self, current_directory:Path, project: Project, generator_name: str, toolchain: Toolchain, profile_name: str):
+        super().__init__(current_directory=current_directory,project=project,generator_name=generator_name,toolchain=toolchain, profile_name=profile_name)
+        self._cmake_context = CMakeContext(current_directory=current_directory, toolchain=toolchain, project=project, profile_name=profile_name)
     
     @property
     def cmakefile(self) -> Path:
@@ -52,13 +52,13 @@ class CMakeListsGenerateContext(KissGenerateContext):
         self._cmake_context = CMakeContext(current_directory=self._cmake_context.current_directory, toolchain=self._cmake_context.toolchain, project=value, profile_name=self.profile_name)
     
     @classmethod
-    def create(cls, directory: Path, project_name: str, generator_name: str, toolchain: Toolchain, profile_name: str) -> Self :
-        project_to_generate = super().find_target_project(directory, project_name)
+    def create(cls, current_directory: Path, project_name: str, generator_name: str, toolchain: Toolchain, profile_name: str) -> Self :
+        project_to_generate = super().find_target_project(current_directory, project_name)
         if not project_to_generate:
-            console.print_error(f"No project found in {str(directory)}")
+            console.print_error(f"No project found in {str(current_directory)}")
             exit(1)
         generator_name = generator_name if generator_name is not None else "cmake"
-        return cls(directory=directory, project=project_to_generate, generator_name=generator_name, toolchain=toolchain, profile_name=profile_name)
+        return cls(current_directory=current_directory, project=project_to_generate, generator_name=generator_name, toolchain=toolchain, profile_name=profile_name)
     
     def is_feature_enabled(self, project: Project, feature_name: str) -> bool:
         return any(profile.is_feature_enabled(project_type=project.type, feature_name=feature_name) for profile in self.toolchain.compiler.profiles)
@@ -546,7 +546,7 @@ class CMakeListsGenerator(BaseGenerator):
         unfreshflags: list[bool] = [False] * len(project_list_to_generate)
         for i, project in enumerate(project_list_to_generate):
             # If the project is not fresh anymore add it to refresh
-            if not (fingerprint.is_fresh_file(CMakeContext.resolveCMakefile(current_directory=cmakelist_generate_context.directory, 
+            if not (fingerprint.is_fresh_file(CMakeContext.resolveCMakefile(current_directory=cmakelist_generate_context.current_directory, 
                                                                             toolchain=cmakelist_generate_context.toolchain, 
                                                                             project=project, 
                                                                             cmake_generator_name=cmakelist_generate_context.cmake_generator_name, 

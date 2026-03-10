@@ -9,8 +9,8 @@ from projectregistry import ProjectRegistry
 from toolchain import Toolchain, Compiler, Target
 
 class KissCleanContext(KissBaseContext):
-    def __init__(self, directory:Path, project: Project, cleaner_name: str, toolchain : Toolchain):
-        super().__init__(directory)
+    def __init__(self, current_directory:Path, project: Project, cleaner_name: str, toolchain : Toolchain):
+        super().__init__(current_directory)
         self._project = project
         self._cleaner_name = cleaner_name
         self._toolchain = toolchain
@@ -28,12 +28,12 @@ class KissCleanContext(KissBaseContext):
         return self._toolchain
     
     @classmethod
-    def create(cls, directory: Path, project_name: str, cleaner_name: str, toolchain : Toolchain) -> Self :
+    def create(cls, current_directory: Path, project_name: str, cleaner_name: str, toolchain : Toolchain) -> Self :
         #### Find the project to generate
-        ProjectRegistry.load_and_register_all_project_in_directory(directory=directory, load_dependencies=True, recursive=False)
-        projects_in_directory = ProjectRegistry.projects_in_directory(directory=directory)
+        ProjectRegistry.load_and_register_all_project_in_directory(current_directory=current_directory, load_dependencies=True, recursive=False)
+        projects_in_directory = ProjectRegistry.projects_in_directory(current_directory=current_directory)
         if len(projects_in_directory) == 0:
-            console.print_error(f"No project found in {str(directory)}")
+            console.print_error(f"No project found in {str(current_directory)}")
             exit(0)
 
         project_to_clean: Project = None
@@ -43,7 +43,7 @@ class KissCleanContext(KissBaseContext):
                     project_to_clean = project
                     break
         
-        return KissCleanContext(directory=directory, project=project_to_clean, cleaner_name=cleaner_name, toolchain=toolchain)
+        return KissCleanContext(current_directory=current_directory, project=project_to_clean, cleaner_name=cleaner_name, toolchain=toolchain)
 
 
     @staticmethod

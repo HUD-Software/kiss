@@ -10,8 +10,8 @@ from project import Project
 from toolchain.toolchain import Toolchain
 
 class CMakeCleanContext(KissCleanContext):
-    def __init__(self, directory:Path, project: Project, builder_name: str, toolchain: Toolchain, cmake_generator_name: str):
-        super().__init__(directory, project, builder_name, toolchain)
+    def __init__(self, current_directory:Path, project: Project, builder_name: str, toolchain: Toolchain, cmake_generator_name: str):
+        super().__init__(current_directory, project, builder_name, toolchain)
         self._cmake_generator_name = cmake_generator_name
 
     @property
@@ -19,12 +19,12 @@ class CMakeCleanContext(KissCleanContext):
         return self._cmake_generator_name
     
     @classmethod
-    def create(cls, directory: Path, project_name: str, builder_name: str, toolchain: Toolchain,  cmake_generator_name: str) -> Self :
-        project_to_build = super().find_target_project(directory, project_name)
+    def create(cls, current_directory: Path, project_name: str, builder_name: str, toolchain: Toolchain,  cmake_generator_name: str) -> Self :
+        project_to_build = super().find_target_project(current_directory, project_name)
         if not project_to_build:
-            console.print_error(f"No project found in {str(directory)}")
+            console.print_error(f"No project found in {str(current_directory)}")
             exit(1)
-        return CMakeCleanContext(directory=directory, 
+        return CMakeCleanContext(current_directory=current_directory, 
                                  project=project_to_build, 
                                  builder_name=builder_name, 
                                  toolchain=toolchain, 
@@ -34,7 +34,7 @@ class CMakeCleanContext(KissCleanContext):
     @staticmethod
     def from_cli_args(cli_args: argparse.Namespace) -> Self:
         clean_context = KissCleanContext.from_cli_args(cli_args)
-        return CMakeCleanContext(directory=clean_context.directory,
+        return CMakeCleanContext(current_directory=clean_context.current_directory,
                                  project=clean_context.project,
                                  builder_name=clean_context.builder_name,
                                  toolchain=clean_context.toolchain,
@@ -52,7 +52,7 @@ class CMakeCleaner(BaseCleaner):
         # If the user specifyed a project, clean only that project
         if clean_context.project :
             # Clean the project
-            context = CMakeContext(current_directory=clean_context.directory, 
+            context = CMakeContext(current_directory=clean_context.current_directory, 
                                 toolchain=clean_context.toolchain, 
                                 project=clean_context.project)
             

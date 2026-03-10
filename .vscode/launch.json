@@ -7,11 +7,11 @@
             "request": "launch",
             "module": "pytest",
             "args": [
-                "${workspaceFolder}/tests", // dossier contenant tes tests
                 "-s", // pour voir les print()
                 "-v", // verbose
                 "-x", // Stop first failure
-                "tests/test_dependency.py::test_git_dependency"
+                //"${workspaceFolder}/tests", // dossier contenant tes tests
+                "tests/test_generate_bin.py::test_generate_bin_default" // Specific project
             ],
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}"

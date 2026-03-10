@@ -43,7 +43,7 @@ def get_windows_latest_toolset(compiler:Compiler) -> Optional[VSToolset] :
     if compiler.cxx_path != Path() or compiler.c_path != Path():
         cxx_path = Path(compiler.cxx_path).resolve()
 
-        if compiler.cxx_path != Path() and compiler.c_path != Path():
+        if compiler.cxx_path != Path() and compiler.c_path != Path() and compiler.cxx_path != compiler.c_path:
             console.print_warning(f"Compiler path 'c_path' and 'cxx_path' are specify in '{compiler.name}' but Visual Studio only use CXX compiler.")
             console.print_warning(f"Ignoring 'c_path'.")
 

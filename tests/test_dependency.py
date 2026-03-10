@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import yaml
 from tests.runtime_fixture import runtime_dir, RUNTIME_DIR
 from tests.common import new_project, new_inner_project, add_dependency
@@ -47,7 +49,7 @@ def test_bin_inner_dependency(runtime_dir):
         assert bin_project["version"] == "0.1.0"
         assert "sources" in bin_project
         assert len(bin_project["sources"]) == 1
-        assert bin_project["sources"][0] == 'src/main.cpp'
+        assert Path(bin_project["sources"][0]) == Path('src/main.cpp')
         assert "dependencies" in bin_project
         assert bin_project["dependencies"][0]["name"] == bin_2_name
         assert bin_project["dependencies"][1]["name"] == lib_name
@@ -61,7 +63,7 @@ def test_bin_inner_dependency(runtime_dir):
         assert bin_2_project["version"] == "0.1.0"
         assert "sources" in bin_2_project
         assert len(bin_2_project["sources"]) == 1
-        assert bin_2_project["sources"][0] == 'src/main.cpp'
+        assert Path(bin_2_project["sources"][0]) == Path('src/main.cpp')
         assert "dependencies" not in bin_2_project
         assert "description" not in bin_2_project
         assert "path" in bin_2_project
@@ -76,7 +78,7 @@ def test_bin_inner_dependency(runtime_dir):
         assert lib_project["version"] == "0.1.0"
         assert "sources" in lib_project
         assert len(lib_project["sources"]) == 1
-        assert lib_project["sources"][0] == 'src/lib.cpp'
+        assert Path(lib_project["sources"][0]) == Path('src/lib.cpp')
         assert "interface_directories" in lib_project
         assert len(lib_project["interface_directories"]) == 1
         assert lib_project["interface_directories"][0] == 'interface'
@@ -95,7 +97,7 @@ def test_bin_inner_dependency(runtime_dir):
         assert dyn_project["version"] == "0.1.0"
         assert "sources" in dyn_project
         assert len(dyn_project["sources"]) == 1
-        assert dyn_project["sources"][0] == 'src/dyn.cpp'
+        assert Path(dyn_project["sources"][0]) == Path('src/dyn.cpp')
         assert "interface_directories" in dyn_project
         assert len(dyn_project["interface_directories"]) == 1
         assert dyn_project["interface_directories"][0] == 'interface'
@@ -149,7 +151,7 @@ def test_lib_inner_dependency(runtime_dir):
         assert lib_project["version"] == "0.1.0"
         assert "sources" in lib_project
         assert len(lib_project["sources"]) == 1
-        assert lib_project["sources"][0] == 'src/lib.cpp'
+        assert Path(lib_project["sources"][0]) == Path('src/lib.cpp')
         assert "interface_directories" in lib_project
         assert len(lib_project["interface_directories"]) == 1
         assert lib_project["interface_directories"][0] == 'interface'
@@ -166,7 +168,7 @@ def test_lib_inner_dependency(runtime_dir):
         assert lib_2_project["version"] == "0.1.0"
         assert "sources" in lib_2_project
         assert len(lib_2_project["sources"]) == 1
-        assert lib_2_project["sources"][0] == 'src/lib.cpp'
+        assert Path(lib_2_project["sources"][0]) == Path('src/lib.cpp')
         assert "interface_directories" in lib_2_project
         assert len(lib_2_project["interface_directories"]) == 1
         assert lib_2_project["interface_directories"][0] == 'interface'
@@ -184,7 +186,7 @@ def test_lib_inner_dependency(runtime_dir):
         assert bin_project["version"] == "0.1.0"
         assert "sources" in bin_project
         assert len(bin_project["sources"]) == 1
-        assert bin_project["sources"][0] == 'src/main.cpp'
+        assert Path(bin_project["sources"][0]) == Path('src/main.cpp')
         assert "dependencies" not in bin_project
         assert "description" not in bin_project
         assert "path" in bin_project
@@ -200,7 +202,7 @@ def test_lib_inner_dependency(runtime_dir):
         assert dyn_project["version"] == "0.1.0"
         assert "sources" in dyn_project
         assert len(dyn_project["sources"]) == 1
-        assert dyn_project["sources"][0] == 'src/dyn.cpp'
+        assert Path(dyn_project["sources"][0]) == Path('src/dyn.cpp')
         assert "interface_directories" in dyn_project
         assert len(dyn_project["interface_directories"]) == 1
         assert dyn_project["interface_directories"][0] == 'interface'
@@ -254,7 +256,7 @@ def test_dyn_inner_dependency(runtime_dir):
         assert dyn_project["version"] == "0.1.0"
         assert "sources" in dyn_project
         assert len(dyn_project["sources"]) == 1
-        assert dyn_project["sources"][0] == 'src/dyn.cpp'
+        assert Path(dyn_project["sources"][0]) == Path('src/dyn.cpp')
         assert "interface_directories" in dyn_project
         assert len(dyn_project["interface_directories"]) == 1
         assert dyn_project["interface_directories"][0] == 'interface'
@@ -271,7 +273,7 @@ def test_dyn_inner_dependency(runtime_dir):
         assert dyn_2_project["version"] == "0.1.0"
         assert "sources" in dyn_2_project
         assert len(dyn_2_project["sources"]) == 1
-        assert dyn_2_project["sources"][0] == 'src/dyn.cpp'
+        assert Path(dyn_2_project["sources"][0]) == Path('src/dyn.cpp')
         assert "interface_directories" in dyn_2_project
         assert len(dyn_2_project["interface_directories"]) == 1
         assert dyn_2_project["interface_directories"][0] == 'interface'
@@ -289,7 +291,7 @@ def test_dyn_inner_dependency(runtime_dir):
         assert bin_project["version"] == "0.1.0"
         assert "sources" in bin_project
         assert len(bin_project["sources"]) == 1
-        assert bin_project["sources"][0] == 'src/main.cpp'
+        assert Path(bin_project["sources"][0]) == Path('src/main.cpp')
         assert "dependencies" not in bin_project
         assert "description" not in bin_project
         assert "path" in bin_project
@@ -305,7 +307,7 @@ def test_dyn_inner_dependency(runtime_dir):
         assert lib_project["version"] == "0.1.0"
         assert "sources" in lib_project
         assert len(lib_project["sources"]) == 1
-        assert lib_project["sources"][0] == 'src/lib.cpp'
+        assert Path(lib_project["sources"][0]) == Path('src/lib.cpp')
         assert "interface_directories" in lib_project
         assert len(lib_project["interface_directories"]) == 1
         assert lib_project["interface_directories"][0] == 'interface'

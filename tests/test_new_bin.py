@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import yaml
 from tests.runtime_fixture import runtime_dir, RUNTIME_DIR
 from tests.common import new_project, new_inner_project
@@ -19,7 +21,7 @@ def test_new_bin_default(runtime_dir):
         assert first_project["version"] == "0.1.0"
         assert "sources" in first_project
         assert len(first_project["sources"]) == 1
-        assert first_project["sources"][0] == 'src/main.cpp'
+        assert Path(first_project["sources"][0]) == Path('src/main.cpp')
         assert "dependencies" not in first_project
         assert "description" not in first_project
         assert "path" not in first_project
@@ -44,7 +46,7 @@ def test_new_bin_default_inner(runtime_dir):
         assert first_project["version"] == "0.1.0"
         assert "sources" in first_project
         assert len(first_project["sources"]) == 1
-        assert first_project["sources"][0] == 'src/main.cpp'
+        assert Path(first_project["sources"][0]) == Path('src/main.cpp')
         assert "dependencies" not in first_project
         assert "description" not in first_project
         assert "path" not in first_project
@@ -55,7 +57,7 @@ def test_new_bin_default_inner(runtime_dir):
         assert second_project["version"] == "0.1.0"
         assert "sources" in second_project
         assert len(second_project["sources"]) == 1
-        assert second_project["sources"][0] == 'src/main.cpp'
+        assert Path(second_project["sources"][0]) == Path('src/main.cpp')
         assert "dependencies" not in second_project
         assert "description" not in second_project
         assert "path" in second_project
@@ -80,7 +82,7 @@ def test_new_bin_desc(runtime_dir):
         assert first_project["version"] == "0.1.0"
         assert "sources" in first_project
         assert len(first_project["sources"]) == 1
-        assert first_project["sources"][0] == 'src/main.cpp'
+        assert Path(first_project["sources"][0]) == Path('src/main.cpp')
         assert "dependencies" not in first_project
         assert "description" in first_project
         assert first_project["description"] == project_description

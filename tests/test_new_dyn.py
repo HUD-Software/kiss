@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import yaml
 from tests.runtime_fixture import runtime_dir, RUNTIME_DIR
 from tests.common import new_project
@@ -19,7 +21,7 @@ def test_new_dyn_default(runtime_dir):
         assert first_project["version"] == "0.1.0"
         assert "sources" in first_project
         assert len(first_project["sources"]) == 1
-        assert first_project["sources"][0] == 'src/dyn.cpp'
+        assert Path(first_project["sources"][0]) == Path('src/dyn.cpp')
         assert "interface_directories" in first_project
         assert len(first_project["interface_directories"]) == 1
         assert first_project["interface_directories"][0] == 'interface'
@@ -46,7 +48,7 @@ def test_new_dyn_desc(runtime_dir):
         assert first_project["version"] == "0.1.0"
         assert "sources" in first_project
         assert len(first_project["sources"]) == 1
-        assert first_project["sources"][0] == 'src/dyn.cpp'
+        assert Path(first_project["sources"][0]) == Path('src/dyn.cpp')
         assert "interface_directories" in first_project
         assert len(first_project["interface_directories"]) == 1
         assert first_project["interface_directories"][0] == 'interface'

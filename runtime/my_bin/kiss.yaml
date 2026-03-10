@@ -1,5 +1,0 @@
-bin:
-- name: my_bin
-  version: 0.1.0
-  sources:
-  - src\main.cpp

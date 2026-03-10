@@ -9,7 +9,8 @@
             "args": [
                 "${workspaceFolder}/tests",  // dossier contenant tes tests
                 "-s",                        // pour voir les print()
-                "-v"                         // verbose
+                "-v",                        // verbose
+                "-x",                        // Stop first failure
             ],
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}"

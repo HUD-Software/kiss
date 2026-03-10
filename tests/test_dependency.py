@@ -315,3 +315,37 @@ def test_dyn_inner_dependency(runtime_dir):
         assert "description" not in lib_project
         assert "path" in lib_project
         assert lib_project["path"] == lib_name
+
+
+def test_git_dependency(runtime_dir):
+    bin_project_type = "bin"
+    bin_name = "my_bin"
+    new_project([bin_project_type, bin_name])
+
+    # Create 'gtest' inner dependency of 'my_bin'
+    gtest_name = "gtest"
+    gtest_address = "git@github.com:google/googletest.git"
+    add_dependency(bin_name, [gtest_name, "--git", gtest_address])
+
+
+    # Load the yaml and validate values
+    with open(RUNTIME_DIR / bin_name / "kiss.yaml" , "r") as f:
+        data = yaml.safe_load(f)
+
+        # assert bin
+        bin_root = data[bin_project_type]
+        assert len(bin_root) == 1
+        bin_project = bin_root[0]
+        assert "name" in bin_project
+        assert bin_project["name"] == bin_name
+        assert "version" in bin_project
+        assert bin_project["version"] == "0.1.0"
+        assert "sources" in bin_project
+        assert len(bin_project["sources"]) == 1
+        assert Path(bin_project["sources"][0]) == Path('src/main.cpp')
+        assert "dependencies" in bin_project
+        assert bin_project["dependencies"][0]["name"] == gtest_name
+        assert bin_project["dependencies"][0]["git"] == gtest_address
+        assert "description" not in bin_project
+        assert "path" not in bin_project
+

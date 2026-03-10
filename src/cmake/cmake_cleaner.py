@@ -1,7 +1,7 @@
 import argparse
 from pathlib import Path
 from typing import Self
-from clean import CleanContext
+from clean import KissCleanContext
 from cleaner import BaseCleaner
 from cli import KissParser
 from cmake.cmake_context import CMakeContext
@@ -9,7 +9,7 @@ import console
 from project import Project
 from toolchain.toolchain import Toolchain
 
-class CMakeCleanContext(CleanContext):
+class CMakeCleanContext(KissCleanContext):
     def __init__(self, directory:Path, project: Project, builder_name: str, toolchain: Toolchain, cmake_generator_name: str):
         super().__init__(directory, project, builder_name, toolchain)
         self._cmake_generator_name = cmake_generator_name
@@ -33,7 +33,7 @@ class CMakeCleanContext(CleanContext):
 
     @staticmethod
     def from_cli_args(cli_args: argparse.Namespace) -> Self:
-        clean_context = CleanContext.from_cli_args(cli_args)
+        clean_context = KissCleanContext.from_cli_args(cli_args)
         return CMakeCleanContext(directory=clean_context.directory,
                                  project=clean_context.project,
                                  builder_name=clean_context.builder_name,
@@ -48,7 +48,7 @@ class CMakeCleaner(BaseCleaner):
     def __init__(self):
         super().__init__("cmake", "Clean cmake CMakeLists.txt")
 
-    def clean_project(self, clean_context: CleanContext):
+    def clean_project(self, clean_context: KissCleanContext):
         # If the user specifyed a project, clean only that project
         if clean_context.project :
             # Clean the project
@@ -86,5 +86,5 @@ class CMakeCleaner(BaseCleaner):
                 shutil.rmtree(CMakeContext.resolveRootBuildDirectory(clean_context.directory))
             
             
-    def clean(self, clean_context: CleanContext):
+    def clean(self, clean_context: KissCleanContext):
         self.clean_project(clean_context=clean_context)

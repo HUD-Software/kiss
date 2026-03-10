@@ -3,12 +3,12 @@ from pathlib import Path
 from typing import Self
 from cleaner import BaseCleaner, CleanerRegistry
 import console
-from context import Context
+from context import KissBaseContext
 from project import Project
 from projectregistry import ProjectRegistry
 from toolchain import Toolchain, Compiler, Target
 
-class CleanContext(Context):
+class KissCleanContext(KissBaseContext):
     def __init__(self, directory:Path, project: Project, cleaner_name: str, toolchain : Toolchain):
         super().__init__(directory)
         self._project = project
@@ -43,7 +43,7 @@ class CleanContext(Context):
                     project_to_clean = project
                     break
         
-        return CleanContext(directory=directory, project=project_to_clean, cleaner_name=cleaner_name, toolchain=toolchain)
+        return KissCleanContext(directory=directory, project=project_to_clean, cleaner_name=cleaner_name, toolchain=toolchain)
 
 
     @staticmethod
@@ -55,7 +55,7 @@ class CleanContext(Context):
         compiler_name : Compiler = getattr(cli_args, "compiler", None) or Compiler.default_compiler_name()
         if( toolchain := Toolchain.create(compiler_name=compiler_name, target_name=target_name)) is None:
             return None
-        clean_context: CleanContext = CleanContext.create(directory=cli_args.directory,
+        clean_context: KissCleanContext = KissCleanContext.create(directory=cli_args.directory,
                                                     project_name=cli_args.project_name,
                                                     cleaner_name=cli_args.cleaner,
                                                     toolchain=toolchain,
@@ -64,7 +64,7 @@ class CleanContext(Context):
 
 
 def cmd_clean(cli_args: argparse.Namespace):
-    clean_context = CleanContext.from_cli_args(cli_args)
+    clean_context = KissCleanContext.from_cli_args(cli_args)
     cleaner : BaseCleaner = CleanerRegistry.cleaners.get(clean_context.cleaner_name)
     if not cleaner:
         console.print_error(f"Cleaner {clean_context.cleaner_name} not found")

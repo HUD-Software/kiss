@@ -9,12 +9,12 @@ from cmake.cmake_context import CMakeContext
 from cmake.cmake_generator_name import CMakeGeneratorName
 from cmake.fingerprint import Fingerprint
 import console
-from generate import GenerateContext
+from generate import KissGenerateContext
 from generator import BaseGenerator
 from project import  BinProject, LibProject, Project, ProjectType
 from toolchain import Toolchain
 
-class CMakeListsGenerateContext(GenerateContext):
+class CMakeListsGenerateContext(KissGenerateContext):
     def __init__(self, directory:Path, project: Project, generator_name: str, toolchain: Toolchain, profile_name: str):
         super().__init__(directory=directory,project=project,generator_name=generator_name,toolchain=toolchain, profile_name=profile_name)
         self._cmake_context = CMakeContext(current_directory=directory, toolchain=toolchain, project=project, profile_name=profile_name)

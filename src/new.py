@@ -4,12 +4,12 @@ from pathlib import Path
 from typing import Self
 import cli
 import console
-from context import Context
+from context import KissBaseContext
 from project import BinProject, DynProject, LibProject, Project, ProjectType
 from yaml_file import PROJECT_FILE_NAME, YamlProjectFile
 
 
-class NewContext(Context):
+class KissNewContext(KissBaseContext):
     def __init__(self, directory:Path, project_file: Path, existing: bool, project_type: ProjectType, populate:bool, project_name:str, project_description:str):
         super().__init__(directory)
         self._existing = existing
@@ -76,7 +76,7 @@ class NewContext(Context):
         return self._project_description
     
     
-def __new_project_in_project_file(new_context: NewContext, project: Project):
+def __new_project_in_project_file(new_context: KissNewContext, project: Project):
     yaml_file = YamlProjectFile(file=new_context.project_file)
 
     # If the file exist load it and check that the project does not already exists or a dependency with the same name already exists
@@ -102,7 +102,7 @@ def __new_project_in_project_file(new_context: NewContext, project: Project):
         console.print_error(f"Error: Unable to save project file `{new_context.project_file}`")
         exit(1)
     
-def __new_bin_project_in_project_file(new_context: NewContext):
+def __new_bin_project_in_project_file(new_context: KissNewContext):
     project = BinProject(
             file=new_context.project_file,
             path=new_context.directory,
@@ -137,7 +137,7 @@ def __new_bin_project_in_project_file(new_context: NewContext):
             f.write('    return 0;\n')
             f.write('}\n')
 
-def __new_lib_project_in_project_file(new_context: NewContext):
+def __new_lib_project_in_project_file(new_context: KissNewContext):
     project = LibProject(
                 file=new_context.project_file,
                 path=new_context.directory,
@@ -189,7 +189,7 @@ def __new_lib_project_in_project_file(new_context: NewContext):
             f.write(f"}} // namespace {project.name}\n\n")
             f.write('#endif // LIB_H\n')
 
-def __new_dyn_project_in_project_file(new_context: NewContext):
+def __new_dyn_project_in_project_file(new_context: KissNewContext):
     project = DynProject(
                 file=new_context.project_file,
                 path=new_context.directory,
@@ -241,7 +241,7 @@ def __new_dyn_project_in_project_file(new_context: NewContext):
             f.write('#endif // DYN_H\n')
 
 def cmd_new(cli_args: argparse.Namespace):
-    new_context = NewContext.from_cli_args(cli_args)
+    new_context = KissNewContext.from_cli_args(cli_args)
     match new_context.project_type_to_create:
         case ProjectType.bin:
             __new_bin_project_in_project_file(new_context)

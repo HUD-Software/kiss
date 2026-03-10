@@ -8,7 +8,7 @@ from cmake.cmake_context import CMakeContext
 import console
 from process import run_process
 from project import ProjectType
-from run import RunContext
+from run import KissRunContext
 from runner import BaseRunner
 
 
@@ -20,7 +20,7 @@ class CMakeRunner(BaseRunner):
     def __init__(self):
         super().__init__("cmake", "Run a binary build with CMake")
 
-    def run_project(self, run_context: RunContext):
+    def run_project(self, run_context: KissRunContext):
         # Ensure the the project is a binary
         if run_context.project.type != ProjectType.bin:
             console.print_error(f"Project {run_context.project.name} is not a binary project")
@@ -82,5 +82,5 @@ class CMakeRunner(BaseRunner):
         if not run_process(binary_path, output_prefix=False, print_command=False) == 0:
              exit(1)
             
-    def run(self, run_context: RunContext):
+    def run(self, run_context: KissRunContext):
         self.run_project(run_context=run_context)

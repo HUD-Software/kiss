@@ -2,12 +2,12 @@ import argparse
 from pathlib import Path
 from typing import Self
 import console
-from context import Context
+from context import KissBaseContext
 from generator import BaseGenerator, GeneratorRegistry
 from project import Project
 from toolchain import Toolchain, Target, Compiler, TargetRegistry
 
-class GenerateContext(Context):
+class KissGenerateContext(KissBaseContext):
     def __init__(self, directory:Path, project: Project, generator_name: str, toolchain: Toolchain, profile_name: str):
         super().__init__(directory)
         self._project = project

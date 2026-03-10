@@ -3,11 +3,11 @@ from pathlib import Path
 from typing import Self
 import cli
 import console
-from context import Context
+from context import KissBaseContext
 from yaml_file import YamlProjectFile, YamlGitDependency, YamlPathDependency, YamlProjectType
 
 
-class ListContext(Context):
+class KissListContext(KissBaseContext):
     def __init__(self, directory:Path, recursive:bool, list_dependencies:bool):
         super().__init__(directory)
         self._recursive = recursive
@@ -26,7 +26,7 @@ class ListContext(Context):
         return cls(directory=cli_args.directory, recursive=cli_args.recursive, list_dependencies=cli_args.list_dependencies)
     
 def cmd_list(cli_args: argparse.Namespace):
-    list_context = ListContext.from_cli_args(cli_args)
+    list_context = KissListContext.from_cli_args(cli_args)
     all_yaml_projects = YamlProjectFile.load_yaml_projects_in_directory(directory=list_context.directory, recursive=list_context.recursive, load_dependencies=list_context.list_dependencies)
     if not all_yaml_projects:
         console.print_success(f"No project found in '{list_context.directory}'")

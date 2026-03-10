@@ -3,11 +3,11 @@ from pathlib import Path
 from typing import Self
 from builder import BaseBuilder, BuilderRegistry
 import console
-from context import Context
+from context import KissBaseContext
 from project import Project
 from toolchain import Toolchain, Compiler, Target, TargetRegistry
 
-class BuildContext(Context):
+class KissBuildContext(KissBaseContext):
     def __init__(self, directory:Path, project: Project, builder_name: str, toolchain: Toolchain, profile_name: str):
         super().__init__(directory)
         self._project = project
@@ -37,7 +37,7 @@ class BuildContext(Context):
         if not project_to_build:
             console.print_error(f"No project '{project_name}' found in {str(directory)}")
             exit(1)
-        return BuildContext(directory=directory, 
+        return KissBuildContext(directory=directory, 
                             project=project_to_build, 
                             builder_name=builder_name, 
                             toolchain=toolchain,
@@ -61,7 +61,7 @@ class BuildContext(Context):
             console.print_error(f"Target {target_name} not found  : {{{', '.join(TargetRegistry.target_name_list())}}}")
             exit(1)
             
-        build_context =  BuildContext.create(directory=cli_args.directory,
+        build_context =  KissBuildContext.create(directory=cli_args.directory,
                                              project_name=cli_args.project_name,
                                              builder_name=cli_args.builder,
                                              toolchain=toolchain,

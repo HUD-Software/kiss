@@ -5,7 +5,7 @@ from project import Project, ProjectType
 from projectregistry import ProjectRegistry
 
 
-class Context:
+class KissBaseContext:
     def __init__(self, directory):
         self._directory = Path(directory)
 

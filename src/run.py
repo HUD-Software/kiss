@@ -2,14 +2,14 @@ import argparse
 from pathlib import Path
 from typing import Self
 import console
-from context import Context
+from context import KissBaseContext
 from generator import BaseGenerator
 from project import Project, ProjectType
 from runner import RunnerRegistry
 from toolchain import Toolchain, Compiler, Target, TargetRegistry
 
 
-class RunContext(Context):
+class KissRunContext(KissBaseContext):
     def __init__(self, directory:Path, project: Project, runner_name: str, toolchain: Toolchain, profile_name: str):
         super().__init__(directory)
         self._project = project
@@ -39,7 +39,7 @@ class RunContext(Context):
         if not project_to_run:
             console.print_error(f"No project found in {str(directory)}")
             exit(1)
-        return RunContext(directory=directory, project=project_to_run, runner_name=runner_name, toolchain=toolchain, profile_name=profile_name)
+        return KissRunContext(directory=directory, project=project_to_run, runner_name=runner_name, toolchain=toolchain, profile_name=profile_name)
 
 
     @staticmethod
@@ -58,7 +58,7 @@ class RunContext(Context):
         if not target_name in TargetRegistry:
             console.print_error(f"Target {target_name} not found  : {{{', '.join(TargetRegistry.target_name_list())}}}")
             exit(1)
-        run_context: RunContext = RunContext.create(directory=cli_args.directory,
+        run_context: KissRunContext = KissRunContext.create(directory=cli_args.directory,
                                                     project_name=cli_args.project_name,
                                                     runner_name=cli_args.runner,
                                                     toolchain=toolchain,
@@ -71,7 +71,7 @@ class RunContext(Context):
     
 
 def cmd_run(cli_args: argparse.Namespace):
-    if(run_context := RunContext.from_cli_args(cli_args)) is None:
+    if(run_context := KissRunContext.from_cli_args(cli_args)) is None:
         return None
     runner : BaseGenerator = RunnerRegistry.runners.get(run_context.runner_name)
     if not runner:

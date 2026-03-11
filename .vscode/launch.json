@@ -11,7 +11,8 @@
                 "-v", // verbose
                 "-x", // Stop first failure
                 //"${workspaceFolder}/tests", // dossier contenant tes tests
-               // "tests/test_generate_bin_cmake.py::test_generate_bin_compiler" // Specific project
+                "tests/test_generate_lib_cmake.py"
+               // "tests/test_generate_dyn_cmake.py::test_generate_dyn_depends" // Specific project
             ],
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}"

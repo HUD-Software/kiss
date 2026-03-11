@@ -76,7 +76,9 @@ def validate_cmakelist_path(path: Path,
                             target_name:str=DEFAULT_TARGET_NAME, 
                             compiler_name:str= DEFAULT_COMPILER_NAME):
     assert path.exists()
-    assert project_name in str(path)
-    assert profile_name in str(path)
-    assert target_name in str(path)
-    assert compiler_name in str(path)
+    assert path.name == "CMakeLists.txt"
+    assert path.parent.name == profile_name
+    assert project_name in path.parent.parent.name
+    assert path.parent.parent.parent.name == "cmake"
+    assert path.parent.parent.parent.parent.name == compiler_name
+    assert path.parent.parent.parent.parent.parent.name == target_name

@@ -1,5 +1,6 @@
 from pathlib import Path
 import platform
+import sys
 from add import cmd_add
 from clean import cmd_clean
 from list import cmd_list
@@ -27,10 +28,10 @@ def main():
         cmd_new(cli_args=args)
     
     elif args.option == "add": 
-        cmd_add(cli_args=args)
+        return (0 if cmd_add(cli_args=args) == True else 1)
         
     elif args.option == "generate": 
-        cmd_generate(cli_args=args)
+        return (0 if cmd_generate(cli_args=args) == True else 1)
     
     elif args.option == "build": 
         cmd_build(cli_args=args)
@@ -49,5 +50,5 @@ def main():
         pass
             
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
 

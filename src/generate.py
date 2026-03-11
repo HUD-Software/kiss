@@ -1,6 +1,6 @@
 import argparse
 from pathlib import Path
-from typing import Self
+from typing import Optional, Self
 import console
 from context import KissBaseContext
 from generator import BaseGenerator, GeneratorRegistry
@@ -32,17 +32,16 @@ class KissGenerateContext(KissBaseContext):
         return self._toolchain
 
     @classmethod
-    def create(cls, current_directory: Path, project_name: str, generator_name: str, toolchain: Toolchain, profile_name: str) -> Self :
+    def create(cls, current_directory: Path, project_name: str, generator_name: str, toolchain: Toolchain, profile_name: str) -> Optional[Self] :
         project_to_generate = super().find_target_project(current_directory, project_name)
         if not project_to_generate:
-            console.print_error(f"No project found in {str(current_directory)}")
-            exit(1)
+            return None
         generator_name = generator_name if generator_name is not None else "cmake"
         return cls(current_directory=current_directory, project=project_to_generate, generator_name=generator_name, toolchain=toolchain, profile_name=profile_name)
 
 
     @classmethod
-    def from_cli_args(cls, cli_args: argparse.Namespace) -> Self | None:
+    def from_cli_args(cls, cli_args: argparse.Namespace) -> Optional[Self]:
         target_name :Target = getattr(cli_args, "target", None) or Target.default_target_name()
         compiler_name : Compiler = getattr(cli_args, "compiler", None) or Compiler.default_compiler_name()
         if( toolchain := Toolchain.create(compiler_name=compiler_name, target_name=target_name)) is None:
@@ -65,9 +64,12 @@ class KissGenerateContext(KissBaseContext):
                           profile_name=cli_args.profile)
        
 
-def cmd_generate(cli_args: argparse.Namespace):
+def cmd_generate(cli_args: argparse.Namespace) -> bool:
     generator : BaseGenerator = GeneratorRegistry.generators.get(cli_args.generator)
     if not generator:
         console.print_error(f"Generator {cli_args.generator} not found")
-        exit(1)
-    generator.generate(cli_args)
+        return False
+    if generator.generate(cli_args) is None:
+        return False
+    else:
+        return True

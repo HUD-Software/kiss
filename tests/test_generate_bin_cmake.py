@@ -32,7 +32,7 @@ def test_generate_bin_default_inner(runtime_dir):
     bin_type = "bin"
     bin_name = "my_bin"
     new_project([bin_type, bin_name])
-    bin_2_name = "my_bin_2"
+    bin_2_name = "my_inner_bin"
     new_inner_project(bin_name, [bin_type, bin_2_name])
 
     ## TEST
@@ -49,10 +49,13 @@ def test_generate_bin_default_inner(runtime_dir):
     # Find CMakeLists.txt
     files = find_cmake_files(RUNTIME_DIR)
     assert len(files) == 2
-    validate_cmakelist_path(path=files[0],
+    bin_file = [f for f in files if bin_name in str(f.parent.parent.name)]
+    validate_cmakelist_path(path=bin_file[0],
                             project_name=bin_name)
-    validate_cmakelist_path(path=files[1],
+    bin_2_file = [f for f in files if bin_2_name in str(f.parent.parent.name)]
+    validate_cmakelist_path(path=bin_2_file[0],
                             project_name=bin_2_name)
+
 
 # Test generation of a two bin project in the same root directory
 # bin in root directory depends of inner bin, user must provide the name of the projec to generate
@@ -63,11 +66,11 @@ def test_generate_bin_no_depends(runtime_dir):
     bin_name = "my_bin"
     new_project([bin_project_type, bin_name])
 
-    # Create 'my_bin_2' inner dependency of 'my_bin'
-    bin_2_name = "my_bin_2"
+    # Create 'my_inner_bin' inner dependency of 'my_bin'
+    bin_2_name = "my_inner_bin"
     new_inner_project(bin_name, ["-e", bin_project_type, bin_2_name])
 
-    # Add 'my_bin_2' as dependency of 'my_bin'
+    # Add 'my_inner_bin' as dependency of 'my_bin'
     add_dependency(bin_name, [bin_2_name])
 
     ## TEST
@@ -76,10 +79,10 @@ def test_generate_bin_no_depends(runtime_dir):
     
     # user must specify a name to generate
     assert generate_project(directory=RUNTIME_DIR/bin_name,
-                            args= ["-p", "my_bin_2"]) == 0
+                            args= ["-p", "my_inner_bin"]) == 0
 
     # Find CMakeLists.txt
-    # Only one must be present because my_bin_2 depends on nothing
+    # Only one must be present because my_inner_bin depends on nothing
     files = find_cmake_files(RUNTIME_DIR)
     assert len(files) == 1
     validate_cmakelist_path(path=files[0],
@@ -95,11 +98,11 @@ def test_generate_bin_depends(runtime_dir):
     bin_name = "my_bin"
     new_project([bin_project_type, bin_name])
 
-    # Create 'my_bin_2' inner dependency of 'my_bin'
-    bin_2_name = "my_bin_2"
+    # Create 'my_inner_bin' inner dependency of 'my_bin'
+    bin_2_name = "my_inner_bin"
     new_inner_project(bin_name, ["-e", bin_project_type, bin_2_name])
 
-    # Add 'my_bin_2' as dependency of 'my_bin'
+    # Add 'my_inner_bin' as dependency of 'my_bin'
     add_dependency(bin_name, [bin_2_name])
 
     ## TEST
@@ -111,12 +114,14 @@ def test_generate_bin_depends(runtime_dir):
                             args= ["-p", "my_bin"]) == 0
 
     # Find CMakeLists.txt
-    # Only one must be present because my_bin_2 depends on nothing
+    # Only one must be present because my_inner_bin depends on nothing
     files = find_cmake_files(RUNTIME_DIR)
     assert len(files) == 2
-    validate_cmakelist_path(path=files[0],
+    bin_file = [f for f in files if bin_name in str(f.parent.parent.name)]
+    validate_cmakelist_path(path=bin_file[0],
                             project_name=bin_name)
-    validate_cmakelist_path(path=files[1],
+    bin_2_file = [f for f in files if bin_2_name in str(f.parent.parent.name)]
+    validate_cmakelist_path(path=bin_2_file[0],
                             project_name=bin_2_name)
 
 
@@ -129,11 +134,11 @@ def test_generate_bin_profile(runtime_dir):
     bin_name = "my_bin"
     new_project([bin_project_type, bin_name])
 
-    # Create 'my_bin_2' inner dependency of 'my_bin'
-    bin_2_name = "my_bin_2"
+    # Create 'my_inner_bin' inner dependency of 'my_bin'
+    bin_2_name = "my_inner_bin"
     new_inner_project(bin_name, ["-e", bin_project_type, bin_2_name])
 
-    # Add 'my_bin_2' as dependency of 'my_bin'
+    # Add 'my_inner_bin' as dependency of 'my_bin'
     add_dependency(bin_name, [bin_2_name])
 
     ## TEST
@@ -145,13 +150,15 @@ def test_generate_bin_profile(runtime_dir):
                             args= ["-p", "my_bin", "--profile", profile_name]) == 0
 
     # Find CMakeLists.txt
-    # Only one must be present because my_bin_2 depends on nothing
+    # Only one must be present because my_inner_bin depends on nothing
     files = find_cmake_files(RUNTIME_DIR)
     assert len(files) == 2
-    validate_cmakelist_path(path=files[0],
+    bin_file = [f for f in files if bin_name in str(f.parent.parent.name)]
+    validate_cmakelist_path(path=bin_file[0],
                             project_name=bin_name,
                             profile_name=profile_name)
-    validate_cmakelist_path(path=files[1],
+    bin_2_file = [f for f in files if bin_2_name in str(f.parent.parent.name)]
+    validate_cmakelist_path(path=bin_2_file[0],
                             project_name=bin_2_name,
                             profile_name=profile_name)
 
@@ -164,11 +171,11 @@ def test_generate_bin_target(runtime_dir):
     bin_name = "my_bin"
     new_project([bin_project_type, bin_name])
 
-    # Create 'my_bin_2' inner dependency of 'my_bin'
-    bin_2_name = "my_bin_2"
+    # Create 'my_inner_bin' inner dependency of 'my_bin'
+    bin_2_name = "my_inner_bin"
     new_inner_project(bin_name, ["-e", bin_project_type, bin_2_name])
 
-    # Add 'my_bin_2' as dependency of 'my_bin'
+    # Add 'my_inner_bin' as dependency of 'my_bin'
     add_dependency(bin_name, [bin_2_name])
 
     ## TEST
@@ -179,13 +186,15 @@ def test_generate_bin_target(runtime_dir):
                             args= ["-p", "my_bin", "--target", "i686-unknown-linux-gnu"]) == 0
 
     # Find CMakeLists.txt
-    # Only one must be present because my_bin_2 depends on nothing
+    # Only one must be present because my_inner_bin depends on nothing
     files = find_cmake_files(RUNTIME_DIR)
     assert len(files) == 2
-    validate_cmakelist_path(path=files[0],
+    bin_file = [f for f in files if bin_name in str(f.parent.parent.name)]
+    validate_cmakelist_path(path=bin_file[0],
                             project_name=bin_name,
                             target_name=target_name)
-    validate_cmakelist_path(path=files[1],
+    bin_2_file = [f for f in files if bin_2_name in str(f.parent.parent.name)]
+    validate_cmakelist_path(path=bin_2_file[0],
                             project_name=bin_2_name,
                             target_name=target_name)
 
@@ -199,11 +208,11 @@ def test_generate_bin_compiler(runtime_dir):
     bin_name = "my_bin"
     new_project([bin_project_type, bin_name])
 
-    # Create 'my_bin_2' inner dependency of 'my_bin'
-    bin_2_name = "my_bin_2"
+    # Create 'my_inner_bin' inner dependency of 'my_bin'
+    bin_2_name = "my_inner_bin"
     new_inner_project(bin_name, ["-e", bin_project_type, bin_2_name])
 
-    # Add 'my_bin_2' as dependency of 'my_bin'
+    # Add 'my_inner_bin' as dependency of 'my_bin'
     add_dependency(bin_name, [bin_2_name])
 
     ## TEST
@@ -214,12 +223,14 @@ def test_generate_bin_compiler(runtime_dir):
                             args= ["-p", "my_bin", "--compiler", compiler_name]) == 0
 
     # Find CMakeLists.txt
-    # Only one must be present because my_bin_2 depends on nothing
+    # Only one must be present because my_inner_bin depends on nothing
     files = find_cmake_files(RUNTIME_DIR)
     assert len(files) == 2
-    validate_cmakelist_path(path=files[0],
+    bin_file = [f for f in files if bin_name in str(f.parent.parent.name)]
+    validate_cmakelist_path(path=bin_file[0],
                             project_name=bin_name,
                             compiler_name=compiler_name)
-    validate_cmakelist_path(path=files[1],
+    bin_2_file = [f for f in files if bin_2_name in str(f.parent.parent.name)]
+    validate_cmakelist_path(path=bin_2_file[0],
                             project_name=bin_2_name,
                             compiler_name=compiler_name)

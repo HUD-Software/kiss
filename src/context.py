@@ -24,6 +24,7 @@ class KissBaseContext:
         # If user provide a project name find it
         if project_name:
             if(project := ProjectRegistry.get_project(project_name)) is None:
+                console.print_error(f"Project {project_name} not found in {str(current_directory)}")
                 return None
             return project
         # If the user dont provide a project name, find the default project

@@ -1,9 +1,18 @@
-from pathlib import Path
 import shutil
 import pytest
 
-RUNTIME_DIR = Path("runtime")
+from tests.common import RUNTIME_DIR
+
+
+
 @pytest.fixture
 def runtime_dir():
+    # Delete RUNTIME_DIR if exist
+    if RUNTIME_DIR.exists():
+        shutil.rmtree(str(RUNTIME_DIR), ignore_errors=True)
+
+    # Run the test
     yield
-    shutil.rmtree(str(RUNTIME_DIR), ignore_errors=True)
+
+    # # Delete RUNTIME_DIR
+    # shutil.rmtree(str(RUNTIME_DIR), ignore_errors=True)

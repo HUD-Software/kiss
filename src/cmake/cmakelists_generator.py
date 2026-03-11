@@ -55,7 +55,6 @@ class CMakeListsGenerateContext(KissGenerateContext):
     def create(cls, current_directory: Path, project_name: str, generator_name: str, toolchain: Toolchain, profile_name: str) -> Self :
         project_to_generate = super().find_target_project(current_directory, project_name)
         if not project_to_generate:
-            console.print_error(f"No project found in {str(current_directory)}")
             exit(1)
         generator_name = generator_name if generator_name is not None else "cmake"
         return cls(current_directory=current_directory, project=project_to_generate, generator_name=generator_name, toolchain=toolchain, profile_name=profile_name)
@@ -461,7 +460,7 @@ class CMakeListsGenerator(BaseGenerator):
             else:
                 f.write(f"set_target_properties({project.name} PROPERTIES OUTPUT_NAME {project.name})\n")
                 f.write(f"set_target_properties({project.name} PROPERTIES\n")
-                output_directory = cmakelist_generate_context.output_directory_for_config(cmakelist_generate_context.profile)
+                output_directory = cmakelist_generate_context.output_directory_for_config(cmakelist_generate_context.profile_name)
                 f.write(f"  LIBRARY_OUTPUT_DIRECTORY   \"{output_directory}\"\n")
                 f.write(f"  RUNTIME_OUTPUT_DIRECTORY   \"{output_directory}\"\n")
                 f.write(")\n")

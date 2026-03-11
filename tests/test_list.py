@@ -1,9 +1,10 @@
 import subprocess
+from tests.common import RUNTIME_DIR
 from tests.runtime_fixture import runtime_dir
 
 def test_new_empty(runtime_dir):
     result = subprocess.run(
-        ["python", "src/kiss.py", "-d", "runtime", "list", "-r", "-d" ],
+        ["python", "src/kiss.py", "-d", str(RUNTIME_DIR), "list", "-r", "-d" ],
         capture_output=True,
         text=True,
     )
@@ -14,7 +15,7 @@ def test_new_empty(runtime_dir):
 def create_project():
     # Create a bin project
     result = subprocess.run(
-        ["python", "src/kiss.py", "-d", "runtime", "new", "bin", "my_bin" ],
+        ["python", "src/kiss.py", "-d", str(RUNTIME_DIR), "new", "bin", "my_bin" ],
         capture_output=True,
         text=True,
     )
@@ -24,7 +25,7 @@ def create_project():
 
     # Create a dyn project
     result = subprocess.run(
-        ["python", "src/kiss.py", "-d", "runtime", "new", "dyn", "my_dyn" ],
+        ["python", "src/kiss.py", "-d", str(RUNTIME_DIR), "new", "dyn", "my_dyn" ],
         capture_output=True,
         text=True,
     )
@@ -34,7 +35,7 @@ def create_project():
 
     # Create a lib project
     result = subprocess.run(
-        ["python", "src/kiss.py", "-d", "runtime", "new", "lib", "my_lib" ],
+        ["python", "src/kiss.py", "-d", str(RUNTIME_DIR), "new", "lib", "my_lib" ],
         capture_output=True,
         text=True,
     )
@@ -45,7 +46,7 @@ def create_project():
 
     # Create a lib project
     result = subprocess.run(
-        ["python", "src/kiss.py", "-d", "runtime/my_bin", "new", "-e", "lib", "my_inner_lib" ],
+        ["python", "src/kiss.py", "-d", str(RUNTIME_DIR/"my_bin"), "new", "-e", "lib", "my_inner_lib" ],
         capture_output=True,
         text=True,
     )
@@ -57,7 +58,7 @@ def test_new(runtime_dir):
     # Create project to list
     create_project()
     result = subprocess.run(
-        ["python", "src/kiss.py", "-d", "runtime", "list", "-r", "-d" ],
+        ["python", "src/kiss.py", "-d", str(RUNTIME_DIR), "list", "-r", "-d" ],
         capture_output=True,
         text=True,
     )

@@ -68,7 +68,7 @@ class Toolchain:
     def load_all_toolchains_in_directory(directory: Path) -> bool :
         # Load the yaml file in this directory
         for file in directory.glob("**/*.yaml",):
-            toolchain_file = ToolchainYamlFile(file);
+            toolchain_file = ToolchainYamlFile(file)
             toolchain_file.load_yaml()
         
     @staticmethod

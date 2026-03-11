@@ -2,7 +2,7 @@ import argparse
 from multiprocessing import context
 import os
 from pathlib import Path
-from typing import Self
+from typing import Optional, Self
 from build import KissBuildContext
 from builder import BaseBuilder
 from cli import KissParser
@@ -42,17 +42,18 @@ class CMakeBuildContext(KissBuildContext):
         return self.cmakelist_generate_context.output_directory_for_config(config)
     
     @classmethod
-    def create(cls, current_directory: Path, project_name: str, builder_name: str, toolchain: Toolchain, profile_name: str, cmake_generator_name: str) -> Self :
+    def create(cls, current_directory: Path, project_name: str, builder_name: str, toolchain: Toolchain, profile_name: str, cmake_generator_name: str) -> Optional[Self] :
         project_to_build = super().find_target_project(current_directory, project_name)
         if not project_to_build:
             console.print_error(f"No project found in {str(current_directory)}")
-            exit(1)
+            return None
         return CMakeBuildContext(current_directory=current_directory, project=project_to_build, builder_name=builder_name, toolchain=toolchain, profile_name=profile_name, cmake_generator_name=cmake_generator_name)
 
 
     @staticmethod
-    def from_cli_args(cli_args: argparse.Namespace) -> Self:
-        build_context = KissBuildContext.from_cli_args(cli_args=cli_args)
+    def from_cli_args(cli_args: argparse.Namespace) -> Optional[Self] :
+        if(build_context := KissBuildContext.from_cli_args(cli_args=cli_args)) is None:
+            return None
         cmake_generator_name  = getattr(cli_args, "generator", None)
         return CMakeBuildContext(current_directory=build_context.current_directory,
                                  project=build_context.project,
@@ -123,12 +124,12 @@ class CMakeBuilder(BaseBuilder):
         cmake_generator_cxx_compiler = f"-DCMAKE_CXX_COMPILER={context.toolchain.compiler.cxx_path}"
         return ["--no-warn-unused-cli", "-S", str(context.cmakelists_directory), "-G", cmake_generator_name, cmake_generator_c_compiler, cmake_generator_cxx_compiler, cmake_generator_c_arch, cmake_generator_cxx_arch]
         
-    def build_project(self, cmake_build_context: CMakeBuildContext):
+    def build_project(self, cmake_build_context: CMakeBuildContext) -> bool:
         # Generate the project
         cmakelists_generator : CMakeListsGenerator = GeneratorRegistry.generators.get(cmake_build_context.builder_name)
         if not cmakelists_generator:
             console.print_error(f"Generator {cmakelists_generator.name} not found")
-            exit(1)
+            return False
         
         generate_context = cmake_build_context.cmakelist_generate_context
         generated_context_list = cmakelists_generator.generate_project(generate_context)
@@ -141,20 +142,20 @@ class CMakeBuilder(BaseBuilder):
         
         if generate_context.cmake_generator_name.is_visual_studio():
             if (configure_args := self._get_visual_studio_configure_args(generate_context.cmake_generator_name.name, context=context) ) is None:
-                exit(1)
+                return False
         elif generate_context.cmake_generator_name.is_unix_makefiles():
             if (configure_args := self._get_linux_gnu_configure_args(generate_context.cmake_generator_name.name,context=context)) is None:
-                exit(1)
+                return False
         else:
             console.print_error(f"Unknown target {context.toolchain.target.name}")
-            exit(1)                
+            return False       
         
 
         os.makedirs(context.build_directory, exist_ok=True)
         if generated_context_list or not context.cmakecache.exists():
             console.print_step(f"🛠️  CMake configure...")
             if not run_process("cmake", configure_args, context.build_directory) == 0:
-                exit(1)
+                return False
         else:            
             console.print_step(f"✔️  No CMake configure required") 
 
@@ -162,7 +163,7 @@ class CMakeBuilder(BaseBuilder):
         console.print_step("🏗️  CMake build...")
         args = ["--build", ".", "--config", cmake_build_context.profile_name]
         if not run_process("cmake", args, context.build_directory) == 0:
-            exit(1)
+            return False
 
         # Install
         # console.print_step("🏗️  CMake install...")
@@ -170,6 +171,9 @@ class CMakeBuilder(BaseBuilder):
         # if not run_process("cmake", args, context.build_directory) == 0:
         #     exit(1)
 
-    def build(self, cli_args: argparse.Namespace):
-        cmake_build_context = CMakeBuildContext.from_cli_args(cli_args)
-        self.build_project(cmake_build_context=cmake_build_context)
+        return True
+
+    def build(self, cli_args: argparse.Namespace) -> bool:
+        if( cmake_build_context := CMakeBuildContext.from_cli_args(cli_args)) is None:
+            return False
+        return self.build_project(cmake_build_context=cmake_build_context)

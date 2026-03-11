@@ -34,7 +34,7 @@ def main():
         return (0 if cmd_generate(cli_args=args) == True else 1)
     
     elif args.option == "build": 
-        cmd_build(cli_args=args)
+        return (0 if cmd_build(cli_args=args) == True else 1)
     
     elif args.option == "run": 
         cmd_run(cli_args=args)

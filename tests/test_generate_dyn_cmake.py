@@ -61,13 +61,13 @@ def test_generate_dyn_default_inner(runtime_dir):
 # kiss see both project and can't select which one is the default
 def test_generate_dyn_no_depends(runtime_dir):
     ## SETUP
-    dyn_project_type = "dyn"
+    dyn_type = "dyn"
     dyn_name = "my_dyn"
-    new_project([dyn_project_type, dyn_name])
+    new_project([dyn_type, dyn_name])
 
     # Create 'my_inner_dyn' inner dependency of 'my_dyn'
     dyn_2_name = "my_inner_dyn"
-    new_inner_project(dyn_name, ["-e", dyn_project_type, dyn_2_name])
+    new_inner_project(dyn_name, ["-e", dyn_type, dyn_2_name])
 
     # Add 'my_inner_dyn' as dependency of 'my_dyn'
     add_dependency(dyn_name, [dyn_2_name])
@@ -93,13 +93,13 @@ def test_generate_dyn_no_depends(runtime_dir):
 # kiss see both project and can't select which one is the default
 def test_generate_dyn_depends(runtime_dir):
     ## SETUP
-    dyn_project_type = "dyn"
+    dyn_type = "dyn"
     dyn_name = "my_dyn"
-    new_project([dyn_project_type, dyn_name])
+    new_project([dyn_type, dyn_name])
 
     # Create 'my_inner_dyn' inner dependency of 'my_dyn'
     dyn_2_name = "my_inner_dyn"
-    new_inner_project(dyn_name, ["-e", dyn_project_type, dyn_2_name])
+    new_inner_project(dyn_name, ["-e", dyn_type, dyn_2_name])
 
     # Add 'my_inner_dyn' as dependency of 'my_dyn'
     add_dependency(dyn_name, [dyn_2_name])
@@ -129,13 +129,13 @@ def test_generate_dyn_depends(runtime_dir):
 # kiss see both project and can't select which one is the default
 def test_generate_dyn_profile(runtime_dir):
     ## SETUP
-    dyn_project_type = "dyn"
+    dyn_type = "dyn"
     dyn_name = "my_dyn"
-    new_project([dyn_project_type, dyn_name])
+    new_project([dyn_type, dyn_name])
 
     # Create 'my_inner_dyn' inner dependency of 'my_dyn'
     dyn_2_name = "my_inner_dyn"
-    new_inner_project(dyn_name, ["-e", dyn_project_type, dyn_2_name])
+    new_inner_project(dyn_name, ["-e", dyn_type, dyn_2_name])
 
     # Add 'my_inner_dyn' as dependency of 'my_dyn'
     add_dependency(dyn_name, [dyn_2_name])
@@ -166,13 +166,13 @@ def test_generate_dyn_profile(runtime_dir):
 # kiss see both project and can't select which one is the default
 def test_generate_dyn_target(runtime_dir):
     ## SETUP
-    dyn_project_type = "dyn"
+    dyn_type = "dyn"
     dyn_name = "my_dyn"
-    new_project([dyn_project_type, dyn_name])
+    new_project([dyn_type, dyn_name])
 
     # Create 'my_inner_dyn' inner dependency of 'my_dyn'
     dyn_2_name = "my_inner_dyn"
-    new_inner_project(dyn_name, ["-e", dyn_project_type, dyn_2_name])
+    new_inner_project(dyn_name, ["-e", dyn_type, dyn_2_name])
 
     # Add 'my_inner_dyn' as dependency of 'my_dyn'
     add_dependency(dyn_name, [dyn_2_name])
@@ -203,13 +203,13 @@ def test_generate_dyn_target(runtime_dir):
 # kiss see both project and can't select which one is the default
 def test_generate_dyn_compiler(runtime_dir):
     ## SETUP
-    dyn_project_type = "dyn"
+    dyn_type = "dyn"
     dyn_name = "my_dyn"
-    new_project([dyn_project_type, dyn_name])
+    new_project([dyn_type, dyn_name])
 
     # Create 'my_inner_dyn' inner dependency of 'my_dyn'
     dyn_2_name = "my_inner_dyn"
-    new_inner_project(dyn_name, ["-e", dyn_project_type, dyn_2_name])
+    new_inner_project(dyn_name, ["-e", dyn_type, dyn_2_name])
 
     # Add 'my_inner_dyn' as dependency of 'my_dyn'
     add_dependency(dyn_name, [dyn_2_name])

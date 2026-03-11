@@ -22,7 +22,7 @@ compilers:
       - name: REMOVE_DEAD_CODE
         description: Remove dead code
         cxx-compiler-flags: [-ffunction-sections, -fdata-sections]
-        cxx-linker-flags: [-Wl,--gc-sections]
+        cxx-linker-flags: ["-Wl,--gc-sections"]
 
       # Warnings
       - name: WARNING_BASE
@@ -87,8 +87,8 @@ compilers:
       # ASAN
       - name: ASAN
         description: Enable ASAN Sanitizer
-        cxx-compiler-flags: ["-fsanitize=address", "-fsanitize-address-use-after-scope"]
-        cxx-linker-flags: ["-fsanitize=address"]
+        cxx-compiler-flags: [-fsanitize=address, -fsanitize-address-use-after-scope]
+        cxx-linker-flags: [-fsanitize=address]
         enable-features: [DEBUG_INFO]
 
     # Features rules
@@ -122,7 +122,7 @@ compilers:
     cxx_path: g++
     c_path: gcc
     profiles:
-      custom:
+      asan:
         extends: debug
         enable-features: [ASAN]
 
@@ -132,6 +132,6 @@ compilers:
     cxx_path: clang++
     c_path: clang
     profiles:
-      custom:
+      asan:
         extends: debug
         enable-features: [ASAN]

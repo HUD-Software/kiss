@@ -245,13 +245,18 @@ class CMakeListsGenerator(BaseGenerator):
                                                                         project=dep_project, 
                                                                         cmake_generator_name=cmakelist_generate_context.cmake_generator_name,
                                                                         profile_name=cmakelist_generate_context.profile_name)
+            
                 f.write(f"# Add {dep_project.name} dependency\n")
                 f.write(f"if(NOT TARGET {dep_project.name})\n")
                 f.write(f"  add_subdirectory(\"{dep_cmakelist_dir.resolve().as_posix()}\" \"{dep_build_dir.resolve().as_posix()}\")\n")
                 f.write(f"endif()\n")
-                f.write(f"target_link_libraries({project.name} PRIVATE {dep_project.name})\n") 
-                f.write(f"target_include_directories({project.name} PRIVATE $<TARGET_PROPERTY:{dep_project.name},INTERFACE_INCLUDE_DIRECTORIES>)\n")
-                f.write("\n")
+                if dep_project.type == ProjectType.bin:
+                    f.write(f"add_dependencies({dep_project.name} {project.name})\n")
+                else:
+
+                    f.write(f"target_link_libraries({project.name} PRIVATE {dep_project.name})\n") 
+                    f.write(f"target_include_directories({project.name} PRIVATE $<TARGET_PROPERTY:{dep_project.name},INTERFACE_INCLUDE_DIRECTORIES>)\n")
+                    f.write("\n")
 
         return True
                 

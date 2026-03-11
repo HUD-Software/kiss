@@ -66,7 +66,6 @@ def generate_project(directory: str, args: list[str] = []) -> int:
     print(result.stderr, flush=True)
     return result.returncode
 
-
 def find_cmake_files(root):
     return list(Path(root).rglob("CMakeLists.txt"))
 
@@ -82,3 +81,56 @@ def validate_cmakelist_path(path: Path,
     assert path.parent.parent.parent.name == "cmake"
     assert path.parent.parent.parent.parent.name == compiler_name
     assert path.parent.parent.parent.parent.parent.name == target_name
+
+
+def build_project(directory: str, args: list[str] = []) -> int:
+    result = subprocess.run(
+        ["python", "src/kiss.py", "-d", str(directory), "build"] + args,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+    )
+    print(result.stdout, flush=True)
+    print(result.stderr, flush=True)
+    return result.returncode
+
+def is_elf(file_path) -> bool:
+    try:
+        with open(file_path, "rb") as f:
+            return f.read(4) == b"\x7fELF"
+    except Exception:
+        return False
+
+def is_dyn(file_path) -> bool:
+    path = Path(file_path)
+    return path.suffix in [".so",".dll"] or is_elf(file_path)
+
+def is_lib(file_path) -> bool:
+    path = Path(file_path)
+    return path.suffix in [".a", ".lib"] and not is_elf(file_path)
+
+
+def validate_build( path: Path, 
+                    project_name:str,
+                    project_type:str,
+                    profile_name:str = DEFAULT_PROFILE_NAME, 
+                    target_name:str=DEFAULT_TARGET_NAME, 
+                    compiler_name:str= DEFAULT_COMPILER_NAME):
+
+    validate_cmakelist_path(path=path,
+                            project_name=project_name,
+                            profile_name=profile_name,
+                            target_name=target_name,
+                            compiler_name=compiler_name)
+    # Assert artifact exist ( near CMakeList.txt )
+    artifact_path = path.parent / project_name
+    assert artifact_path.exists()
+    # Assert type is correct
+    match project_type:
+        case "bin":
+            assert is_elf(artifact_path)
+        case "dyn":
+            assert is_dyn(artifact_path)
+        case "lib":
+            assert is_lib(artifact_path)

@@ -1,6 +1,6 @@
 import argparse
 from pathlib import Path
-from typing import Self
+from typing import Optional, Self
 from builder import BaseBuilder, BuilderRegistry
 import console
 from context import KissBaseContext
@@ -32,11 +32,11 @@ class KissBuildContext(KissBaseContext):
         return self._toolchain
 
     @classmethod
-    def create(cls, current_directory: Path, project_name: str, builder_name: str, toolchain: Toolchain, profile_name: str) -> Self :
+    def create(cls, current_directory: Path, project_name: str, builder_name: str, toolchain: Toolchain, profile_name: str) -> Optional[Self] :
         project_to_build = super().find_target_project(current_directory, project_name)
         if not project_to_build:
             console.print_error(f"No project '{project_name}' found in {str(current_directory)}")
-            exit(1)
+            return None
         return KissBuildContext(current_directory=current_directory, 
                             project=project_to_build, 
                             builder_name=builder_name, 
@@ -45,7 +45,7 @@ class KissBuildContext(KissBaseContext):
 
 
     @staticmethod
-    def from_cli_args(cli_args: argparse.Namespace) -> Self | None:
+    def from_cli_args(cli_args: argparse.Namespace) -> Optional[Self]:
         target_name :Target = getattr(cli_args, "target", None) or Target.default_target_name()
         compiler_name : Compiler = getattr(cli_args, "compiler", None) or Compiler.default_compiler_name()
         if( toolchain := Toolchain.create(compiler_name=compiler_name, target_name=target_name)) is None:
@@ -54,24 +54,21 @@ class KissBuildContext(KissBaseContext):
         # Ensure we request a valid profile
         if not toolchain.is_profile_exist(cli_args.profile):
             console.print_error(f"Profile {cli_args.profile} not found in the toolchain : {{{', '.join(toolchain.profile_name_list())}}}")
-            exit(1)
+            return None
         
         # Ensure target exists
         if not target_name in TargetRegistry:
             console.print_error(f"Target {target_name} not found  : {{{', '.join(TargetRegistry.target_name_list())}}}")
-            exit(1)
+            return None
             
-        build_context =  KissBuildContext.create(current_directory=cli_args.directory,
+        return KissBuildContext.create(current_directory=cli_args.directory,
                                              project_name=cli_args.project_name,
                                              builder_name=cli_args.builder,
                                              toolchain=toolchain,
                                              profile_name=cli_args.profile)
-        
-        return build_context
 
-def cmd_build(cli_args: argparse.Namespace):
-    builder : BaseBuilder = BuilderRegistry.builders.get(cli_args.builder)
-    if not builder:
+def cmd_build(cli_args: argparse.Namespace) -> bool:
+    if( builder := BuilderRegistry.builders.get(cli_args.builder)) is None:
         console.print_error(f"Builder {cli_args.builder} not found")
-        exit(1)
-    builder.build(cli_args)
+        return False
+    return builder.build(cli_args) 

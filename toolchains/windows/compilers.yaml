@@ -153,7 +153,7 @@ compilers:
   cl:
     extends: msvc-generic
     profiles:
-      custom:
+      asan:
         extends: debug
         enable-features: [ASAN]
     features:
@@ -170,10 +170,9 @@ compilers:
   clangcl:
     extends: msvc-generic
     profiles:
-      debug:
-        enable-features: [ASAN]
-      custom:
+      asan:
         extends: debug
+        enable-features: [ASAN]
     features:
       - name: ASAN
         description: Enable ASAN Sanitizer with ASAN static linking

@@ -61,13 +61,13 @@ def test_generate_lib_default_inner(runtime_dir):
 # kiss see both project and can't select which one is the default
 def test_generate_lib_no_depends(runtime_dir):
     ## SETUP
-    lib_project_type = "lib"
+    lib_type = "lib"
     lib_name = "my_lib"
-    new_project([lib_project_type, lib_name])
+    new_project([lib_type, lib_name])
 
     # Create 'my_inner_lib' inner dependency of 'my_lib'
     lib_2_name = "my_inner_lib"
-    new_inner_project(lib_name, ["-e", lib_project_type, lib_2_name])
+    new_inner_project(lib_name, ["-e", lib_type, lib_2_name])
 
     # Add 'my_inner_lib' as dependency of 'my_lib'
     add_dependency(lib_name, [lib_2_name])
@@ -93,13 +93,13 @@ def test_generate_lib_no_depends(runtime_dir):
 # kiss see both project and can't select which one is the default
 def test_generate_lib_depends(runtime_dir):
     ## SETUP
-    lib_project_type = "lib"
+    lib_type = "lib"
     lib_name = "my_lib"
-    new_project([lib_project_type, lib_name])
+    new_project([lib_type, lib_name])
 
     # Create 'my_inner_lib' inner dependency of 'my_lib'
     lib_2_name = "my_inner_lib"
-    new_inner_project(lib_name, ["-e", lib_project_type, lib_2_name])
+    new_inner_project(lib_name, ["-e", lib_type, lib_2_name])
 
     # Add 'my_inner_lib' as dependency of 'my_lib'
     add_dependency(lib_name, [lib_2_name])
@@ -129,13 +129,13 @@ def test_generate_lib_depends(runtime_dir):
 # kiss see both project and can't select which one is the default
 def test_generate_lib_profile(runtime_dir):
     ## SETUP
-    lib_project_type = "lib"
+    lib_type = "lib"
     lib_name = "my_lib"
-    new_project([lib_project_type, lib_name])
+    new_project([lib_type, lib_name])
 
     # Create 'my_inner_lib' inner dependency of 'my_lib'
     lib_2_name = "my_inner_lib"
-    new_inner_project(lib_name, ["-e", lib_project_type, lib_2_name])
+    new_inner_project(lib_name, ["-e", lib_type, lib_2_name])
 
     # Add 'my_inner_lib' as dependency of 'my_lib'
     add_dependency(lib_name, [lib_2_name])
@@ -166,13 +166,13 @@ def test_generate_lib_profile(runtime_dir):
 # kiss see both project and can't select which one is the default
 def test_generate_lib_target(runtime_dir):
     ## SETUP
-    lib_project_type = "lib"
+    lib_type = "lib"
     lib_name = "my_lib"
-    new_project([lib_project_type, lib_name])
+    new_project([lib_type, lib_name])
 
     # Create 'my_inner_lib' inner dependency of 'my_lib'
     lib_2_name = "my_inner_lib"
-    new_inner_project(lib_name, ["-e", lib_project_type, lib_2_name])
+    new_inner_project(lib_name, ["-e", lib_type, lib_2_name])
 
     # Add 'my_inner_lib' as dependency of 'my_lib'
     add_dependency(lib_name, [lib_2_name])
@@ -203,13 +203,13 @@ def test_generate_lib_target(runtime_dir):
 # kiss see both project and can't select which one is the default
 def test_generate_lib_compiler(runtime_dir):
     ## SETUP
-    lib_project_type = "lib"
+    lib_type = "lib"
     lib_name = "my_lib"
-    new_project([lib_project_type, lib_name])
+    new_project([lib_type, lib_name])
 
     # Create 'my_inner_lib' inner dependency of 'my_lib'
     lib_2_name = "my_inner_lib"
-    new_inner_project(lib_name, ["-e", lib_project_type, lib_2_name])
+    new_inner_project(lib_name, ["-e", lib_type, lib_2_name])
 
     # Add 'my_inner_lib' as dependency of 'my_lib'
     add_dependency(lib_name, [lib_2_name])

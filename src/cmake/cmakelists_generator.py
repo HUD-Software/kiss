@@ -231,8 +231,10 @@ class CMakeListsGenerator(BaseGenerator):
                     for profile in toolchain.compiler.profiles:
                         if profile.is_feature_enabled(project.type, "ASAN"):
                             if toolchain.compiler.is_clangcl_based():
-                                f.write(f"target_link_libraries({project.name} PRIVATE $<$<CONFIG:{profile.name}>:${{ASAN_LIB}}>)\n")
-                                f.write(f"target_link_libraries({project.name} PRIVATE $<$<CONFIG:{profile.name}>:${{ASAN_LIB}}> $<$<CONFIG:{profile.name}>:msvcrt.lib>)\n")
+                                if toolchain.target.is_i686():
+                                    f.write(f"target_link_libraries({project.name} PRIVATE $<$<CONFIG:{profile.name}>:${{ASAN_LIB}}> $<$<CONFIG:{profile.name}>:msvcrt.lib>)\n")
+                                else:
+                                    f.write(f"target_link_libraries({project.name} PRIVATE $<$<CONFIG:{profile.name}>:${{ASAN_LIB}}>)\n")
                                 f.write(f"target_link_options({project.name}  PRIVATE $<$<CONFIG:{profile.name}>:/WHOLEARCHIVE:${{ASAN_LIB}}>)\n")
                             f.write(f"target_compile_definitions({project.name} PRIVATE $<$<CONFIG:{profile.name}>:_DISABLE_VECTOR_ANNOTATION>)\n")
                             f.write(f"target_compile_definitions({project.name} PRIVATE $<$<CONFIG:{profile.name}>:_DISABLE_STRING_ANNOTATION>)\n")

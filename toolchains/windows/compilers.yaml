@@ -177,7 +177,7 @@ compilers:
       - name: ASAN
         description: Enable ASAN Sanitizer
         cxx-compiler-flags: ["-fsanitize=address", "-fsanitize-address-use-after-scope", "-fsanitize-recover=address"]
-        cxx-linker-flags: ["-lib:msvcrt.lib"] # mscvrt.lib is needed for i868 target
+        #cxx-linker-flags: ["if(target=i686-pc-windows-msvc):-lib:msvcrt.lib"] # mscvrt.lib is needed for i868 target
         enable-features: [DEBUG_INFO, WINDOWS_STATIC_RUNTIME_DEBUG, DISABLE_INCREMENTAL_LINK]
     feature-rules:
       - incompatible: asan

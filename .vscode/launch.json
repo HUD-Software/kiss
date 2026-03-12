@@ -12,7 +12,7 @@
                 "-x", // Stop first failure
                 //"${workspaceFolder}/tests", // dossier contenant tes tests
                 //"tests/test_build_bin_cmake.py"
-               "tests/test_build_bin_cmake.py::test_build_bin_compiler" // Specific project
+                "tests/test_build_bin_cmake.py::test_build_bin_asan" // Specific project
             ],
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}"

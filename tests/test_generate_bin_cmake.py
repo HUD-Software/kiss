@@ -13,7 +13,7 @@ def test_generate_bin_default(runtime_dir):
     # Find CMakeLists.txt
     files = find_cmake_files(RUNTIME_DIR)
     assert len(files) == 1
-    validate_cmakelist_path(path=files[0],
+    validate_cmakelist_path(cmake_filepath=files[0],
                             project_name=bin_name)
 
     assert generate_project(directory=RUNTIME_DIR/bin_name) == 0
@@ -21,7 +21,7 @@ def test_generate_bin_default(runtime_dir):
     # Find CMakeLists.txt
     files = find_cmake_files(RUNTIME_DIR)
     assert len(files) == 1
-    validate_cmakelist_path(path=files[0],
+    validate_cmakelist_path(cmake_filepath=files[0],
                             project_name=bin_name)
 
 # Test generation of a two bin project in the same root directory
@@ -41,7 +41,7 @@ def test_generate_bin_default_inner(runtime_dir):
     # Find CMakeLists.txt
     files = find_cmake_files(RUNTIME_DIR)
     assert len(files) == 1
-    validate_cmakelist_path(path=files[0],
+    validate_cmakelist_path(cmake_filepath=files[0],
                             project_name=bin_name)
     
     assert generate_project(directory=RUNTIME_DIR/bin_name/bin_2_name) == 0
@@ -50,10 +50,10 @@ def test_generate_bin_default_inner(runtime_dir):
     files = find_cmake_files(RUNTIME_DIR)
     assert len(files) == 2
     bin_file = [f for f in files if bin_name in str(f.parent.parent.name)]
-    validate_cmakelist_path(path=bin_file[0],
+    validate_cmakelist_path(cmake_filepath=bin_file[0],
                             project_name=bin_name)
     bin_2_file = [f for f in files if bin_2_name in str(f.parent.parent.name)]
-    validate_cmakelist_path(path=bin_2_file[0],
+    validate_cmakelist_path(cmake_filepath=bin_2_file[0],
                             project_name=bin_2_name)
 
 
@@ -85,7 +85,7 @@ def test_generate_bin_no_depends(runtime_dir):
     # Only one must be present because my_inner_bin depends on nothing
     files = find_cmake_files(RUNTIME_DIR)
     assert len(files) == 1
-    validate_cmakelist_path(path=files[0],
+    validate_cmakelist_path(cmake_filepath=files[0],
                             project_name=bin_2_name)
 
 
@@ -118,10 +118,10 @@ def test_generate_bin_depends(runtime_dir):
     files = find_cmake_files(RUNTIME_DIR)
     assert len(files) == 2
     bin_file = [f for f in files if bin_name in str(f.parent.parent.name)]
-    validate_cmakelist_path(path=bin_file[0],
+    validate_cmakelist_path(cmake_filepath=bin_file[0],
                             project_name=bin_name)
     bin_2_file = [f for f in files if bin_2_name in str(f.parent.parent.name)]
-    validate_cmakelist_path(path=bin_2_file[0],
+    validate_cmakelist_path(cmake_filepath=bin_2_file[0],
                             project_name=bin_2_name)
 
 
@@ -154,11 +154,11 @@ def test_generate_bin_profile(runtime_dir):
     files = find_cmake_files(RUNTIME_DIR)
     assert len(files) == 2
     bin_file = [f for f in files if bin_name in str(f.parent.parent.name)]
-    validate_cmakelist_path(path=bin_file[0],
+    validate_cmakelist_path(cmake_filepath=bin_file[0],
                             project_name=bin_name,
                             profile_name=profile_name)
     bin_2_file = [f for f in files if bin_2_name in str(f.parent.parent.name)]
-    validate_cmakelist_path(path=bin_2_file[0],
+    validate_cmakelist_path(cmake_filepath=bin_2_file[0],
                             project_name=bin_2_name,
                             profile_name=profile_name)
 
@@ -190,11 +190,11 @@ def test_generate_bin_target(runtime_dir):
     files = find_cmake_files(RUNTIME_DIR)
     assert len(files) == 2
     bin_file = [f for f in files if bin_name in str(f.parent.parent.name)]
-    validate_cmakelist_path(path=bin_file[0],
+    validate_cmakelist_path(cmake_filepath=bin_file[0],
                             project_name=bin_name,
                             target_name=target_name)
     bin_2_file = [f for f in files if bin_2_name in str(f.parent.parent.name)]
-    validate_cmakelist_path(path=bin_2_file[0],
+    validate_cmakelist_path(cmake_filepath=bin_2_file[0],
                             project_name=bin_2_name,
                             target_name=target_name)
 
@@ -227,10 +227,10 @@ def test_generate_bin_compiler(runtime_dir):
     files = find_cmake_files(RUNTIME_DIR)
     assert len(files) == 2
     bin_file = [f for f in files if bin_name in str(f.parent.parent.name)]
-    validate_cmakelist_path(path=bin_file[0],
+    validate_cmakelist_path(cmake_filepath=bin_file[0],
                             project_name=bin_name,
                             compiler_name=compiler_name)
     bin_2_file = [f for f in files if bin_2_name in str(f.parent.parent.name)]
-    validate_cmakelist_path(path=bin_2_file[0],
+    validate_cmakelist_path(cmake_filepath=bin_2_file[0],
                             project_name=bin_2_name,
                             compiler_name=compiler_name)

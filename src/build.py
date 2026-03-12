@@ -62,13 +62,24 @@ class KissBuildContext(KissBaseContext):
             return None
             
         return KissBuildContext.create(current_directory=cli_args.directory,
-                                             project_name=cli_args.project_name,
-                                             builder_name=cli_args.builder,
-                                             toolchain=toolchain,
-                                             profile_name=cli_args.profile)
+                                        project_name=cli_args.project_name,
+                                        builder_name=cli_args.builder,
+                                        toolchain=toolchain,
+                                        profile_name=cli_args.profile)
 
 def cmd_build(cli_args: argparse.Namespace) -> bool:
     if( builder := BuilderRegistry.builders.get(cli_args.builder)) is None:
         console.print_error(f"Builder {cli_args.builder} not found")
         return False
-    return builder.build(cli_args) 
+    
+    if(kiss_build_context := KissBuildContext.from_cli_args(cli_args=cli_args)) is None:
+        return None
+    
+    console.print_step(f"Building '{kiss_build_context.project.name}' with \n"
+                       f" - Builder : {builder.name}\n"
+                       f" - Profile : {kiss_build_context.profile_name}\n"
+                       f" - Target : {kiss_build_context.toolchain.target.name}\n"
+                       f" - Compiler : {kiss_build_context.toolchain.compiler.name}")
+
+    return builder.build(kiss_build_context=kiss_build_context, 
+                         cli_args=cli_args) 

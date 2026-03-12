@@ -1,6 +1,7 @@
 import sys
 from colorama import Fore, Style
-
+sys.stdout.reconfigure(encoding="utf-8")
+sys.stderr.reconfigure(encoding="utf-8")
 
 def print(s: str, end='\n'):
     sys.stdout.write(f"{Fore.WHITE}{s}{Style.RESET_ALL}{end}")

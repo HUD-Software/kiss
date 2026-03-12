@@ -1,13 +1,15 @@
 
-from typing import Self
+from typing import Optional, Self
 import console
 from toolchain import target
 from toolchain.target.target_registry import Target
 from toolchain.toolchain import Toolchain
+from visual_studio import VSToolset
 
 class CMakeGeneratorName:
-    def __init__(self, name: str): 
+    def __init__(self, name: str, vstoolset : Optional[VSToolset] = None): 
         self.name = name
+        self.vstoolset = vstoolset
 
     def is_visual_studio(self) -> bool:
         return self.name.startswith("Visual Studio")
@@ -83,7 +85,7 @@ class CMakeGeneratorName:
             return []
         
     @staticmethod
-    def create(toolchain: Toolchain) -> Self | None:
+    def create(toolchain: Toolchain) -> Optional[Self]:
         if toolchain.target.is_windows_os():
             from visual_studio import get_windows_latest_toolset
             if( toolset := get_windows_latest_toolset(toolchain.compiler)) is None:
@@ -93,8 +95,8 @@ class CMakeGeneratorName:
                 year = 2026
             if not year:
                 year = int(toolset.product_line_version)
-            console.print_tips(f" {toolset}")
-            return CMakeGeneratorName(f"{toolset.product_name} {toolset.major_version} {year}")
+            return CMakeGeneratorName(f"{toolset.product_name} {toolset.major_version} {year}", 
+                                      vstoolset=toolset)
         elif toolchain.target.is_linux_os():
             return CMakeGeneratorName("Unix Makefiles")
         else:

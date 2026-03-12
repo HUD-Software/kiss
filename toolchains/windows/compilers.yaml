@@ -175,9 +175,10 @@ compilers:
         enable-features: [ASAN]
     features:
       - name: ASAN
-        description: Enable ASAN Sanitizer with ASAN static linking
+        description: Enable ASAN Sanitizer
         cxx-compiler-flags: ["-fsanitize=address", "-fsanitize-address-use-after-scope", "-fsanitize-recover=address"]
-        enable-features: [DEBUG_INFO, WINDOWS_DLL_RUNTIME_DEBUG, DISABLE_INCREMENTAL_LINK]
+        cxx-linker-flags: ["-lib:msvcrt.lib"] # mscvrt.lib is needed for i868 target
+        enable-features: [DEBUG_INFO, WINDOWS_STATIC_RUNTIME_DEBUG, DISABLE_INCREMENTAL_LINK]
     feature-rules:
       - incompatible: asan
         feature: ASAN

@@ -61,4 +61,6 @@ def cmd_add(cli_args: argparse.Namespace) -> bool:
     if not yaml_file.save_yaml():
         console.print_error(f"Error: Unable to save project file `{project_file}`")
         return False
+
+    console.print_success(f"Project '{cli_args.dependency_name}' added as dependency of '{project_name}' successfully ")
     return True

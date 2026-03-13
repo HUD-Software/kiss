@@ -17,35 +17,30 @@ from toolchain import Toolchain
 
 
 class CMakeBuildContext(KissBuildContext):
-    def __init__(self, current_directory:Path, project: Project, builder_name: str, toolchain: Toolchain, profile_name: str, cmake_generator_name:str):
+    def __init__(self, current_directory:Path, project: Project, builder_name: str, toolchain: Toolchain, cmake_generator_name:str):
         super().__init__(current_directory=current_directory, 
                          project=project, 
                          builder_name=builder_name, 
-                         toolchain=toolchain, 
-                         profile_name=profile_name)
+                         toolchain=toolchain)
         self._cmakelist_generate_context = CMakeListsGenerateContext.create(current_directory=current_directory,
                                                                             project_name=project.name,
                                                                             generator_name=builder_name,
                                                                             toolchain=toolchain,
-                                                                            profile_name=profile_name,
                                                                             cmake_generator_name=cmake_generator_name)
 
     @property
     def cmakelist_generate_context(self) -> CMakeListsGenerateContext:
         return self._cmakelist_generate_context
+    
     @property
     def cmake_generator_name(self) -> CMakeGeneratorName :
         return self.cmakelist_generate_context.cmake_generator_name
     
-    @property
-    def profile_name(self) -> str:
-        return self._cmakelist_generate_context.profile_name
-
-    def output_directory_for_config(self, config: str) -> str: 
-        return self.cmakelist_generate_context.output_directory_for_config(config)
+    def output_directory_for_profile(self, config: str) -> str: 
+        return self.cmakelist_generate_context.output_directory_for_profile(config)
     
     @classmethod
-    def create(cls, current_directory: Path, project_name: str, builder_name: str, toolchain: Toolchain, profile_name: str, cmake_generator_name:str) -> Optional[Self] :
+    def create(cls, current_directory: Path, project_name: str, builder_name: str, toolchain: Toolchain, cmake_generator_name:str) -> Optional[Self] :
         project_to_build = super().find_target_project(current_directory, project_name)
         if not project_to_build:
             console.print_error(f"No project found in {str(current_directory)}")
@@ -54,7 +49,6 @@ class CMakeBuildContext(KissBuildContext):
                                  project=project_to_build, 
                                  builder_name=builder_name, 
                                  toolchain=toolchain, 
-                                 profile_name=profile_name, 
                                  cmake_generator_name=cmake_generator_name)
 
 
@@ -65,7 +59,6 @@ class CMakeBuildContext(KissBuildContext):
                                  project=kiss_build_context.project,
                                  builder_name=kiss_build_context.builder_name,
                                  toolchain=kiss_build_context.toolchain,
-                                 profile_name=kiss_build_context.profile_name,
                                  cmake_generator_name=cmake_generator_name)
 
     
@@ -144,7 +137,6 @@ class CMakeBuilder(BaseBuilder):
         context = CMakeContext(current_directory=cmake_build_context.current_directory, 
                                toolchain=cmake_build_context.toolchain, 
                                project=cmake_build_context.project,
-                               profile_name=cmake_build_context.profile_name,
                                cmake_generator_name=cmake_build_context.cmake_generator_name)
         
         if generate_context.cmake_generator_name.is_visual_studio():
@@ -170,7 +162,7 @@ class CMakeBuilder(BaseBuilder):
 
         # Build
         console.print_step("🏗️  CMake build...")
-        args = ["--build", ".", "--config", cmake_build_context.profile_name]
+        args = ["--build", ".", "--config", cmake_build_context.toolchain.profile.name]
         if not run_process("cmake", args, context.build_directory) == 0:
             return False
 

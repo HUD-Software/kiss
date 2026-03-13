@@ -12,9 +12,10 @@ from toolchain.toolchain_yaml_loader import ToolchainYamlFile
 
 
 class Toolchain:
-    def __init__(self, compiler: Compiler, target: Target):
+    def __init__(self, compiler: Compiler, target: Target, profile: Profile):
         self.compiler = compiler
         self.target = target
+        self.profile = profile
     
     def get_profile(self, profile_name: str) -> Profile | None:
         return self.compiler.get_profile(profile_name)
@@ -48,21 +49,25 @@ class Toolchain:
         return arch in ("x86", "i386", "i686") and arch_w6432 == ""
 
     @staticmethod
-    def create(compiler_name: str, target_name : str)-> Self | None:
+    def create(compiler_name: str, target_name : str, profile_name: str)-> Self | None:
         # Find the compiler
         compiler = Compiler.create(compiler_name)
         if not compiler:
-            console.print_error(f"Fail to create toolchain with compiler {compiler_name} and target {target_name}")
+            console.print_error(f"Fail to create toolchain with compiler {compiler_name}")
             return None
         
-        #console.print_success(compiler)
-
         # Find the target
         target = TargetRegistry.get(target_name)
-
-        #console.print_success(target)
+        if not target:
+            console.print_error(f"Target {target_name} not found  : {{{', '.join(TargetRegistry.target_name_list())}}}")
+            return None
         
-        return Toolchain(compiler, target)
+        # Ensure we request a valid profile 
+        if not compiler.is_profile_exist(profile_name):
+            console.print_error(f"Profile {profile_name} not found in the toolchain : {{{', '.join(compiler.profile_name_list())}}}")
+            return None
+        
+        return Toolchain(compiler, target, compiler.get_profile(profile_name))
 
     @staticmethod
     def load_all_toolchains_in_directory(directory: Path) -> bool :

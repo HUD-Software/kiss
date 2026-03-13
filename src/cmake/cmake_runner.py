@@ -35,29 +35,29 @@ class CMakeRunner(BaseRunner):
                                                         project_name=run_context.project.name,
                                                         builder_name=run_context.runner_name,
                                                         toolchain=run_context.toolchain,
-                                                        profile_name=run_context.profile_name,
                                                         cmake_generator_name=None)
         cmake_builder.build_project(cmake_build_context)
         
         context = CMakeContext(current_directory=run_context.current_directory, 
                             toolchain=run_context.toolchain, 
                             project=run_context.project,
-                            profile_name=run_context.profile_name)
+                            cmake_generator_name=None)
         
         if run_context.toolchain.target.is_windows_os():
-            binary_path = Path(cmake_build_context.output_directory_for_config(run_context.profile_name)) / f"{run_context.project.name}.exe"
+            binary_path = Path(cmake_build_context.output_directory_for_profile(run_context.toolchain.profile.name)) / f"{run_context.project.name}.exe"
         else:
-            binary_path = Path(cmake_build_context.output_directory_for_config(run_context.profile_name)) / run_context.project.name
+            binary_path = Path(cmake_build_context.output_directory_for_profile(run_context.toolchain.profile.name)) / run_context.project.name
         console.print_step(f"▶ Run {Path(*binary_path.parts[-2:])} ({context.toolchain.compiler.name})...")
 
         # Add DLL path to PATH on Windows
-        if run_context.toolchain.target.is_windows_os():
+        if run_context.toolchain.target.is_msvc_abi():
             project_list = context.project.topological_sort_projects()
             existing_path = os.environ.get("PATH", "")
            
             # Add ASAN path
             cmakelist_generate_context = cmake_build_context.cmakelist_generate_context 
-            if any( cmakelist_generate_context.is_asan_enabled(project) for project in project_list ):
+            if cmakelist_generate_context.toolchain.profile.is_feature_enabled(project_type=cmakelist_generate_context.project.type, 
+                                                                               feature_name="ASAN"):
                 if (dll_path := asan.get_msvc_asan_dynamic_dll_path(cmakelist_generate_context.toolchain)) is None:
                     exit(1)
                 asan_lib_path = str(Path(dll_path).parent)
@@ -71,7 +71,7 @@ class CMakeRunner(BaseRunner):
                     proj_context = CMakeContext(current_directory=run_context.current_directory, 
                                                 toolchain=run_context.toolchain, 
                                                 project=project)
-                    dll_paths.append(proj_context.output_directory_for_config(run_context.profile))  
+                    dll_paths.append(proj_context.output_directory_for_profile(run_context.toolchain.profile.name))  
 
             new_path = ";".join(dll_paths + [existing_path])
             if dll_paths:  

@@ -20,57 +20,28 @@ DEFAULT_COMPILER_NAME  = Compiler.default_compiler_name()
 DEFAULT_TARGET_NAME = Target.default_target_name()
 
 def new_project(args: list[str]):
-    result = subprocess.run(
-        ["python", "src/kiss.py", "-d", RUNTIME_DIR, "new"] + args,
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-    )
-    print(result.stdout, flush=True)
-    print(result.stderr, flush=True)
+    result = subprocess.run(["python", "src/kiss.py", "-d", RUNTIME_DIR, "new"] + args)
     assert result.returncode == 0
 
 def new_inner_project(project_name :str, args: list[str]):
-    result = subprocess.run(
-        ["python", "src/kiss.py", "-d", str(RUNTIME_DIR / project_name), "new"] + args,
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-    )
-    print(result.stdout, flush=True)
-    print(result.stderr, flush=True)
+    result = subprocess.run(["python", "src/kiss.py", "-d", str(RUNTIME_DIR / project_name), "new"] + args)
     assert result.returncode == 0
 
 def add_dependency(project_name :str, args : list[str]):
-    result = subprocess.run(
-        ["python", "src/kiss.py", "-d", str(RUNTIME_DIR/ project_name), "add"] + args,
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-    )
-    print(result.stdout, flush=True)
-    print(result.stderr, flush=True)
+    result = subprocess.run(["python", "src/kiss.py", "-d", str(RUNTIME_DIR/ project_name), "add"] + args)
     assert result.returncode == 0
 
 
 def generate_project(directory: str, args: list[str] = []) -> int:
-    result = subprocess.run(
-        ["python", "src/kiss.py", "-d", str(directory), "generate"] + args,
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-    )
-    print(result.stdout, flush=True)
-    print(result.stderr, flush=True)
+    result = subprocess.run(["python", "src/kiss.py", "-d", str(directory), "generate"] + args)
     return result.returncode
 
 def get_cmake_generator_name(target_name:str, 
-                             compiler_name:str) ->  CMakeGeneratorName:
-    toolchain  = Toolchain.create(compiler_name=compiler_name, target_name=target_name)
+                             compiler_name:str,
+                             profile_name:str) ->  CMakeGeneratorName:
+    toolchain  = Toolchain.create(compiler_name=compiler_name, 
+                                  target_name=target_name, 
+                                  profile_name=profile_name)
     return CMakeGeneratorName.create(toolchain=toolchain)
 
 def find_cmake_files(root):
@@ -85,7 +56,8 @@ def validate_cmakelist_path(cmake_filepath: Path,
     assert cmake_filepath.exists()
     assert cmake_filepath.name == "CMakeLists.txt"
     cmake_generator_name = get_cmake_generator_name(compiler_name=compiler_name,
-                                                    target_name=target_name)
+                                                    target_name=target_name,
+                                                    profile_name=profile_name)
     if cmake_generator_name.is_single_profile():
         assert cmake_filepath.parent.name == profile_name
         assert project_name in cmake_filepath.parent.parent.name
@@ -102,15 +74,7 @@ def validate_cmakelist_path(cmake_filepath: Path,
 
 
 def build_project(directory: str, args: list[str] = []) -> int:
-    result = subprocess.run(
-        ["python", "src/kiss.py", "-d", str(directory), "build"] + args,
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-    )
-    print(result.stdout, flush=True)
-    print(result.stderr, flush=True)
+    result = subprocess.run(["python", "src/kiss.py", "-d", str(directory), "build"] + args)
     return result.returncode
 
 def validate_build( cmake_filepath: Path, 
@@ -151,3 +115,25 @@ def validate_build( cmake_filepath: Path,
                 assert artifact_path.exists()
     else:
         assert False
+
+
+def run_project(directory: str, args: list[str] = []) -> int:
+    result = subprocess.run(["python", "src/kiss.py", "-d", str(directory), "run"] + args)
+    return result.returncode
+
+
+def validate_run( cmake_filepath: Path, 
+                    project_name:str,
+                    project_type:str,
+                    cmake_generator_name:CMakeGeneratorName,
+                    profile_name:str = DEFAULT_PROFILE_NAME, 
+                    target_name:str=DEFAULT_TARGET_NAME, 
+                    compiler_name:str= DEFAULT_COMPILER_NAME,
+                    ):
+    validate_build(cmake_filepath=cmake_filepath,
+                   project_type=project_type,
+                   cmake_generator_name=cmake_generator_name,
+                   project_name=project_name,
+                   profile_name=profile_name,
+                   target_name=target_name,
+                   compiler_name=compiler_name)

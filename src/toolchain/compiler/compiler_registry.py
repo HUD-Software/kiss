@@ -162,7 +162,7 @@ class Compiler:
         if not hasattr(cls, "_default_compiler_name"):
             system = platform.system()
             if system == "Windows":
-                supported_compilers = ["clangcl", "cl"]
+                supported_compilers = ["cl", "clangcl"]
             elif system == "Linux":
                 supported_compilers = ["gcc", "clang"]
             elif system == "Darwin":

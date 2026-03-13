@@ -8,20 +8,15 @@ from project import Project
 from toolchain import Toolchain, Target, Compiler, TargetRegistry
 
 class KissGenerateContext(KissBaseContext):
-    def __init__(self, current_directory:Path, project: Project, generator_name: str, toolchain: Toolchain, profile_name: str):
+    def __init__(self, current_directory:Path, project: Project, generator_name: str, toolchain: Toolchain):
         super().__init__(current_directory)
         self._project = project
         self._generator_name = generator_name
         self._toolchain = toolchain
-        self._profile_name = profile_name
     
     @property
     def project(self) -> Project:
         return self._project
-
-    @property
-    def profile_name(self) -> str:
-        return self._profile_name
 
     @property
     def generator_name(self) -> str:
@@ -32,36 +27,25 @@ class KissGenerateContext(KissBaseContext):
         return self._toolchain
 
     @classmethod
-    def create(cls, current_directory: Path, project_name: str, generator_name: str, toolchain: Toolchain, profile_name: str) -> Optional[Self] :
+    def create(cls, current_directory: Path, project_name: str, generator_name: str, toolchain: Toolchain) -> Optional[Self] :
         project_to_generate = super().find_target_project(current_directory, project_name)
         if not project_to_generate:
             return None
         generator_name = generator_name if generator_name is not None else "cmake"
-        return cls(current_directory=current_directory, project=project_to_generate, generator_name=generator_name, toolchain=toolchain, profile_name=profile_name)
+        return cls(current_directory=current_directory, project=project_to_generate, generator_name=generator_name, toolchain=toolchain)
 
 
     @classmethod
     def from_cli_args(cls, cli_args: argparse.Namespace) -> Optional[Self]:
-        target_name :Target = getattr(cli_args, "target", None) or Target.default_target_name()
-        compiler_name : Compiler = getattr(cli_args, "compiler", None) or Compiler.default_compiler_name()
-        if( toolchain := Toolchain.create(compiler_name=compiler_name, target_name=target_name)) is None:
-            return None
-        
-        # Ensure we request a valid profile
-        if not toolchain.is_profile_exist(cli_args.profile):
-            console.print_error(f"Profile {cli_args.profile} not found in the toolchain : {{{', '.join(toolchain.profile_name_list())}}}")
-            return None
-
-        # Ensure target exists
-        if not target_name in TargetRegistry:
-            console.print_error(f"Target {target_name} not found  : {{{', '.join(TargetRegistry.target_name_list())}}}")
+        target_name: Target = getattr(cli_args, "target", None) or Target.default_target_name()
+        compiler_name: Compiler = getattr(cli_args, "compiler", None) or Compiler.default_compiler_name()
+        if( toolchain := Toolchain.create(compiler_name=compiler_name, target_name=target_name, profile_name=cli_args.profile)) is None:
             return None
             
         return cls.create(current_directory=cli_args.directory,
                           project_name=cli_args.project_name,
                           generator_name=cli_args.generator_name,
-                          toolchain=toolchain,
-                          profile_name=cli_args.profile)
+                          toolchain=toolchain)
        
 
 def cmd_generate(cli_args: argparse.Namespace) -> bool:

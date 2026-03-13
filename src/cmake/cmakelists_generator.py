@@ -59,7 +59,10 @@ class CMakeListsGenerateContext(KissGenerateContext):
                                            toolchain=self._cmake_context.toolchain, 
                                            project=value,
                                            cmake_generator_name=self.cmake_generator_name)
-    
+
+    def output_directory_for_profile(self, config: str) -> str: 
+        return self._cmake_context.output_directory_for_profile(config)
+        
     @classmethod
     def create(cls, current_directory: Path, project_name: str, generator_name: str, toolchain: Toolchain, cmake_generator_name:str) -> Self | None:
         project_to_generate = super().find_target_project(current_directory, project_name)
@@ -72,8 +75,16 @@ class CMakeListsGenerateContext(KissGenerateContext):
                    toolchain=toolchain,
                    cmake_generator_name=cmake_generator_name)
     
-    def output_directory_for_profile(self, config: str) -> str: 
-        return self._cmake_context.output_directory_for_profile(config)
+    @staticmethod
+    def from_cli_args(kiss_generate_context: KissGenerateContext, cli_args: argparse.Namespace) -> Optional[Self] :
+        cmake_generator_name  = getattr(cli_args, "generator_name", None)
+        return CMakeListsGenerateContext(current_directory=kiss_generate_context.current_directory,
+                                         project=kiss_generate_context.project,
+                                         generator_name=kiss_generate_context.generator_name,
+                                         toolchain=kiss_generate_context.toolchain,
+                                         cmake_generator_name=cmake_generator_name)
+    
+
 
 
 class CMakeListsGenerator(BaseGenerator):
@@ -213,7 +224,8 @@ class CMakeListsGenerator(BaseGenerator):
                             return False
                         f.write(f"set(ASAN_LIB \"{asan_lib_path}\")\n")
                     for profile in toolchain.compiler.profiles:
-                        if profile.is_feature_enabled(project.type, "ASAN"):
+                        if profile.is_feature_enabled(project_type=project.type, 
+                                                      feature_name="ASAN"):
                             if toolchain.compiler.is_clangcl_based():
                                 if toolchain.target.is_i686():
                                     f.write(f"target_link_libraries({project.name} PRIVATE $<$<CONFIG:{profile.name}>:${{ASAN_LIB}}> $<$<CONFIG:{profile.name}>:msvcrt.lib>)\n")
@@ -449,9 +461,28 @@ class CMakeListsGenerator(BaseGenerator):
                 cxx_linker_flags = profile.linker_flags_for_project_type(project.type)
                 f.write(f"target_link_options({project.name} PRIVATE {' '.join(cxx_linker_flags)})\n")
 
-            # Add ASAN if needed
-            if cmakelist_generate_context.is_asan_enabled(project=project, 
-                                                          profile_name=profile_name):
+            # Add ASAN if activated
+            if toolchain.target.is_msvc_abi():
+                if cmakelist_generate_context.cmake_generator_name.is_multi_profile():
+                    is_clang_cl_based = toolchain.compiler.is_clangcl_based()
+                    if is_clang_cl_based:
+                        if(asan_lib_path := asan.get_msvc_asan_dll_thunk_lib_path(toolchain)) is None:
+                            return False
+                        f.write(f"set(ASAN_LIB \"{asan_lib_path}\")\n")
+                    for profile in toolchain.compiler.profiles:
+                        if profile.is_feature_enabled(project.type, "ASAN"):
+                            if toolchain.compiler.is_clangcl_based():
+                                f.write(f"target_link_libraries({project.name} PRIVATE \"{asan_lib_path}\")\n")
+                                # if toolchain.target.is_i686():
+                                #     f.write(f"target_link_libraries({project.name} PRIVATE $<$<CONFIG:{profile.name}>:${{ASAN_LIB}}> $<$<CONFIG:{profile.name}>:msvcrt.lib>)\n")
+                                # else:
+                                #     f.write(f"target_link_libraries({project.name} PRIVATE $<$<CONFIG:{profile.name}>:${{ASAN_LIB}}>)\n")
+                                #f.write(f"target_link_options({project.name}  PRIVATE $<$<CONFIG:{profile.name}>:/WHOLEARCHIVE:${{ASAN_LIB}}>)\n")
+                            f.write(f"target_compile_definitions({project.name} PRIVATE $<$<CONFIG:{profile.name}>:_DISABLE_VECTOR_ANNOTATION>)\n")
+                            f.write(f"target_compile_definitions({project.name} PRIVATE $<$<CONFIG:{profile.name}>:_DISABLE_STRING_ANNOTATION>)\n")
+
+            if cmakelist_generate_context.toolchain.profile.is_feature_enabled(project_type=project.type, 
+                                                                               feature_name="ASAN"):
                 if toolchain.target.is_msvc_abi():
                     if(asan_lib_path := asan.get_msvc_asan_dll_thunk_lib_path(cmakelist_generate_context.toolchain)) is None:
                         return False
@@ -601,7 +632,7 @@ class CMakeListsGenerator(BaseGenerator):
             console.print_step(f"✔️  All CMakeLists.txt are up-to-date")
         return unfreshlist
 
-    def generate(self, cli_args: argparse.Namespace)-> bool:
-        if( cmakelist_generate_context := CMakeListsGenerateContext.from_cli_args(cli_args)) is None:
-            return None
-        return self.generate_project(cmakelist_generate_context=cmakelist_generate_context)
+    def generate(self, kiss_generate_context: KissGenerateContext, cli_args: argparse.Namespace)-> bool:
+        if( cmakelist_generate_context := CMakeListsGenerateContext.from_cli_args(kiss_generate_context, cli_args)) is None:
+            return False
+        return self.generate_project(cmakelist_generate_context=cmakelist_generate_context) is not None

@@ -1,8 +1,7 @@
 from pathlib import Path
 
 import yaml
-from tests.runtime_fixture import runtime_dir, RUNTIME_DIR
-from tests.common import new_project, new_inner_project, add_dependency
+from tests.common import *
 
 
 def test_bin_inner_dependency(runtime_dir):

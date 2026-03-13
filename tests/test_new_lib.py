@@ -1,8 +1,6 @@
 from pathlib import Path
-
 import yaml
-from tests.runtime_fixture import runtime_dir, RUNTIME_DIR
-from tests.common import new_project
+from tests.common import *
 
 def test_new_lib_default(runtime_dir):
     project_type = "lib"

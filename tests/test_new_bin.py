@@ -1,8 +1,6 @@
 from pathlib import Path
-
 import yaml
-from tests.runtime_fixture import runtime_dir, RUNTIME_DIR
-from tests.common import new_project, new_inner_project
+from tests.common import *
 
 def test_new_bin_default(runtime_dir):
     project_type = "bin"

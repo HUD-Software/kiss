@@ -1,4 +1,3 @@
-from tests.runtime_fixture import runtime_dir
 from tests.common import *
 
 # Test build of a single bin project
@@ -12,8 +11,6 @@ def test_build_bin_default(runtime_dir):
 
     files = find_cmake_files(RUNTIME_DIR)
     assert len(files) == 1
-    
-    
     toolchain  = Toolchain.create(compiler_name=DEFAULT_COMPILER_NAME, 
                                   target_name=DEFAULT_TARGET_NAME, 
                                   profile_name=DEFAULT_PROFILE_NAME)
@@ -21,6 +18,7 @@ def test_build_bin_default(runtime_dir):
     validate_build(cmake_filepath=files[0],
                    project_name=bin_name,
                    project_type=bin_type,
+                   toolchain=toolchain,
                    cmake_generator_name=cmake_generator_name)
     
 # Test build of a two bin project in the same root directory
@@ -48,6 +46,7 @@ def test_build_bin_default_inner(runtime_dir):
     validate_build(cmake_filepath=files[0],
                    project_name=bin_name,
                    project_type=bin_type,
+                   toolchain=toolchain,
                    cmake_generator_name=cmake_generator_name)
     
     assert build_project(directory=RUNTIME_DIR/bin_name/bin_2_name) == 0
@@ -64,22 +63,26 @@ def test_build_bin_default_inner(runtime_dir):
         validate_build(cmake_filepath=bin_file[0],
                     project_name=bin_name,
                     project_type=bin_type,
-                   cmake_generator_name=cmake_generator_name)
+                    toolchain=toolchain,
+                    cmake_generator_name=cmake_generator_name)
         bin_2_file = [f for f in files if bin_2_name in str(f.parent.parent.name)]
         validate_build(cmake_filepath=bin_2_file[0],
                     project_name=bin_2_name,
                     project_type=bin_type,
-                   cmake_generator_name=cmake_generator_name)
+                    toolchain=toolchain,
+                    cmake_generator_name=cmake_generator_name)
     elif cmake_generator_name.is_multi_profile():
         bin_file = [f for f in files if bin_name in str(f.parent.name)]
         validate_build(cmake_filepath=bin_file[0],
                     project_name=bin_name,
                     project_type=bin_type,
+                    toolchain=toolchain,
                     cmake_generator_name=cmake_generator_name)
         bin_2_file = [f for f in files if bin_2_name in str(f.parent.name)]
         validate_build(cmake_filepath=bin_2_file[0],
                     project_name=bin_2_name,
                     project_type=bin_type,
+                    toolchain=toolchain,
                     cmake_generator_name=cmake_generator_name)
     else:
         assert False
@@ -121,6 +124,7 @@ def test_build_bin_no_depends(runtime_dir):
     validate_build(cmake_filepath=files[0],
                    project_name=bin_2_name,
                    project_type=bin_type,
+                   toolchain=toolchain,
                    cmake_generator_name=cmake_generator_name)
     
 # Test build of a two bin project in the same root directory
@@ -160,22 +164,26 @@ def test_build_bin_depends(runtime_dir):
         validate_build(cmake_filepath=bin_file[0],
                     project_name=bin_name,
                     project_type=bin_type,
+                    toolchain=toolchain,
                     cmake_generator_name=cmake_generator_name)
         bin_2_file = [f for f in files if bin_2_name in str(f.parent.parent.name)]
         validate_build(cmake_filepath=bin_2_file[0],
                     project_name=bin_2_name,
                     project_type=bin_type,
+                    toolchain=toolchain,
                     cmake_generator_name=cmake_generator_name)
     elif cmake_generator_name.is_multi_profile():
         bin_file = [f for f in files if bin_name in str(f.parent.name)]
         validate_build(cmake_filepath=bin_file[0],
                     project_name=bin_name,
                     project_type=bin_type,
+                    toolchain=toolchain,
                     cmake_generator_name=cmake_generator_name)
         bin_2_file = [f for f in files if bin_2_name in str(f.parent.name)]
         validate_build(cmake_filepath=bin_2_file[0],
                     project_name=bin_2_name,
                     project_type=bin_type,
+                    toolchain=toolchain,
                     cmake_generator_name=cmake_generator_name)
     else:
         assert False
@@ -210,34 +218,34 @@ def test_build_bin_profile(runtime_dir):
     assert len(files) == 2
     toolchain  = Toolchain.create(compiler_name=DEFAULT_COMPILER_NAME, 
                                   target_name=DEFAULT_TARGET_NAME,
-                                  profile_name=DEFAULT_PROFILE_NAME)
+                                  profile_name=profile_name)
     cmake_generator_name =  CMakeGeneratorName.create(toolchain=toolchain)
     if cmake_generator_name.is_single_profile():
         bin_file = [f for f in files if bin_name in str(f.parent.parent.name)]
         validate_build(cmake_filepath=bin_file[0],
-                    project_name=bin_name,
-                    project_type=bin_type,
-                    profile_name=profile_name,
-                    cmake_generator_name=cmake_generator_name)
+                       project_name=bin_name,
+                       project_type=bin_type,
+                       toolchain=toolchain,
+                       cmake_generator_name=cmake_generator_name)
         bin_2_file = [f for f in files if bin_2_name in str(f.parent.parent.name)]
         validate_build(cmake_filepath=bin_2_file[0],
-                    project_name=bin_2_name,
-                    project_type=bin_type,
-                    profile_name=profile_name,
-                    cmake_generator_name=cmake_generator_name)
+                       project_name=bin_2_name,
+                       project_type=bin_type,
+                       toolchain=toolchain,
+                       cmake_generator_name=cmake_generator_name)
     elif cmake_generator_name.is_multi_profile():
         bin_file = [f for f in files if bin_name in str(f.parent.name)]
         validate_build(cmake_filepath=bin_file[0],
-                    project_name=bin_name,
-                    project_type=bin_type,
-                    profile_name=profile_name,
-                    cmake_generator_name=cmake_generator_name)
+                       project_name=bin_name,
+                       project_type=bin_type,
+                       toolchain=toolchain,
+                       cmake_generator_name=cmake_generator_name)
         bin_2_file = [f for f in files if bin_2_name in str(f.parent.name)]
         validate_build(cmake_filepath=bin_2_file[0],
-                    project_name=bin_2_name,
-                    project_type=bin_type,
-                    profile_name=profile_name,
-                    cmake_generator_name=cmake_generator_name)
+                       project_name=bin_2_name,
+                       project_type=bin_type,
+                       toolchain=toolchain,
+                       cmake_generator_name=cmake_generator_name)
     else:
         assert False
 
@@ -263,7 +271,6 @@ def test_build_bin_target(runtime_dir):
         target_name = "i686-pc-windows-msvc"
     else:
         target_name = "i686-unknown-linux-gnu"
-
     assert target_name != DEFAULT_TARGET_NAME
     # user must specify a name to build
     assert build_project(directory=RUNTIME_DIR/bin_name,
@@ -274,35 +281,35 @@ def test_build_bin_target(runtime_dir):
     files = find_cmake_files(RUNTIME_DIR)
     assert len(files) == 2
     toolchain  = Toolchain.create(compiler_name=DEFAULT_COMPILER_NAME, 
-                                  target_name=DEFAULT_TARGET_NAME,
+                                  target_name=target_name,
                                   profile_name=DEFAULT_PROFILE_NAME)
     cmake_generator_name =  CMakeGeneratorName.create(toolchain=toolchain)
     if cmake_generator_name.is_single_profile():
         bin_file = [f for f in files if bin_name in str(f.parent.parent.name)]
         validate_build(cmake_filepath=bin_file[0],
-                    project_name=bin_name,
-                    project_type=bin_type,
-                    target_name=target_name,
-                    cmake_generator_name=cmake_generator_name)
+                       project_name=bin_name,
+                       project_type=bin_type,
+                       toolchain=toolchain,
+                       cmake_generator_name=cmake_generator_name)
         bin_2_file = [f for f in files if bin_2_name in str(f.parent.parent.name)]
         validate_build(cmake_filepath=bin_2_file[0],
-                    project_name=bin_2_name,
-                    project_type=bin_type,
-                    target_name=target_name,
-                    cmake_generator_name=cmake_generator_name)
+                       project_name=bin_2_name,
+                       project_type=bin_type,
+                       toolchain=toolchain,
+                       cmake_generator_name=cmake_generator_name)
     elif cmake_generator_name.is_multi_profile():
         bin_file = [f for f in files if bin_name in str(f.parent.name)]
         validate_build(cmake_filepath=bin_file[0],
-                    project_name=bin_name,
-                    project_type=bin_type,
-                    target_name=target_name,
-                    cmake_generator_name=cmake_generator_name)
+                       project_name=bin_name,
+                       project_type=bin_type,
+                       toolchain=toolchain,
+                       cmake_generator_name=cmake_generator_name)
         bin_2_file = [f for f in files if bin_2_name in str(f.parent.name)]
         validate_build(cmake_filepath=bin_2_file[0],
-                    project_name=bin_2_name,
-                    project_type=bin_type,
-                    target_name=target_name,
-                    cmake_generator_name=cmake_generator_name)
+                       project_name=bin_2_name,
+                       project_type=bin_type,
+                       toolchain=toolchain,
+                       cmake_generator_name=cmake_generator_name)
     else:
         assert False
     
@@ -336,46 +343,41 @@ def test_build_bin_compiler(runtime_dir):
     # Only one must be present because my_inner_bin depends on nothing
     files = find_cmake_files(RUNTIME_DIR)
     assert len(files) == 2
-    toolchain  = Toolchain.create(compiler_name=DEFAULT_COMPILER_NAME, 
+    toolchain  = Toolchain.create(compiler_name=compiler_name, 
                                   target_name=DEFAULT_TARGET_NAME,
                                   profile_name=DEFAULT_PROFILE_NAME)
     cmake_generator_name =  CMakeGeneratorName.create(toolchain=toolchain)
     if cmake_generator_name.is_single_profile():
         bin_file = [f for f in files if bin_name in str(f.parent.parent.name)]
         validate_build(cmake_filepath=bin_file[0],
-                    project_name=bin_name,
-                    project_type=bin_type,
-                    compiler_name=compiler_name,
-                    cmake_generator_name=cmake_generator_name)
+                       project_name=bin_name,
+                       project_type=bin_type,
+                       toolchain=toolchain,
+                       cmake_generator_name=cmake_generator_name)
         bin_2_file = [f for f in files if bin_2_name in str(f.parent.parent.name)]
         validate_build(cmake_filepath=bin_2_file[0],
-                    project_name=bin_2_name,
-                    project_type=bin_type,
-                    compiler_name=compiler_name,
-                    cmake_generator_name=cmake_generator_name)
+                       project_name=bin_2_name,
+                       project_type=bin_type,
+                       toolchain=toolchain,
+                       cmake_generator_name=cmake_generator_name)
     elif cmake_generator_name.is_multi_profile():
         bin_file = [f for f in files if bin_name in str(f.parent.name)]
         validate_build(cmake_filepath=bin_file[0],
-                    project_name=bin_name,
-                    project_type=bin_type,
-                    compiler_name=compiler_name,
-                    cmake_generator_name=cmake_generator_name)
+                       project_name=bin_name,
+                       project_type=bin_type,
+                       toolchain=toolchain,
+                       cmake_generator_name=cmake_generator_name)
         bin_2_file = [f for f in files if bin_2_name in str(f.parent.name)]
         validate_build(cmake_filepath=bin_2_file[0],
-                    project_name=bin_2_name,
-                    project_type=bin_type,
-                    compiler_name=compiler_name,
-                    cmake_generator_name=cmake_generator_name)
+                       project_name=bin_2_name,
+                       project_type=bin_type,
+                       toolchain=toolchain,
+                       cmake_generator_name=cmake_generator_name)
     else:
         assert False
 
 
-def test_build_bin_asan(runtime_dir):
-    bin_type = "bin"
-    bin_name = "my_bin"
-    new_project([bin_type, bin_name])
-
-    
+def test_build_bin_all(runtime_dir):
     profiles = ["debug", "release", "asan"]
     if platform.system() == "Windows":
         compilers = ["clangcl", "cl"]
@@ -390,9 +392,26 @@ def test_build_bin_asan(runtime_dir):
     for target in  targets:
         for compiler in compilers:
             for profile in profiles:
+                delete_runtime_dir()
+
+                bin_type = "bin"
+                bin_name = "my_bin"
+                new_project([bin_type, bin_name])
+
+
                 assert build_project(directory=RUNTIME_DIR/bin_name,
                                      args= ["-p", "my_bin", "--compiler", compiler, "--target", target, "--profile", profile]) == 0
-
+                files = find_cmake_files(RUNTIME_DIR)
+                assert len(files) == 1
+                toolchain  = Toolchain.create(compiler_name=compiler, 
+                                              target_name=target, 
+                                              profile_name=profile)
+                cmake_generator_name =  CMakeGeneratorName.create(toolchain=toolchain)
+                validate_build(cmake_filepath=files[0],
+                               project_name=bin_name,
+                               project_type=bin_type,
+                               toolchain=toolchain,
+                               cmake_generator_name=cmake_generator_name)
         
 
         

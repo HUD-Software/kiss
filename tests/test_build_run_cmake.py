@@ -1,4 +1,3 @@
-from tests.runtime_fixture import runtime_dir
 from tests.common import *
 
 # Test run of a single bin project
@@ -21,6 +20,7 @@ def test_run_bin_default(runtime_dir):
     validate_run(cmake_filepath=files[0],
                  project_name=bin_name,
                  project_type=bin_type,
+                 toolchain=toolchain,
                  cmake_generator_name=cmake_generator_name)
     
 # Test run of a two bin project in the same root directory

@@ -32,17 +32,22 @@ class KissGenerateContext(KissBaseContext):
         if not project_to_generate:
             return None
         generator_name = generator_name if generator_name is not None else "cmake"
-        return cls(current_directory=current_directory, project=project_to_generate, generator_name=generator_name, toolchain=toolchain)
+        return KissGenerateContext(current_directory=current_directory,
+                                   project=project_to_generate,
+                                   generator_name=generator_name,
+                                   toolchain=toolchain)
 
 
-    @classmethod
-    def from_cli_args(cls, cli_args: argparse.Namespace) -> Optional[Self]:
+    @staticmethod
+    def from_cli_args(cli_args: argparse.Namespace) -> Optional[Self]:
         target_name: Target = getattr(cli_args, "target", None) or Target.default_target_name()
         compiler_name: Compiler = getattr(cli_args, "compiler", None) or Compiler.default_compiler_name()
-        if( toolchain := Toolchain.create(compiler_name=compiler_name, target_name=target_name, profile_name=cli_args.profile)) is None:
+        if( toolchain := Toolchain.create(compiler_name=compiler_name, 
+                                          target_name=target_name, 
+                                          profile_name=cli_args.profile)) is None:
             return None
             
-        return cls.create(current_directory=cli_args.directory,
+        return KissGenerateContext.create(current_directory=cli_args.directory,
                           project_name=cli_args.project_name,
                           generator_name=cli_args.generator_name,
                           toolchain=toolchain)
@@ -53,7 +58,21 @@ def cmd_generate(cli_args: argparse.Namespace) -> bool:
     if not generator:
         console.print_error(f"Generator {cli_args.generator} not found")
         return False
-    if generator.generate(cli_args) is None:
-        return False
+    
+    if(kiss_generate_context := KissGenerateContext.from_cli_args(cli_args=cli_args)) is None:
+        return None
+    
+    console.print_step(f"Generating '{kiss_generate_context.project.name}' with \n"
+                       f" - Builder : {generator.name}\n"
+                       f" - Profile : {kiss_generate_context.toolchain.profile.name}\n"
+                       f" - Target : {kiss_generate_context.toolchain.target.name}\n"
+                       f" - Compiler : {kiss_generate_context.toolchain.compiler.name}")
+    
+    is_generate_success = generator.generate(kiss_generate_context=kiss_generate_context, 
+                                             cli_args=cli_args)
+
+    if is_generate_success:
+        console.print_success(f"'{kiss_generate_context.project.name}' build successfully") 
     else:
-        return True
+        console.print_error(f"'{kiss_generate_context.project.name}' build error") 
+    return is_generate_success

@@ -65,7 +65,7 @@ def cmd_build(cli_args: argparse.Namespace) -> bool:
                        f" - Compiler : {kiss_build_context.toolchain.compiler.name}")
 
     is_build_success = builder.build(kiss_build_context=kiss_build_context, 
-                        cli_args=cli_args) 
+                                     cli_args=cli_args) 
 
     if is_build_success:
         console.print_success(f"'{kiss_build_context.project.name}' build successfully") 

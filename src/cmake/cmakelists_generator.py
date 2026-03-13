@@ -207,8 +207,8 @@ class CMakeListsGenerator(BaseGenerator):
                     cxx_linker_flags = profile.linker_flags_for_project_type(project.type)
                     f.write(f"set(CMAKE_EXE_LINKER_FLAGS_{upper_profile_name} \"{' '.join(cxx_linker_flags)}\" CACHE STRING \"\" FORCE)\n")                    
             else:
-                if( profile := toolchain.get_profile(cmakelist_generate_context.profile_name)) is None:
-                    console.print_warning(f"Profile {cmakelist_generate_context.profile_name} not found in {self.name}")
+                if( profile := toolchain.get_profile(cmakelist_generate_context.toolchain.profile.name)) is None:
+                    console.print_warning(f"Profile {cmakelist_generate_context.toolchain.profile.name} not found in {self.name}")
                     return False
                 cxx_compiler_flags = profile.compiler_flags_for_project_type(project.type)
                 f.write(f"target_compile_options({project.name} PRIVATE {' '.join(cxx_compiler_flags)})\n")

@@ -59,6 +59,7 @@ compilers:
       - name: LTO
         description: Whole program optimization
         cxx-compiler-flags: [-flto]
+        cxx-linker-flags: [-flto]
       - name: OMIT_FRAME_POINTER
         description: Omit frame pointer
         cxx-compiler-flags: [-fomit-frame-pointer]

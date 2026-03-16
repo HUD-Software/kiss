@@ -488,7 +488,6 @@ class CMakeListsGenerator(BaseGenerator):
                         return False
                     f.write(f"target_link_libraries({project.name} PRIVATE \"{asan_lib_path}\")\n")
                 
-
             #Write export definition for windows
             f.write(f"target_compile_definitions({project.name} PRIVATE {project.name.upper()}_EXPORTS)\n")
 

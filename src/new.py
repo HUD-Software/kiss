@@ -215,7 +215,13 @@ def __new_dyn_project_in_project_file(new_context: KissNewContext):
         if absolute_header.exists(): 
             console.print_error(f"The file {absolute_header} already exists !")
             exit(1)
+        absolute_export_header = project.path / relative_interface_directory / project.name / "exports.h"
+        if absolute_export_header.exists(): 
+            console.print_error(f"The file {absolute_export_header} already exists !")
+            exit(1)
         project.interface_directories.append(relative_interface_directory)
+
+
 
     # Create the project in the project file
     __new_project_in_project_file(new_context=new_context, project=project)
@@ -224,21 +230,37 @@ def __new_dyn_project_in_project_file(new_context: KissNewContext):
     if new_context.populate:
         project.path.mkdir(parents=True, exist_ok=True)
         os.makedirs(absolute_dynfile.parent, exist_ok=True)
+        # dyn.cpp
         with open(absolute_dynfile, "w", encoding="utf-8") as f:
-            f.write('#include <iostream>\n\n')
+            f.write('#include <iostream>\n')
+            f.write(f'#include <{project.name}/{absolute_header.name}>\n\n')
             f.write(f"namespace {project.name} {{ \n\n")
-            f.write('void hello_world() {\n')
-            f.write('    std::cout << "Hello, Dyn World!" << std::endl;\n')
+            f.write(f'void hello_{project.name}() {{\n')
+            f.write(f'    std::cout << "Hello, {project.name} World!" << std::endl;\n')
             f.write('}\n\n')
             f.write(f"}} // namespace {project.name} \n\n")
         os.makedirs(absolute_header.parent, exist_ok=True)
+        # dyn.h
         with open(absolute_header, "w", encoding="utf-8") as f:
-            f.write('#ifndef DYN_H\n')
-            f.write('#define DYN_H\n\n')
+            f.write(f'#ifndef {project.name.upper()}_H\n')
+            f.write(f'#define {project.name.upper()}_H\n\n')
+            f.write(f'#include "{absolute_export_header.name}"\n')
             f.write(f"namespace {project.name} {{ \n\n")
-            f.write('void hello_world();\n\n')
+            f.write(f'{project.name.upper()}_API void hello_{project.name}();\n\n')
             f.write(f"}} // namespace {project.name}\n\n")
-            f.write('#endif // DYN_H\n')
+            f.write(f'#endif // {project.name.upper()}_H\n')
+        # dyn_exports.h
+        with open(absolute_export_header, "w", encoding="utf-8") as f:
+            f.write(f'#ifndef {project.name.upper()}_EXPORTS_H\n')
+            f.write(f'#define {project.name.upper()}_EXPORTS_H\n\n')
+            f.write('#if defined(_WIN32) || defined(__CYGWIN__)\n')
+            f.write(f'  #ifdef {project.name.upper()}_EXPORTS\n')
+            f.write(f'    #define {project.name.upper()}_API __declspec(dllexport)\n')
+            f.write(f'  #else\n')
+            f.write(f'    #define {project.name.upper()}_API __declspec(dllimport)\n')
+            f.write(f'  #endif\n')
+            f.write(f'#endif\n\n')
+            f.write(f'#endif // {project.name.upper()}_EXPORTS_H\n')
 
 def cmd_new(cli_args: argparse.Namespace):
     new_context = KissNewContext.from_cli_args(cli_args)

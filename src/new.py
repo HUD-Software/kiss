@@ -235,7 +235,7 @@ def __new_dyn_project_in_project_file(new_context: KissNewContext):
             f.write('#include <iostream>\n')
             f.write(f'#include <{project.name}/{absolute_header.name}>\n\n')
             f.write(f"namespace {project.name} {{ \n\n")
-            f.write(f'void hello_{project.name}() {{\n')
+            f.write(f'void hello_world() {{\n')
             f.write(f'    std::cout << "Hello, {project.name} World!" << std::endl;\n')
             f.write('}\n\n')
             f.write(f"}} // namespace {project.name} \n\n")
@@ -246,7 +246,7 @@ def __new_dyn_project_in_project_file(new_context: KissNewContext):
             f.write(f'#define {project.name.upper()}_H\n\n')
             f.write(f'#include "{absolute_export_header.name}"\n')
             f.write(f"namespace {project.name} {{ \n\n")
-            f.write(f'{project.name.upper()}_API void hello_{project.name}();\n\n')
+            f.write(f'{project.name.upper()}_API void hello_world();\n\n')
             f.write(f"}} // namespace {project.name}\n\n")
             f.write(f'#endif // {project.name.upper()}_H\n')
         # dyn_exports.h

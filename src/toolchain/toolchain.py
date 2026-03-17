@@ -56,6 +56,8 @@ class Toolchain:
             console.print_error(f"Fail to create toolchain with compiler {compiler_name}")
             return None
         
+        print(compiler)
+        
         # Find the target
         target = TargetRegistry.get(target_name)
         if not target:

@@ -473,21 +473,9 @@ class CMakeListsGenerator(BaseGenerator):
                         if profile.is_feature_enabled(project.type, "ASAN"):
                             if toolchain.compiler.is_clangcl_based():
                                 f.write(f"target_link_libraries({project.name} PRIVATE \"{asan_lib_path}\")\n")
-                                # if toolchain.target.is_i686():
-                                #     f.write(f"target_link_libraries({project.name} PRIVATE $<$<CONFIG:{profile.name}>:${{ASAN_LIB}}> $<$<CONFIG:{profile.name}>:msvcrt.lib>)\n")
-                                # else:
-                                #     f.write(f"target_link_libraries({project.name} PRIVATE $<$<CONFIG:{profile.name}>:${{ASAN_LIB}}>)\n")
-                                #f.write(f"target_link_options({project.name}  PRIVATE $<$<CONFIG:{profile.name}>:/WHOLEARCHIVE:${{ASAN_LIB}}>)\n")
                             f.write(f"target_compile_definitions({project.name} PRIVATE $<$<CONFIG:{profile.name}>:_DISABLE_VECTOR_ANNOTATION>)\n")
                             f.write(f"target_compile_definitions({project.name} PRIVATE $<$<CONFIG:{profile.name}>:_DISABLE_STRING_ANNOTATION>)\n")
-
-            if cmakelist_generate_context.toolchain.profile.is_feature_enabled(project_type=project.type, 
-                                                                               feature_name="ASAN"):
-                if toolchain.target.is_msvc_abi():
-                    if(asan_lib_path := asan.get_msvc_asan_dll_thunk_lib_path(cmakelist_generate_context.toolchain)) is None:
-                        return False
-                    f.write(f"target_link_libraries({project.name} PRIVATE \"{asan_lib_path}\")\n")
-                
+               
             #Write export definition for windows
             f.write(f"target_compile_definitions({project.name} PRIVATE {project.name.upper()}_EXPORTS)\n")
 

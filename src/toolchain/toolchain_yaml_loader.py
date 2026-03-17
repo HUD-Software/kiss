@@ -19,11 +19,11 @@ class ToolchainYamlFile:
                 for item_name, item_yaml_object in self._yaml.items():
                     match item_name:
                         case "compilers":
-                            yaml_compiler_file = CompilerInfoLoader(self.file)
-                            yaml_compiler_file.read_yaml_compilers(item_yaml_object)
+                            compiler_info_loader = CompilerInfoLoader(self.file)
+                            compiler_info_loader.read_yaml_compilers(item_yaml_object)
                         case "targets":
-                            yaml_target_file = TargetInfoLoader(self.file)
-                            yaml_target_file.read_targets(item_yaml_object)
+                            target_info_loader = TargetInfoLoader(self.file)
+                            target_info_loader.read_targets(item_yaml_object)
             return True
         
         except (OSError, yaml.YAMLError) as e:

@@ -19,20 +19,20 @@ class CompilerInfoLoader:
                 case "cxx-compiler-flags":
                     # Check that 'cxx-compiler-flags' is a list of string
                     if not isinstance(yaml_object.value, list) or not all(isinstance(x, str) for x in yaml_object.value):
-                        console.print_error(f"Line {yaml_object.key_line} : 'cxx-compiler-flags' must contains list of feature name in'{self.file}'")
+                        console.print_error(f"Line {yaml_object.key_line} : 'cxx-compiler-flags' must contains list of feature name in '{self.file}'")
                         return None
                     project_specific.cxx_compiler_flags.add_list(yaml_object.value)
                 case "cxx-linker-flags":
                     # Check that 'cxx-linker-flags' is a list of string
                     if not isinstance(yaml_object.value, list) or not all(isinstance(x, str) for x in yaml_object.value):
-                        console.print_error(f"Line {yaml_object.key_line} : 'cxx-linker-flags' must contains list of feature name in'{self.file}'")
+                        console.print_error(f"Line {yaml_object.key_line} : 'cxx-linker-flags' must contains list of feature name in '{self.file}'")
                         return None
                     
                     project_specific.cxx_linker_flags.add_list(yaml_object.value)
                 case "enable-features":
                     # Check that 'enable-features' is a list of string
                     if not isinstance(yaml_object.value, list) or not all(isinstance(x, str) for x in yaml_object.value):
-                        console.print_error(f"Line {yaml_object.key_line} : 'enable-features' must contains list of feature name in'{self.file}'")
+                        console.print_error(f"Line {yaml_object.key_line} : 'enable-features' must contains list of feature name in '{self.file}'")
                         return None
                     project_specific.enable_features.add_list(yaml_object.value)
                 case _:
@@ -42,57 +42,70 @@ class CompilerInfoLoader:
     
     def _read_profiles(self, yaml_object: YamlObject) -> ProfileNodeList | None:
         profiles = ProfileNodeList()
-        for profile_name, yaml_object_profile in yaml_object.value.items():
-            profile = ProfileNode(profile_name)
-            if yaml_object_profile.value:
-                for item, yaml_object in yaml_object_profile.value.items():
-                    match item:
-                        case "is_abstract":
-                            # Check that 'is_abstract' is a boolean
-                            if not isinstance(yaml_object.value, bool):
-                                console.print_error(f"Line {yaml_object.key_line} : 'is_abstract' must be a boolean value (true|false) in '{self.file}'")
-                                return None
-                            profile.is_abstract = yaml_object.value
-                        case "enable-features":
-                            # Check that 'enable-features' is a list of string
-                            if not isinstance(yaml_object.value, list) or not all(isinstance(x, str) for x in yaml_object.value):
-                                console.print_error(f"Line {yaml_object.key_line} : 'enable-features' must contains list of feature name in'{self.file}'")
-                                return None
-                            profile.bin_lib_dyn_list.common_enable_features.add_list(yaml_object.value)
-                        case "cxx-compiler-flags":
-                            # Check that 'cxx-compiler-flags' is a list of string
-                            if not isinstance(yaml_object.value, list) or not all(isinstance(x, str) for x in yaml_object.value):
-                                console.print_error(f"Line {yaml_object.key_line} : 'cxx-compiler-flags' must contains list of feature name in'{self.file}'")
-                                return None
-                            profile.bin_lib_dyn_list.common_cxx_compiler.add_list(yaml_object.value)
-                        case "cxx-linker-flags":
-                            # Check that 'cxx-linker-flags' is a list of string
-                            if not isinstance(yaml_object.value, list) or not all(isinstance(x, str) for x in yaml_object.value):
-                                console.print_error(f"Line {yaml_object.key_line} : 'cxx-linker-flags' must contains list of feature name in'{self.file}'")
-                                return None
-                            profile.bin_lib_dyn_list.common_cxx_linker.add_list(yaml_object.value)
-                        case "extends":
-                            # Check that 'extends' is a string
-                            if not isinstance(yaml_object.value, str):
-                                console.print_error(f"Line {yaml_object.key_line} : 'extends' must be a profile name in'{self.file}'")
-                                return None
-                            profile.extends_name = yaml_object.value
-                        case _:
-                            if ProjectType.is_valid_str(item):
-                                # Check that 'bin|lib`|dyn' appears only one time
-                                if item in profile.bin_lib_dyn_list:
-                                    console.print_error(f"Line {yaml_object.key_line} : 'item' already exist in profile '{profile.name}' in'{self.file}'")
-                                    return None
-                                project_specific = self._read_project_specific(ProjectType(item), yaml_object)
-                                if project_specific is None:
-                                    return None
-                                profile.bin_lib_dyn_list.add(project_specific)
-                            else:
-                                console.print_error(f"Line {yaml_object.key_line} : Unknown key '{item}' in '{self.file}'")
-                                continue
+        for profile_or_project_type_name, yaml_object_profile_or_project_type in yaml_object.value.items():
+            if ProjectType.is_valid_str(profile_or_project_type_name):
+                project_type_name = profile_or_project_type_name
+                if project_type_name in profiles.common_bin_lib_dyn_set:
+                    console.print_error(f"Line {yaml_object.key_line} : '{project_type_name}' already exist in 'profiles' in '{self.file}'")
+                    return None
+                yaml_project_type = yaml_object_profile_or_project_type
+                project_specific = self._read_project_specific(ProjectType(project_type_name), yaml_project_type)
+                if project_specific is None:
+                    return None
+                profiles.common_bin_lib_dyn_set.add(project_specific)
             else:
-                console.print_warning(f"⚠️ Line {yaml_object_profile.key_line} : Profile 'profile_name' is empty in '{self.file}'")
-            profiles.add(profile)
+                profile_name = profile_or_project_type_name
+                profile = ProfileNode(profile_name)
+                yaml_object_profile = yaml_object_profile_or_project_type
+                if not yaml_object_profile.value:
+                    console.print_warning(f"⚠️ Line {yaml_object_profile.key_line} : Profile 'profile_name' is empty in '{self.file}'")
+                else:
+                    for item, yaml_object in yaml_object_profile.value.items():
+                        match item:
+                            case "is_abstract":
+                                # Check that 'is_abstract' is a boolean
+                                if not isinstance(yaml_object.value, bool):
+                                    console.print_error(f"Line {yaml_object.key_line} : 'is_abstract' must be a boolean value (true|false) in '{self.file}'")
+                                    return None
+                                profile.is_abstract = yaml_object.value
+                            case "enable-features":
+                                # Check that 'enable-features' is a list of string
+                                if not isinstance(yaml_object.value, list) or not all(isinstance(x, str) for x in yaml_object.value):
+                                    console.print_error(f"Line {yaml_object.key_line} : 'enable-features' must contains list of feature name in '{self.file}'")
+                                    return None
+                                profile.bin_lib_dyn_list.common_enable_features.add_list(yaml_object.value)
+                            case "cxx-compiler-flags":
+                                # Check that 'cxx-compiler-flags' is a list of string
+                                if not isinstance(yaml_object.value, list) or not all(isinstance(x, str) for x in yaml_object.value):
+                                    console.print_error(f"Line {yaml_object.key_line} : 'cxx-compiler-flags' must contains list of feature name in '{self.file}'")
+                                    return None
+                                profile.bin_lib_dyn_list.common_cxx_compiler.add_list(yaml_object.value)
+                            case "cxx-linker-flags":
+                                # Check that 'cxx-linker-flags' is a list of string
+                                if not isinstance(yaml_object.value, list) or not all(isinstance(x, str) for x in yaml_object.value):
+                                    console.print_error(f"Line {yaml_object.key_line} : 'cxx-linker-flags' must contains list of feature name in '{self.file}'")
+                                    return None
+                                profile.bin_lib_dyn_list.common_cxx_linker.add_list(yaml_object.value)
+                            case "extends":
+                                # Check that 'extends' is a string
+                                if not isinstance(yaml_object.value, str):
+                                    console.print_error(f"Line {yaml_object.key_line} : 'extends' must be a profile name in '{self.file}'")
+                                    return None
+                                profile.extends_name = yaml_object.value
+                            case _:
+                                if ProjectType.is_valid_str(item):
+                                    # Check that 'bin|lib`|dyn' appears only one time
+                                    if item in profile.bin_lib_dyn_list:
+                                        console.print_error(f"Line {yaml_object.key_line} : '{item}' already exist in profile '{profile.name}' in '{self.file}'")
+                                        return None
+                                    project_specific = self._read_project_specific(ProjectType(item), yaml_object)
+                                    if project_specific is None:
+                                        return None
+                                    profile.bin_lib_dyn_list.add(project_specific)
+                                else:
+                                    console.print_error(f"Line {yaml_object.key_line} : Unknown key '{item}' in '{self.file}'")
+                                    continue
+                profiles.add(profile)
         return profiles
     
     def _read_compiler_features(self, yaml_object: YamlObject) -> FeatureNodeList | None:
@@ -116,38 +129,48 @@ class CompilerInfoLoader:
                     case "description":
                         # Check that 'extends' is a string
                         if not isinstance(yaml_object.value, str):
-                            console.print_error(f"Line {yaml_object.key_line} : 'description' must be a string in'{self.file}'")
+                            console.print_error(f"Line {yaml_object.key_line} : 'description' must be a string in '{self.file}'")
                             return None
                         feature.description = yaml_object.value
                     case "enable-features":
                         # Check that 'enable-features' is a list of string
                         if not isinstance(yaml_object.value, list) or not all(isinstance(x, str) for x in yaml_object.value):
-                            console.print_error(f"Line {yaml_object.key_line} : 'enable-features' must contains list of feature name in'{self.file}'")
+                            console.print_error(f"Line {yaml_object.key_line} : 'enable-features' must contains list of feature name in '{self.file}'")
                             return None
                         feature.enable_features.add_list(yaml_object.value)
                     case "cxx-compiler-flags":
                         # Check that 'cxx-compiler-flags' is a list of string
                         if not isinstance(yaml_object.value, list) or not all(isinstance(x, str) for x in yaml_object.value):
-                            console.print_error(f"Line {yaml_object.key_line} : 'cxx-compiler-flags' must contains list of feature name in'{self.file}'")
+                            console.print_error(f"Line {yaml_object.key_line} : 'cxx-compiler-flags' must contains list of feature name in '{self.file}'")
                             return None
                         feature.cxx_compiler_flags.add_list(yaml_object.value)
                     case "cxx-linker-flags":
                         # Check that 'cxx-linker-flags' is a list of string
                         if not isinstance(yaml_object.value, list) or not all(isinstance(x, str) for x in yaml_object.value):
-                            console.print_error(f"Line {yaml_object.key_line} : 'cxx-linker-flags' must contains list of feature name in'{self.file}'")
+                            console.print_error(f"Line {yaml_object.key_line} : 'cxx-linker-flags' must contains list of feature name in '{self.file}'")
                             return None
                         feature.cxx_linker_flags.add_list(yaml_object.value)
                     case "profiles":
                         if not isinstance(yaml_object.value, dict):
-                            console.print_error(f"Line {yaml_object.key_line} : 'profiles' must contains profiles'{self.file}'")
+                            console.print_error(f"Line {yaml_object.key_line} : 'profiles' must contains profiles '{self.file}'")
                             return None
                         profiles = self._read_profiles(yaml_object)
                         if profiles is None:
                             return None
                         feature.profiles = profiles
                     case _:
-                        console.print_error(f"Line {yaml_object.key_line} : Unknown key '{item}' in'{self.file}'")
-                        continue
+                        if ProjectType.is_valid_str(item):
+                            # Check that 'bin|lib`|dyn' appears only one time
+                            if item in feature.common_bin_lib_dyn_list:
+                                console.print_error(f"Line {yaml_object.key_line} : '{item}' already exist in feature '{feature.name}' in '{self.file}'")
+                                return None
+                            project_specific = self._read_project_specific(ProjectType(item), yaml_object)
+                            if project_specific is None:
+                                return None
+                            feature.common_bin_lib_dyn_list.add(project_specific)
+                        else:
+                            console.print_error(f"Line {yaml_object.key_line} : Unknown key '{item}' in '{self.file}'")
+                            continue
             feature_list.add(feature)
         return feature_list
     
@@ -158,12 +181,12 @@ class CompilerInfoLoader:
             feature_only_one_name = yaml_object_feature_rule.get(FeatureRuleNodeOnlyOne.KEY)
             if feature_only_one_name:
                 if not isinstance(feature_only_one_name.value, str):
-                    console.print_error(f"Line {feature_only_one_name.key_line} : '{FeatureRuleNodeOnlyOne.KEY}' must be a feature-rule name in'{self.file}'")
+                    console.print_error(f"Line {feature_only_one_name.key_line} : '{FeatureRuleNodeOnlyOne.KEY}' must be a feature-rule name in '{self.file}'")
                     return None
                 feature_only_one = FeatureRuleNodeOnlyOne(feature_only_one_name.value)
                 features = yaml_object_feature_rule.get("features")
                 if not isinstance(features.value, list) or not all(isinstance(x, str) for x in features.value):
-                    console.print_error(f"Line {yaml_object.key_line} : 'features' must contains list of feature name in'{self.file}'")
+                    console.print_error(f"Line {yaml_object.key_line} : 'features' must contains list of feature name in '{self.file}'")
                     return None
                 feature_only_one.feature_list.add_list(features.value)
                 feature_rules_list.add(feature_only_one)
@@ -172,17 +195,17 @@ class CompilerInfoLoader:
             feature_incompatible_name = yaml_object_feature_rule.get(FeatureRuleNodeIncompatibleWith.KEY)
             if feature_incompatible_name:
                 if not isinstance(feature_incompatible_name.value, str):
-                    console.print_error(f"Line {feature_incompatible_name.key_line} : '{FeatureRuleNodeIncompatibleWith.KEY}' must be a feature-rule name in'{self.file}'")
+                    console.print_error(f"Line {feature_incompatible_name.key_line} : '{FeatureRuleNodeIncompatibleWith.KEY}' must be a feature-rule name in '{self.file}'")
                     return None
                 feature_incompatible = FeatureRuleNodeIncompatibleWith(feature_incompatible_name.value)
                 feature = yaml_object_feature_rule.get("feature")
                 if not isinstance(feature.value, str):
-                    console.print_error(f"Line {feature_incompatible.key_line} : 'feature' must be a feature-rule name in'{self.file}'")
+                    console.print_error(f"Line {feature_incompatible.key_line} : 'feature' must be a feature-rule name in '{self.file}'")
                     return None
                 feature_incompatible.feature_name = feature.value
                 with_list = yaml_object_feature_rule.get("with")
                 if not isinstance(with_list.value, list) or not all(isinstance(x, str) for x in with_list.value):
-                    console.print_error(f"Line {yaml_object.key_line} : 'with' must contains list of feature name in'{self.file}'")
+                    console.print_error(f"Line {yaml_object.key_line} : 'with' must contains list of feature name in '{self.file}'")
                     return None
                 feature_incompatible.incompatible_with.add_list(with_list.value)
                 feature_rules_list.add(feature_incompatible)
@@ -211,12 +234,12 @@ class CompilerInfoLoader:
                 case "extends":
                     # Check that 'extends' is a string
                     if not isinstance(yaml_object.value, str):
-                        console.print_error(f"Line {yaml_object.key_line} : 'extends' in must be a compiler name in'{self.file}'")
+                        console.print_error(f"Line {yaml_object.key_line} : 'extends' in must be a compiler name in '{self.file}'")
                         return None
                     compiler_node.extends_name = yaml_object.value
                 case "profiles":
                     if not isinstance(yaml_object.value, dict):
-                        console.print_error(f"Line {yaml_object.key_line} : 'profiles' must contains profiles'{self.file}'")
+                        console.print_error(f"Line {yaml_object.key_line} : 'profiles' must contains profiles '{self.file}'")
                         return None
                     profiles = self._read_profiles(yaml_object)
                     if profiles is None:
@@ -224,7 +247,7 @@ class CompilerInfoLoader:
                     compiler_node.profiles = profiles
                 case "features":
                     if not isinstance(yaml_object.value, list):
-                        console.print_error(f"Line {yaml_object.key_line} : 'features' must contains list of features in'{self.file}'")
+                        console.print_error(f"Line {yaml_object.key_line} : 'features' must contains list of features in '{self.file}'")
                         return None
                     features = self._read_compiler_features(yaml_object)
                     if features is None:
@@ -232,7 +255,7 @@ class CompilerInfoLoader:
                     compiler_node.features = features
                 case "feature-rules":
                     if not isinstance(yaml_object.value, list):
-                        console.print_error(f"Line {yaml_object.key_line} : 'feature-rules' must contains list of feature rules in'{self.file}'")
+                        console.print_error(f"Line {yaml_object.key_line} : 'feature-rules' must contains list of feature rules in '{self.file}'")
                         return None
                     feature_rules = self._read_compiler_feature_rules(yaml_object)
                     if feature_rules is None:
@@ -240,12 +263,12 @@ class CompilerInfoLoader:
                     compiler_node.feature_rules = feature_rules
                 case "cxx_path":
                     if not isinstance(yaml_object.value, str):
-                        console.print_error(f"Line {yaml_object.key_line} : 'cxx_path' in must be a compiler path in'{self.file}'")
+                        console.print_error(f"Line {yaml_object.key_line} : 'cxx_path' in must be a compiler path in '{self.file}'")
                         return None
                     compiler_node.cxx_path = Path(yaml_object.value)
                 case "c_path":
                     if not isinstance(yaml_object.value, str):
-                        console.print_error(f"Line {yaml_object.key_line} : 'c_path' in must be a compiler path in'{self.file}'")
+                        console.print_error(f"Line {yaml_object.key_line} : 'c_path' in must be a compiler path in '{self.file}'")
                         return None
                     compiler_node.c_path = Path(yaml_object.value)
                 case _:

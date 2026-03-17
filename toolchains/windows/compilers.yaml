@@ -178,6 +178,8 @@ compilers:
         description: Enable ASAN Sanitizer
         cxx-compiler-flags: ["-fsanitize=address", "-fsanitize-address-use-after-scope", "-fsanitize-recover=address"]
         enable-features: [DEBUG_INFO, WINDOWS_DLL_RUNTIME_DEBUG, DISABLE_INCREMENTAL_LINK]
+        dyn:
+          enable-features: [DYNAMIC_LIBRARY_RELEASE] # AddressSanitizer doesn't support linking with debug runtime libraries yet
     feature-rules:
       - incompatible: asan
         feature: ASAN

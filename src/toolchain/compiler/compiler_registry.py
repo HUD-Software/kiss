@@ -134,24 +134,24 @@ class Compiler:
                 assert profile.is_extended, f"Profile {profile.name} must be extended"
                 new_profile = Profile(profile.name)
                 for bin_lib_dyn in profile.bin_lib_dyn_list:
-                    cxx_compiler_flags = list()
-                    cxx_linker_flags = list()
-                    cxx_feature_flags = list()
-                    cxx_compiler_flags.extend(bin_lib_dyn.cxx_compiler_flags)
-                    cxx_linker_flags.extend(bin_lib_dyn.cxx_linker_flags)
-                    cxx_feature_flags.extend(bin_lib_dyn.enable_features)
+                    cxx_compiler_flags = set()
+                    cxx_linker_flags = set()
+                    cxx_feature_flags = set()
+                    cxx_compiler_flags.update(bin_lib_dyn.cxx_compiler_flags)
+                    cxx_linker_flags.update(bin_lib_dyn.cxx_linker_flags)
+                    cxx_feature_flags.update(bin_lib_dyn.enable_features)
                     # Add flags of features
                     for feature_name in bin_lib_dyn.enable_features:
                         if (feature_node := compiler_node.get_feature(feature_name)) is None:
                             console.print_error(f"Feature {feature_name} not found for profile {profile.name} in compiler {new_compiler.name}")
                             return None
-                        cxx_compiler_flags.extend(feature_node.cxx_compiler_flags)
-                        cxx_linker_flags.extend(feature_node.cxx_linker_flags)
-                        cxx_feature_flags.extend(feature_node.enable_features)
+                        cxx_compiler_flags.update(feature_node.cxx_compiler_flags)
+                        cxx_linker_flags.update(feature_node.cxx_linker_flags)
+                        cxx_feature_flags.update(feature_node.enable_features)
 
-                    new_profile.per_project_type_compiler_flags[bin_lib_dyn.project_type] = cxx_compiler_flags
-                    new_profile.per_project_type_linker_flags[bin_lib_dyn.project_type] = cxx_linker_flags
-                    new_profile.per_project_type_feature_names[bin_lib_dyn.project_type] = cxx_feature_flags
+                    new_profile.per_project_type_compiler_flags[bin_lib_dyn.project_type] = list(cxx_compiler_flags)
+                    new_profile.per_project_type_linker_flags[bin_lib_dyn.project_type] = list(cxx_linker_flags)
+                    new_profile.per_project_type_feature_names[bin_lib_dyn.project_type] = list(cxx_feature_flags)
                     
                 new_compiler.profiles.add(new_profile)
 

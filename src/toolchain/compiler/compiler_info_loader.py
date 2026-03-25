@@ -2,43 +2,109 @@
 # CompilerInfoLoader represent a yaml file that contains compilers to load
 #####################################################################
 from pathlib import Path
+from typing import Optional
 import console
 from project import ProjectType
 from yaml_file.line_loader import YamlObject
-from toolchain.compiler.compiler_info import CompilerNodeRegistry, CompilerNode, CompilerNodeList, FeatureNode, FeatureNodeList, FeatureRuleNodeIncompatibleWith, FeatureRuleNodeList, FeatureRuleNodeOnlyOne, ProfileNode, ProfileNodeList, ProjectTypeNode
+from toolchain.compiler.compiler_info import CompilerNodeRegistry, ProjectTypeNodeList, CompilerNode, CompilerNodeList, FeatureNode, FeatureNodeList, FeatureRuleNodeIncompatibleWith, FeatureRuleNodeList, FeatureRuleNodeOnlyOne, ProfileNode, ProfileNodeList, ProjectTypeNode, Commons
 
 class CompilerInfoLoader:
     def __init__(self, file: Path):
         self.file = file
         self.compilers = CompilerNodeList()
     
+    def _read_yaml_enable_feature(self, yaml_object: YamlObject) -> Optional[list[str]]:
+        # Check that 'enable-features' is a list of string
+        if not isinstance(yaml_object.value, list) or not all(isinstance(x, str) for x in yaml_object.value):
+            console.print_error(f"Line {yaml_object.key_line} : 'enable-features' must contains list of feature name in '{self.file}'")
+            return None
+        return yaml_object.value
+    
+    def _read_yaml_cxx_linker_flags(self, yaml_object: YamlObject) -> Optional[list[str]]:
+        # Check that 'cxx-linker-flags' is a list of string
+        if not isinstance(yaml_object.value, list) or not all(isinstance(x, str) for x in yaml_object.value):
+            console.print_error(f"Line {yaml_object.key_line} : 'cxx-linker-flags' must contains list of feature name in '{self.file}'")
+            return None
+        return yaml_object.value
+    
+    def _read_yaml_cxx_compiler_flags(self, yaml_object: YamlObject) -> Optional[list[str]]:
+        # Check that 'cxx-compiler-flags' is a list of string
+        if not isinstance(yaml_object.value, list) or not all(isinstance(x, str) for x in yaml_object.value):
+            console.print_error(f"Line {yaml_object.key_line} : 'cxx-compiler-flags' must contains list of feature name in '{self.file}'")
+            return None
+        return yaml_object.value
+    
+    def is_yaml_name_commons(self, yaml_object: YamlObject) -> bool:
+        pass 
+
+    def read_commmons(self, yaml_object: YamlObject) -> Optional[Commons]:
+        commons = Commons()
+        for item, yaml_object in yaml_object.value.items():
+            match item:
+                case "cxx-compiler-flags":
+                    if(cxx_compiler_flags := self._read_yaml_cxx_compiler_flags(yaml_object)) is None:
+                        return None
+                    commons.cxx_compiler_flags.add_list(cxx_compiler_flags)
+                case "cxx-linker-flags":
+                    if(cxx_linker_flags := self._read_yaml_cxx_linker_flags(yaml_object)) is None:
+                        return None
+                    commons.cxx_linker_flags.add_list(cxx_linker_flags)
+                case "enable-features":
+                    if(feature_name_list := self._read_yaml_enable_feature(yaml_object)) is None:
+                        return None
+                    commons.enable_features.add_list(feature_name_list)
+                case _:
+                    console.print_error(f"Line {yaml_object.key_line} : Unknown key '{item}' in'{self.file}'")
+                    continue
+        return commons
+    def _read_yaml_project_type(self, project_type_name: str, yaml_object: YamlObject) -> Optional[ProjectTypeNode]:
+        project_type_node = ProjectTypeNode(project_type_name)        
+        return project_type_node
+
     def _read_bin_lib_dyn(self, project_type: ProjectType, yaml_object: YamlObject) -> ProjectTypeNode | None:
         project_specific = ProjectTypeNode(project_type)
         for item, yaml_object in yaml_object.value.items():
             match item:
                 case "cxx-compiler-flags":
-                    # Check that 'cxx-compiler-flags' is a list of string
-                    if not isinstance(yaml_object.value, list) or not all(isinstance(x, str) for x in yaml_object.value):
-                        console.print_error(f"Line {yaml_object.key_line} : 'cxx-compiler-flags' must contains list of feature name in '{self.file}'")
+                    if(cxx_compiler_flags := self._read_yaml_cxx_compiler_flags(yaml_object)) is None:
                         return None
-                    project_specific.cxx_compiler_flags.add_list(yaml_object.value)
+                    project_specific.cxx_compiler_flags.add_list(cxx_compiler_flags)
                 case "cxx-linker-flags":
-                    # Check that 'cxx-linker-flags' is a list of string
-                    if not isinstance(yaml_object.value, list) or not all(isinstance(x, str) for x in yaml_object.value):
-                        console.print_error(f"Line {yaml_object.key_line} : 'cxx-linker-flags' must contains list of feature name in '{self.file}'")
+                    if(cxx_linker_flags := self._read_yaml_cxx_linker_flags(yaml_object)) is None:
                         return None
-                    
-                    project_specific.cxx_linker_flags.add_list(yaml_object.value)
+                    project_specific.cxx_linker_flags.add_list(cxx_linker_flags)
                 case "enable-features":
-                    # Check that 'enable-features' is a list of string
-                    if not isinstance(yaml_object.value, list) or not all(isinstance(x, str) for x in yaml_object.value):
-                        console.print_error(f"Line {yaml_object.key_line} : 'enable-features' must contains list of feature name in '{self.file}'")
+                    if(feature_name_list := self._read_yaml_enable_feature(yaml_object)) is None:
                         return None
-                    project_specific.enable_features.add_list(yaml_object.value)
+                    project_specific.enable_features.add_list(feature_name_list)
                 case _:
                     console.print_error(f"Line {yaml_object.key_line} : Unknown key '{item}' in'{self.file}'")
                     continue
         return project_specific
+    
+    def _read_project_list(self, yaml_object: YamlObject) -> Optional[ProjectTypeNodeList]:
+        project_type_list = ProjectTypeNodeList()
+        for project_type_name, yaml_object in yaml_object.value.items():
+            project_type_node = ProjectTypeNode(project_type_name)
+            for item, yaml_object in yaml_object.value.items():
+                match item:
+                    case "cxx-compiler-flags":
+                        if(cxx_compiler_flags := self._read_yaml_cxx_compiler_flags(yaml_object)) is None:
+                            return None
+                        project_type_node.commons.cxx_compiler_flags.add_list(cxx_compiler_flags)
+                    case "cxx-linker-flags":
+                        if(cxx_linker_flags := self._read_yaml_cxx_linker_flags(yaml_object)) is None:
+                            return None
+                        project_type_node.commons.cxx_linker_flags.add_list(cxx_linker_flags)
+                    case "enable-features":
+                        if(feature_name_list := self._read_yaml_enable_feature(yaml_object)) is None:
+                            return None
+                        project_type_node.commons.enable_features_list.add_list(feature_name_list)
+                    case _:
+                        console.print_error(f"Line {yaml_object.key_line} : Unknown key '{item}' in'{self.file}'")
+                        continue
+            project_type_list.add(project_type_node)
+        return project_type_list
     
     def _read_profile_list(self, yaml_object: YamlObject) -> ProfileNodeList | None:
         profiles = ProfileNodeList()
@@ -279,22 +345,47 @@ class CompilerInfoLoader:
 
 
     def read_yaml_compilers(self, item_yaml_object):
-        for compiler_name, compiler_yaml_object in item_yaml_object.value.items():
-            # Ignore if we already have a compiler name
-            existing_compiler: CompilerNode = CompilerNodeRegistry.compilers.get(compiler_name)
-            if existing_compiler:
-                console.print_warning(f"⚠️ Li ne {compiler_yaml_object.key_line} : CompilerNode '{existing_compiler}' already exist in '{existing_compiler.file}' when loading '{self.file}'")
-                continue
-            
-            # Load the compiler
-            compiler = self._read_compiler_node(compiler_name, compiler_yaml_object)
-            if compiler is None:
-                console.print_warning(f"⚠️ Line {compiler_yaml_object.key_line} : CompilerNode '{compiler_name}' in '{self.file}' will not be available")
-                continue
-            compiler.file = self.file
+        compiler_list = CompilerNodeList()
+        for node_name, yaml_object in item_yaml_object.value.items():
+            match node_name:
+                case "cxx-compiler-flags":
+                    if(cxx_compiler_flags := self._read_yaml_cxx_compiler_flags(yaml_object)) is None:
+                        return None
+                    CompilerNodeRegistry.compiler_list.commons.cxx_compiler_flags.add_list(cxx_compiler_flags)
+                case "cxx-linker-flags":
+                    if(cxx_linker_flags := self._read_yaml_cxx_linker_flags(yaml_object)) is None:
+                        return None
+                    CompilerNodeRegistry.compiler_list.commons.cxx_linker_flags.add_list(cxx_linker_flags)
+                case "enable-features":
+                    if(feature_name_list := self._read_yaml_enable_feature(yaml_object)) is None:
+                        return None
+                    CompilerNodeRegistry.compiler_list.commons.enable_features_list.add_list(feature_name_list)
+                case "projects":
+                    if(project_list := self._read_project_list(yaml_object)) is None:
+                        return None
+                    CompilerNodeRegistry.compiler_list.project_list = project_list
+                case "profiles":
+                    if(profile_list := self._read_profile_list(yaml_object)) is None:
+                        return None
+                case _:
+                    # Ignore if we already have a compiler name
+                    existing_compiler: CompilerNode = CompilerNodeRegistry.get(node_name)
+                    if existing_compiler:
+                        console.print_warning(f"⚠️ Line {yaml_object.key_line} : CompilerNode '{existing_compiler}' already exist in '{existing_compiler.file}' when loading '{self.file}'")
+                        continue
+                    
+                    # Load the compiler
+                    compiler = self._read_compiler_node(node_name, yaml_object)
+                    if compiler is None:
+                        console.print_warning(f"⚠️ Line {yaml_object.key_line} : CompilerNode '{node_name}' in '{self.file}' will not be available")
+                        continue
+                    compiler.file = self.file
 
-            # Add it to the available compiler list
-            CompilerNodeRegistry.register_compiler(compiler)
-            self.compilers.add(compiler)
+                    # Add it to the available compiler list
+                    CompilerNodeRegistry.register_compiler(compiler)
+                    self.compilers.add(compiler)
+
+                    
+           
 
 

@@ -7,68 +7,88 @@ compilers:
   enable-features: [] # Feature enabled for all compilers
   cxx-linker-flags: [] # Linker flags enabled for all compilers
   cxx-compiler-flags: [] # Compiler flags enabled for all compilers
-  project_types:
-    # For all 'profile' and all 'bin' project used with this 'msvc-generic' compiler
+  projects:
+    # For all 'profile' and all 'bin' project used with all compilers
     bin:
-      enable-features: [] # Feature enabled for all 'profile' and all 'bin' used with this 'msvc-generic' compiler
-      cxx-linker-flags: [] # Linker flags enabled for all 'profile' and all 'bin' used with this 'msvc-generic' compiler
-      cxx-compiler-flags: [] # Compiler flags enabled for all 'profile' and all 'bin' used with this 'msvc-generic' compiler
-    # For all 'profile' and all 'dyn' project used with this 'msvc-generic' compiler
+      enable-features: [] # Feature enabled for all 'profile' and all 'bin' used with all compilers
+      cxx-linker-flags: [] # Linker flags enabled for all 'profile' and all 'bin' used with all compilers
+      cxx-compiler-flags: [] # Compiler flags enabled for all 'profile' and all 'bin' used with all compilers
+    # For all 'profile' and all 'dyn' project used used with all compilers
     dyn:
-      enable-features: [] # Feature enabled for all 'profile' and all 'dyn' used with this 'msvc-generic' compiler
-      cxx-linker-flags: [] # Linker flags enabled for all 'profile' and all 'dyn' used with this 'msvc-generic' compiler
-      cxx-compiler-flags: [] # Compiler flags enabled for all 'profile' and all 'dyn' used with this 'msvc-generic' compiler
-    # For all 'profile' and all 'lib' project used with this 'msvc-generic' compiler
+      enable-features: [] # Feature enabled for all 'profile' and all 'dyn' used used with all compilers
+      cxx-linker-flags: [] # Linker flags enabled for all 'profile' and all 'dyn' used with all compilers
+      cxx-compiler-flags: [] # Compiler flags enabled for all 'profile' and all 'dyn' used with all compilers
+    # For all 'profile' and all 'lib' project used with all compilers
     lib:
-      enable-features: [] # Feature enabled for all 'profile' and all 'lib' used with this 'msvc-generic' compiler
-      cxx-linker-flags: [] # Linker flags enabled for all 'profile' and all 'lib' used with this 'msvc-generic' compiler
-      cxx-compiler-flags: [] # Compiler flags enabled for all 'profile' and all 'lib' used with this 'msvc-generic' compiler
+      enable-features: [] # Feature enabled for all 'profile' and all 'lib' used with all compilers
+      cxx-linker-flags: [] # Linker flags enabled for all 'profile' and all 'lib' used with all compilers
+      cxx-compiler-flags: [] # Compiler flags enabled for all 'profile' and all 'lib' used with all compilers
   profiles:
-    enable-features: [] # Feature enabled for all compilers
-    cxx-linker-flags: [] # Linker flags enabled for all compilers
-    cxx-compiler-flags: [] # Compiler flags enabled for all compilers
-    project_types:
-      # For all 'profile' and all 'bin' project used with this 'msvc-generic' compiler
-      bin:
-        enable-features: [] # Feature enabled for all 'profile' and all 'bin' used with this 'msvc-generic' compiler
-        cxx-linker-flags: [] # Linker flags enabled for all 'profile' and all 'bin' used with this 'msvc-generic' compiler
-        cxx-compiler-flags: [] # Compiler flags enabled for all 'profile' and all 'bin' used with this 'msvc-generic' compiler
-      # For all 'profile' and all 'dyn' project used with this 'msvc-generic' compiler
-      dyn:
-        enable-features: [] # Feature enabled for all 'profile' and all 'dyn' used with this 'msvc-generic' compiler
-        cxx-linker-flags: [] # Linker flags enabled for all 'profile' and all 'dyn' used with this 'msvc-generic' compiler
-        cxx-compiler-flags: [] # Compiler flags enabled for all 'profile' and all 'dyn' used with this 'msvc-generic' compiler
-      # For all 'profile' and all 'lib' project used with this 'msvc-generic' compiler
-      lib:
-        enable-features: [] # Feature enabled for all 'profile' and all 'lib' used with this 'msvc-generic' compiler
-        cxx-linker-flags: [] # Linker flags enabled for all 'profile' and all 'lib' used with this 'msvc-generic' compiler
-        cxx-compiler-flags: [] # Compiler flags enabled for all 'profile' and all 'lib' used with this 'msvc-generic' compiler
+    debug:
+      enable-features: [] # Feature enabled for all compilers for 'debug' profile and all projects types
+      cxx-linker-flags: [] # Linker flags enabled for all compilers for 'debug' profile and all projects types
+      cxx-compiler-flags: [] # Compiler flags enabled for all compilers for 'debug' profile and all projects types
+      projects:
+        # For 'debug' and all 'bin' project used with all compilers
+        bin:
+          enable-features: [] # Feature enabled for all compilers for 'debug' profile and 'bin' projects types
+          cxx-linker-flags: [] # Linker flags enabled for all compilers for 'debug' profile and 'bin' project types
+          cxx-compiler-flags: [] # Compiler flags enabled for all compilers for 'debug' profile and 'bin' project types
+        # For 'debug' and all 'dyn' project used with all compilers
+        dyn:
+          eenable-features: [] # Feature enabled for all compilers for 'debug' profile and 'dyn' projects types
+          cxx-linker-flags: [] # Linker flags enabled for all compilers for 'debug' profile and 'dyn' project types
+          cxx-compiler-flags: [] # Compiler flags enabled for all compilers for 'debug' profile and 'dyn' project types
+        # For 'debug' and all 'lib' project used with all compilers
+        lib:
+          enable-features: [] # Feature enabled for all compilers for 'debug' profile and 'lib' projects types
+          cxx-linker-flags: [] # Linker flags enabled for all compilers for 'debug' profile and 'lib' project types
+          cxx-compiler-flags: [] # Compiler flags enabled for all compilers for 'debug' profile and 'lib' project types
   # define 'msvc-generic' compiler, this compiler is not a compiler that
   # can be used to build
   msvc-generic-compiler:
     is_abstract: true # This compiler is not a compiler that can be used to build
 
-    # List of profiles defined when we use this compiler
+    enable-features: [] # Feature enabled for 'msvc-generic-compiler' compilers and compiler that extend it
+    cxx-linker-flags: [] # Linker flags enabled for 'msvc-generic-compiler' compilers and compiler that extend it
+    cxx-compiler-flags: [] # Compiler flags enabled for 'msvc-generic-compiler' compilers and compiler that extend it
+    projects:
+      # For all 'profile' and all 'bin' project used with 'msvc-generic-compiler' compilers and compiler that extend it
+      bin:
+        enable-features: [] # Feature enabled for all 'profile' and all 'bin' used with 'msvc-generic-compiler' compilers and compiler that extend it
+        cxx-linker-flags: [] # Linker flags enabled for all 'profile' and all 'bin' used with 'msvc-generic-compiler' compilers and compiler that extend it
+        cxx-compiler-flags: [] # Compiler flags enabled for all 'profile' and all 'bin' used with 'msvc-generic-compiler' compilers and compiler that extend it
+      # For all 'profile' and all 'dyn' project used used with all 'msvc-generic-compiler' compilers and compiler that extend it
+      dyn:
+        enable-features: [] # Feature enabled for all 'profile' and all 'dyn' used used with 'msvc-generic-compiler' compilers and compiler that extend it
+        cxx-linker-flags: [] # Linker flags enabled for all 'profile' and all 'dyn' used with 'msvc-generic-compiler' compilers and compiler that extend it
+        cxx-compiler-flags: [] # Compiler flags enabled for all 'profile' and all 'dyn' used with 'msvc-generic-compiler' compilers and compiler that extend it
+      # For all 'profile' and all 'lib' project used with 'msvc-generic-compiler' compilers and compiler that extend it
+      lib:
+        enable-features: [] # Feature enabled for all 'profile' and all 'lib' used with 'msvc-generic-compiler' compilers and compiler that extend it
+        cxx-linker-flags: [] # Linker flags enabled for all 'profile' and all 'lib' used with 'msvc-generic-compiler' compilers and compiler that extend it
+        cxx-compiler-flags: [] # Compiler flags enabled for all 'profile' and all 'lib' used with 'msvc-generic-compiler' compilers and compiler that extend it
     profiles:
-      enable-features: [] # Feature enabled for all 'profile' and all project type used with this 'msvc-generic' compiler
-      cxx-linker-flags: [] # Linker flags enabled for all 'profile' and all project type used with this 'msvc-generic' compiler
-      cxx-compiler-flags: [] # Compiler flags enabled for all 'profile' and all project type used with this 'msvc-generic' compiler
-      project_types:
-        # For all 'profile' and all 'bin' project used with this 'msvc-generic' compiler
-        bin:
-          enable-features: [] # Feature enabled for all 'profile' and all 'bin' used with this 'msvc-generic' compiler
-          cxx-linker-flags: [] # Linker flags enabled for all 'profile' and all 'bin' used with this 'msvc-generic' compiler
-          cxx-compiler-flags: [] # Compiler flags enabled for all 'profile' and all 'bin' used with this 'msvc-generic' compiler
-        # For all 'profile' and all 'dyn' project used with this 'msvc-generic' compiler
-        dyn:
-          enable-features: [] # Feature enabled for all 'profile' and all 'dyn' used with this 'msvc-generic' compiler
-          cxx-linker-flags: [] # Linker flags enabled for all 'profile' and all 'dyn' used with this 'msvc-generic' compiler
-          cxx-compiler-flags: [] # Compiler flags enabled for all 'profile' and all 'dyn' used with this 'msvc-generic' compiler
-        # For all 'profile' and all 'lib' project used with this 'msvc-generic' compiler
-        lib:
-          enable-features: [] # Feature enabled for all 'profile' and all 'lib' used with this 'msvc-generic' compiler
-          cxx-linker-flags: [] # Linker flags enabled for all 'profile' and all 'lib' used with this 'msvc-generic' compiler
-          cxx-compiler-flags: [] # Compiler flags enabled for all 'profile' and all 'lib' used with this 'msvc-generic' compiler
+      debug:
+        enable-features: [] # Feature enabled for 'debug' profile and all projects types for 'msvc-generic-compiler' compilers and compiler that extend it
+        cxx-linker-flags: [] # Linker flags enabled for 'debug' profile and all projects types for 'msvc-generic-compiler' compilers and compiler that extend it
+        cxx-compiler-flags: [] # Compiler flags enabled for 'debug' profile and all projects types for 'msvc-generic-compiler' compilers and compiler that extend it
+        projects:
+          # For 'debug' and all 'bin' project used with 'msvc-generic-compiler' compilers and compiler that extend it
+          bin:
+            enable-features: [] # Feature enabled for 'debug' profile and 'bin' projects types for 'msvc-generic-compiler' compilers and compiler that extend it
+            cxx-linker-flags: [] # Linker flags enabled for 'debug' profile and 'bin' project types for 'msvc-generic-compiler' compilers and compiler that extend it
+            cxx-compiler-flags: [] # Compiler flags enabled for 'debug' profile and 'bin' project types for 'msvc-generic-compiler' compilers and compiler that extend it
+          # For 'debug' and all 'dyn' project used with 'msvc-generic-compiler' compilers and compiler that extend it
+          dyn:
+            eenable-features: [] # Feature enabled for 'debug' profile and 'dyn' projects types for 'msvc-generic-compiler' compilers and compiler that extend it
+            cxx-linker-flags: [] # Linker flags enabled for 'debug' profile and 'dyn' project types for 'msvc-generic-compiler' compilers and compiler that extend it
+            cxx-compiler-flags: [] # Compiler flags enabled for 'debug' profile and 'dyn' project types for 'msvc-generic-compiler' compilers and compiler that extend it
+          # For 'debug' and all 'lib' project used with 'msvc-generic-compiler' compilers and compiler that extend it
+          lib:
+            enable-features: [] # Feature enabled for 'debug' profile and 'lib' projects types for 'msvc-generic-compiler' compilers and compiler that extend it
+            cxx-linker-flags: [] # Linker flags enabled for 'debug' profile and 'lib' project types for 'msvc-generic-compiler' compilers and compiler that extend it
+            cxx-compiler-flags: [] # Compiler flags enabled for 'debug' profile and 'lib' project types for 'msvc-generic-compiler' compilers and compiler that extend it
 
       # 'msvc-generic' profile is not a profile that can be used to build
       msvc-generic-profile:

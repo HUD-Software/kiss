@@ -5,15 +5,15 @@ from pathlib import Path
 import console
 from project import ProjectType
 from yaml_file.line_loader import YamlObject
-from toolchain.compiler.compiler_info import CompilerNodeRegistry, CompilerNode, CompilerNodeList, FeatureNode, FeatureNodeList, FeatureRuleNodeIncompatibleWith, FeatureRuleNodeList, FeatureRuleNodeOnlyOne, ProfileNode, ProfileNodeList, BinLibDynNode
+from toolchain.compiler.compiler_info import CompilerNodeRegistry, CompilerNode, CompilerNodeList, FeatureNode, FeatureNodeList, FeatureRuleNodeIncompatibleWith, FeatureRuleNodeList, FeatureRuleNodeOnlyOne, ProfileNode, ProfileNodeList, ProjectTypeNode
 
 class CompilerInfoLoader:
     def __init__(self, file: Path):
         self.file = file
         self.compilers = CompilerNodeList()
     
-    def _read_project_specific(self, project_type: ProjectType, yaml_object: YamlObject) -> BinLibDynNode | None:
-        project_specific = BinLibDynNode(project_type)
+    def _read_bin_lib_dyn(self, project_type: ProjectType, yaml_object: YamlObject) -> ProjectTypeNode | None:
+        project_specific = ProjectTypeNode(project_type)
         for item, yaml_object in yaml_object.value.items():
             match item:
                 case "cxx-compiler-flags":
@@ -40,7 +40,7 @@ class CompilerInfoLoader:
                     continue
         return project_specific
     
-    def _read_profiles(self, yaml_object: YamlObject) -> ProfileNodeList | None:
+    def _read_profile_list(self, yaml_object: YamlObject) -> ProfileNodeList | None:
         profiles = ProfileNodeList()
         for profile_or_project_type_name, yaml_object_profile_or_project_type in yaml_object.value.items():
             if ProjectType.is_valid_str(profile_or_project_type_name):
@@ -49,7 +49,7 @@ class CompilerInfoLoader:
                     console.print_error(f"Line {yaml_object.key_line} : '{project_type_name}' already exist in 'profiles' in '{self.file}'")
                     return None
                 yaml_project_type = yaml_object_profile_or_project_type
-                project_specific = self._read_project_specific(ProjectType(project_type_name), yaml_project_type)
+                project_specific = self._read_bin_lib_dyn(ProjectType(project_type_name), yaml_project_type)
                 if project_specific is None:
                     return None
                 profiles.common_bin_lib_dyn_set.add(project_specific)
@@ -98,7 +98,7 @@ class CompilerInfoLoader:
                                     if item in profile.bin_lib_dyn_list:
                                         console.print_error(f"Line {yaml_object.key_line} : '{item}' already exist in profile '{profile.name}' in '{self.file}'")
                                         return None
-                                    project_specific = self._read_project_specific(ProjectType(item), yaml_object)
+                                    project_specific = self._read_bin_lib_dyn(ProjectType(item), yaml_object)
                                     if project_specific is None:
                                         return None
                                     profile.bin_lib_dyn_list.add(project_specific)
@@ -154,7 +154,7 @@ class CompilerInfoLoader:
                         if not isinstance(yaml_object.value, dict):
                             console.print_error(f"Line {yaml_object.key_line} : 'profiles' must contains profiles '{self.file}'")
                             return None
-                        profiles = self._read_profiles(yaml_object)
+                        profiles = self._read_profile_list(yaml_object)
                         if profiles is None:
                             return None
                         feature.profiles = profiles
@@ -164,7 +164,7 @@ class CompilerInfoLoader:
                             if item in feature.common_bin_lib_dyn_list:
                                 console.print_error(f"Line {yaml_object.key_line} : '{item}' already exist in feature '{feature.name}' in '{self.file}'")
                                 return None
-                            project_specific = self._read_project_specific(ProjectType(item), yaml_object)
+                            project_specific = self._read_bin_lib_dyn(ProjectType(item), yaml_object)
                             if project_specific is None:
                                 return None
                             feature.common_bin_lib_dyn_list.add(project_specific)
@@ -174,7 +174,7 @@ class CompilerInfoLoader:
             feature_list.add(feature)
         return feature_list
     
-    def _read_compiler_feature_rules(self, yaml_object: YamlObject) -> FeatureRuleNodeList | None:
+    def _read_compiler_feature_list(self, yaml_object: YamlObject) -> FeatureRuleNodeList | None:
         feature_rules_list = FeatureRuleNodeList()
         for  yaml_object_feature_rule in yaml_object.value:
             # Read only-one feature rule
@@ -241,7 +241,7 @@ class CompilerInfoLoader:
                     if not isinstance(yaml_object.value, dict):
                         console.print_error(f"Line {yaml_object.key_line} : 'profiles' must contains profiles '{self.file}'")
                         return None
-                    profiles = self._read_profiles(yaml_object)
+                    profiles = self._read_profile_list(yaml_object)
                     if profiles is None:
                         return None
                     compiler_node.profiles = profiles
@@ -257,7 +257,7 @@ class CompilerInfoLoader:
                     if not isinstance(yaml_object.value, list):
                         console.print_error(f"Line {yaml_object.key_line} : 'feature-rules' must contains list of feature rules in '{self.file}'")
                         return None
-                    feature_rules = self._read_compiler_feature_rules(yaml_object)
+                    feature_rules = self._read_compiler_feature_list(yaml_object)
                     if feature_rules is None:
                         return None
                     compiler_node.feature_rules = feature_rules
@@ -272,7 +272,7 @@ class CompilerInfoLoader:
                         return None
                     compiler_node.c_path = Path(yaml_object.value)
                 case _:
-                    console.print_error(f"Line {yaml_object.key_line} : Unknown key '{item}' in'{self.file}'")
+                    console.print_error(f"Line {yaml_object.key_line} : Unknown key '{item}' in '{self.file}'")
                     continue
 
         return compiler_node 
@@ -283,7 +283,7 @@ class CompilerInfoLoader:
             # Ignore if we already have a compiler name
             existing_compiler: CompilerNode = CompilerNodeRegistry.compilers.get(compiler_name)
             if existing_compiler:
-                console.print_warning(f"⚠️ Line {compiler_yaml_object.key_line} : CompilerNode '{existing_compiler}' already exist in '{existing_compiler.file}' when loading '{self.file}'")
+                console.print_warning(f"⚠️ Li ne {compiler_yaml_object.key_line} : CompilerNode '{existing_compiler}' already exist in '{existing_compiler.file}' when loading '{self.file}'")
                 continue
             
             # Load the compiler

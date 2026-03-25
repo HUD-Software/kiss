@@ -51,8 +51,6 @@ class FlagList:
         return extended
     
 
-    
-
 ##############################################################
 # FeatureNameList are list of feature names
 # 
@@ -61,9 +59,9 @@ class FlagList:
 #
 ##############################################################
 class FeatureNameList:
-    def __init__(self, is_extended = False):
+    def __init__(self):
         self.feature_names = set[str]()
-        self.is_extended = is_extended
+        self.is_extended = False
         
     def __iter__(self):
         return iter(self.feature_names)
@@ -92,14 +90,36 @@ class FeatureNameList:
     def add_list(self, flags: list[str]):
         for f in flags:
             self.add(f)
-    
+
     # Extend this feature name list
     # This is similar to extend but we don't merge with a base, we just add enabled features by the features in this list
     # and check that the result validate feature rules
-    def extend_self(self, compiler_features, compiler_feature_rules) -> Self | None:
-        return self.extend(base_enable_features=FeatureNameList(is_extended=True), 
-                           compiler_features=compiler_features, 
-                           compiler_feature_rules=compiler_feature_rules)
+    def extend_self(self, compiler_features, compiler_feature_rules) -> Optional[Self]:
+        extended = FeatureNameList()
+        extended.feature_names = copy.deepcopy(self.feature_names)
+        if not self.is_extended:
+            to_process = extended.feature_names
+            while to_process:
+                # Find the feature to enable
+                feature_name = to_process.pop()
+                if (feature := compiler_features.get(feature_name)) is None:
+                    console.print_error(f"Feature {feature_name} not found")
+                    return None
+                feature : FeatureNode = feature
+                
+                # Add all features that are enable by the feature
+                for new_feature in feature.commons.enable_features_list:
+                    if new_feature not in extended.feature_names:  # Add it only once
+                        if new_feature not in compiler_features:
+                            console.print_error(f"Feature {new_feature} not found")
+                            return None
+                        extended.feature_names.add(new_feature)
+                        to_process.append(new_feature)
+        if not compiler_feature_rules.is_feature_list_validate_rules(extended.feature_names):
+            console.print_error(f"Rule invalidate feature list '{', '.join(list(extended.feature_names))}' ")
+            return None
+        extended.is_extended = True
+        return extended
     
     # Extend this feature name list with another feature name list.
     # This is a merge but with some rules:
@@ -107,51 +127,32 @@ class FeatureNameList:
     #    e.g. If we have feature A that enable feature B, and we add B in this list ( A is already in the list).
     #  - We check that the merge of the two list validate the feature rules, if not we return None
     #  - For the rule 'only-one', if we have a feature name in self and a feature name in base_enable_features that are in the same 'only-one' rule, we keep the one in self
-    def extend(self, base_enable_features: Self, compiler_features, compiler_feature_rules) -> Self | None:
-        if not self.is_extended:
-            # Add enabled feature that feature enables
-            to_process = list(self)
-            while to_process:
-                feature_name = to_process.pop()
+    def extend_with_other(self, other: Self, compiler_features, compiler_feature_rules) -> Optional[Self]:
+        # Extend self, adding feature enable by each feature
+        if(extended := other.extend_self(compiler_features, compiler_feature_rules)) is None:
+            return None
+        extended:Self = extended
 
-                if (feature := compiler_features.get(feature_name)) is None:
-                    console.print_error(f"Feature {feature_name} not found")
-                    return None
-
-                for new_feature in feature.enable_features:
-                    if new_feature not in self:  # éviter doublons
-                        if new_feature not in compiler_features:
-                            console.print_error(f"Feature {new_feature} not found")
-                            return None
-                        self.add(new_feature)
-                        to_process.append(new_feature)
-
-        # Check that self validate feature-rules before merging
-        # We check base after that
         # Merge 2 features name list
         # - If 'base' and 'self' contains feature name that exists in a 'only-one' rule
         #   We don't add 'base' but 'self'. 
         #   Error when 'base' contains more that 1 elements on 'only-one', same for 'self'
         # - If 'base' and 'self' contains feature name that exists in a 'incompatible' rule
         #   Error
-        if not compiler_feature_rules.is_feature_list_validate_rules(self):
-            console.print_error(f"Rule invalidate feature list '{', '.join(list(self.feature_names))}' ")
-            return None
-
         only_one_rules = [
             rule
             for rule in compiler_feature_rules
             if isinstance(rule, FeatureRuleNodeOnlyOne)
         ]
-        cleaned_list_base = copy.deepcopy(base_enable_features)
+        cleaned_list_base:Self= copy.deepcopy(other)
         for only_one_rule in only_one_rules:
-            result = FeatureRuleNodeOnlyOne.ResultOnlyOne = only_one_rule.evaluate(base_enable_features)
+            result = FeatureRuleNodeOnlyOne.ResultOnlyOne = only_one_rule.evaluate(other)
             match result:
                 # One feature name is present in base that is also present in 'only-one' rule
                 case str() as base_feature_name:
                     # We have a feature name in base that is concerned by this rule,
                     # Check if the rule also concern self
-                    result = FeatureRuleNodeOnlyOne.ResultOnlyOne = only_one_rule.evaluate(self)
+                    result = FeatureRuleNodeOnlyOne.ResultOnlyOne = only_one_rule.evaluate(extended)
                     match result:
                         # One feature name is present in self that is also present in base and 'only-one' rule
                         case str():
@@ -165,9 +166,8 @@ class FeatureNameList:
                 case None:
                     pass
 
-        # Merge cleaned_list_base and self    
-        result = FeatureNameList(is_extended=True)
-        result.feature_names = cleaned_list_base.feature_names.union(self.feature_names)
+        # Merge cleaned_list_base and self
+        extended.feature_names = cleaned_list_base.feature_names.union(extended.feature_names)
         # Check that merge feature_names validate feature-rules before merging
         if not compiler_feature_rules.is_feature_list_validate_rules(result.feature_names):
             console.print_error(f"Rule invalidate feature list '{', '.join(list(result.feature_names))}' ")
@@ -183,6 +183,35 @@ class FeatureRuleNode:
         self.name = name
 
 
+class Commons:
+    def __init__(self):
+        self.cxx_linker_flags = CXXLinkerFlagList()
+        self.cxx_compiler_flags = CXXCompilerFlagList()
+        self.enable_features_list = FeatureNameList()
+        self.is_extended = False
+    
+    def extend_self(self) -> Self:
+        extended = Commons()
+        extended.cxx_linker_flags = copy.deepcopy(self.cxx_linker_flags)
+        extended.cxx_compiler_flags = copy.deepcopy(self.cxx_compiler_flags)
+        extended.enable_features_list = copy.deepcopy(self.enable_features_list)
+        extended.is_extended = True
+        return extended
+
+    def extends_with_other(self, other: Self, compiler_features, compiler_feature_rules) -> Optional[Self]:
+        extended = Commons()
+        extended.cxx_compiler_flags = self.cxx_compiler_flags.merge(other.cxx_compiler_flags)
+        extended.cxx_linker_flags = self.cxx_linker_flags.merge(other.cxx_linker_flags)
+
+        # Extends 
+        if(enable_feature := self.enable_features_list.extend_with_other(other=other.enable_features_list,
+                                                                         compiler_features=compiler_features, 
+                                                                         compiler_feature_rules=compiler_feature_rules)) is None:
+            return None
+        extended.enable_features_list = enable_feature
+        extended.is_extended = True
+        return extended
+    
 ###############################################################
 # FeatureNode with a unique name
 # It add flags and features for all profiles
@@ -198,7 +227,7 @@ class FeatureRuleNode:
 #             cxx-compiler-flags: []     <== 'CXXCompilerFlagList'
 #             cxx-linker-flags: []       <== 'CXXLinkerFlagList'
 #             enable-features: []        <== 'FeatureNameList'
-#             dyn|bin|lib:               <== set of 'BinLibDynNode'
+#             dyn|bin|lib:               <== set of 'ProjectTypeNode'
 #             profiles:                  <== 'ProfileNodeList'
 #             
 #
@@ -207,11 +236,9 @@ class FeatureNode:
     def __init__(self, name: str):
         self.name = name
         self.description: str = ""
-        self.cxx_linker_flags = CXXLinkerFlagList()
-        self.cxx_compiler_flags = CXXCompilerFlagList()
-        self.enable_features = FeatureNameList()
+        self.commons = Commons()
         self.profiles = ProfileNodeList()
-        self.common_bin_lib_dyn_list = BinLibDynNodeList()
+        self.common_bin_lib_dyn_list = ProjectTypeNodeList()
 
     def __hash__(self) -> int:
         return hash(self.name)
@@ -229,9 +256,7 @@ class FeatureNode:
     # This will extends all profiles in this feature by dispatching common flags and features into all profiles and check that the result validate feature rules
     def extend_self(self, compiler_features, compiler_feature_rules) -> Self:
         extended = FeatureNode(self.name)
-        extended.cxx_linker_flags = copy.deepcopy(self.cxx_linker_flags)
-        extended.cxx_compiler_flags = copy.deepcopy(self.cxx_compiler_flags)
-        extended.enable_features = copy.deepcopy(self.enable_features)
+        extended.commons = self.commons.extend_self()
         extended.common_bin_lib_dyn_list = copy.deepcopy(self.common_bin_lib_dyn_list)
         self.profiles.common_bin_lib_dyn_set = self.profiles.common_bin_lib_dyn_set.extends_with_common(self.common_bin_lib_dyn_list,
                                                                                                         compiler_features=compiler_features,
@@ -323,39 +348,37 @@ class CXXLinkerFlagList:
         return extended
     
 ###############################################################
-# BinLibDynNode add flags and features by project
+# ProjectTypeNode add flags and features by project
 # 
 # Yaml :
 #   <root>
 #     compilers|features:               <== 'CompilerNodeList'|'FeatureNodeList'
 #       profiles:                       <== 'ProfileNodeList', set of 'ProfileNode'
 #         debug|release:                <== 'ProfileNode'
-#           dyn|bin|lib:                <== 'PerProfileBinLibDynNodeList', set of 'BinLibDynNode'
+#           dyn|bin|lib:                <== 'PerProfileBinLibDynNodeList', set of 'ProjectTypeNode'
 #             cxx-compiler-flags: []       <== 'CXXCompilerFlagList'
 #             cxx-linker-flags: []         <== 'CXXLinkerFlagList'
 #             enable-features: []          <== 'FeatureNameList'
 #
 ##############################################################
-class BinLibDynNode:
+class ProjectTypeNode:
     def __init__(self, project_type: ProjectType):
         self.project_type = project_type
-        self.cxx_linker_flags = CXXLinkerFlagList()
-        self.cxx_compiler_flags = CXXCompilerFlagList()
-        self.enable_features = FeatureNameList()
+        self.flag_and_feature = Commons()
 
     def __hash__(self) -> int:
         return hash(self.project_type)
 
     def __eq__(self, other) -> bool:
-        if not isinstance(other, BinLibDynNode):
+        if not isinstance(other, ProjectTypeNode):
             return NotImplemented
         return self.project_type == other.project_type
     
     def _build_repr(self) -> str:
-        return f""" BinLibDynNode : {self.project_type}:
-    cxx_linker_flags : {self.cxx_linker_flags}
-    cxx_compiler_flags : {self.cxx_compiler_flags}
-    enable_features : {self.enable_features}"""
+        return f""" ProjectTypeNode : {self.project_type}:
+    cxx_linker_flags : {self.flag_and_feature.cxx_linker_flags}
+    cxx_compiler_flags : {self.flag_and_feature.cxx_compiler_flags}
+    enable_features : {self.flag_and_feature.enable_features}"""
 
     def __repr__(self) -> str:
         return self._build_repr()
@@ -363,31 +386,31 @@ class BinLibDynNode:
     def __str__(self) -> str:
         return self._build_repr()
     
-    # Extends the BinLibDynNode with common flags and features of the profile.
+    def extends_with_other(self, other: Self, compiler_features, compiler_feature_rules) -> Optional[Self]:
+        extended = ProjectTypeNode(self.project_type)
+        extended.flag_and_feature = self.flag_and_feature.extends_with_other(other_flag_and_feature=other.flag_and_feature,
+                                                                             compiler_features=compiler_features,
+                                                                             compiler_feature_rules=compiler_feature_rules)
+        return extended
+    # Extends the ProjectTypeNode with common flags and features of the profile.
     # This will merge compiler and linker flags and extends features and validate feature rules.
-    def extends_with_commons(self, common_cxx_compiler: CXXCompilerFlagList, common_cxx_linker : CXXLinkerFlagList, common_enable_features: FeatureNameList, compiler_features, compiler_feature_rules) -> Self | None :
-        extended = BinLibDynNode(self.project_type)
-        extended.cxx_compiler_flags = self.cxx_compiler_flags.merge(common_cxx_compiler)
-        extended.cxx_linker_flags = self.cxx_linker_flags.merge(common_cxx_linker)
-
-        # Extends 
-        if(enable_feature := self.enable_features.extend(base_enable_features=common_enable_features,
-                                                         compiler_features=compiler_features, 
-                                                         compiler_feature_rules=compiler_feature_rules)) is None:
-            return None
-        extended.enable_features = enable_feature
+    def extends_with_commons(self, common_flag_and_features: Commons, compiler_features, compiler_feature_rules) -> Self | None :
+        extended = ProjectTypeNode(self.project_type)
+        extended.flag_and_feature = self.flag_and_feature.extends_with_other(other_flag_and_feature=common_flag_and_features,
+                                                                             compiler_features=compiler_features,
+                                                                             compiler_feature_rules=compiler_feature_rules)
         return extended
 
 ###############################################################
-# BinLibDynNodeList are list of BinLibDynNode
+# ProjectTypeNodeList are list of ProjectTypeNode
 # 
 # Yaml :
-#     dyn|bin|lib:                <== 'BinLibDynNodeList', set of 'BinLibDynNode'
+#     dyn|bin|lib:                <== 'ProjectTypeNodeList', set of 'ProjectTypeNode'
 #
 ##############################################################
-class BinLibDynNodeList:
+class ProjectTypeNodeList:
     def __init__(self):
-        self.bin_lib_dyn_set: set[BinLibDynNode] = set()
+        self.bin_lib_dyn_set: set[ProjectTypeNode] = set()
 
     def __iter__(self):
         return iter(self.bin_lib_dyn_set)
@@ -395,11 +418,11 @@ class BinLibDynNodeList:
     def __len__(self):
         return len(self.bin_lib_dyn_set)
     
-    def __contains__(self, binlibdyn_node: BinLibDynNode) -> bool:
+    def __contains__(self, binlibdyn_node: ProjectTypeNode) -> bool:
         return binlibdyn_node in self.bin_lib_dyn_set
     
     def __contains__(self, item) -> bool:
-        if isinstance(item, BinLibDynNode):
+        if isinstance(item, ProjectTypeNode):
             return item in self.bin_lib_dyn_set
         if isinstance(item, ProjectType):
             return any(p.project_type == item for p in self.bin_lib_dyn_set)
@@ -407,13 +430,13 @@ class BinLibDynNodeList:
     
     def _build_repr(self) -> str:
         lines = [
-            f"BinLibDynNodeList :",
+            f"ProjectTypeNodeList :",
         ]
         for ps in self.bin_lib_dyn_set:
             lines.append(f"{ps.project_type}:")
-            lines.append(f"  cxx_compiler_flags: {ps.cxx_compiler_flags}")
-            lines.append(f"  cxx_linker_flags: {ps.cxx_linker_flags}")
-            lines.append(f"  features: {ps.enable_features}")
+            lines.append(f"  cxx_compiler_flags: {ps.common_flag_and_feature.cxx_compiler_flags}")
+            lines.append(f"  cxx_linker_flags: {ps.common_flag_and_feature.cxx_linker_flags}")
+            lines.append(f"  features: {ps.common_flag_and_feature.enable_features}")
         return "\n".join(lines)
 
     def __repr__(self) -> str:
@@ -422,20 +445,20 @@ class BinLibDynNodeList:
     def __str__(self) -> str:
         return self._build_repr()
     
-    def add(self, profile:BinLibDynNode):
+    def add(self, profile:ProjectTypeNode):
         self.bin_lib_dyn_set.add(profile)
     
     # Retrieves the project specific with the given project type, if not found return None
-    def get(self, project_type: ProjectType) -> BinLibDynNode | None:
+    def get(self, project_type: ProjectType) -> ProjectTypeNode | None:
         for p in self.bin_lib_dyn_set:
             if p.project_type == project_type:
                 return p
         return None 
     
-    # Extends the BinLibDynNodeList with common flags and features.
+    # Extends the ProjectTypeNodeList with common flags and features.
     # This will merge compiler and linker flags and extends features and validate feature rules.
     def extends_with_common(self, common_bin_lib_dyn_list: Self, compiler_features, compiler_feature_rules) -> Self | None :
-        extended = BinLibDynNodeList()
+        extended = ProjectTypeNodeList()
 
         # Get elements in self AND profiles_of_base
         common_bin_dyn_lib = self.bin_lib_dyn_set.intersection(common_bin_lib_dyn_list)
@@ -460,22 +483,20 @@ class BinLibDynNodeList:
         return extended
     
 ###############################################################
-# PerProfileBinLibDynNodeList are list of BinLibDynNode
+# PerProfileBinLibDynNodeList are list of ProjectTypeNode
 # 
 # Yaml :
 #   <root>
 #     compilers|features:               <== 'CompilerNodeList'|'FeatureNodeList'
 #       profiles:                       <== 'ProfileNodeList', set of 'ProfileNode'
 #         debug|release:                <== 'ProfileNode'
-#           dyn|bin|lib:                <== 'PerProfileBinLibDynNodeList', set of 'BinLibDynNode'
+#           dyn|bin|lib:                <== 'PerProfileBinLibDynNodeList', set of 'ProjectTypeNode'
 #
 ##############################################################
 class PerProfileBinLibDynNodeList:
     def __init__(self):
-        self.bin_lib_dyn_list = BinLibDynNodeList()
-        self.common_cxx_compiler = CXXCompilerFlagList()
-        self.common_cxx_linker = CXXLinkerFlagList()
-        self.common_enable_features = FeatureNameList()
+        self.bin_lib_dyn_list = ProjectTypeNodeList()
+        self.flag_and_feature = Commons()
     
     def __iter__(self):
         return iter(self.bin_lib_dyn_list)
@@ -483,7 +504,7 @@ class PerProfileBinLibDynNodeList:
     def __len__(self):
         return len(self.bin_lib_dyn_list)
     
-    def __contains__(self, binlibdyn_node: BinLibDynNode) -> bool:
+    def __contains__(self, binlibdyn_node: ProjectTypeNode) -> bool:
         return binlibdyn_node in self.bin_lib_dyn_list
     
     def __contains__(self, item) -> bool:
@@ -493,15 +514,15 @@ class PerProfileBinLibDynNodeList:
         lines = [
             f"PerProfileBinLibDynNodeList :",
         ]
-        lines.append(f"        cxx_compiler_flags: {self.common_cxx_compiler.flags}")
-        lines.append(f"        cxx_linker_flags: {self.common_cxx_linker.flags}")
-        lines.append(f"        features: {self.common_enable_features.feature_names}")
+        lines.append(f"        cxx_compiler_flags: {self.flag_and_feature.cxx_compiler_flags}")
+        lines.append(f"        cxx_linker_flags: {self.flag_and_feature.cxx_linker_flags}")
+        lines.append(f"        features: {self.flag_and_feature.enable_features}")
         lines.append(f"        bin_lib_dyn:")
         for ps in self.bin_lib_dyn_list.bin_lib_dyn_set:
             lines.append(f"          {ps.project_type}:")
-            lines.append(f"            cxx_compiler_flags: {ps.cxx_compiler_flags}")
-            lines.append(f"            cxx_linker_flags: {ps.cxx_linker_flags}")
-            lines.append(f"            features: {ps.enable_features}")
+            lines.append(f"            cxx_compiler_flags: {ps.flag_and_feature.cxx_compiler_flags}")
+            lines.append(f"            cxx_linker_flags: {ps.flag_and_feature.cxx_linker_flags}")
+            lines.append(f"            features: {ps.flag_and_feature.enable_features}")
         return "\n".join(lines)
 
     def __repr__(self) -> str:
@@ -510,14 +531,14 @@ class PerProfileBinLibDynNodeList:
     def __str__(self) -> str:
         return self._build_repr()
     
-    def add(self, profile:BinLibDynNode):
+    def add(self, profile:ProjectTypeNode):
         self.bin_lib_dyn_list.add(profile)
     
     # Retrieves the project specific with the given project type, if not found return None
-    def get(self, project_type: ProjectType) -> BinLibDynNode | None:
+    def get(self, project_type: ProjectType) -> ProjectTypeNode | None:
         return self.bin_lib_dyn_list.get(project_type)
     
-    def extend_self(self, compiler_features, compiler_feature_rules, common_bin_lib_dyn_set: Optional[BinLibDynNodeList]) -> Self:
+    def extend_self(self, compiler_features, compiler_feature_rules, common_bin_lib_dyn_set: Optional[ProjectTypeNodeList]) -> Self:
         # Extends common part under
         # debug|release :
         #  cxx-compiler-flags:
@@ -542,7 +563,7 @@ class PerProfileBinLibDynNodeList:
         # ASAN feature enable DYNAMIC_LIBRARY_RELEASE for dyn project type
         # We merge DYNAMIC_LIBRARY_RELEASE to the common bin_lib_dyn_list['dyn'].enable_features
         # Note: Flags are merge later when we create the compiler because we don't have to check compatiblity like feature rules
-        extended_bin_lib_dyn_list : BinLibDynNodeList = copy.deepcopy(self.bin_lib_dyn_list)
+        extended_bin_lib_dyn_list : ProjectTypeNodeList = copy.deepcopy(self.bin_lib_dyn_list)
         for feature in extended_common_enable_features:
             compiler_feature = compiler_features.get(feature)
             extended_bin_lib_dyn_list = extended_bin_lib_dyn_list.extends_with_common(compiler_feature.common_bin_lib_dyn_list, 
@@ -552,7 +573,7 @@ class PerProfileBinLibDynNodeList:
         # Add project type that does not exists in the project to extends first
         for project_type in ProjectType:
             if not project_type in self:
-                self.add(BinLibDynNode(project_type))
+                self.add(ProjectTypeNode(project_type))
 
         # Merge common per project first
         # profiles:
@@ -565,7 +586,7 @@ class PerProfileBinLibDynNodeList:
         #     cxx-linker-flags:
         #     enable-features:
         if common_bin_lib_dyn_set:
-            extended_bin_lib_dyn = BinLibDynNodeList()
+            extended_bin_lib_dyn = ProjectTypeNodeList()
             for bin_lib_dyn in common_bin_lib_dyn_set:
                 if project_type in self:
                     if( a := self.get(bin_lib_dyn.project_type)) is None:
@@ -603,9 +624,9 @@ class PerProfileBinLibDynNodeList:
         
         extended = PerProfileBinLibDynNodeList()
         # Get elements in self_extended AND other
-        same_name_nodes : set[BinLibDynNode] = self_extended.bin_lib_dyn_list.bin_lib_dyn_set.intersection(bin_lib_dyn_of_base.bin_lib_dyn_list.bin_lib_dyn_set)
+        same_name_nodes : set[ProjectTypeNode] = self_extended.bin_lib_dyn_list.bin_lib_dyn_set.intersection(bin_lib_dyn_of_base.bin_lib_dyn_list.bin_lib_dyn_set)
         # Get elements not in self_extended and other
-        non_commons : set[BinLibDynNode] = self_extended.bin_lib_dyn_list.bin_lib_dyn_set.symmetric_difference(bin_lib_dyn_of_base.bin_lib_dyn_list.bin_lib_dyn_set)
+        non_commons : set[ProjectTypeNode] = self_extended.bin_lib_dyn_list.bin_lib_dyn_set.symmetric_difference(bin_lib_dyn_of_base.bin_lib_dyn_list.bin_lib_dyn_set)
 
         # Extends the commons and add non common
         for same_name_node in same_name_nodes:
@@ -637,7 +658,7 @@ class PerProfileBinLibDynNodeList:
 #           enable-features: []         <== 'FeatureNameList'
 #           cxx-compiler-flags: []      <== 'CXXCompilerFlagList'
 #           cxx-linker-flags: []        <== 'CXXLinkerFlagList'
-#           dyn|bin|lib:                <== <== 'PerProfileBinLibDynNodeList', set of 'BinLibDynNode'
+#           dyn|bin|lib:                <== <== 'PerProfileBinLibDynNodeList', set of 'ProjectTypeNode'
 # 
 #############################################################
 class ProfileNode:
@@ -753,7 +774,7 @@ class ExtendsCyclicError(Exception):
 class ProfileNodeList:
     def __init__(self):
         self.profiles: set[ProfileNode] = set()
-        self.common_bin_lib_dyn_set = BinLibDynNodeList()
+        self.common_bin_lib_dyn_set = ProjectTypeNodeList()
         
     def __iter__(self):
         return iter(self.profiles)
@@ -1348,6 +1369,9 @@ class CompilerNode:
 class CompilerNodeList:
     def __init__(self):
         self.compilers : set[CompilerNode] = set()
+        self.common_compilers_cxx_linker_flags = CXXLinkerFlagList()
+        self.common_compilers_cxx_compiler_flags = CXXCompilerFlagList()
+        self.common_compilers_enable_features = FeatureNameList()
 
     def __iter__(self):
         return iter(self.compilers)

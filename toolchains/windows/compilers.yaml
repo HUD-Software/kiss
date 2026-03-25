@@ -4,28 +4,144 @@
 # Individual compiler (like cl or clangcl) will extends this compiler to
 # inherit its configuration, avoiding duplication.
 compilers:
-  msvc-generic:
-    # This compiler is not a compiler that can be used to build
-    is_abstract: true
+  enable-features: [] # Feature enabled for all compilers
+  cxx-linker-flags: [] # Linker flags enabled for all compilers
+  cxx-compiler-flags: [] # Compiler flags enabled for all compilers
+  project_types:
+    # For all 'profile' and all 'bin' project used with this 'msvc-generic' compiler
+    bin:
+      enable-features: [] # Feature enabled for all 'profile' and all 'bin' used with this 'msvc-generic' compiler
+      cxx-linker-flags: [] # Linker flags enabled for all 'profile' and all 'bin' used with this 'msvc-generic' compiler
+      cxx-compiler-flags: [] # Compiler flags enabled for all 'profile' and all 'bin' used with this 'msvc-generic' compiler
+    # For all 'profile' and all 'dyn' project used with this 'msvc-generic' compiler
+    dyn:
+      enable-features: [] # Feature enabled for all 'profile' and all 'dyn' used with this 'msvc-generic' compiler
+      cxx-linker-flags: [] # Linker flags enabled for all 'profile' and all 'dyn' used with this 'msvc-generic' compiler
+      cxx-compiler-flags: [] # Compiler flags enabled for all 'profile' and all 'dyn' used with this 'msvc-generic' compiler
+    # For all 'profile' and all 'lib' project used with this 'msvc-generic' compiler
+    lib:
+      enable-features: [] # Feature enabled for all 'profile' and all 'lib' used with this 'msvc-generic' compiler
+      cxx-linker-flags: [] # Linker flags enabled for all 'profile' and all 'lib' used with this 'msvc-generic' compiler
+      cxx-compiler-flags: [] # Compiler flags enabled for all 'profile' and all 'lib' used with this 'msvc-generic' compiler
+  profiles:
+    enable-features: [] # Feature enabled for all compilers
+    cxx-linker-flags: [] # Linker flags enabled for all compilers
+    cxx-compiler-flags: [] # Compiler flags enabled for all compilers
+    project_types:
+      # For all 'profile' and all 'bin' project used with this 'msvc-generic' compiler
+      bin:
+        enable-features: [] # Feature enabled for all 'profile' and all 'bin' used with this 'msvc-generic' compiler
+        cxx-linker-flags: [] # Linker flags enabled for all 'profile' and all 'bin' used with this 'msvc-generic' compiler
+        cxx-compiler-flags: [] # Compiler flags enabled for all 'profile' and all 'bin' used with this 'msvc-generic' compiler
+      # For all 'profile' and all 'dyn' project used with this 'msvc-generic' compiler
+      dyn:
+        enable-features: [] # Feature enabled for all 'profile' and all 'dyn' used with this 'msvc-generic' compiler
+        cxx-linker-flags: [] # Linker flags enabled for all 'profile' and all 'dyn' used with this 'msvc-generic' compiler
+        cxx-compiler-flags: [] # Compiler flags enabled for all 'profile' and all 'dyn' used with this 'msvc-generic' compiler
+      # For all 'profile' and all 'lib' project used with this 'msvc-generic' compiler
+      lib:
+        enable-features: [] # Feature enabled for all 'profile' and all 'lib' used with this 'msvc-generic' compiler
+        cxx-linker-flags: [] # Linker flags enabled for all 'profile' and all 'lib' used with this 'msvc-generic' compiler
+        cxx-compiler-flags: [] # Compiler flags enabled for all 'profile' and all 'lib' used with this 'msvc-generic' compiler
+  # define 'msvc-generic' compiler, this compiler is not a compiler that
+  # can be used to build
+  msvc-generic-compiler:
+    is_abstract: true # This compiler is not a compiler that can be used to build
+
+    # List of profiles defined when we use this compiler
     profiles:
-      msvc-generic:
-        is_abstract: true
-        enable-features: [WARNING_STRICT, ENABLE_EXCEPTION]
+      enable-features: [] # Feature enabled for all 'profile' and all project type used with this 'msvc-generic' compiler
+      cxx-linker-flags: [] # Linker flags enabled for all 'profile' and all project type used with this 'msvc-generic' compiler
+      cxx-compiler-flags: [] # Compiler flags enabled for all 'profile' and all project type used with this 'msvc-generic' compiler
+      project_types:
+        # For all 'profile' and all 'bin' project used with this 'msvc-generic' compiler
+        bin:
+          enable-features: [] # Feature enabled for all 'profile' and all 'bin' used with this 'msvc-generic' compiler
+          cxx-linker-flags: [] # Linker flags enabled for all 'profile' and all 'bin' used with this 'msvc-generic' compiler
+          cxx-compiler-flags: [] # Compiler flags enabled for all 'profile' and all 'bin' used with this 'msvc-generic' compiler
+        # For all 'profile' and all 'dyn' project used with this 'msvc-generic' compiler
+        dyn:
+          enable-features: [] # Feature enabled for all 'profile' and all 'dyn' used with this 'msvc-generic' compiler
+          cxx-linker-flags: [] # Linker flags enabled for all 'profile' and all 'dyn' used with this 'msvc-generic' compiler
+          cxx-compiler-flags: [] # Compiler flags enabled for all 'profile' and all 'dyn' used with this 'msvc-generic' compiler
+        # For all 'profile' and all 'lib' project used with this 'msvc-generic' compiler
+        lib:
+          enable-features: [] # Feature enabled for all 'profile' and all 'lib' used with this 'msvc-generic' compiler
+          cxx-linker-flags: [] # Linker flags enabled for all 'profile' and all 'lib' used with this 'msvc-generic' compiler
+          cxx-compiler-flags: [] # Compiler flags enabled for all 'profile' and all 'lib' used with this 'msvc-generic' compiler
+
+      # 'msvc-generic' profile is not a profile that can be used to build
+      msvc-generic-profile:
+        is_abstract: true # 'msvc-generic' profile is not a profile that can be used to build
+        enable-features: [WARNING_STRICT, ENABLE_EXCEPTION] # 'msvc-generic' profile enable those features for all profiles and all project type that extend it
+        cxx-linker-flags: [] # 'msvc-generic' profile add linker flags for all profiles and all project type that extend it
+        cxx-compiler-flags: [] # 'msvc-generic' profile add compiler flags for all profiles and all project type that extend it
+        # For all 'msvc-generic' profile and all 'bin' project used with this 'msvc-generic' compiler
+        bin:
+          enable-features: [] # Feature enabled for all 'profile' and all 'bin' used with this 'msvc-generic' profile
+          cxx-linker-flags: [] # Linker flags enabled for all 'profile' and all 'bin' used with this 'msvc-generic' profile
+          cxx-compiler-flags: [] # Compiler flags enabled for all 'profile' and all 'bin' used with this 'msvc-generic' profile
+        # For all 'msvc-generic' profile and all 'dyn' project used with this 'msvc-generic' compiler
+        dyn:
+          enable-features: [] # Feature enabled for all 'msvc-generic' profile and all 'dyn' project used with this 'msvc-generic' compiler
+          cxx-linker-flags: [] # Linker flags enabled for all 'msvc-generic' profile and all 'dyn' project used with this 'msvc-generic' compiler
+          cxx-compiler-flags: [] # Compiler flags enabled for all 'msvc-generic' profile and all 'dyn' project used with this 'msvc-generic' compiler
+        # For all 'msvc-generic' profile and all 'lib' project used with this 'msvc-generic' profile
+        lib:
+          enable-features: [] # Feature enabled for all 'msvc-generic' profile and all 'dyn' project used with this 'msvc-generic' compiler
+          cxx-linker-flags: [] # Linker flags enabled for all 'msvc-generic' profile and all 'dyn' project used with this 'msvc-generic' compiler
+          cxx-compiler-flags: [] # Compiler flags enabled for all 'msvc-generic' profile and all 'dyn' project used with this 'msvc-generic' compiler
+      # 'debug' profile
       debug:
-        extends: msvc-generic
-        enable-features: [OPT_LEVEL_0, ENABLE_INCREMENTAL_LINK, WINDOWS_DLL_RUNTIME_DEBUG]
-        dyn:
-          enable-features: [DYNAMIC_LIBRARY_DEBUG]
+        extends: msvc-generic-profile # Extend 'msvc-generic' profile
+        enable-features: [OPT_LEVEL_0, ENABLE_INCREMENTAL_LINK, WINDOWS_DLL_RUNTIME_DEBUG] # Enable 'debug' profile features
+        dyn: # For all 'dyn' project compiled with 'debug' profile
+          enable-features: [DYNAMIC_LIBRARY_DEBUG] #  Enable 'dyn' specific features for 'debug' profile
+      # 'release' profile
       release:
-        extends: msvc-generic
-        enable-features: [OPT_LEVEL_3, REMOVE_DEAD_CODE, DISABLE_INCREMENTAL_LINK, WINDOWS_DLL_RUNTIME_RELEASE]
-        dyn:
-          enable-features: [DYNAMIC_LIBRARY_RELEASE]
+        extends: msvc-generic-profile # Extend 'msvc-generic' profile
+        enable-features: [OPT_LEVEL_3, REMOVE_DEAD_CODE, DISABLE_INCREMENTAL_LINK, WINDOWS_DLL_RUNTIME_RELEASE] # Enable 'release' profile features
+        dyn: # For all 'dyn' project compiled with 'release' profile
+          enable-features: [DYNAMIC_LIBRARY_RELEASE] #  Enable 'dyn' specific features for 'release' profile
+
+    # List of features that this compiler can 'enable'
     features:
-      # Dynmaci library
+      # Dynamic library
       - name: DYNAMIC_LIBRARY_RELEASE
         description: Generate a dynamic library in release
+        enable-features: []
         cxx-compiler-flags: [/LD]
+        cxx-linker-flags: []
+        bin:
+          enable-features: []
+          cxx-linker-flags: []
+          cxx-compiler-flags: []
+        dyn:
+          enable-features: []
+          cxx-linker-flags: []
+          cxx-compiler-flags: []
+        lib:
+          enable-features: []
+          cxx-linker-flags: []
+          cxx-compiler-flags: []
+        profiles:
+          debug:
+            enable-features: []
+            cxx-compiler-flags: [/LD]
+            cxx-linker-flags: []
+            bin:
+              enable-features: []
+              cxx-linker-flags: []
+              cxx-compiler-flags: []
+            dyn:
+              enable-features: []
+              cxx-linker-flags: []
+              cxx-compiler-flags: []
+            lib:
+              enable-features: []
+              cxx-linker-flags: []
+              cxx-compiler-flags: []
+
       - name: DYNAMIC_LIBRARY_DEBUG
         description: Generate a dynamic library in debug
         cxx-compiler-flags: [/LDd]
@@ -151,7 +267,7 @@ compilers:
 
   # MSVC cl.exe compiler
   cl:
-    extends: msvc-generic
+    extends: msvc-generic-compiler
     profiles:
       asan:
         extends: debug
@@ -168,7 +284,7 @@ compilers:
 
   # MSVC clang-cl compiler
   clangcl:
-    extends: msvc-generic
+    extends: msvc-generic-compiler
     profiles:
       asan:
         extends: debug

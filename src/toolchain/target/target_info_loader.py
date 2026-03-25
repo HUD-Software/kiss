@@ -3,6 +3,7 @@
 #####################################################################
 from pathlib import Path
 import console
+from toolchain.compiler.compiler_info_loader import CompilerInfoLoader
 from toolchain.target.target_info import TargetInfo
 from toolchain.target.target_registry import TargetRegistry, Target
 from yaml_file.line_loader import YamlObject
@@ -70,6 +71,18 @@ class TargetInfoLoader:
                         console.print_error(f"Line {yaml_object.key_line} : 'endianness' must be 'big' or 'little' in'{self.file}'")
                         return None
                     target_file.endianness = yaml_object.value
+                case "supported-compilers":
+                    # Check that 'supported-compilers' is a list of string
+                    if not isinstance(yaml_object.value, list) or not all(isinstance(x, str) for x in yaml_object.value):
+                        console.print_error(f"Line {yaml_object.key_line} : 'supported-compilers' must contains list of compiler name in '{self.file}'")
+                        return None
+                    target_file.supported_compilers = yaml_object.value
+                case "compilers":
+                    #    CompilerInfoLoader(file, )
+                    pass
+                case _:
+                    console.print_error(f"Line {yaml_object.key_line} : Unknown key '{item}' in '{self.file}'")
+                    continue
         return target_file
         
         

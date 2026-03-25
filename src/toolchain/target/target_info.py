@@ -14,6 +14,8 @@ class TargetInfo:
         self.pointer_width = int
         # Endianness ( little or big )
         self.endianness = str
+        # Supported compilers
+        self.supported_compilers = list[str]()
 
     def __hash__(self) -> int:
         return hash(self.name)

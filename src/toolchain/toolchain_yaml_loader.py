@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Optional
 import yaml
 import console
 from toolchain.compiler import CompilerInfoLoader
@@ -29,5 +30,3 @@ class ToolchainYamlFile:
         except (OSError, yaml.YAMLError) as e:
             console.print_error(f"Error: When loading '{self.file}' file: {e}")
             return False
-
-

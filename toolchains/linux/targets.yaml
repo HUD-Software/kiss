@@ -6,7 +6,7 @@ targets:
     abi: gnu # msvc, gnu, musl, none
     pointer-width: 64 # 32 or 64
     endianness: little # or big
-    compiler-features: [TARGET_X64]
+    enable-compiler-features: [TARGET_X64]
 
   i686-unknown-linux-gnu:
     arch: i686 # x86_64, i686, aarch64, arm
@@ -15,4 +15,4 @@ targets:
     abi: gnu # msvc, gnu, musl, none
     pointer-width: 32 # 32 or 64
     endianness: little # or big
-    compiler-features: [TARGET_X86]
+    enable-compiler-features: [TARGET_X86]

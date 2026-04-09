@@ -1,6 +1,6 @@
 from pathlib import Path
 import platform
-from typing import Self
+from typing import Optional, Self
 import console
 from project import ProjectType
 from toolchain.compiler.compiler_info import CompilerNode, CompilerNodeRegistry
@@ -116,12 +116,8 @@ class Compiler:
         return profile.compiler_flags_for_project_type(project_type)
 
     @staticmethod
-    def create(name :str) -> Self | None:
-        if (root_compiler_info := CompilerNodeRegistry.get(name)) is None:
-            console.print_error(f"Compiler {name} not found")
-            return None
-        
-        if(compiler_node := root_compiler_info.extend_self()) is None:
+    def create(name :str) -> Optional[Self]:
+        if(compiler_node := CompilerNodeRegistry.get_extended(name)) is None:
             return None
         
         new_compiler = Compiler(name=compiler_node.name,

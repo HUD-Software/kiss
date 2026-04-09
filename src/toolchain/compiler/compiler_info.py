@@ -215,7 +215,7 @@ class FeatureNode:
         self.name = name
         self.description: str = ""
         self.commons = Commons()
-        self.common_project_list = ProjectTypeNodeList()
+        self.common_project_list = ProjectNodeList()
         self.common_profile_list = ProfileNodeList()
 
     def __hash__(self) -> int:
@@ -234,14 +234,20 @@ class FeatureNode:
     # This will extends all profiles in this feature by dispatching common flags and features into all profiles and check that the result validate feature rules
     def extend_self(self, compiler_features, compiler_feature_rules) -> Self:
         extended = FeatureNode(self.name)
-        extended.commons = self.commons.extend_self()
-        extended.common_bin_lib_dyn_list = copy.deepcopy(self.common_bin_lib_dyn_list)
-        self.profiles.common_bin_lib_dyn_set = self.profiles.common_bin_lib_dyn_set.extends_with_common(self.common_bin_lib_dyn_list,
-                                                                                                        compiler_features=compiler_features,
-                                                                                                        compiler_feature_rules=compiler_feature_rules)
-        extended.profiles = self.profiles.extend_self(compiler_features=compiler_features,
-                                                      compiler_feature_rules=compiler_feature_rules,
-                                                      profiles_of_base=None)
+        extended.commons = self.commons.extend_self(compiler_features=compiler_features,
+                                                    compiler_feature_rules=compiler_feature_rules)
+        extended.common_profile_list = self.common_project_list.extends_with_commons(extended.commons,
+                                                          compiler_features=compiler_features,
+                                                          compiler_feature_rules=compiler_feature_rules)
+        extended.common_profile_list.extend_self(compiler_features=compiler_features,
+                                                 compiler_feature_rules=compiler_feature_rules)
+        # extended.common_bin_lib_dyn_list = copy.deepcopy(self.common_bin_lib_dyn_list)
+        # self.profiles.common_bin_lib_dyn_set = self.profiles.common_bin_lib_dyn_set.extends_with_common(self.common_bin_lib_dyn_list,
+        #                                                                                                 compiler_features=compiler_features,
+        #                                                                                                 compiler_feature_rules=compiler_feature_rules)
+        # extended.profiles = self.profiles.extend_self(compiler_features=compiler_features,
+        #                                               compiler_feature_rules=compiler_feature_rules,
+        #                                               profiles_of_base=None)
         return extended
     
 ###############################################################
@@ -272,7 +278,7 @@ class CXXCompilerFlagList:
       
 
     def add(self, flag:str):
-        self.flags.append(flag)
+        self.flags.add(flag)
 
     def get(self, name: str) -> str | None:
         return self.flags.get(name)
@@ -312,7 +318,7 @@ class CXXLinkerFlagList:
         return str(self.flags)  
     
     def add(self, flag:str):
-        self.flags.append(flag)
+        self.flags.add(flag)
         
     def get(self, name: str) -> str | None:
         return self.flags.get(name)
@@ -354,18 +360,26 @@ class ProjectTypeNode:
     def __str__(self) -> str:
         return self._build_repr()
     
-    def extends_with_other(self, other: Self, compiler_features, compiler_feature_rules) -> Optional[Self]:
+    def extend_with_commons(self, commons: Commons, compiler_features, compiler_feature_rules) -> Optional[Self]:
         extended = ProjectTypeNode(self.project_type_name)
-        extended.commons = self.commons.extends_with_other(other=other.commons,
+        extended.commons = self.commons.extends_with_other(commons,
                                                            compiler_features=compiler_features,
                                                            compiler_feature_rules=compiler_feature_rules)
+        extended.is_extended = True
         return extended
+    
+    # def extends_with_other(self, other: Self, compiler_features, compiler_feature_rules) -> Optional[Self]:
+    #     extended = ProjectTypeNode(self.project_type_name)
+    #     extended.commons = self.commons.extends_with_other(other=other.commons,
+    #                                                        compiler_features=compiler_features,
+    #                                                        compiler_feature_rules=compiler_feature_rules)
+    #     return extended
 
 
 ###############################################################
-# ProjectTypeNodeList are list of ProjectTypeNode
+# ProjectNodeList are list of ProjectTypeNode
 ##############################################################
-class ProjectTypeNodeList:
+class ProjectNodeList:
     def __init__(self):
         self.project_type_set: set[ProjectTypeNode] = set()
         self.is_extended = False
@@ -413,10 +427,20 @@ class ProjectTypeNodeList:
                 return p
         return None 
     
-    # Extends the ProjectTypeNodeList with common flags and features.
+    def extends_with_commons(self, commons: Commons, compiler_features, compiler_feature_rules) -> Optional[Self]:
+        extended = ProjectNodeList()
+        for project_type in self.project_type_set:
+            project_type.extend_with_commons(commons,
+                                             compiler_feature=compiler_features,
+                                             compiler_feature_rules=compiler_feature_rules)
+        extended.is_extended = True
+        return extended
+        
+
+    # Extends the ProjectNodeList with common flags and features.
     # This will merge compiler and linker flags and extends features and validate feature rules.
     def extends_with_other(self, other: Self, compiler_features, compiler_feature_rules) -> Self | None :
-        extended = ProjectTypeNodeList()
+        extended = ProjectNodeList()
 
         # Get elements in self AND profiles_of_base
         common_bin_dyn_lib = self.project_type_set.intersection(other)
@@ -443,7 +467,7 @@ class ProjectTypeNodeList:
 ##############################################################
 class PerProfileBinLibDynNodeList:
     def __init__(self):
-        self.bin_lib_dyn_list = ProjectTypeNodeList()
+        self.bin_lib_dyn_list = ProjectNodeList()
         self.flag_and_feature = Commons()
     
     def __iter__(self):
@@ -486,7 +510,7 @@ class PerProfileBinLibDynNodeList:
     def get(self, project_type: ProjectType) -> ProjectTypeNode | None:
         return self.bin_lib_dyn_list.get(project_type)
     
-    def extend_self(self, compiler_features, compiler_feature_rules, common_bin_lib_dyn_set: Optional[ProjectTypeNodeList]) -> Self:
+    def extend_self(self, compiler_features, compiler_feature_rules, common_bin_lib_dyn_set: Optional[ProjectNodeList]) -> Self:
         # Extends common part under
         # debug|release :
         #  cxx-compiler-flags:
@@ -511,7 +535,7 @@ class PerProfileBinLibDynNodeList:
         # ASAN feature enable DYNAMIC_LIBRARY_RELEASE for dyn project type
         # We merge DYNAMIC_LIBRARY_RELEASE to the common bin_lib_dyn_list['dyn'].enable_features
         # Note: Flags are merge later when we create the compiler because we don't have to check compatiblity like feature rules
-        extended_bin_lib_dyn_list : ProjectTypeNodeList = copy.deepcopy(self.bin_lib_dyn_list)
+        extended_bin_lib_dyn_list : ProjectNodeList = copy.deepcopy(self.bin_lib_dyn_list)
         for feature in extended_common_enable_features:
             compiler_feature = compiler_features.get(feature)
             extended_bin_lib_dyn_list = extended_bin_lib_dyn_list.extends_with_common(compiler_feature.common_bin_lib_dyn_list, 
@@ -534,7 +558,7 @@ class PerProfileBinLibDynNodeList:
         #     cxx-linker-flags:
         #     enable-features:
         if common_bin_lib_dyn_set:
-            extended_bin_lib_dyn = ProjectTypeNodeList()
+            extended_bin_lib_dyn = ProjectNodeList()
             for bin_lib_dyn in common_bin_lib_dyn_set:
                 if project_type in self:
                     if( a := self.get(bin_lib_dyn.project_type)) is None:
@@ -604,10 +628,10 @@ class ProfileNode:
         self.extends_name : str = None
         # If this profile specific is abstract ( Not usable by the user )
         self.is_abstract = False
-        # List of flags and features that apply to all project types
+        # List of flags and features that apply to all project types of this profile
         self.commons = Commons()
         # List of project type specific flags and features with this profile
-        self.projects = ProjectTypeNodeList()
+        self.projects = ProjectNodeList()
         # True if this node is extended
         self.is_extended = False
 
@@ -769,16 +793,7 @@ class ProfileNodeList:
     def extend_self(self, compiler_features, compiler_feature_rules, profiles_of_base: Self) -> Self | None:
         extended = ProfileNodeList()
         already_extended = ProfileNodeList()
-        
-        # If profile in base in not present in self, we add it the self profile list
-        # This will allow other profile that extends this one to also extends with profile at the top
-        # Copy it, we don't want to modify the base profile
-        if profiles_of_base:
-            for profile_of_base in profiles_of_base:
-                if not profile_of_base in self.profiles:
-                    self.add(copy.deepcopy(profile_of_base))
-        
-        
+              
         # Then we extends all profiles in self
         for profile in self.profiles:
             if profile in already_extended:
@@ -819,9 +834,18 @@ class ProfileNodeList:
         return extended
 
     def get_extended_with_base(self, profiles_of_base : Self, compiler_features, compiler_feature_rules) -> Self | None :
+        # If profile in base in not present in self, we add it the self profile list
+        # This will allow other profile that extends this one to also extends with profile at the top
+        # Copy it, we don't want to modify the base profile
+        self_profiles_of_base : Self = ProfileNodeList()
+        self_profiles_of_base.profiles.update(self.profiles)
+        # for profile_of_base in profiles_of_base:
+        #     if not profile_of_base in self.profiles:
+        #         self.add(copy.deepcopy(profile_of_base))
+
         if(self_extended := self.extend_self(compiler_features=compiler_features,
                                              compiler_feature_rules=compiler_feature_rules,
-                                             profiles_of_base=profiles_of_base)) is None:
+                                             profiles_of_base=self_profiles_of_base)) is None:
             return None
         
         extended = ProfileNodeList()
@@ -1081,7 +1105,10 @@ class FeatureRuleNodeList:
                 return f
         return None 
     
-    def get_extended_with(self, base : Self) -> Self | None:
+    def extend_self(self) -> Self:
+        return copy.deepcopy(self)
+    
+    def extends_with_other(self, base : Self) -> Self | None:
         extended = FeatureRuleNodeList()
         # Get elements in self AND base
         common_feature_rules : set[FeatureNode] = self.feature_rules.intersection(base.feature_rules)
@@ -1133,7 +1160,7 @@ class CompilerNode:
         # List of profiles specific flags and features with this compiler
         self.common_profile_list = ProfileNodeList()
         # List of project type specific flags and features with this compiler
-        self.common_project_list = ProjectTypeNodeList()
+        self.common_project_list = ProjectNodeList()
         # List of features
         self.features = FeatureNodeList()
         # List of feature rules that are common to all profiles
@@ -1144,6 +1171,10 @@ class CompilerNode:
         self.is_extended = is_extended
         # Compiler extends names
         self.extends_ordered_list = list[Self]()
+        # C++ compiler path
+        self.cxx_path : Optional[Path] = None
+        # C compiler path
+        self.c_path : Optional[Path] = None
 
     def is_derived_from(self, compiler_name: Self) -> bool:
         for extends in self.extends_ordered_list:
@@ -1205,12 +1236,15 @@ class CompilerNode:
     
     def get_profile_names(self) -> set[str]:
         profiles = set[str]()
-        profiles.update(self.profiles.get_profile_names())
+        profiles.update(self.get_profile_names())
         profiles.update(self.features.get_profile_names())
         return profiles
 
     @staticmethod
-    def _extend_no_base_then_validate_features(to_extend_compiler_node: Self) -> Self | None:
+    def _extend_no_base_then_validate_features(to_extend_compiler_node: Self, 
+                                               commons: Commons, 
+                                               common_project_list : ProjectNodeList, 
+                                               common_profile_list : ProfileNodeList) -> Self | None:
         assert not to_extend_compiler_node.is_extended, f"'{to_extend_compiler_node.name}' Already extended"
         
         if(extended := ExtendedCompilerNodeRegistry.get(to_extend_compiler_node.name)) is None:
@@ -1219,7 +1253,7 @@ class CompilerNode:
             extended.cxx_path = to_extend_compiler_node.cxx_path
             extended.c_path = to_extend_compiler_node.c_path
             extended.extends_name = to_extend_compiler_node.extends_name
-            extended.feature_rules = copy.deepcopy(to_extend_compiler_node.feature_rules)
+            extended.feature_rules = to_extend_compiler_node.feature_rules.extend_self()
             extended.features = to_extend_compiler_node.features.extend_self(compiler_feature_rules=extended.feature_rules)
             if (extended_profiles := to_extend_compiler_node.profiles.extend_self(compiler_features=extended.features, 
                                                                                   compiler_feature_rules=extended.feature_rules,
@@ -1273,7 +1307,7 @@ class CompilerNode:
         assert extended.is_extended
         return extended
 
-    def extend_self(self) -> Self | None:
+    def extends_with_commons(self, commons: Commons, common_project_list : ProjectNodeList, common_profile_list : ProfileNodeList) -> Optional[Self]:
         
         # Flattening the compiler hierarchy establishes a dependency order.
         # This ensures safe iteration where all included compilers are
@@ -1286,7 +1320,10 @@ class CompilerNode:
         base_compiler_node: CompilerNode = CompilerNodeRegistry.get(flatten_compiler_extends[0].name)
         
         # Extend the base
-        if (extended_base := CompilerNode._extend_no_base_then_validate_features(base_compiler_node)) is None:
+        if (extended_base := CompilerNode._extend_no_base_then_validate_features(to_extend_compiler_node=base_compiler_node,
+                                                                                 commons=commons,
+                                                                                 common_project_list=common_project_list,
+                                                                                 common_profile_list=common_profile_list)) is None:
             return None
         
         # If there is no compiler to extend from the base, return the extended_base directly
@@ -1326,7 +1363,7 @@ class CompilerNodeList:
     def __init__(self):
         self.compilers : set[CompilerNode] = set()
         self.commons = Commons()
-        self.common_project_list = ProjectTypeNodeList()
+        self.common_project_list = ProjectNodeList()
         self.common_profile_list = ProfileNodeList()
 
     def __iter__(self):
@@ -1351,11 +1388,13 @@ class CompilerNodeList:
                 return t
         return None
 
-    def get_extended(self) -> Self :
-        extended = CompilerNodeList()
-        for compiler in self.compilers:
-            extended.add(compiler.get_extended())
-        return extended
+    def get_extended(self, compiler_name : str) -> Optional[Self] :
+        if (compiler_node := self.get(compiler_name)) is None:
+            console.print_error(f"Compiler {compiler_name} not found")
+            return None
+        return compiler_node.extends_with_commons(commons=self.commons,
+                                                  common_project_list=self.common_project_list,
+                                                  common_profile_list=self.common_profile_list)
 
 ################################################
 # List of all 'CompilerNode' loaded by files
@@ -1371,8 +1410,20 @@ class CompilerNodeRegistry:
     def __iter__(self):
         return iter(self.compiler_list)
     
-    def get(self, name: str) -> CompilerNode | None:
+    def get(self, name: str) -> Optional[CompilerNode]:
         return self.compiler_list.get(name)
+    
+    def commons(self) -> Commons:
+        return self.compiler_list.commons
+    
+    def common_profile_list(self) -> ProfileNodeList:
+        return self.compiler_list.common_profile_list
+    
+    def common_project_list(self) -> ProjectNodeList:
+        return self.compiler_list.common_project_list
+    
+    def get_extended(self, compiler_name : str) -> Optional[CompilerNode] :
+        return self.compiler_list.get_extended(compiler_name=compiler_name)
     
     def register_compiler(self, compiler: CompilerNode):
         existing_compiler = self.compiler_list.get(compiler.name)

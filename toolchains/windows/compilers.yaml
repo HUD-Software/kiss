@@ -4,48 +4,48 @@
 # Individual compiler (like cl or clangcl) will extends this compiler to
 # inherit its configuration, avoiding duplication.
 compilers:
-  enable-features: [A] # Feature enabled for all compilers
-  cxx-linker-flags: [B] # Linker flags enabled for all compilers
-  cxx-compiler-flags: [C] # Compiler flags enabled for all compilers
+  enable-features: [] # Feature enabled for all compilers
+  cxx-linker-flags: [] # Linker flags enabled for all compilers
+  cxx-compiler-flags: [] # Compiler flags enabled for all compilers
   projects:
     # For all 'profile' and all 'bin' project used with all compilers
     bin:
-      enable-features: [D] # Feature enabled for all 'profile' and all 'bin' used with all compilers
-      cxx-linker-flags: [E] # Linker flags enabled for all 'profile' and all 'bin' used with all compilers
-      cxx-compiler-flags: [F] # Compiler flags enabled for all 'profile' and all 'bin' used with all compilers
+      enable-features: [] # Feature enabled for all 'profile' and all 'bin' used with all compilers
+      cxx-linker-flags: [] # Linker flags enabled for all 'profile' and all 'bin' used with all compilers
+      cxx-compiler-flags: [] # Compiler flags enabled for all 'profile' and all 'bin' used with all compilers
     # For all 'profile' and all 'dyn' project used used with all compilers
     dyn:
-      enable-features: [G] # Feature enabled for all 'profile' and all 'dyn' used used with all compilers
-      cxx-linker-flags: [H] # Linker flags enabled for all 'profile' and all 'dyn' used with all compilers
-      cxx-compiler-flags: [I] # Compiler flags enabled for all 'profile' and all 'dyn' used with all compilers
+      enable-features: [] # Feature enabled for all 'profile' and all 'dyn' used used with all compilers
+      cxx-linker-flags: [] # Linker flags enabled for all 'profile' and all 'dyn' used with all compilers
+      cxx-compiler-flags: [] # Compiler flags enabled for all 'profile' and all 'dyn' used with all compilers
     # For all 'profile' and all 'lib' project used with all compilers
     lib:
-      enable-features: [J] # Feature enabled for all 'profile' and all 'lib' used with all compilers
-      cxx-linker-flags: [K] # Linker flags enabled for all 'profile' and all 'lib' used with all compilers
-      cxx-compiler-flags: [L] # Compiler flags enabled for all 'profile' and all 'lib' used with all compilers
+      enable-features: [] # Feature enabled for all 'profile' and all 'lib' used with all compilers
+      cxx-linker-flags: [] # Linker flags enabled for all 'profile' and all 'lib' used with all compilers
+      cxx-compiler-flags: [] # Compiler flags enabled for all 'profile' and all 'lib' used with all compilers
   profiles:
     debug:
       is_abstract: false # This profile is intent to be used
       extends:
-      enable-features: [M] # Feature enabled for all compilers for 'debug' profile and all projects types
-      cxx-linker-flags: [N] # Linker flags enabled for all compilers for 'debug' profile and all projects types
-      cxx-compiler-flags: [O] # Compiler flags enabled for all compilers for 'debug' profile and all projects types
+      enable-features: [] # Feature enabled for all compilers for 'debug' profile and all projects types
+      cxx-linker-flags: [] # Linker flags enabled for all compilers for 'debug' profile and all projects types
+      cxx-compiler-flags: [] # Compiler flags enabled for all compilers for 'debug' profile and all projects types
       projects:
         # For 'debug' and all 'bin' project used with all compilers
         bin:
-          enable-features: [P] # Feature enabled for all compilers for 'debug' profile and 'bin' projects types
-          cxx-linker-flags: [Q] # Linker flags enabled for all compilers for 'debug' profile and 'bin' project types
-          cxx-compiler-flags: [R] # Compiler flags enabled for all compilers for 'debug' profile and 'bin' project types
+          enable-features: [] # Feature enabled for all compilers for 'debug' profile and 'bin' projects types
+          cxx-linker-flags: [] # Linker flags enabled for all compilers for 'debug' profile and 'bin' project types
+          cxx-compiler-flags: [] # Compiler flags enabled for all compilers for 'debug' profile and 'bin' project types
         # For 'debug' and all 'dyn' project used with all compilers
         dyn:
-          enable-features: [S] # Feature enabled for all compilers for 'debug' profile and 'dyn' projects types
-          cxx-linker-flags: [T] # Linker flags enabled for all compilers for 'debug' profile and 'dyn' project types
-          cxx-compiler-flags: [U] # Compiler flags enabled for all compilers for 'debug' profile and 'dyn' project types
+          enable-features: [] # Feature enabled for all compilers for 'debug' profile and 'dyn' projects types
+          cxx-linker-flags: [] # Linker flags enabled for all compilers for 'debug' profile and 'dyn' project types
+          cxx-compiler-flags: [] # Compiler flags enabled for all compilers for 'debug' profile and 'dyn' project types
         # For 'debug' and all 'lib' project used with all compilers
         lib:
-          enable-features: [V] # Feature enabled for all compilers for 'debug' profile and 'lib' projects types
-          cxx-linker-flags: [W] # Linker flags enabled for all compilers for 'debug' profile and 'lib' project types
-          cxx-compiler-flags: [X] # Compiler flags enabled for all compilers for 'debug' profile and 'lib' project types
+          enable-features: [] # Feature enabled for all compilers for 'debug' profile and 'lib' projects types
+          cxx-linker-flags: [] # Linker flags enabled for all compilers for 'debug' profile and 'lib' project types
+          cxx-compiler-flags: [] # Compiler flags enabled for all compilers for 'debug' profile and 'lib' project types
   # define 'msvc-generic' compiler, this compiler is not a compiler that
   # can be used to build
   msvc-generic-compiler:
@@ -127,40 +127,7 @@ compilers:
       # Dynamic library
       - name: DYNAMIC_LIBRARY_RELEASE
         description: Generate a dynamic library in release
-        enable-features: []
         cxx-compiler-flags: [/LD]
-        cxx-linker-flags: []
-        projects:
-          bin:
-            enable-features: []
-            cxx-linker-flags: []
-            cxx-compiler-flags: []
-          dyn:
-            enable-features: []
-            cxx-linker-flags: []
-            cxx-compiler-flags: []
-          lib:
-            enable-features: []
-            cxx-linker-flags: []
-            cxx-compiler-flags: []
-        profiles:
-          debug:
-            enable-features: []
-            cxx-compiler-flags: [/LD]
-            cxx-linker-flags: []
-            projects:
-              bin:
-                enable-features: []
-                cxx-linker-flags: []
-                cxx-compiler-flags: []
-              dyn:
-                enable-features: []
-                cxx-linker-flags: []
-                cxx-compiler-flags: []
-              lib:
-                enable-features: []
-                cxx-linker-flags: []
-                cxx-compiler-flags: []
 
       - name: DYNAMIC_LIBRARY_DEBUG
         description: Generate a dynamic library in debug
@@ -314,8 +281,9 @@ compilers:
         description: Enable ASAN Sanitizer
         cxx-compiler-flags: ["-fsanitize=address", "-fsanitize-address-use-after-scope", "-fsanitize-recover=address"]
         enable-features: [DEBUG_INFO, WINDOWS_DLL_RUNTIME_DEBUG, DISABLE_INCREMENTAL_LINK]
-        dyn:
-          enable-features: [DYNAMIC_LIBRARY_RELEASE] # AddressSanitizer doesn't support linking with debug runtime libraries yet
+        projects:
+          dyn:
+            enable-features: [DYNAMIC_LIBRARY_RELEASE] # AddressSanitizer doesn't support linking with debug runtime libraries yet
     feature-rules:
       - incompatible: asan
         feature: ASAN

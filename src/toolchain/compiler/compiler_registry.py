@@ -76,7 +76,7 @@ class Compiler:
         # Path of the C compiler
         self.c_path = c_path
         # The extended compiler info used to create this compiler
-        assert compiler_info.is_extended, f"Compiler info '{compiler_info.name}' must be extended to create a compiler"
+        assert compiler_info.is_self_extended, f"Compiler info '{compiler_info.name}' must be extended to create a compiler"
         self._compiler_info = compiler_info
     
     def is_derived_from(self, compiler_name: Self) -> bool:
@@ -125,29 +125,30 @@ class Compiler:
                                 c_path=compiler_node.c_path,
                                 compiler_info=compiler_node)
         
-        for profile in compiler_node.profiles:
+        for profile in compiler_node.profile_list:
             if not profile.is_abstract:
-                assert profile.is_extended, f"Profile {profile.name} must be extended"
-                new_profile = Profile(profile.name)
-                for bin_lib_dyn in profile.bin_lib_dyn_list:
-                    cxx_compiler_flags = set()
-                    cxx_linker_flags = set()
-                    cxx_feature_flags = set()
-                    cxx_compiler_flags.update(bin_lib_dyn.cxx_compiler_flags)
-                    cxx_linker_flags.update(bin_lib_dyn.cxx_linker_flags)
-                    cxx_feature_flags.update(bin_lib_dyn.enable_features)
-                    # Add flags of features
-                    for feature_name in bin_lib_dyn.enable_features:
-                        if (feature_node := compiler_node.get_feature(feature_name)) is None:
-                            console.print_error(f"Feature {feature_name} not found for profile {profile.name} in compiler {new_compiler.name}")
-                            return None
-                        cxx_compiler_flags.update(feature_node.cxx_compiler_flags)
-                        cxx_linker_flags.update(feature_node.cxx_linker_flags)
-                        cxx_feature_flags.update(feature_node.enable_features)
+                assert profile.is_self_extended, f"Profile {profile.name} must be extended"
+                # Create the profile for the compiler
+                # new_profile = Profile(profile.name)
+                # for bin_lib_dyn in profile.bin_lib_dyn_list:
+                #     cxx_compiler_flags = set()
+                #     cxx_linker_flags = set()
+                #     cxx_feature_flags = set()
+                #     cxx_compiler_flags.update(bin_lib_dyn.cxx_compiler_flags)
+                #     cxx_linker_flags.update(bin_lib_dyn.cxx_linker_flags)
+                #     cxx_feature_flags.update(bin_lib_dyn.enable_features)
+                #     # Add flags of features
+                #     for feature_name in bin_lib_dyn.enable_features:
+                #         if (feature_node := compiler_node.get_feature(feature_name)) is None:
+                #             console.print_error(f"Feature {feature_name} not found for profile {profile.name} in compiler {new_compiler.name}")
+                #             return None
+                #         cxx_compiler_flags.update(feature_node.cxx_compiler_flags)
+                #         cxx_linker_flags.update(feature_node.cxx_linker_flags)
+                #         cxx_feature_flags.update(feature_node.enable_features)
 
-                    new_profile.per_project_type_compiler_flags[bin_lib_dyn.project_type] = list(cxx_compiler_flags)
-                    new_profile.per_project_type_linker_flags[bin_lib_dyn.project_type] = list(cxx_linker_flags)
-                    new_profile.per_project_type_feature_names[bin_lib_dyn.project_type] = list(cxx_feature_flags)
+                #     new_profile.per_project_type_compiler_flags[bin_lib_dyn.project_type] = list(cxx_compiler_flags)
+                #     new_profile.per_project_type_linker_flags[bin_lib_dyn.project_type] = list(cxx_linker_flags)
+                #     new_profile.per_project_type_feature_names[bin_lib_dyn.project_type] = list(cxx_feature_flags)
                     
                 new_compiler.profiles.add(new_profile)
 

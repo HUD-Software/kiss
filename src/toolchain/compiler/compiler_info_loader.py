@@ -93,7 +93,7 @@ class CompilerInfoLoader:
                         case "projects":
                             if(project_list := self._read_project_list(yaml_object)) is None:
                                 return None
-                            profile.projects.project_type_set.update(project_list.project_type_set)
+                            profile.common_project_list.project_type_set.update(project_list.project_type_set)
                         case "is_abstract":
                             # Check that 'is_abstract' is a boolean
                             if not yaml_object.value:
@@ -118,7 +118,7 @@ class CompilerInfoLoader:
             profile_list.add(profile)
         return profile_list
     
-    def _read_compiler_features(self, yaml_object: YamlObject) -> FeatureNodeList | None:
+    def _read_compiler_features_list(self, yaml_object: YamlObject) -> FeatureNodeList | None:
         feature_list = FeatureNodeList()
         for yaml_object_feature in yaml_object.value:
             # Read the name as it is required
@@ -189,14 +189,14 @@ class CompilerInfoLoader:
                             return None
                         elif(project_list := self._read_project_list(yaml_object)) is None:
                             return None
-                        feature.project_list = project_list
+                        feature.common_project_list = project_list
                     case _:
                         console.print_error(f"Unknown key '{item}' in '{self.file}({yaml_object.key_line})'")
                         continue
             feature_list.add(feature)
         return feature_list
     
-    def _read_compiler_feature_list(self, yaml_object: YamlObject) -> FeatureRuleNodeList | None:
+    def _read_compiler_feature_rule_list(self, yaml_object: YamlObject) -> Optional[FeatureRuleNodeList]:
         feature_rules_list = FeatureRuleNodeList()
         for  yaml_object_feature_rule in yaml_object.value:
             # Read only-one feature rule
@@ -284,14 +284,14 @@ class CompilerInfoLoader:
                     elif( projects := self._read_project_list(yaml_object)) is None:
                         return None
                     else:
-                        compiler_node.project_list = projects
+                        compiler_node.common_project_list = projects
                 case "features":
                     if not yaml_object.value:
                         console.print_warning(f"'features' in compiler '{compiler_name}' is empty in '{self.file}({yaml_compiler.key_line})'")
                     elif not isinstance(yaml_object.value, list):
                         console.print_error(f"'features' must contains list of features in '{self.file}({yaml_compiler.key_line})'")
                         return None
-                    elif( features := self._read_compiler_features(yaml_object)) is None:
+                    elif( features := self._read_compiler_features_list(yaml_object)) is None:
                         return None
                     else:
                         compiler_node.features = features
@@ -301,7 +301,7 @@ class CompilerInfoLoader:
                     elif not isinstance(yaml_object.value, list):
                         console.print_error(f"'feature-rules' must contains list of feature rules in '{self.file}({yaml_compiler.key_line})'")
                         return None
-                    elif( feature_rules := self._read_compiler_feature_list(yaml_object)) is None:
+                    elif( feature_rules := self._read_compiler_feature_rule_list(yaml_object)) is None:
                         return None
                     else:
                         compiler_node.feature_rules = feature_rules
@@ -359,7 +359,7 @@ class CompilerInfoLoader:
                 case "projects":
                     if(project_list := self._read_project_list(yaml_object)) is None:
                         return None
-                    compiler_list.project_list = project_list
+                    compiler_list.common_project_list = project_list
                 case "profiles":
                     if(profile_list := self._read_profile_list(yaml_object)) is None:
                         return None
@@ -381,8 +381,13 @@ class CompilerInfoLoader:
                     compiler_list.add(compiler)
         
         # Register all compilers we just load
+        
         for compiler in compiler_list:
             CompilerNodeRegistry.register_compiler(compiler)
+
+        CompilerNodeRegistry.compiler_list.commons = compiler_list.commons
+        CompilerNodeRegistry.compiler_list.profile_list = compiler_list.profile_list
+        CompilerNodeRegistry.compiler_list.common_project_list = compiler_list.common_project_list
         
                     
            

@@ -52,7 +52,11 @@ class KissCleanContext(KissBaseContext):
         debug_info :bool = getattr(cli_args, "debug_info", True) or (True if not release else False)
         config : Config = Config(release, debug_info)
         target_name :Target = getattr(cli_args, "target", None) or Target.default_target_name()
-        compiler_name : Compiler = getattr(cli_args, "compiler", None) or Compiler.default_compiler_name()
+        compiler_name: Compiler = getattr(cli_args, "compiler", None)
+        if not compiler_name:
+            if(compiler_name := Compiler.default_compiler_name()) is None:
+                console.print_error(f"Default compiler not found")
+                return None
         if( toolchain := Toolchain.create(compiler_name=compiler_name, target_name=target_name)) is None:
             return None
         clean_context: KissCleanContext = KissCleanContext.create(directory=cli_args.directory,

@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Optional
 import console
 from yaml_file.line_loader import YamlObject
-from toolchain.compiler.compiler_info import CompilerNodeRegistry, ProjectNodeList, CompilerNode, CompilerNodeList, FeatureNode, FeatureNodeList, FeatureRuleNodeIncompatibleWith, FeatureRuleNodeList, FeatureRuleNodeOnlyOne, ProfileNode, ProfileNodeList, ProjectTypeNode, Commons
+from toolchain.compiler.compiler_info import CompilerNodeRegistry, ProjectNodeList, CompilerNode, FileCompilerNodeList, FeatureNode, FeatureNodeList, FeatureRuleNodeIncompatibleWith, FeatureRuleNodeList, FeatureRuleNodeOnlyOne, ProfileNode, ProfileNodeList, ProjectTypeNode, Commons
 
 class CompilerInfoLoader:
     def __init__(self, file: Path):
@@ -341,7 +341,7 @@ class CompilerInfoLoader:
 
 
     def read_yaml_compilers(self, item_yaml_object):
-        compiler_list = CompilerNodeList()
+        compiler_list = FileCompilerNodeList(self.file)
         for node_name, yaml_object in item_yaml_object.value.items():
             match node_name:
                 case "cxx-compiler-flags":
@@ -366,7 +366,7 @@ class CompilerInfoLoader:
                     compiler_list.profile_list = profile_list
                 case _:
                     # Ignore if we already have a compiler name
-                    existing_compiler: CompilerNode = CompilerNodeRegistry.get(node_name)
+                    existing_compiler: CompilerNode = CompilerNodeRegistry.get_compiler_node(node_name)
                     if existing_compiler:
                         console.print_warning(f"'{existing_compiler}' compiler already exist in '{existing_compiler.file}' when loading '{self.file}({yaml_object.key_line})'")
                         continue
@@ -381,13 +381,7 @@ class CompilerInfoLoader:
                     compiler_list.add(compiler)
         
         # Register all compilers we just load
-        
-        for compiler in compiler_list:
-            CompilerNodeRegistry.register_compiler(compiler)
-
-        CompilerNodeRegistry.compiler_list.commons = compiler_list.commons
-        CompilerNodeRegistry.compiler_list.profile_list = compiler_list.profile_list
-        CompilerNodeRegistry.compiler_list.common_project_list = compiler_list.common_project_list
+        CompilerNodeRegistry.register_file_compiler_list(compiler_list)
         
                     
            

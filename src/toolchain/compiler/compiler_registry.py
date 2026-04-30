@@ -150,12 +150,12 @@ class Compiler:
                 #     new_profile.per_project_type_linker_flags[bin_lib_dyn.project_type] = list(cxx_linker_flags)
                 #     new_profile.per_project_type_feature_names[bin_lib_dyn.project_type] = list(cxx_feature_flags)
                     
-                new_compiler.profiles.add(new_profile)
+                #new_compiler.profiles.add(new_profile)
 
         return new_compiler
     
     @classmethod
-    def default_compiler_name(cls) -> Self:
+    def default_compiler_name(cls) -> Optional[Self]:
         if not hasattr(cls, "_default_compiler_name"):
             system = platform.system()
             if system == "Windows":
@@ -166,11 +166,11 @@ class Compiler:
                 supported_compilers = ["clang", "gcc"]
                 
             for compiler_name in supported_compilers:
-                if compiler_name in CompilerNodeRegistry:
-                    cls._default_compiler_name = compiler_name
-                    return cls._default_compiler_name
-            console.print_warning("⚠️  Warning: Default compiler not found")
-            return ""
+                for compiler_list in CompilerNodeRegistry.file_compiler_list:
+                    if compiler_name in compiler_list:
+                        cls._default_compiler_name = compiler_name
+                        return cls._default_compiler_name
+            return None
         return cls._default_compiler_name
     def _build_repr(self) -> str:
         lines = [

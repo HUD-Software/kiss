@@ -41,7 +41,11 @@ class KissBuildContext(KissBaseContext):
     @staticmethod
     def from_cli_args(cli_args: argparse.Namespace) -> Optional[Self]:
         target_name: Target = getattr(cli_args, "target", None) or Target.default_target_name()
-        compiler_name: Compiler = getattr(cli_args, "compiler", None) or Compiler.default_compiler_name()
+        compiler_name: Compiler = getattr(cli_args, "compiler", None)
+        if not compiler_name:
+            if(compiler_name := Compiler.default_compiler_name()) is None:
+                console.print_error(f"Default compiler not found")
+                return None
         if( toolchain := Toolchain.create(compiler_name=compiler_name, target_name=target_name, profile_name=cli_args.profile)) is None:
             return None
             

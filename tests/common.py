@@ -18,7 +18,7 @@ else:
 
 RUNTIME_DIR = Path("tests/runtime")
 DEFAULT_PROFILE_NAME = "debug"
-DEFAULT_COMPILER_NAME  = Compiler.default_compiler_name()
+DEFAULT_COMPILER_NAME = Compiler.default_compiler_name()
 DEFAULT_TARGET_NAME = Target.default_target_name()
 
 

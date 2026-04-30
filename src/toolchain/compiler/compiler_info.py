@@ -941,7 +941,7 @@ class FeatureNodeList:
                     return f
         return None
     
-    def merge_with_other(self, other_features_list : Self, compiler_feature_rules) -> Optional[Self]:
+    def merge_with_other(self, other_features_list : Self) -> Optional[Self]:
         extended = FeatureNodeList()
         # Get elements in self AND features_of_base
         common_features : set[FeatureNode] = self.features.intersection(other_features_list.features)
@@ -1261,8 +1261,7 @@ class CompilerNode:
         extended.feature_rules = extended_feature_rules
 
         # Extend features
-        if(extended_features := self.features.merge_with_other(other_features_list=other_compiler_node.features, 
-                                                               compiler_feature_rules=extended_feature_rules)) is None:
+        if(extended_features := self.features.merge_with_other(other_features_list=other_compiler_node.features)) is None:
             console.print_error(f"Error extending features for compiler '{self.name}' with '{other_compiler_node.name}'")
             return None
         extended.features = extended_features
@@ -1297,6 +1296,24 @@ class CompilerNode:
             return None
         extended.profile_list = extended_profile_list                                                   
         return extended
+
+    def extend_features(self) -> Optional[Self]:
+        extended = CompilerNode(self.name, self.file_path)
+        extended.extends_name = self.extends_name
+        extended.is_abstract = self.is_abstract
+        extended.cxx_path = self.cxx_path
+        extended.c_path = self.c_path
+        extended.extends_ordered_list = self.extends_ordered_list.copy()
+        extended.feature_rules = copy.deepcopy(self.feature_rules)
+        extended.features = copy.deepcopy(self.features)
+        assert False, "TODO"
+        return extended
+
+        # extended = copy.deepcopy(self)
+        # if(extended.features.is_feature_list_validate_rules(compiler_feature_rules=compiler_feature_rules)) is False:
+        #     console.print_error(f"Error validating feature rules for compiler '{self.name}'")
+        #     return None
+        # return extended
     # @staticmethod
     # def _extend_no_base_then_validate_features(to_extend_compiler_node: Self, 
     #                                            commons: Commons, 
@@ -1609,7 +1626,7 @@ class FileCompilerNodeList:
                 return None
 
         # Extends features enabled by features
-        if(extended_features_compiler := extended_compiler.features.extend_enabled_features_by_other_features(compiler_feature_rules=extended_compiler.feature_rules)) is None:
+        if(extended_features_compiler := extended_compiler.extend_features()) is None:
             console.print_error(f"Error extending features enabled by features for compiler {compiler_name} in file {str(self.file_path)}")
             return None
         extended_compiler.features = extended_features_compiler

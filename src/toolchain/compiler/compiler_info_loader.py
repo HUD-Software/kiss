@@ -93,7 +93,7 @@ class CompilerInfoLoader:
                         case "projects":
                             if(project_list := self._read_project_list(yaml_object)) is None:
                                 return None
-                            profile.common_project_list.project_type_set.update(project_list.project_type_set)
+                            profile.project_list.project_type_set.update(project_list.project_type_set)
                         case "is_abstract":
                             # Check that 'is_abstract' is a boolean
                             if not yaml_object.value:
@@ -238,7 +238,8 @@ class CompilerInfoLoader:
         return feature_rules_list
 
     def _read_compiler_node(self, compiler_name: str, yaml_compiler : YamlObject) -> CompilerNode | None:
-        compiler_node : CompilerNode = CompilerNode(compiler_name)
+        compiler_node : CompilerNode = CompilerNode(compiler_name, 
+                                                    file_path=self.file)
 
         # If the compiler is empty, ignore it
         if not yaml_compiler.value:
@@ -347,28 +348,28 @@ class CompilerInfoLoader:
                 case "cxx-compiler-flags":
                     if(cxx_compiler_flags := self._read_yaml_cxx_compiler_flags(yaml_object)) is None:
                         return None
-                    compiler_list.commons.cxx_compiler_flags.add_list(cxx_compiler_flags)
+                    compiler_list.common_compiler.commons.cxx_compiler_flags.add_list(cxx_compiler_flags)
                 case "cxx-linker-flags":
                     if(cxx_linker_flags := self._read_yaml_cxx_linker_flags(yaml_object)) is None:
                         return None
-                    compiler_list.commons.cxx_linker_flags.add_list(cxx_linker_flags)
+                    compiler_list.common_compiler.commons.cxx_linker_flags.add_list(cxx_linker_flags)
                 case "enable-features":
                     if(feature_name_list := self._read_yaml_enable_feature(yaml_object)) is None:
                         return None
-                    compiler_list.commons.enable_features_list.add_list(feature_name_list)
+                    compiler_list.common_compiler.commons.enable_features_list.add_list(feature_name_list)
                 case "projects":
                     if(project_list := self._read_project_list(yaml_object)) is None:
                         return None
-                    compiler_list.common_project_list = project_list
+                    compiler_list.common_compiler.project_list = project_list
                 case "profiles":
                     if(profile_list := self._read_profile_list(yaml_object)) is None:
                         return None
-                    compiler_list.profile_list = profile_list
+                    compiler_list.common_compiler.profile_list = profile_list
                 case _:
                     # Ignore if we already have a compiler name
                     existing_compiler: CompilerNode = CompilerNodeRegistry.get_compiler_node(node_name)
                     if existing_compiler:
-                        console.print_warning(f"'{existing_compiler}' compiler already exist in '{existing_compiler.file}' when loading '{self.file}({yaml_object.key_line})'")
+                        console.print_warning(f"'{existing_compiler}' compiler already exist in '{existing_compiler.file_path}' when loading '{self.file}({yaml_object.key_line})'")
                         continue
                     
                     # Load the compiler

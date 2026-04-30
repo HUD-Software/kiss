@@ -4,18 +4,18 @@
 # Individual compiler (like cl or clangcl) will extends this compiler to
 # inherit its configuration, avoiding duplication.
 compilers:
-  enable-features: [] # Feature enabled for all compilers
+  enable-features: [ X ] # Feature enabled for all compilers
   cxx-linker-flags: [] # Linker flags enabled for all compilers
   cxx-compiler-flags: [] # Compiler flags enabled for all compilers
   projects:
     # For all 'profile' and all 'bin' project used with all compilers
     bin:
-      enable-features: [] # Feature enabled for all 'profile' and all 'bin' used with all compilers
+      enable-features: [ Y ] # Feature enabled for all 'profile' and all 'bin' used with all compilers
       cxx-linker-flags: [] # Linker flags enabled for all 'profile' and all 'bin' used with all compilers
       cxx-compiler-flags: [] # Compiler flags enabled for all 'profile' and all 'bin' used with all compilers
     # For all 'profile' and all 'dyn' project used used with all compilers
     dyn:
-      enable-features: [] # Feature enabled for all 'profile' and all 'dyn' used used with all compilers
+      enable-features: [ A ] # Feature enabled for all 'profile' and all 'dyn' used used with all compilers
       cxx-linker-flags: [] # Linker flags enabled for all 'profile' and all 'dyn' used with all compilers
       cxx-compiler-flags: [] # Compiler flags enabled for all 'profile' and all 'dyn' used with all compilers
     # For all 'profile' and all 'lib' project used with all compilers
@@ -33,7 +33,7 @@ compilers:
       projects:
         # For 'debug' and all 'bin' project used with all compilers
         bin:
-          enable-features: [] # Feature enabled for all compilers for 'debug' profile and 'bin' projects types
+          enable-features: [ Z ] # Feature enabled for all compilers for 'debug' profile and 'bin' projects types
           cxx-linker-flags: [] # Linker flags enabled for all compilers for 'debug' profile and 'bin' project types
           cxx-compiler-flags: [] # Compiler flags enabled for all compilers for 'debug' profile and 'bin' project types
         # For 'debug' and all 'dyn' project used with all compilers
@@ -73,7 +73,7 @@ compilers:
       # 'msvc-generic' profile is not a profile that can be used to build
       msvc-generic-profile:
         is_abstract: true # 'msvc-generic' profile is not a profile that can be used to build
-        enable-features: [WARNING_STRICT, ENABLE_EXCEPTION] # 'msvc-generic' profile enable those features for all profiles and all project type that extend it
+        enable-features: [ WARNING_STRICT, ENABLE_EXCEPTION ] # 'msvc-generic' profile enable those features for all profiles and all project type that extend it
         cxx-linker-flags: [] # 'msvc-generic' profile add linker flags for all profiles and all project type that extend it
         cxx-compiler-flags: [] # 'msvc-generic' profile add compiler flags for all profiles and all project type that extend it
         projects:
@@ -95,7 +95,7 @@ compilers:
       # 'debug' profile
       debug:
         extends: msvc-generic-profile # Extend 'msvc-generic' profile
-        enable-features: [OPT_LEVEL_0, ENABLE_INCREMENTAL_LINK, WINDOWS_DLL_RUNTIME_DEBUG] # Feature enabled for 'debug' profile and all projects types for 'msvc-generic-compiler' compilers and compiler that extend it
+        enable-features: [ OPT_LEVEL_0, ENABLE_INCREMENTAL_LINK, WINDOWS_DLL_RUNTIME_DEBUG ] # Feature enabled for 'debug' profile and all projects types for 'msvc-generic-compiler' compilers and compiler that extend it
         cxx-linker-flags: [] # Linker flags enabled for 'debug' profile and all projects types for 'msvc-generic-compiler' compilers and compiler that extend it
         cxx-compiler-flags: [] # Compiler flags enabled for 'debug' profile and all projects types for 'msvc-generic-compiler' compilers and compiler that extend it
         projects:
@@ -106,7 +106,7 @@ compilers:
             cxx-compiler-flags: [] # Compiler flags enabled for 'debug' profile and 'bin' project types for 'msvc-generic-compiler' compilers and compiler that extend it
           # For 'debug' and all 'dyn' project used with 'msvc-generic-compiler' compilers and compiler that extend it
           dyn:
-            enable-features: [DYNAMIC_LIBRARY_DEBUG] # Feature enabled for 'debug' profile and 'dyn' projects types for 'msvc-generic-compiler' compilers and compiler that extend it
+            enable-features: [ DYNAMIC_LIBRARY_DEBUG ] # Feature enabled for 'debug' profile and 'dyn' projects types for 'msvc-generic-compiler' compilers and compiler that extend it
             cxx-linker-flags: [] # Linker flags enabled for 'debug' profile and 'dyn' project types for 'msvc-generic-compiler' compilers and compiler that extend it
             cxx-compiler-flags: [] # Compiler flags enabled for 'debug' profile and 'dyn' project types for 'msvc-generic-compiler' compilers and compiler that extend it
           # For 'debug' and all 'lib' project used with 'msvc-generic-compiler' compilers and compiler that extend it
@@ -117,110 +117,111 @@ compilers:
       # 'release' profile
       release:
         extends: msvc-generic-profile # Extend 'msvc-generic' profile
-        enable-features: [OPT_LEVEL_3, REMOVE_DEAD_CODE, DISABLE_INCREMENTAL_LINK, WINDOWS_DLL_RUNTIME_RELEASE] # Enable 'release' profile features
+        enable-features: [ OPT_LEVEL_3, REMOVE_DEAD_CODE, DISABLE_INCREMENTAL_LINK, WINDOWS_DLL_RUNTIME_RELEASE ] # Enable 'release' profile features
         projects:
-          dyn: # For all 'dyn' project compiled with 'release' profile
-            enable-features: [DYNAMIC_LIBRARY_RELEASE] #  Enable 'dyn' specific features for 'release' profile
+          dyn:
+            # For all 'dyn' project compiled with 'release' profile
+            enable-features: [ DYNAMIC_LIBRARY_RELEASE ] #  Enable 'dyn' specific features for 'release' profile
 
     # List of features that this compiler can 'enable'
     features:
       # Dynamic library
       - name: DYNAMIC_LIBRARY_RELEASE
         description: Generate a dynamic library in release
-        cxx-compiler-flags: [/LD]
+        cxx-compiler-flags: [ /LD ]
 
       - name: DYNAMIC_LIBRARY_DEBUG
         description: Generate a dynamic library in debug
-        cxx-compiler-flags: [/LDd]
+        cxx-compiler-flags: [ /LDd ]
 
       # Remove dead code
       - name: REMOVE_DEAD_CODE
         description: Remove dead code
-        cxx-linker-flags: [/OPT:REF, /OPT:ICF]
+        cxx-linker-flags: [ /OPT:REF, /OPT:ICF ]
 
       # Warnings
       - name: WARNING_BASE
         description: Default warning level
-        cxx-compiler-flags: [/W3]
+        cxx-compiler-flags: [ /W3 ]
       - name: WARNING_STRICT
         description: Strict warnings
-        cxx-compiler-flags: [/W4]
+        cxx-compiler-flags: [ /W4 ]
       - name: WARNING_ALL
         description: All warnings (very noisy)
-        cxx-compiler-flags: [/Wall]
+        cxx-compiler-flags: [ /Wall ]
       - name: WARNING_AS_ERROR
         description: Treat warnings as errors
-        cxx-compiler-flags: [/WX]
+        cxx-compiler-flags: [ /WX ]
       - name: NO_WARNING
         description: Disable all warnings
-        cxx-compiler-flags: [/W0]
+        cxx-compiler-flags: [ /W0 ]
 
       # Windows Runtime
       - name: WINDOWS_DLL_RUNTIME_DEBUG
         description: Windows CRT dynamic runtime in debug (MSVCRTD.lib)
-        cxx-compiler-flags: [/MDd]
+        cxx-compiler-flags: [ /MDd ]
       - name: WINDOWS_DLL_RUNTIME_RELEASE
         description: Windows CRT dynamic runtime in release (MSVCRT.lib)
-        cxx-compiler-flags: [/MD]
+        cxx-compiler-flags: [ /MD ]
       - name: WINDOWS_STATIC_RUNTIME_DEBUG
         description: Windows CRT static runtime in debug (LIBCMTD.lib)
-        cxx-compiler-flags: [/MTd]
+        cxx-compiler-flags: [ /MTd ]
       - name: WINDOWS_STATIC_RUNTIME_RELEASE
         description: Windows CRT static runtime in release (LIBCMT.lib)
-        cxx-compiler-flags: [/MT]
+        cxx-compiler-flags: [ /MT ]
 
       # Optimisations
       - name: OPT_LEVEL_0
         description: No optimization
-        cxx-compiler-flags: [/Od]
-        cxx-linker-flags: [/DEBUG]
-        enable-features: [DEBUG_INFO]
+        cxx-compiler-flags: [ /Od ]
+        cxx-linker-flags: [ /DEBUG ]
+        enable-features: [ DEBUG_INFO ]
       - name: OPT_LEVEL_1
         description: Minimal optimization
-        cxx-compiler-flags: [/O1]
+        cxx-compiler-flags: [ /O1 ]
       - name: OPT_LEVEL_2
         description: Default optimization
-        cxx-compiler-flags: [/O2]
+        cxx-compiler-flags: [ /O2 ]
       - name: OPT_LEVEL_3
         description: Max optimization
-        cxx-compiler-flags: [/O2, /Ob2, /Oi]
-        enable-features: [LTO, OMIT_FRAME_POINTER]
+        cxx-compiler-flags: [ /O2, /Ob2, /Oi ]
+        enable-features: [ LTO, OMIT_FRAME_POINTER ]
       - name: LTO
         description: Whole program optimization
-        cxx-compiler-flags: [/GL]
-        cxx-linker-flags: [/LTCG]
+        cxx-compiler-flags: [ /GL ]
+        cxx-linker-flags: [ /LTCG ]
       - name: OMIT_FRAME_POINTER
         description: Omit frame pointer
-        cxx-compiler-flags: [/Oy]
+        cxx-compiler-flags: [ /Oy ]
 
       # Debug informations
       - name: DEBUG_INFO
         description: Generate debug informations
-        cxx-compiler-flags: [/Zi]
+        cxx-compiler-flags: [ /Zi ]
 
       # Exception
       - name: ENABLE_EXCEPTION
         description: Enable C++ exception
-        cxx-compiler-flags: [/EHsc]
+        cxx-compiler-flags: [ /EHsc ]
       - name: DISABLE_EXCEPTION
         description: Disable C++ exception
-        cxx-compiler-flags: [/EH-]
+        cxx-compiler-flags: [ /EH- ]
 
       # Incremental link
       - name: ENABLE_INCREMENTAL_LINK
         description: Enable incremental linking
-        cxx-linker-flags: [/INCREMENTAL]
+        cxx-linker-flags: [ /INCREMENTAL ]
       - name: DISABLE_INCREMENTAL_LINK
         description: Disable incremental linking
-        cxx-linker-flags: [/INCREMENTAL:NO]
+        cxx-linker-flags: [ /INCREMENTAL:NO ]
 
       # Target Architecture
       - name: TARGET_X64
         description: Enable 64 bits (AMD64 / Intel64) link
-        cxx-linker-flags: [/MACHINE:X64]
+        cxx-linker-flags: [ /MACHINE:X64 ]
       - name: TARGET_X86
         description: Enable 32 bits (x86) link
-        cxx-linker-flags: [/MACHINE:X86]
+        cxx-linker-flags: [ /MACHINE:X86 ]
 
     # Features rules
     # only-one rule : Only 1 rules is allowed in 'features'. Multiple in the same target is not allowed.
@@ -228,29 +229,29 @@ compilers:
     feature-rules:
       # Only one warning level at a time
       - only-one: warning
-        features: [WARNING_BASE, WARNING_STRICT, WARNING_ALL, NO_WARNING]
+        features: [ WARNING_BASE, WARNING_STRICT, WARNING_ALL, NO_WARNING ]
       # Only one runtime at a time
       - only-one: runtime
-        features: [WINDOWS_DLL_RUNTIME_DEBUG, WINDOWS_DLL_RUNTIME_RELEASE, WINDOWS_STATIC_RUNTIME_DEBUG, WINDOWS_STATIC_RUNTIME_RELEASE]
+        features: [ WINDOWS_DLL_RUNTIME_DEBUG, WINDOWS_DLL_RUNTIME_RELEASE, WINDOWS_STATIC_RUNTIME_DEBUG, WINDOWS_STATIC_RUNTIME_RELEASE ]
       # Only one optimization level at a time
       - only-one: optimization
-        features: [OPT_LEVEL_0, OPT_LEVEL_1, OPT_LEVEL_2, OPT_LEVEL_3]
+        features: [ OPT_LEVEL_0, OPT_LEVEL_1, OPT_LEVEL_2, OPT_LEVEL_3 ]
       # OPT_LEVEL_0 is incompatible with LTO, OMIT_FRAME_POINTER
       - incompatible: no_opt
         feature: OPT_LEVEL_0
-        with: [LTO, OMIT_FRAME_POINTER]
+        with: [ LTO, OMIT_FRAME_POINTER ]
       # Only one exceptions mode
       - only-one: exceptions
-        features: [ENABLE_EXCEPTION, DISABLE_EXCEPTION]
+        features: [ ENABLE_EXCEPTION, DISABLE_EXCEPTION ]
       # Only one incremental link mode
       - only-one: incremental
-        features: [ENABLE_INCREMENTAL_LINK, DISABLE_INCREMENTAL_LINK]
+        features: [ ENABLE_INCREMENTAL_LINK, DISABLE_INCREMENTAL_LINK ]
       # Only one target mode
       - only-one: target
-        features: [TARGET_X64, TARGET_X86]
+        features: [ TARGET_X64, TARGET_X86 ]
       # Only one dynamic library mode
       - only-one: dll
-        features: [DYNAMIC_LIBRARY_RELEASE, DYNAMIC_LIBRARY_DEBUG]
+        features: [ DYNAMIC_LIBRARY_RELEASE, DYNAMIC_LIBRARY_DEBUG ]
 
   # MSVC cl.exe compiler
   cl:
@@ -258,16 +259,16 @@ compilers:
     profiles:
       asan:
         extends: debug
-        enable-features: [ASAN]
+        enable-features: [ ASAN ]
     features:
       - name: ASAN
         description: Enable ASAN Sanitizer
-        cxx-compiler-flags: ["/fsanitize=address"]
-        enable-features: [DEBUG_INFO, WINDOWS_DLL_RUNTIME_DEBUG, DISABLE_INCREMENTAL_LINK]
+        cxx-compiler-flags: [ "/fsanitize=address" ]
+        enable-features: [ DEBUG_INFO, WINDOWS_DLL_RUNTIME_DEBUG, DISABLE_INCREMENTAL_LINK ]
     feature-rules:
       - incompatible: asan
         feature: ASAN
-        with: [OPT_LEVEL_3, LTO, OMIT_FRAME_POINTER]
+        with: [ OPT_LEVEL_3, LTO, OMIT_FRAME_POINTER ]
 
   # MSVC clang-cl compiler
   clangcl:
@@ -275,16 +276,16 @@ compilers:
     profiles:
       asan:
         extends: debug
-        enable-features: [ASAN]
+        enable-features: [ ASAN ]
     features:
       - name: ASAN
         description: Enable ASAN Sanitizer
-        cxx-compiler-flags: ["-fsanitize=address", "-fsanitize-address-use-after-scope", "-fsanitize-recover=address"]
-        enable-features: [DEBUG_INFO, WINDOWS_DLL_RUNTIME_DEBUG, DISABLE_INCREMENTAL_LINK]
+        cxx-compiler-flags: [ "-fsanitize=address", "-fsanitize-address-use-after-scope", "-fsanitize-recover=address" ]
+        enable-features: [ DEBUG_INFO, WINDOWS_DLL_RUNTIME_DEBUG, DISABLE_INCREMENTAL_LINK ]
         projects:
           dyn:
-            enable-features: [DYNAMIC_LIBRARY_RELEASE] # AddressSanitizer doesn't support linking with debug runtime libraries yet
+            enable-features: [ DYNAMIC_LIBRARY_RELEASE ] # AddressSanitizer doesn't support linking with debug runtime libraries yet
     feature-rules:
       - incompatible: asan
         feature: ASAN
-        with: [OPT_LEVEL_3, LTO, OMIT_FRAME_POINTER]
+        with: [ OPT_LEVEL_3, LTO, OMIT_FRAME_POINTER ]

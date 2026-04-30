@@ -75,8 +75,7 @@ class Compiler:
         self.cxx_path = cxx_path
         # Path of the C compiler
         self.c_path = c_path
-        # The extended compiler info used to create this compiler
-        assert compiler_info.is_self_extended, f"Compiler info '{compiler_info.name}' must be extended to create a compiler"
+        # The compiler info node from which the compiler is created
         self._compiler_info = compiler_info
     
     def is_derived_from(self, compiler_name: Self) -> bool:
@@ -124,10 +123,15 @@ class Compiler:
                                 cxx_path=compiler_node.cxx_path,
                                 c_path=compiler_node.c_path,
                                 compiler_info=compiler_node)
-        
         for profile in compiler_node.profile_list:
             if not profile.is_abstract:
-                assert profile.is_self_extended, f"Profile {profile.name} must be extended"
+                new_profile = Profile(profile.name)
+                for profile in profile.profile_list:
+                    pass
+                new_compiler.profiles.add(new_profile)
+        # for profile in compiler_node.profile_list:
+        #     if not profile.is_abstract:
+        #         assert profile.is_self_extended, f"Profile {profile.name} must be extended"
                 # Create the profile for the compiler
                 # new_profile = Profile(profile.name)
                 # for bin_lib_dyn in profile.bin_lib_dyn_list:

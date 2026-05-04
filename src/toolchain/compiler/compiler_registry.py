@@ -3,16 +3,35 @@ import platform
 from typing import Optional, Self
 import console
 from project import ProjectType
-from toolchain.compiler.compiler_info import CompilerNode, CompilerNodeRegistry
+from toolchain.compiler.compiler_info import CompilerNode, CompilerNodeRegistry, FeatureNode, ProfileNode
+
+
+class Project:
+    def __init__(
+        self,
+        name: str,
+        linker_flags: set[str],
+        compile_flags: set[str],
+        feature_name: set[str],
+    ):
+        self.name = name
+        self.linker_flags = linker_flags
+        self.compile_flags = compile_flags
+        self.feature_name = feature_name
+
+    def __hash__(self) -> int:
+        return hash(self.name)
+
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, Project):
+            return NotImplemented
+        return self.name == other.name
 
 class Profile:
     def __init__(self, name: str):
         # The profile name
         self.name = name
-        # Per project type flags and features
-        self.per_project_type_linker_flags : dict[ProjectType, list[str]] = {}
-        self.per_project_type_compiler_flags : dict[ProjectType, list[str]] = {}
-        self.per_project_type_feature_names : dict[ProjectType, list[str]] = {}
+        self.projects : set[Project] = set()
 
     def __hash__(self) -> int:
         return hash(self.name)
@@ -21,17 +40,26 @@ class Profile:
         if not isinstance(other, Profile):
             return NotImplemented
         return self.name == other.name
-    
-    def linker_flags_for_project_type(self, project_type: ProjectType) -> list[str]:
-         return self.per_project_type_linker_flags.get(project_type, [])
-    
-    def compiler_flags_for_project_type(self, project_type: ProjectType) -> list[str]:
-         return self.per_project_type_compiler_flags.get(project_type, [])
 
-    def is_feature_enabled(self, project_type: ProjectType, feature_name: str) -> bool:
-        if( list := self.per_project_type_feature_names.get(project_type,[])) is None:
+    def get(self, project_type_name: str) -> Optional[Project]:
+        for project in self.projects:
+            if project.name == project_type_name:
+                return project
+        return None
+
+    def linker_flags_for_project_type(self, project_type_name: str) -> list[str]:
+        project = self.get(project_type_name)
+        return project.linker_flags if project else []
+
+    def compiler_flags_for_project_type(self, project_type_name: str) -> list[str]:
+        project = self.get(project_type_name)
+        return project.compile_flags if project else []
+
+    def is_feature_enabled(self, project_type_name: str, feature_name: str) -> bool:
+        project = self.get(project_type_name)
+        if not project:
             return False
-        return feature_name in list
+        return feature_name in project.feature_name
     
 class ProfileList:
     def __init__(self):
@@ -119,15 +147,37 @@ class Compiler:
         if(compiler_node := CompilerNodeRegistry.get_extended(name)) is None:
             return None
         
+        compiler_node : CompilerNode = compiler_node
         new_compiler = Compiler(name=compiler_node.name,
                                 cxx_path=compiler_node.cxx_path,
                                 c_path=compiler_node.c_path,
                                 compiler_info=compiler_node)
         for profile in compiler_node.profile_list:
+            profile : ProfileNode = profile
             if not profile.is_abstract:
                 new_profile = Profile(profile.name)
-                for profile in profile.profile_list:
-                    pass
+                for project_type in profile.project_type_list:
+                    cxx_compiler_flags = set()
+                    cxx_linker_flags = set()
+                    cxx_feature_flags = set()
+                    cxx_compiler_flags.update(project_type.commons.cxx_compiler_flags)
+                    cxx_linker_flags.update(project_type.commons.cxx_linker_flags)
+                    cxx_feature_flags.update(project_type.commons.enable_features_list)
+
+                    # Add all features enabled by features
+                    for feature_name in project_type.commons.enable_features_list:
+                        if (feature_node := compiler_node.get_feature(feature_name)) is None:
+                            console.print_error(f"Feature {feature_name} not found for profile {profile.name} in compiler {new_compiler.name}")
+                            return None
+                        feature_node : FeatureNode = feature_node
+                        # cxx_compiler_flags.update(feature_node.profile_list.get(profile.name).compiler_flags_for_project_type(project_type.name))
+                        # cxx_linker_flags.update(feature_node.cxx_linker_flags)
+                        # cxx_feature_flags.update(feature_node.enable_features)
+
+                    new_profile.projects.add(Project(name=project_type.name,
+                                                linker_flags=cxx_linker_flags,
+                                                compiler_flags=cxx_compiler_flags,
+                                                feature_names=cxx_feature_flags))
                 new_compiler.profiles.add(new_profile)
         # for profile in compiler_node.profile_list:
         #     if not profile.is_abstract:

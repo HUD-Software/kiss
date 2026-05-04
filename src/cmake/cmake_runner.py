@@ -51,7 +51,7 @@ class CMakeRunner(BaseRunner):
 
         # Add DLL path to PATH on Windows
         if run_context.toolchain.target.is_msvc_abi():
-            project_list = context.project.topological_sort_projects()
+            project_type_list = context.project.topological_sort_projects()
             existing_path = os.environ.get("PATH", "")
            
             # Add ASAN path
@@ -65,7 +65,7 @@ class CMakeRunner(BaseRunner):
                 console.print_step(f"Add {asan_lib_path} to PATH")
 
             dll_paths = []
-            for project in project_list:
+            for project in project_type_list:
                 if project.type == ProjectType.dyn:
                     # Add the DLL path to PATH
                     proj_context = CMakeContext(current_directory=run_context.current_directory, 

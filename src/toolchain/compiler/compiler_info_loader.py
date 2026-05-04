@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Optional
 import console
 from yaml_file.line_loader import YamlObject
-from toolchain.compiler.compiler_info import CompilerNodeRegistry, ProjectNodeList, CompilerNode, FileCompilerNodeList, FeatureNode, FeatureNodeList, FeatureRuleNodeIncompatibleWith, FeatureRuleNodeList, FeatureRuleNodeOnlyOne, ProfileNode, ProfileNodeList, ProjectTypeNode, Commons
+from toolchain.compiler.compiler_info import CompilerNodeRegistry, ProjectTypeNodeList, CompilerNode, FileCompilerNodeList, FeatureNode, FeatureNodeList, FeatureRuleNodeIncompatibleWith, FeatureRuleNodeList, FeatureRuleNodeOnlyOne, ProfileNode, ProfileNodeList, ProjectTypeNode, Commons
 
 class CompilerInfoLoader:
     def __init__(self, file: Path):
@@ -38,8 +38,8 @@ class CompilerInfoLoader:
             return None
         return yaml_object.value
     
-    def _read_project_list(self, yaml_object: YamlObject) -> Optional[ProjectNodeList]:
-        project_type_list = ProjectNodeList()
+    def _read_project_list(self, yaml_object: YamlObject) -> Optional[ProjectTypeNodeList]:
+        project_type_list = ProjectTypeNodeList()
         for project_type_name, yaml_object in yaml_object.value.items():
             project_type_node = ProjectTypeNode(project_type_name)
             if not isinstance(yaml_object.value, dict):
@@ -91,9 +91,9 @@ class CompilerInfoLoader:
                                 return None
                             profile.commons.enable_features_list.add_list(feature_name_list)
                         case "projects":
-                            if(project_list := self._read_project_list(yaml_object)) is None:
+                            if(project_type_list := self._read_project_list(yaml_object)) is None:
                                 return None
-                            profile.project_list.project_type_set.update(project_list.project_type_set)
+                            profile.project_type_list.project_type_set.update(project_type_list.project_type_set)
                         case "is_abstract":
                             # Check that 'is_abstract' is a boolean
                             if not yaml_object.value:
@@ -187,9 +187,9 @@ class CompilerInfoLoader:
                         elif not isinstance(yaml_object.value, dict):
                             console.print_error(f"'projects' must contains projects '{self.file}({yaml_object.key_line})'")
                             return None
-                        elif(project_list := self._read_project_list(yaml_object)) is None:
+                        elif(project_type_list := self._read_project_list(yaml_object)) is None:
                             return None
-                        feature.common_project_list = project_list
+                        feature.common_project_list = project_type_list
                     case _:
                         console.print_error(f"Unknown key '{item}' in '{self.file}({yaml_object.key_line})'")
                         continue
@@ -358,9 +358,9 @@ class CompilerInfoLoader:
                         return None
                     compiler_list.common_compiler.commons.enable_features_list.add_list(feature_name_list)
                 case "projects":
-                    if(project_list := self._read_project_list(yaml_object)) is None:
+                    if(project_type_list := self._read_project_list(yaml_object)) is None:
                         return None
-                    compiler_list.common_compiler.project_list = project_list
+                    compiler_list.common_compiler.project_type_list = project_type_list
                 case "profiles":
                     if(profile_list := self._read_profile_list(yaml_object)) is None:
                         return None

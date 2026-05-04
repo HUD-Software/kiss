@@ -20,8 +20,8 @@ class ProjectRegistry:
         return self.projects_.items()
     
     def get_project(self, project_name: Project) -> Project | None:
-        for path, project_list in self:
-            for project in project_list:
+        for path, project_type_list in self:
+            for project in project_type_list:
                 if project.name == project_name:
                     return project
         return None
@@ -75,10 +75,10 @@ class ProjectRegistry:
             self.register_project(project)
         
     def projects_in_directory(self, current_directory: Path) -> list[Project]:
-        for path, project_list in self.projects.items():
+        for path, project_type_list in self.projects.items():
             if path.parent != current_directory:
                 continue
-            return project_list
+            return project_type_list
         return []
             
 ProjectRegistry = ProjectRegistry()

@@ -212,7 +212,7 @@ class FeatureNode:
         self.name = name
         self.description: str = ""
         self.commons = Commons()
-        self.common_project_list = ProjectNodeList()
+        self.common_project_list = ProjectTypeNodeList()
         self.profile_list = ProfileNodeList()
 
     def __hash__(self) -> int:
@@ -402,9 +402,9 @@ class ProjectTypeNode:
     #                                     compiler_feature_rules=compiler_feature_rules)
 
 ###############################################################
-# ProjectNodeList are list of ProjectTypeNode
+# ProjectTypeNodeList are list of ProjectTypeNode
 ##############################################################
-class ProjectNodeList:
+class ProjectTypeNodeList:
     def __init__(self):
         self.project_type_set: set[ProjectTypeNode] = set()
     #    self.is_self_extended = False
@@ -455,7 +455,7 @@ class ProjectNodeList:
     # def extend_self(self, compiler_features, compiler_feature_rules) -> Optional[Self]:
     #     if self.is_self_extended:
     #         return self
-    #     extended = ProjectNodeList()
+    #     extended = ProjectTypeNodeList()
     #     for project_type_node in self.project_type_set:
     #         if( extended_project_type_node := project_type_node.extend_self(compiler_features=compiler_features,
     #                                                                         compiler_feature_rules=compiler_feature_rules)) is None:
@@ -467,7 +467,7 @@ class ProjectNodeList:
     def merge_with_commons(self, 
                            commons: Commons, 
                            compiler_feature_rules : 'FeatureRuleNodeList') -> Optional[Self]:
-        merged = ProjectNodeList()
+        merged = ProjectTypeNodeList()
         for project_type in self.project_type_set:
             if( merged_project_type := project_type.merge_with_commons(commons=commons,
                                                                        compiler_feature_rules=compiler_feature_rules)) is None:
@@ -478,7 +478,7 @@ class ProjectNodeList:
     def merge_with_other(self, 
                          other_project_node_list: Self, 
                          compiler_feature_rules : 'FeatureRuleNodeList') -> Optional[Self]:
-        merged = ProjectNodeList()
+        merged = ProjectTypeNodeList()
         for project_type in other_project_node_list.project_type_set:
             # If the project type is not in self, we add it to the extended
             if (existing_project_type := self.get(project_type)) is None:
@@ -507,7 +507,7 @@ class ProfileNode:
         # List of flags and features that apply to all project types of this profile
         self.commons = Commons()
         # List of project type specific flags and features with this profile
-        self.project_list = ProjectNodeList()
+        self.project_type_list = ProjectTypeNodeList()
         # True if this node is extended with self
        # self.is_self_extended = False
 
@@ -526,9 +526,9 @@ class ProfileNode:
             f" cxx_linker_flags: {self.commons.cxx_linker_flags}",
             f" enable_features: {self.commons.enable_features_list}",
         ]
-        if len(self.project_list) > 0:
+        if len(self.project_type_list) > 0:
             lines.append(f" projects:")
-            for project_type in self.project_list:
+            for project_type in self.project_type_list:
                 lines.append(f"    {project_type.project_type_name}:")
                 lines.append(f"      cxx_compiler_flags : {project_type.commons.cxx_compiler_flags}")
                 lines.append(f"      cxx_linker_flags : {project_type.commons.cxx_linker_flags}")
@@ -546,7 +546,7 @@ class ProfileNode:
 
     def merge_with_commons_and_project_list(self, 
                                             commons: Commons, 
-                                            project_list: ProjectNodeList,
+                                            project_type_list: ProjectTypeNodeList,
                                             compiler_feature_rules: 'FeatureRuleNodeList') -> Optional[Self]:
         merged = ProfileNode(self.name)
         merged.extends_name = self.extends_name
@@ -559,15 +559,15 @@ class ProfileNode:
         merged.commons = merged_commons
 
         # Merge global common in profile project list
-        if( merged_project_list := self.project_list.merge_with_commons(commons=commons,
+        if( merged_project_list := self.project_type_list.merge_with_commons(commons=commons,
                                                                         compiler_feature_rules=compiler_feature_rules)) is None:
             return None
         
         # Merge global project list in profile project list
-        if( merged_project_list := merged_project_list.merge_with_other(other_project_node_list=project_list,
+        if( merged_project_list := merged_project_list.merge_with_other(other_project_node_list=project_type_list,
                                                                         compiler_feature_rules=compiler_feature_rules)) is None:
             return None
-        merged.project_list = merged_project_list
+        merged.project_type_list = merged_project_list
         return merged
            
     def merge_with_commons(self, 
@@ -582,10 +582,10 @@ class ProfileNode:
             return None
         merged.commons = merged_commons
 
-        if( merged_project_list := self.project_list.merge_with_commons(commons=commons,
+        if( merged_project_list := self.project_type_list.merge_with_commons(commons=commons,
                                                                                compiler_feature_rules=compiler_feature_rules)) is None:
             return None
-        merged.project_list = merged_project_list
+        merged.project_type_list = merged_project_list
 
         return merged
 
@@ -611,14 +611,14 @@ class ProfileNode:
     #     return extended
     
     # def merge_with_project_list(self, 
-    #                             project_node_list: ProjectNodeList, 
+    #                             project_node_list: ProjectTypeNodeList, 
     #                             compiler_feature_rules: 'FeatureRuleNodeList') -> Optional[Self]:
     #     merged = copy.deepcopy(self)
 
-    #     if(extended_project_list := self.project_list.merge_with_commons(other_project_node_list=project_node_list,
+    #     if(extended_project_list := self.project_type_list.merge_with_commons(other_project_node_list=project_node_list,
     #                                                                             compiler_feature_rules=compiler_feature_rules)) is None:
     #         return None
-    #     merged.project_list = extended_project_list
+    #     merged.project_type_list = extended_project_list
     #     return merged
     
     # def extend_with_other(self, other: Self, compiler_features, compiler_feature_rules) -> Optional[Self]:
@@ -709,7 +709,7 @@ class ProfileNodeList:
     def add(self, profile:ProfileNode):
         self.profiles.add(profile)
 
-    def get(self, name: str) -> ProfileNode | None:
+    def get(self, name: str) -> Optional[ProfileNode]:
         for p in self.profiles:
             if p.name == name:
                 return p
@@ -729,14 +729,14 @@ class ProfileNodeList:
     
     def merge_with_commons_and_project_list(self, 
                                             commons: Commons, 
-                                            project_list: ProjectNodeList,
+                                            project_type_list: ProjectTypeNodeList,
                                             compiler_feature_rules: 'FeatureRuleNodeList') -> Optional[Self]:
         merged = ProfileNodeList()
         profiles_to_extend = self.profiles.copy()
         while profiles_to_extend:
             to_process_profile = profiles_to_extend.pop()
             if(extended_profile := to_process_profile.merge_with_commons_and_project_list(commons=commons,
-                                                                                          project_list=project_list,
+                                                                                          project_type_list=project_type_list,
                                                                                           compiler_feature_rules=compiler_feature_rules)) is None:
                 console.print_error(f"When extending '{to_process_profile.name}' profile with commons and project list.")
                 return None
@@ -756,7 +756,7 @@ class ProfileNodeList:
             # If the profile is in other_profile_list, we merge it with the profile of other_profile_list
             else:
                 if(merged_profile := profile.merge_with_commons_and_project_list(commons=existing_profile.commons,
-                                                                                 project_list=existing_profile.project_list,
+                                                                                 project_type_list=existing_profile.project_type_list,
                                                                                  compiler_feature_rules=compiler_feature_rules)) is None:
                     console.print_error(f"When merging '{profile.name}' profile with '{existing_profile.name}' profile.")
                     return None
@@ -1142,7 +1142,7 @@ class CompilerNode:
         # List of flags and features that apply to all project types and all profiles
         self.commons = Commons()
         # List of project type specific flags and features with this compiler
-        self.project_list = ProjectNodeList()
+        self.project_type_list = ProjectTypeNodeList()
         # List of profiles specific flags and features with this compiler
         self.profile_list = ProfileNodeList()
         # List of features
@@ -1232,14 +1232,14 @@ class CompilerNode:
         merged.feature_rules = copy.deepcopy(self.feature_rules)
         merged.extends_ordered_list = self.extends_ordered_list.copy()
 
-        if(extended_project_list := self.project_list.merge_with_commons(commons=self.commons,
+        if(extended_project_list := self.project_type_list.merge_with_commons(commons=self.commons,
                                                                          compiler_feature_rules=self.feature_rules)) is None:
             console.print_error(f"Error merging project list for compiler '{self.name}'")
             return None
-        merged.project_list = extended_project_list
+        merged.project_type_list = extended_project_list
 
         if(extended_profile_list := self.profile_list.merge_with_commons_and_project_list(commons=self.commons,
-                                                                                          project_list=extended_project_list,
+                                                                                          project_type_list=extended_project_list,
                                                                                           compiler_feature_rules=self.feature_rules)) is None:
             console.print_error(f"Error merging profile list for compiler '{self.name}'")
             return None
@@ -1274,7 +1274,7 @@ class CompilerNode:
         extended.commons = extended_commons
 
         # Extends project list
-        if( extended_project_list := self.project_list.merge_with_other(other_project_node_list=other_compiler_node.project_list,
+        if( extended_project_list := self.project_type_list.merge_with_other(other_project_node_list=other_compiler_node.project_type_list,
                                                                         compiler_feature_rules=extended_feature_rules)) is None:
             console.print_error(f"Error extending project list for compiler '{self.name}' with '{other_compiler_node.name}'")
             return None
@@ -1282,7 +1282,7 @@ class CompilerNode:
                                                                               compiler_feature_rules=extended_feature_rules)) is None:
             console.print_error(f"Error extending project list with commons for compiler '{self.name}' with '{other_compiler_node.name}'")
             return None
-        extended.project_list = extended_project_list
+        extended.project_type_list = extended_project_list
 
         # Extends profile list
         if( extended_profile_list := self.profile_list.merge_with_other(other_profile_list=other_compiler_node.profile_list,
@@ -1290,24 +1290,24 @@ class CompilerNode:
             console.print_error(f"Error extending profile list for compiler '{self.name}' with '{other_compiler_node.name}'")
             return None
         if( extended_profile_list := extended_profile_list.merge_with_commons_and_project_list(commons=extended_commons,
-                                                                                               project_list=extended_project_list,
+                                                                                               project_type_list=extended_project_list,
                                                                                                compiler_feature_rules=extended_feature_rules)) is None:
             console.print_error(f"Error extending profile list with commons for compiler '{self.name}' with '{other_compiler_node.name}'")
             return None
         extended.profile_list = extended_profile_list                                                   
         return extended
 
-    def extend_features(self) -> Optional[Self]:
-        extended = CompilerNode(self.name, self.file_path)
-        extended.extends_name = self.extends_name
-        extended.is_abstract = self.is_abstract
-        extended.cxx_path = self.cxx_path
-        extended.c_path = self.c_path
-        extended.extends_ordered_list = self.extends_ordered_list.copy()
-        extended.feature_rules = copy.deepcopy(self.feature_rules)
-        extended.features = copy.deepcopy(self.features)
-        assert False, "TODO"
-        return extended
+    # def extend_features(self) -> Optional[Self]:
+    #     extended = CompilerNode(self.name, self.file_path)
+    #     extended.extends_name = self.extends_name
+    #     extended.is_abstract = self.is_abstract
+    #     extended.cxx_path = self.cxx_path
+    #     extended.c_path = self.c_path
+    #     extended.extends_ordered_list = self.extends_ordered_list.copy()
+    #     extended.feature_rules = copy.deepcopy(self.feature_rules)
+    #     extended.features = copy.deepcopy(self.features)
+    #     assert False, "TODO"
+     #   return extended
 
         # extended = copy.deepcopy(self)
         # if(extended.features.is_feature_list_validate_rules(compiler_feature_rules=compiler_feature_rules)) is False:
@@ -1317,7 +1317,7 @@ class CompilerNode:
     # @staticmethod
     # def _extend_no_base_then_validate_features(to_extend_compiler_node: Self, 
     #                                            commons: Commons, 
-    #                                            common_project_list : ProjectNodeList, 
+    #                                            common_project_list : ProjectTypeNodeList, 
     #                                            profile_list : ProfileNodeList) -> Optional[Self]:
     #     to_extend_compiler_node : CompilerNode = to_extend_compiler_node
     #     assert not to_extend_compiler_node.is_self_extended, f"'{to_extend_compiler_node.name}' Already extended"
@@ -1492,7 +1492,7 @@ class CompilerNode:
     #                                                                               compiler_features=extended.features,
     #                                                                               compiler_feature_rules=extended.feature_rules)
     #         # 4. Extends project with common part, this will check that the merge of common and project specific validate feature rules
-    #         extended.project_list = to_extend_compiler_node.project_list.extend_with_other(other_project_node_list=base_compiler_node.project_list,
+    #         extended.project_type_list = to_extend_compiler_node.project_type_list.extend_with_other(other_project_node_list=base_compiler_node.project_type_list,
     #                                                                                                      compiler_features=extended.features,
     #                                                                                                      compiler_feature_rules=extended.feature_rules)
     #         # 5. Extends profile with project part, this will check that the merge of common and profile specific validate feature rules
@@ -1505,7 +1505,7 @@ class CompilerNode:
     #     assert extended.is_self_extended
     #     return extended
 
-    # def extend_with_commons(self, commons: Commons, common_project_list : ProjectNodeList, profile_list : ProfileNodeList) -> Optional[Self]:
+    # def extend_with_commons(self, commons: Commons, common_project_list : ProjectTypeNodeList, profile_list : ProfileNodeList) -> Optional[Self]:
         
     #     # Flattening the compiler hierarchy establishes a dependency order.
     #     # This ensures safe iteration where all included compilers are
@@ -1549,7 +1549,7 @@ class CompilerNode:
     #     extended_base.extends_ordered_list = extends_ordered_list
     #     return extended_base
     
-    def get_feature(self, feature_name: str) -> FeatureNode:
+    def get_feature(self, feature_name: str) -> Optional[FeatureNode]:
         return self.features.get(feature_name)
     
 ################################################
@@ -1626,10 +1626,10 @@ class FileCompilerNodeList:
                 return None
 
         # Extends features enabled by features
-        if(extended_features_compiler := extended_compiler.extend_features()) is None:
-            console.print_error(f"Error extending features enabled by features for compiler {compiler_name} in file {str(self.file_path)}")
-            return None
-        extended_compiler.features = extended_features_compiler
+        # if(extended_features_compiler := extended_compiler.extend_features()) is None:
+        #     console.print_error(f"Error extending features enabled by features for compiler {compiler_name} in file {str(self.file_path)}")
+        #     return None
+        # extended_compiler.features = extended_features_compiler
 
         return extended_compiler
         

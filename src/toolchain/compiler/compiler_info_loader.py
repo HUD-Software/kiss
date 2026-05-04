@@ -3,6 +3,7 @@
 #####################################################################
 from pathlib import Path
 from typing import Optional
+from unittest import case
 import console
 from yaml_file.line_loader import YamlObject
 from toolchain.compiler.compiler_info import CompilerNodeRegistry, ProjectTypeNodeList, CompilerNode, FileCompilerNodeList, FeatureNode, FeatureNodeList, FeatureRuleNodeIncompatibleWith, FeatureRuleNodeList, FeatureRuleNodeOnlyOne, ProfileNode, ProfileNodeList, ProjectTypeNode, Commons
@@ -145,33 +146,18 @@ class CompilerInfoLoader:
                             return None
                         else:
                             feature.description = yaml_object.value
-                    case "enable-features":
-                        # Check that 'enable-features' is a list of string
-                        if not yaml_object.value:
-                            console.print_warning(f"'enable-features' in feature '{feature_name.value}' is empty in '{self.file}({yaml_object.key_line})'")
-                        elif not isinstance(yaml_object.value, list) or not all(isinstance(x, str) for x in yaml_object.value):
-                            console.print_error(f"'enable-features' must contains list of feature name in '{self.file}({yaml_object.key_line})'")
-                            return None
-                        else:
-                            feature.commons.enable_features_list.add_list(yaml_object.value)
                     case "cxx-compiler-flags":
-                        # Check that 'cxx-compiler-flags' is a list of string
-                        if not yaml_object.value:
-                            console.print_warning(f"'cxx-compiler-flags' in feature '{feature_name.value}' is empty in '{self.file}({yaml_object.key_line})'")
-                        elif not isinstance(yaml_object.value, list) or not all(isinstance(x, str) for x in yaml_object.value):
-                            console.print_error(f"'cxx-compiler-flags' must contains list of feature name in '{self.file}({yaml_object.key_line})'")
+                        if(cxx_compiler_flags := self._read_yaml_cxx_compiler_flags(yaml_object)) is None:
                             return None
-                        else:
-                            feature.commons.cxx_compiler_flags.add_list(yaml_object.value)
+                        feature.commons.cxx_compiler_flags.add_list(cxx_compiler_flags)
                     case "cxx-linker-flags":
-                        # Check that 'cxx-linker-flags' is a list of string
-                        if not yaml_object.value:
-                            console.print_warning(f"'cxx-linker-flags' in feature '{feature_name.value}' is empty in '{self.file}({yaml_object.key_line})'")
-                        elif not isinstance(yaml_object.value, list) or not all(isinstance(x, str) for x in yaml_object.value):
-                            console.print_error(f"'cxx-linker-flags' must contains list of feature name in '{self.file}({yaml_object.key_line})'")
+                        if(cxx_linker_flags := self._read_yaml_cxx_linker_flags(yaml_object)) is None:
                             return None
-                        else:
-                            feature.commons.cxx_linker_flags.add_list(yaml_object.value)
+                        feature.commons.cxx_linker_flags.add_list(cxx_linker_flags)
+                    case "enable-features":
+                        if(feature_name_list := self._read_yaml_enable_feature(yaml_object)) is None:
+                            return None
+                        feature.commons.enable_features_list.add_list(feature_name_list)
                     case "profiles":
                         if not yaml_object.value:
                             console.print_warning(f"'profiles' in feature '{feature_name.value}' is empty in '{self.file}({yaml_object.key_line})'")
@@ -189,7 +175,7 @@ class CompilerInfoLoader:
                             return None
                         elif(project_type_list := self._read_project_list(yaml_object)) is None:
                             return None
-                        feature.common_project_list = project_type_list
+                        feature.project_list = project_type_list
                     case _:
                         console.print_error(f"Unknown key '{item}' in '{self.file}({yaml_object.key_line})'")
                         continue
@@ -285,7 +271,7 @@ class CompilerInfoLoader:
                     elif( projects := self._read_project_list(yaml_object)) is None:
                         return None
                     else:
-                        compiler_node.common_project_list = projects
+                        compiler_node.project_list = projects
                 case "features":
                     if not yaml_object.value:
                         console.print_warning(f"'features' in compiler '{compiler_name}' is empty in '{self.file}({yaml_compiler.key_line})'")

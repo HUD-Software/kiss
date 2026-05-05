@@ -115,8 +115,19 @@ class Compiler:
     def is_clangcl_based(self) -> bool:
         return  self._compiler_info.is_derived_from("clangcl")
     
-    def get_profile(self, profile_name: str) -> Profile | None:
-        return self.profiles.get(profile_name)
+    def get_profile(self, profile_name: str) -> Optional[Profile]:
+        # Check if we already create the profile
+        if(profile := self.profiles.get(profile_name)):
+            return profile
+
+        # Load the profile from the compiler info node describes in file
+        if( profile := self._compiler_info.profile_list.get(profile_name)):
+            profile = Profile(profile_name)
+
+            self.profiles.add(profile)
+            return profile
+        
+        # Else we need to create the profile with all 'commons' info
     
     def is_profile_exist(self, profile_name: str) -> bool:
         return profile_name in self.profiles
@@ -124,23 +135,23 @@ class Compiler:
     def profile_name_list(self) -> list[str] : 
         return self.profiles.profile_name_list()
     
-    def linker_flags_list(self, profile_name: str, project_type: ProjectType) -> list[str]:
-        if( profile := self.get_profile(profile_name)) is None:
-            console.print_warning(f"Profile {profile_name} not found in {self.name}")
-            return []
-        return profile.linker_flags_for_project_type(project_type)
+    # def get_linker_flags_list(self, profile_name: str, project_type: ProjectType) -> list[str]:
+    #     if( profile := self.get_profile(profile_name)) is None:
+    #         console.print_warning(f"Profile {profile_name} not found in {self.name}")
+    #         return []
+    #     return profile.linker_flags_for_project_type(project_type)
     
-    def compiler_flags_list(self, profile_name: str, project_type: ProjectType) -> list[str]: 
-        if( profile := self.get_profile(profile_name)) is None:
-            console.print_warning(f"Profile {profile_name} not found in {self.name}")
-            return []
-        return profile.compiler_flags_for_project_type(project_type)
+    # def get_compiler_flags_list(self, profile_name: str, project_type: ProjectType) -> list[str]: 
+    #     if( profile := self.get_profile(profile_name)) is None:
+    #         console.print_warning(f"Profile {profile_name} not found in {self.name}")
+    #         return []
+    #     return profile.compiler_flags_for_project_type(project_type)
     
-    def is_feature_enabled(self, profile_name: str, project_type: ProjectType) -> bool:
-        if( profile := self.get_profile(profile_name)) is None:
-            console.print_warning(f"Profile {profile_name} not found in {self.name}")
-            return []
-        return profile.compiler_flags_for_project_type(project_type)
+    # def is_feature_enabled(self, profile_name: str, project_type: ProjectType) -> bool:
+    #     if( profile := self.get_profile(profile_name)) is None:
+    #         console.print_warning(f"Profile {profile_name} not found in {self.name}")
+    #         return []
+    #     return profile.compiler_flags_for_project_type(project_type)
 
     @staticmethod
     def create(name :str) -> Optional[Self]:
@@ -156,6 +167,7 @@ class Compiler:
             profile : ProfileNode = profile
             if not profile.is_abstract:
                 new_profile = Profile(profile.name)
+                # Each profile contains a per project flags and commons to all project flags
                 for project_type in profile.project_type_list:
                     cxx_compiler_flags = set()
                     cxx_linker_flags = set()
@@ -174,10 +186,10 @@ class Compiler:
                         # cxx_linker_flags.update(feature_node.cxx_linker_flags)
                         # cxx_feature_flags.update(feature_node.enable_features)
 
-                    new_profile.projects.add(Project(name=project_type.name,
-                                                linker_flags=cxx_linker_flags,
-                                                compiler_flags=cxx_compiler_flags,
-                                                feature_names=cxx_feature_flags))
+                    new_profile.projects.add(Project(name=project_type.project_type_name,
+                                                     linker_flags=cxx_linker_flags,
+                                                     compiler_flags=cxx_compiler_flags,
+                                                     feature_names=cxx_feature_flags))
                 new_compiler.profiles.add(new_profile)
         # for profile in compiler_node.profile_list:
         #     if not profile.is_abstract:

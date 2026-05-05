@@ -175,7 +175,7 @@ class CompilerInfoLoader:
                             return None
                         elif(project_type_list := self._read_project_list(yaml_object)) is None:
                             return None
-                        feature.project_list = project_type_list
+                        feature.project_type_list = project_type_list
                     case _:
                         console.print_error(f"Unknown key '{item}' in '{self.file}({yaml_object.key_line})'")
                         continue
@@ -271,7 +271,7 @@ class CompilerInfoLoader:
                     elif( projects := self._read_project_list(yaml_object)) is None:
                         return None
                     else:
-                        compiler_node.project_list = projects
+                        compiler_node.project_type_list = projects
                 case "features":
                     if not yaml_object.value:
                         console.print_warning(f"'features' in compiler '{compiler_name}' is empty in '{self.file}({yaml_compiler.key_line})'")

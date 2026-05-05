@@ -164,7 +164,7 @@ class FeatureNode:
         self.name = name
         self.description: str = ""
         self.commons = Commons()
-        self.project_list = ProjectTypeNodeList()
+        self.project_type_list = ProjectTypeNodeList()
         self.profile_list = ProfileNodeList()
 
     def __hash__(self) -> int:
@@ -948,6 +948,41 @@ class CompilerNode:
         merged.profile_list = extended_profile_list
         return merged
     
+    def merge_commons(self,
+                      commons: Commons, 
+                      project_type_list: ProjectTypeNodeList, 
+                      profile_list:ProfileNodeList, 
+                      feature_rules: FeatureRuleNodeList):
+        # Extends commons
+        if (extended_commons := self.commons.merge_with_other(other_commons=commons,
+                                                              compiler_feature_rules=feature_rules)) is None:
+            console.print_error(f"Error extending commons for compiler '{self.name}'")
+            return None
+        self.commons = extended_commons
+
+        # Extends project list
+        if( extended_project_list := self.project_type_list.merge_with_other(other_project_node_list=project_type_list,
+                                                                        compiler_feature_rules=feature_rules)) is None:
+            console.print_error(f"Error extending project list for compiler '{self.name}'")
+            return None
+        if( extended_project_list := extended_project_list.merge_with_commons(commons=extended_commons,
+                                                                              compiler_feature_rules=feature_rules)) is None:
+            console.print_error(f"Error extending project list with commons for compiler '{self.name}'")
+            return None
+        self.project_type_list = extended_project_list
+
+        # Extends profile list
+        if( extended_profile_list := self.profile_list.merge_with_other(other_profile_list=profile_list,
+                                                                        compiler_feature_rules=feature_rules)) is None:
+            console.print_error(f"Error extending profile list for compiler '{self.name}'")
+            return None
+        if( extended_profile_list := extended_profile_list.merge_with_commons_and_project_list(commons=extended_commons,
+                                                                                               project_type_list=extended_project_list,
+                                                                                               compiler_feature_rules=feature_rules)) is None:
+            console.print_error(f"Error extending profile list with commons for compiler '{self.name}'")
+            return None
+        self.profile_list = extended_profile_list                                            
+        
     # Extends this compiler with the other compiler, 
     # this will merge commons, project list and profile list of the other compiler into this one.
     def extend_with_other(self, other_compiler_node: Self) -> Optional[Self]:
@@ -970,49 +1005,59 @@ class CompilerNode:
             return None
         extended.features = extended_features
 
-        # Extends commons
-        if (extended_commons := self.commons.merge_with_other(other_commons=other_compiler_node.commons,
-                                                              compiler_feature_rules=extended_feature_rules)) is None:
-            console.print_error(f"Error extending commons for compiler '{self.name}' with '{other_compiler_node.name}'")
-            return None
-        extended.commons = extended_commons
-
-        # Extends project list
-        if( extended_project_list := self.project_type_list.merge_with_other(other_project_node_list=other_compiler_node.project_type_list,
-                                                                        compiler_feature_rules=extended_feature_rules)) is None:
-            console.print_error(f"Error extending project list for compiler '{self.name}' with '{other_compiler_node.name}'")
-            return None
-        if( extended_project_list := extended_project_list.merge_with_commons(commons=extended_commons,
-                                                                              compiler_feature_rules=extended_feature_rules)) is None:
-            console.print_error(f"Error extending project list with commons for compiler '{self.name}' with '{other_compiler_node.name}'")
-            return None
-        extended.project_type_list = extended_project_list
-
-        # Extends profile list
-        if( extended_profile_list := self.profile_list.merge_with_other(other_profile_list=other_compiler_node.profile_list,
-                                                                        compiler_feature_rules=extended_feature_rules)) is None:
-            console.print_error(f"Error extending profile list for compiler '{self.name}' with '{other_compiler_node.name}'")
-            return None
-        if( extended_profile_list := extended_profile_list.merge_with_commons_and_project_list(commons=extended_commons,
-                                                                                               project_type_list=extended_project_list,
-                                                                                               compiler_feature_rules=extended_feature_rules)) is None:
-            console.print_error(f"Error extending profile list with commons for compiler '{self.name}' with '{other_compiler_node.name}'")
-            return None
-        extended.profile_list = extended_profile_list                                                   
+        extended.merge_commons(commons=other_compiler_node.commons,
+                                project_type_list=other_compiler_node.project_type_list,
+                                profile_list=other_compiler_node.profile_list,
+                                feature_rules=extended_feature_rules)
         return extended
 
-    # Extend this compiler by adding features enabled by features, this will add features enabled by features to the compiler features. 
-    def extend_features(self) -> Optional[Self]:
-        extended = CompilerNode(self.name, self.file_path)
-        extended.extends_name = self.extends_name
-        extended.is_abstract = self.is_abstract
-        extended.cxx_path = self.cxx_path
-        extended.c_path = self.c_path
-        extended.extends_ordered_list =self.extends_ordered_list.copy()
-        extended.feature_rules = copy.deepcopy(self.feature_rules)
-        for feature in self.features:
-            pass
-        return extended
+    
+    # def _extend_feature(self, feature_node: FeatureNode) : 
+    #     # Common feature must be merge with the common of the compiler to be able to check that the feature rules are still valid
+    #     if(merged_common := self.commons.merge_with_other(feature_node.commons)) is None:
+    #         console.print_error(f"Error extending feature '{feature_node.name}' with compiler '{self.name}'")
+    #         return None
+    #     self.commons = merged_common
+
+    #     if(merged_project_list := self.project_type_list.merge_with_other(other_project_node_list=feature_node.project_type_list,
+    #                                                                       compiler_feature_rules=self.feature_rules)) is None:
+    #         console.print_error(f"Error extending feature '{feature_node.name}' with compiler '{self.name}'")
+    #         return None
+    #     self.commons = merged_project_list
+        
+
+    #     # Add feature enabled by features, and check that the feature rules are still valid after adding each feature enabled by features        
+    #     return feature_node
+    
+    # # Extend this compiler by adding features enabled by features,
+    # # This will add features enabled by features to the compiler features. 
+    # def extend_features(self) -> Optional[Self]:
+    #     extended = CompilerNode(self.name, self.file_path)
+    #     extended.extends_name = self.extends_name
+    #     extended.is_abstract = self.is_abstract
+    #     extended.cxx_path = self.cxx_path
+    #     extended.c_path = self.c_path
+    #     extended.extends_ordered_list =self.extends_ordered_list.copy()
+    #     extended.feature_rules = copy.deepcopy(self.feature_rules)
+
+    #     feature_to_extend_list : FeatureNodeList = copy.deepcopy(self.features)
+    #     # Add feature enabled by features, and check that the feature rules are still valid after adding each feature enabled by features
+    #     while feature_to_extend_list.features:
+    #         feature = feature_to_extend_list.features.pop()
+    #         feature : FeatureNode = feature
+
+    #         # Check that the feature list with the new feature enabled by feature validate the feature rules
+    #         if not self.feature_rules.is_feature_list_validate_rules(feature_list=[*feature.commons.enable_features_list, feature.name]):
+    #             console.print_error(f"The feature '{feature.name}' enable features that do not respect feature rules in compiler '{self.name}'")
+    #             return None
+            
+    #         extended._merge_commons(commons=feature.commons,
+    #                                 project_type_list=feature.project_type_list,
+    #                                 profile_list=feature.profile_list,
+    #                                 feature_rules=extended.feature_rules)
+            
+    #         feature_to_extend_list.features.update(feature.commons.enable_features_list)
+    #     return extended
 
     def get_feature(self, feature_name: str) -> Optional[FeatureNode]:
         return self.features.get(feature_name)
@@ -1089,12 +1134,6 @@ class FileCompilerNodeList:
             if(extended_compiler := merged_compiler.extend_with_other(other_compiler_node=extended_compiler)) is None:
                 console.print_error(f"Error merging common compiler with compiler {compiler_name} in file {str(self.file_path)}")
                 return None
-
-        # Extends features enabled by features
-        # if(extended_features_compiler := extended_compiler.extend_features()) is None:
-        #     console.print_error(f"Error extending features enabled by features for compiler {compiler_name} in file {str(self.file_path)}")
-        #     return None
-        # extended_compiler.features = extended_features_compiler
 
         return extended_compiler
         

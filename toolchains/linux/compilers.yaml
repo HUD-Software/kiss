@@ -4,138 +4,138 @@
 # Individual compiler (like cl or clangcl) will extends this compiler to
 # inherit its configuration, avoiding duplication.
 compilers:
-  enable-features: [A] # Feature enabled for all compilers
-  cxx-linker-flags: [B] # Linker flags enabled for all compilers
-  cxx-compiler-flags: [C] # Compiler flags enabled for all compilers
-  projects:
-    # For all 'profile' and all 'bin' project used with all compilers
-    bin:
-      enable-features: [D] # Feature enabled for all 'profile' and all 'bin' used with all compilers
-      cxx-linker-flags: [E] # Linker flags enabled for all 'profile' and all 'bin' used with all compilers
-      cxx-compiler-flags: [F] # Compiler flags enabled for all 'profile' and all 'bin' used with all compilers
-    # For all 'profile' and all 'dyn' project used used with all compilers
-    dyn:
-      enable-features: [G] # Feature enabled for all 'profile' and all 'dyn' used used with all compilers
-      cxx-linker-flags: [H] # Linker flags enabled for all 'profile' and all 'dyn' used with all compilers
-      cxx-compiler-flags: [I] # Compiler flags enabled for all 'profile' and all 'dyn' used with all compilers
-    # For all 'profile' and all 'lib' project used with all compilers
-    lib:
-      enable-features: [J] # Feature enabled for all 'profile' and all 'lib' used with all compilers
-      cxx-linker-flags: [K] # Linker flags enabled for all 'profile' and all 'lib' used with all compilers
-      cxx-compiler-flags: [L] # Compiler flags enabled for all 'profile' and all 'lib' used with all compilers
+  enable-compiler-features: [] # Feature enabled for all compilers
+  cxx-linker-flags: [] # Linker flags enabled for all compilers
+  cxx-compiler-flags: [] # Compiler flags enabled for all compilers
+  # projects:
+  #   # For all 'profile' and all 'bin' project used with all compilers
+  #   bin:
+  #     enable-compiler-features: [] # Feature enabled for all 'profile' and all 'bin' used with all compilers
+  #     cxx-linker-flags: [] # Linker flags enabled for all 'profile' and all 'bin' used with all compilers
+  #     cxx-compiler-flags: [] # Compiler flags enabled for all 'profile' and all 'bin' used with all compilers
+  #   # For all 'profile' and all 'dyn' project used used with all compilers
+  #   dyn:
+  #     enable-compiler-features: [] # Feature enabled for all 'profile' and all 'dyn' used used with all compilers
+  #     cxx-linker-flags: [] # Linker flags enabled for all 'profile' and all 'dyn' used with all compilers
+  #     cxx-compiler-flags: [] # Compiler flags enabled for all 'profile' and all 'dyn' used with all compilers
+  #   # For all 'profile' and all 'lib' project used with all compilers
+  #   lib:
+  #     enable-compiler-features: [] # Feature enabled for all 'profile' and all 'lib' used with all compilers
+  #     cxx-linker-flags: [] # Linker flags enabled for all 'profile' and all 'lib' used with all compilers
+  #     cxx-compiler-flags: [] # Compiler flags enabled for all 'profile' and all 'lib' used with all compilers
   profiles:
     debug:
       is_abstract: false # This profile is intent to be used
       extends:
-      enable-features: [M] # Feature enabled for all compilers for 'debug' profile and all projects types
-      cxx-linker-flags: [N] # Linker flags enabled for all compilers for 'debug' profile and all projects types
-      cxx-compiler-flags: [O] # Compiler flags enabled for all compilers for 'debug' profile and all projects types
-      projects:
-        # For 'debug' and all 'bin' project used with all compilers
-        bin:
-          enable-features: [P] # Feature enabled for all compilers for 'debug' profile and 'bin' projects types
-          cxx-linker-flags: [Q] # Linker flags enabled for all compilers for 'debug' profile and 'bin' project types
-          cxx-compiler-flags: [R] # Compiler flags enabled for all compilers for 'debug' profile and 'bin' project types
-        # For 'debug' and all 'dyn' project used with all compilers
-        dyn:
-          enable-features: [S] # Feature enabled for all compilers for 'debug' profile and 'dyn' projects types
-          cxx-linker-flags: [T] # Linker flags enabled for all compilers for 'debug' profile and 'dyn' project types
-          cxx-compiler-flags: [U] # Compiler flags enabled for all compilers for 'debug' profile and 'dyn' project types
-        # For 'debug' and all 'lib' project used with all compilers
-        lib:
-          enable-features: [V] # Feature enabled for all compilers for 'debug' profile and 'lib' projects types
-          cxx-linker-flags: [W] # Linker flags enabled for all compilers for 'debug' profile and 'lib' project types
-          cxx-compiler-flags: [X] # Compiler flags enabled for all compilers for 'debug' profile and 'lib' project types
-  gnu-generic:
+      enable-compiler-features: [] # Feature enabled for all compilers for 'debug' profile and all projects types
+      cxx-linker-flags: [] # Linker flags enabled for all compilers for 'debug' profile and all projects types
+      cxx-compiler-flags: [] # Compiler flags enabled for all compilers for 'debug' profile and all projects types
+      # projects:
+      #   # For 'debug' and all 'bin' project used with all compilers
+      #   bin:
+      #     enable-compiler-features: [] # Feature enabled for all compilers for 'debug' profile and 'bin' projects types
+      #     cxx-linker-flags: [] # Linker flags enabled for all compilers for 'debug' profile and 'bin' project types
+      #     cxx-compiler-flags: [] # Compiler flags enabled for all compilers for 'debug' profile and 'bin' project types
+      #   # For 'debug' and all 'dyn' project used with all compilers
+      #   dyn:
+      #     enable-compiler-features: [] # Feature enabled for all compilers for 'debug' profile and 'dyn' projects types
+      #     cxx-linker-flags: [] # Linker flags enabled for all compilers for 'debug' profile and 'dyn' project types
+      #     cxx-compiler-flags: [] # Compiler flags enabled for all compilers for 'debug' profile and 'dyn' project types
+      #   # For 'debug' and all 'lib' project used with all compilers
+      #   lib:
+      #     enable-compiler-features: [] # Feature enabled for all compilers for 'debug' profile and 'lib' projects types
+      #     cxx-linker-flags: [] # Linker flags enabled for all compilers for 'debug' profile and 'lib' project types
+      #     cxx-compiler-flags: [] # Compiler flags enabled for all compilers for 'debug' profile and 'lib' project types
+  gnu-generic-compiler:
     # This compiler is not a compiler that can be used to build
     is_abstract: true
     cxx-linker-flags: [] # 'msvc-generic' profile add linker flags for all profiles and all project type that extend it
     cxx-compiler-flags: [] # 'msvc-generic' profile add compiler flags for all profiles and all project type that extend it
-    projects:
-      # For all 'msvc-generic' profile and all 'bin' project used with this 'msvc-generic' compiler
-      bin:
-        enable-features: [] # Feature enabled for all 'profile' and all 'bin' used with this 'msvc-generic' profile
-        cxx-linker-flags: [] # Linker flags enabled for all 'profile' and all 'bin' used with this 'msvc-generic' profile
-        cxx-compiler-flags: [] # Compiler flags enabled for all 'profile' and all 'bin' used with this 'msvc-generic' profile
-      # For all 'msvc-generic' profile and all 'dyn' project used with this 'msvc-generic' compiler
-      dyn:
-        enable-features: [] # Feature enabled for all 'msvc-generic' profile and all 'dyn' project used with this 'msvc-generic' compiler
-        cxx-linker-flags: [] # Linker flags enabled for all 'msvc-generic' profile and all 'dyn' project used with this 'msvc-generic' compiler
-        cxx-compiler-flags: [] # Compiler flags enabled for all 'msvc-generic' profile and all 'dyn' project used with this 'msvc-generic' compiler
-      # For all 'msvc-generic' profile and all 'lib' project used with this 'msvc-generic' profile
-      lib:
-        enable-features: [] # Feature enabled for all 'msvc-generic' profile and all 'dyn' project used with this 'msvc-generic' compiler
-        cxx-linker-flags: [] # Linker flags enabled for all 'msvc-generic' profile and all 'dyn' project used with this 'msvc-generic' compiler
-        cxx-compiler-flags: [] # Compiler flags enabled for all 'msvc-generic' profile and all 'dyn' project used with this 'msvc-generic' compiler
+    # projects:
+    #   # For all 'msvc-generic' profile and all 'bin' project used with this 'msvc-generic' compiler
+    #   bin:
+    #     enable-compiler-features: [] # Feature enabled for all 'profile' and all 'bin' used with this 'msvc-generic' profile
+    #     cxx-linker-flags: [] # Linker flags enabled for all 'profile' and all 'bin' used with this 'msvc-generic' profile
+    #     cxx-compiler-flags: [] # Compiler flags enabled for all 'profile' and all 'bin' used with this 'msvc-generic' profile
+    #   # For all 'msvc-generic' profile and all 'dyn' project used with this 'msvc-generic' compiler
+    #   dyn:
+    #     enable-compiler-features: [] # Feature enabled for all 'msvc-generic' profile and all 'dyn' project used with this 'msvc-generic' compiler
+    #     cxx-linker-flags: [] # Linker flags enabled for all 'msvc-generic' profile and all 'dyn' project used with this 'msvc-generic' compiler
+    #     cxx-compiler-flags: [] # Compiler flags enabled for all 'msvc-generic' profile and all 'dyn' project used with this 'msvc-generic' compiler
+    #   # For all 'msvc-generic' profile and all 'lib' project used with this 'msvc-generic' profile
+    #   lib:
+    #     enable-compiler-features: [] # Feature enabled for all 'msvc-generic' profile and all 'dyn' project used with this 'msvc-generic' compiler
+    #     cxx-linker-flags: [] # Linker flags enabled for all 'msvc-generic' profile and all 'dyn' project used with this 'msvc-generic' compiler
+    #     cxx-compiler-flags: [] # Compiler flags enabled for all 'msvc-generic' profile and all 'dyn' project used with this 'msvc-generic' compiler
     profiles:
       gnu-generic-profile:
         is_abstract: true
-        enable-features: [WARNING_STRICT, ENABLE_EXCEPTION]
+        enable-compiler-features: [WARNING_STRICT, ENABLE_EXCEPTION]
         cxx-linker-flags: [] # 'msvc-generic' profile add linker flags for all profiles and all project type that extend it
         cxx-compiler-flags: [] # 'msvc-generic' profile add compiler flags for all profiles and all project type that extend it
-        projects:
-          # For all 'msvc-generic' profile and all 'bin' project used with this 'msvc-generic' compiler
-          bin:
-            enable-features: [] # Feature enabled for all 'profile' and all 'bin' used with this 'msvc-generic' profile
-            cxx-linker-flags: [] # Linker flags enabled for all 'profile' and all 'bin' used with this 'msvc-generic' profile
-            cxx-compiler-flags: [] # Compiler flags enabled for all 'profile' and all 'bin' used with this 'msvc-generic' profile
-          # For all 'msvc-generic' profile and all 'dyn' project used with this 'msvc-generic' compiler
-          dyn:
-            enable-features: [] # Feature enabled for all 'msvc-generic' profile and all 'dyn' project used with this 'msvc-generic' compiler
-            cxx-linker-flags: [] # Linker flags enabled for all 'msvc-generic' profile and all 'dyn' project used with this 'msvc-generic' compiler
-            cxx-compiler-flags: [] # Compiler flags enabled for all 'msvc-generic' profile and all 'dyn' project used with this 'msvc-generic' compiler
-          # For all 'msvc-generic' profile and all 'lib' project used with this 'msvc-generic' profile
-          lib:
-            enable-features: [] # Feature enabled for all 'msvc-generic' profile and all 'dyn' project used with this 'msvc-generic' compiler
-            cxx-linker-flags: [] # Linker flags enabled for all 'msvc-generic' profile and all 'dyn' project used with this 'msvc-generic' compiler
-            cxx-compiler-flags: [] # Compiler flags enabled for all 'msvc-generic' profile and all 'dyn' project used with this 'msvc-generic' compiler
+        # projects:
+        #   # For all 'msvc-generic' profile and all 'bin' project used with this 'msvc-generic' compiler
+        #   bin:
+        #     enable-compiler-features: [] # Feature enabled for all 'profile' and all 'bin' used with this 'msvc-generic' profile
+        #     cxx-linker-flags: [] # Linker flags enabled for all 'profile' and all 'bin' used with this 'msvc-generic' profile
+        #     cxx-compiler-flags: [] # Compiler flags enabled for all 'profile' and all 'bin' used with this 'msvc-generic' profile
+        #   # For all 'msvc-generic' profile and all 'dyn' project used with this 'msvc-generic' compiler
+        #   dyn:
+        #     enable-compiler-features: [] # Feature enabled for all 'msvc-generic' profile and all 'dyn' project used with this 'msvc-generic' compiler
+        #     cxx-linker-flags: [] # Linker flags enabled for all 'msvc-generic' profile and all 'dyn' project used with this 'msvc-generic' compiler
+        #     cxx-compiler-flags: [] # Compiler flags enabled for all 'msvc-generic' profile and all 'dyn' project used with this 'msvc-generic' compiler
+        #   # For all 'msvc-generic' profile and all 'lib' project used with this 'msvc-generic' profile
+        #   lib:
+        #     enable-compiler-features: [] # Feature enabled for all 'msvc-generic' profile and all 'dyn' project used with this 'msvc-generic' compiler
+        #     cxx-linker-flags: [] # Linker flags enabled for all 'msvc-generic' profile and all 'dyn' project used with this 'msvc-generic' compiler
+        #     cxx-compiler-flags: [] # Compiler flags enabled for all 'msvc-generic' profile and all 'dyn' project used with this 'msvc-generic' compiler
       debug:
         extends: gnu-generic-profile
-        enable-features: [OPT_LEVEL_0]
+        enable-compiler-features: [OPT_LEVEL_0]
       release:
         extends: gnu-generic-profile
-        enable-features: [OPT_LEVEL_3, REMOVE_DEAD_CODE]
+        enable-compiler-features: [OPT_LEVEL_3, REMOVE_DEAD_CODE]
     features:
       - name: TEST_FEATURE
         description: Feature used for test parsing of this file
-        enable-features: [A,B] # Feature enabled for all compilers
+        enable-compiler-features: [A,B] # Feature enabled for all compilers
         cxx-linker-flags: [C] # Linker flags enabled for all compilers
         cxx-compiler-flags: [D] # Compiler flags enabled for all compilers
         projects:
           # For all 'profile' and all 'bin' project used with all compilers
           bin:
-            enable-features: [] # Feature enabled for all 'profile' and all 'bin' used with all compilers
+            enable-compiler-features: [] # Feature enabled for all 'profile' and all 'bin' used with all compilers
             cxx-linker-flags: [] # Linker flags enabled for all 'profile' and all 'bin' used with all compilers
             cxx-compiler-flags: [] # Compiler flags enabled for all 'profile' and all 'bin' used with all compilers
           # For all 'profile' and all 'dyn' project used used with all compilers
           dyn:
-            enable-features: [] # Feature enabled for all 'profile' and all 'dyn' used used with all compilers
+            enable-compiler-features: [] # Feature enabled for all 'profile' and all 'dyn' used used with all compilers
             cxx-linker-flags: [] # Linker flags enabled for all 'profile' and all 'dyn' used with all compilers
             cxx-compiler-flags: [] # Compiler flags enabled for all 'profile' and all 'dyn' used with all compilers
           # For all 'profile' and all 'lib' project used with all compilers
           lib:
-            enable-features: [] # Feature enabled for all 'profile' and all 'lib' used with all compilers
+            enable-compiler-features: [] # Feature enabled for all 'profile' and all 'lib' used with all compilers
             cxx-linker-flags: [] # Linker flags enabled for all 'profile' and all 'lib' used with all compilers
             cxx-compiler-flags: [] # Compiler flags enabled for all 'profile' and all 'lib' used with all compilers
         profiles:
           debug:
-            enable-features: [] # Feature enabled for all compilers for 'debug' profile and all projects types
+            enable-compiler-features: [] # Feature enabled for all compilers for 'debug' profile and all projects types
             cxx-linker-flags: [] # Linker flags enabled for all compilers for 'debug' profile and all projects types
             cxx-compiler-flags: [] # Compiler flags enabled for all compilers for 'debug' profile and all projects types
             projects:
               # For 'debug' and all 'bin' project used with all compilers
               bin:
-                enable-features: [] # Feature enabled for all compilers for 'debug' profile and 'bin' projects types
+                enable-compiler-features: [] # Feature enabled for all compilers for 'debug' profile and 'bin' projects types
                 cxx-linker-flags: [] # Linker flags enabled for all compilers for 'debug' profile and 'bin' project types
                 cxx-compiler-flags: [] # Compiler flags enabled for all compilers for 'debug' profile and 'bin' project types
               # For 'debug' and all 'dyn' project used with all compilers
               dyn:
-                enable-features: [] # Feature enabled for all compilers for 'debug' profile and 'dyn' projects types
+                enable-compiler-features: [] # Feature enabled for all compilers for 'debug' profile and 'dyn' projects types
                 cxx-linker-flags: [] # Linker flags enabled for all compilers for 'debug' profile and 'dyn' project types
                 cxx-compiler-flags: [] # Compiler flags enabled for all compilers for 'debug' profile and 'dyn' project types
               # For 'debug' and all 'lib' project used with all compilers
               lib:
-                enable-features: [] # Feature enabled for all compilers for 'debug' profile and 'lib' projects types
+                enable-compiler-features: [] # Feature enabled for all compilers for 'debug' profile and 'lib' projects types
                 cxx-linker-flags: [] # Linker flags enabled for all compilers for 'debug' profile and 'lib' project types
                 cxx-compiler-flags: [] # Compiler flags enabled for all compilers for 'debug' profile and 'lib' project types
       # Remove dead code
@@ -165,7 +165,7 @@ compilers:
       - name: OPT_LEVEL_0
         description: No optimization (debug-like)
         cxx-compiler-flags: [-O0]
-        enable-features: [DEBUG_INFO]
+        enable-compiler-features: [DEBUG_INFO]
       - name: OPT_LEVEL_1
         description: Minimal optimization (-O1)
         cxx-compiler-flags: [-O1]
@@ -175,7 +175,7 @@ compilers:
       - name: OPT_LEVEL_3
         description: Max optimization (-O2 + aggressive inline)
         cxx-compiler-flags: [-O3, -finline-functions, -funroll-loops]
-        enable-features: [LTO, OMIT_FRAME_POINTER]
+        enable-compiler-features: [LTO, OMIT_FRAME_POINTER]
       - name: LTO
         description: Whole program optimization
         cxx-compiler-flags: [-flto]
@@ -210,7 +210,7 @@ compilers:
         description: Enable ASAN Sanitizer
         cxx-compiler-flags: [-fsanitize=address, -fsanitize-address-use-after-scope]
         cxx-linker-flags: [-fsanitize=address]
-        enable-features: [DEBUG_INFO]
+        enable-compiler-features: [DEBUG_INFO]
 
     # Features rules
     # only-one rule : Only 1 rules is allowed in 'features'. Multiple in the same target is not allowed.
@@ -239,20 +239,20 @@ compilers:
 
   # GCC compiler
   gcc:
-    extends: gnu-generic
+    extends: gnu-generic-compiler
     cxx_path: g++
     c_path: gcc
     profiles:
       asan:
         extends: debug
-        enable-features: [ASAN]
+        enable-compiler-features: [ASAN]
 
   # Clang compiler
   clang:
-    extends: gnu-generic
+    extends: gnu-generic-compiler
     cxx_path: clang++
     c_path: clang
     profiles:
       asan:
         extends: debug
-        enable-features: [ASAN]
+        enable-compiler-features: [ASAN]

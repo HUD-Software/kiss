@@ -2,3 +2,4 @@ colorama
 vswhere
 semver
 pyyaml
+pytest

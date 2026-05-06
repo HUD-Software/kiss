@@ -8,7 +8,7 @@ targets:
     endianness: little # or big
     supported-compilers: [clangcl, cl]
     compilers:
-      enable-features: [TARGET_X64]
+      enable-compiler-features: [TARGET_X64]
 
   i686-pc-windows-msvc:
     arch: i686 # x86_64, i686, aarch64, arm
@@ -19,7 +19,7 @@ targets:
     endianness: little # or big
     supported-compilers: [clangcl, cl] # List of supported compilers
     compilers:
-      enable-features: [TARGET_X86] # Feature enabled for all supported compilers
+      enable-compiler-features: [TARGET_X86] # Feature enabled for all supported compilers
       cxx-linker-flags: [] # Linker flags enabled for all supported compilers
       cxx-compiler-flags: [] # Compiler flags enabled for all supported compilers
       clangcl: # For clangcl compilers

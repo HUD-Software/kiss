@@ -53,7 +53,7 @@ class Toolchain:
         # Find the compiler
         compiler = Compiler.create(compiler_name)
         if not compiler:
-            console.print_error(f"Fail to create toolchain with compiler {compiler_name}")
+            console.print_error(f"Fail to create toolchain with compiler '{compiler_name}'")
             return None
         
         print(compiler)
@@ -61,12 +61,12 @@ class Toolchain:
         # Find the target
         target = TargetRegistry.get(target_name)
         if not target:
-            console.print_error(f"Target {target_name} not found  : {{{', '.join(TargetRegistry.target_name_list())}}}")
+            console.print_error(f"Target '{target_name}' not found  : {{{', '.join(TargetRegistry.target_name_list())}}}")
             return None
         
         # Ensure we request a valid profile 
         if not compiler.is_profile_exist(profile_name):
-            console.print_error(f"Profile {profile_name} not found in the toolchain : {{{', '.join(compiler.profile_name_list())}}}")
+            console.print_error(f"Profile '{profile_name}' not found in the toolchain : {{{', '.join(compiler.profile_name_list())}}}")
             return None
         
         return Toolchain(compiler, target, compiler.get_profile(profile_name))

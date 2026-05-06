@@ -13,11 +13,11 @@ class CompilerInfoLoader:
         self.file = file
     
     def _read_yaml_enable_feature(self, yaml_object: YamlObject) -> Optional[list[str]]:
-        # Check that 'enable-features' is a list of string
+        # Check that 'enable-compiler-features' is a list of string
         if not yaml_object.value:
-            console.print_warning(f"'enable-features' is empty in '{self.file}({yaml_object.key_line})'")
+            console.print_warning(f"'enable-compiler-features' is empty in '{self.file}({yaml_object.key_line})'")
         elif not isinstance(yaml_object.value, list) or not all(isinstance(x, str) for x in yaml_object.value):
-            console.print_error(f"'enable-features' must contains list of feature name in '{self.file}({yaml_object.key_line})'")
+            console.print_error(f"'enable-compiler-features' must contains list of feature name in '{self.file}({yaml_object.key_line})'")
             return None
         return yaml_object.value
     
@@ -59,7 +59,7 @@ class CompilerInfoLoader:
                             if(cxx_linker_flags := self._read_yaml_cxx_linker_flags(yaml_object)) is None:
                                 return None
                             project_type_node.commons.cxx_linker_flags.add_list(cxx_linker_flags)
-                        case "enable-features":
+                        case "enable-compiler-features":
                             if(feature_name_list := self._read_yaml_enable_feature(yaml_object)) is None:
                                 return None
                             project_type_node.commons.enable_features_list.add_list(feature_name_list)
@@ -87,7 +87,7 @@ class CompilerInfoLoader:
                             if(cxx_linker_flags := self._read_yaml_cxx_linker_flags(yaml_object)) is None:
                                 return None
                             profile.commons.cxx_linker_flags.add_list(cxx_linker_flags)
-                        case "enable-features":
+                        case "enable-compiler-features":
                             if(feature_name_list := self._read_yaml_enable_feature(yaml_object)) is None:
                                 return None
                             profile.commons.enable_features_list.add_list(feature_name_list)
@@ -154,7 +154,7 @@ class CompilerInfoLoader:
                         if(cxx_linker_flags := self._read_yaml_cxx_linker_flags(yaml_object)) is None:
                             return None
                         feature.commons.cxx_linker_flags.add_list(cxx_linker_flags)
-                    case "enable-features":
+                    case "enable-compiler-features":
                         if(feature_name_list := self._read_yaml_enable_feature(yaml_object)) is None:
                             return None
                         feature.commons.enable_features_list.add_list(feature_name_list)
@@ -300,7 +300,7 @@ class CompilerInfoLoader:
                     if(cxx_linker_flags := self._read_yaml_cxx_linker_flags(yaml_object)) is None:
                         return None
                     compiler_node.commons.cxx_linker_flags.add_list(cxx_linker_flags)
-                case "enable-features":
+                case "enable-compiler-features":
                     if(feature_name_list := self._read_yaml_enable_feature(yaml_object)) is None:
                         return None
                     compiler_node.commons.enable_features_list.add_list(feature_name_list)
@@ -339,7 +339,7 @@ class CompilerInfoLoader:
                     if(cxx_linker_flags := self._read_yaml_cxx_linker_flags(yaml_object)) is None:
                         return None
                     compiler_list.common_compiler.commons.cxx_linker_flags.add_list(cxx_linker_flags)
-                case "enable-features":
+                case "enable-compiler-features":
                     if(feature_name_list := self._read_yaml_enable_feature(yaml_object)) is None:
                         return None
                     compiler_list.common_compiler.commons.enable_features_list.add_list(feature_name_list)

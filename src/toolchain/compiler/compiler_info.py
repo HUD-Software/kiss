@@ -971,9 +971,54 @@ class CompilerNode:
     
     def _build_repr(self) -> str:
         lines = [
-            f"CompilerNode : {self.name} (abstract:{self.is_abstract}, extends: {self.extends_name})",
-            "  Profiles : TDB",
+            f"CompilerNode : {self.name} (abstract:{self.is_abstract}, extends: {[extend.name for extend in self.extends_ordered_list]})",
+            f"  c_path : {self.c_path}",
+            f"  cxx_path : {self.cxx_path}",
+             "  All projects and profiles:",
+            f"    cxx_compiler_flags : {[flag for flag in self.commons.cxx_compiler_flags]}",
+            f"    cxx_linker_flags : {[flag for flag in self.commons.cxx_linker_flags]}",
+            f"    enable_features_list : {[feature_name for feature_name in self.commons.enable_features_list]}"
         ]
+        if len(self.project_type_list) > 0:
+            lines += [
+                "  For project types :"
+            ]
+            for project_type in self.project_type_list:
+                lines += [
+                    f"    '{project_type.project_type_name}':",
+                    f"      cxx_compiler_flags : {[flag for flag in project_type.commons.cxx_compiler_flags]}",
+                    f"      cxx_linker_flags : {[flag for flag in project_type.commons.cxx_linker_flags]}",
+                    f"      enable_features_list : {[feature_name for feature_name in project_type.commons.enable_features_list]}"
+                ]
+                for profile in self.profile_list:
+                    if project_type in profile.project_type_list:
+                        project_type = profile.project_type_list.get(project_type)
+                        lines += [
+                            f"      '{profile.name}':",
+                            f"        cxx_compiler_flags : {[flag for flag in project_type.commons.cxx_compiler_flags]}",
+                            f"        cxx_linker_flags : {[flag for flag in project_type.commons.cxx_linker_flags]}",
+                            f"        enable_features_list : {[feature_name for feature_name in project_type.commons.enable_features_list]}"
+                        ]
+            
+        if len(self.profile_list) > 0:
+            lines += [
+                "  For profiles :"
+            ]
+            for profile in self.profile_list:
+                lines += [
+                    f"    '{profile.name}' (abstract:{profile.is_abstract}, extends: '{profile.extends_name}'):",
+                    f"      cxx_compiler_flags : {[flag for flag in profile.commons.cxx_compiler_flags]}",
+                    f"      cxx_linker_flags : {[flag for flag in profile.commons.cxx_linker_flags]}",
+                    f"      enable_features_list : {[feature_name for feature_name in profile.commons.enable_features_list]}"
+                ]
+                for project_type in profile.project_type_list:
+                    lines += [
+                        f"  '{project_type}':",
+                        f"    cxx_compiler_flags : {[flag for flag in project_type.commons.cxx_compiler_flags]}",
+                        f"    cxx_linker_flags : {[flag for flag in project_type.commons.cxx_linker_flags]}",
+                        f"    enable_features_list : {[feature_name for feature_name in project_type.commons.enable_features_list]}"
+                    ]
+
         return "\n".join(lines)
 
     def __repr__(self) -> str:

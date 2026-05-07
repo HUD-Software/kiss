@@ -192,6 +192,7 @@ class Compiler:
             return None
         
         compiler_node : CompilerNode = compiler_node
+        print(compiler_node)
         new_compiler = Compiler(name=compiler_node.name,
                                 cxx_path=compiler_node.cxx_path,
                                 c_path=compiler_node.c_path,

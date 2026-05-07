@@ -96,48 +96,6 @@ compilers:
         extends: gnu-generic-profile
         enable-compiler-features: [OPT_LEVEL_3, REMOVE_DEAD_CODE]
     features:
-      - name: TEST_FEATURE
-        description: Feature used for test parsing of this file
-        enable-compiler-features: [A,B] # Feature enabled for all compilers
-        cxx-linker-flags: [C] # Linker flags enabled for all compilers
-        cxx-compiler-flags: [D] # Compiler flags enabled for all compilers
-        projects:
-          # For all 'profile' and all 'bin' project used with all compilers
-          bin:
-            enable-compiler-features: [] # Feature enabled for all 'profile' and all 'bin' used with all compilers
-            cxx-linker-flags: [] # Linker flags enabled for all 'profile' and all 'bin' used with all compilers
-            cxx-compiler-flags: [] # Compiler flags enabled for all 'profile' and all 'bin' used with all compilers
-          # For all 'profile' and all 'dyn' project used used with all compilers
-          dyn:
-            enable-compiler-features: [] # Feature enabled for all 'profile' and all 'dyn' used used with all compilers
-            cxx-linker-flags: [] # Linker flags enabled for all 'profile' and all 'dyn' used with all compilers
-            cxx-compiler-flags: [] # Compiler flags enabled for all 'profile' and all 'dyn' used with all compilers
-          # For all 'profile' and all 'lib' project used with all compilers
-          lib:
-            enable-compiler-features: [] # Feature enabled for all 'profile' and all 'lib' used with all compilers
-            cxx-linker-flags: [] # Linker flags enabled for all 'profile' and all 'lib' used with all compilers
-            cxx-compiler-flags: [] # Compiler flags enabled for all 'profile' and all 'lib' used with all compilers
-        profiles:
-          debug:
-            enable-compiler-features: [] # Feature enabled for all compilers for 'debug' profile and all projects types
-            cxx-linker-flags: [] # Linker flags enabled for all compilers for 'debug' profile and all projects types
-            cxx-compiler-flags: [] # Compiler flags enabled for all compilers for 'debug' profile and all projects types
-            projects:
-              # For 'debug' and all 'bin' project used with all compilers
-              bin:
-                enable-compiler-features: [] # Feature enabled for all compilers for 'debug' profile and 'bin' projects types
-                cxx-linker-flags: [] # Linker flags enabled for all compilers for 'debug' profile and 'bin' project types
-                cxx-compiler-flags: [] # Compiler flags enabled for all compilers for 'debug' profile and 'bin' project types
-              # For 'debug' and all 'dyn' project used with all compilers
-              dyn:
-                enable-compiler-features: [] # Feature enabled for all compilers for 'debug' profile and 'dyn' projects types
-                cxx-linker-flags: [] # Linker flags enabled for all compilers for 'debug' profile and 'dyn' project types
-                cxx-compiler-flags: [] # Compiler flags enabled for all compilers for 'debug' profile and 'dyn' project types
-              # For 'debug' and all 'lib' project used with all compilers
-              lib:
-                enable-compiler-features: [] # Feature enabled for all compilers for 'debug' profile and 'lib' projects types
-                cxx-linker-flags: [] # Linker flags enabled for all compilers for 'debug' profile and 'lib' project types
-                cxx-compiler-flags: [] # Compiler flags enabled for all compilers for 'debug' profile and 'lib' project types
       # Remove dead code
       - name: REMOVE_DEAD_CODE
         description: Remove dead code

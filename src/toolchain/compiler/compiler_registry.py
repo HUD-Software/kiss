@@ -194,8 +194,8 @@ class Compiler:
         compiler_node : CompilerNode = compiler_node
         print(compiler_node)
         new_compiler = Compiler(name=compiler_node.name,
-                                cxx_path=compiler_node.cxx_path,
-                                c_path=compiler_node.c_path,
+                                cxx_path=compiler_node.cxx_path or Path(),
+                                c_path=compiler_node.c_path or Path(),
                                 compiler_info=compiler_node)
         for profile in compiler_node.profile_list:
             profile : ProfileNode = profile
@@ -216,9 +216,12 @@ class Compiler:
                             console.print_error(f"Feature {feature_name} not found for profile {profile.name} in compiler {new_compiler.name}")
                             return None
                         feature_node : FeatureNode = feature_node
-                        cxx_compiler_flags.update(feature_node.profile_list.get(profile.name).compiler_flags_for_project_type(project_type.name))
-                        cxx_linker_flags.update(feature_node.cxx_linker_flags)
-                        enabled_feature_list.update(feature_node.enable_features)
+                        if (profile_node := feature_node.profile_list.get(profile.name)):
+                            if( project_type_node := profile_node.project_type_list.get(project_type.name)):
+                                cxx_compiler_flags.update(project_type_node.commons.cxx_compiler_flags)
+                                cxx_linker_flags.update(project_type_node.commons.cxx_linker_flags)
+                        cxx_linker_flags.update(feature_node.commons.cxx_linker_flags)
+                        enabled_feature_list.update(feature_node.commons.enable_features_list)
 
                     new_profile.project_type_list.add(ProjectType(name=project_type.project_type_name,
                                                      cxx_linker_flags=cxx_linker_flags,

@@ -4,18 +4,18 @@
 # Individual compiler (like cl or clangcl) will extends this compiler to
 # inherit its configuration, avoiding duplication.
 compilers:
-  enable-compiler-features: [ X ] # Feature enabled for all compilers
+  enable-compiler-features: [] # Feature enabled for all compilers
   cxx-linker-flags: [] # Linker flags enabled for all compilers
   cxx-compiler-flags: [] # Compiler flags enabled for all compilers
   projects:
     # For all 'profile' and all 'bin' project used with all compilers
     bin:
-      enable-compiler-features: [ Y ] # Feature enabled for all 'profile' and all 'bin' used with all compilers
+      enable-compiler-features: [] # Feature enabled for all 'profile' and all 'bin' used with all compilers
       cxx-linker-flags: [] # Linker flags enabled for all 'profile' and all 'bin' used with all compilers
       cxx-compiler-flags: [] # Compiler flags enabled for all 'profile' and all 'bin' used with all compilers
     # For all 'profile' and all 'dyn' project used used with all compilers
     dyn:
-      enable-compiler-features: [ A ] # Feature enabled for all 'profile' and all 'dyn' used used with all compilers
+      enable-compiler-features: [] # Feature enabled for all 'profile' and all 'dyn' used used with all compilers
       cxx-linker-flags: [] # Linker flags enabled for all 'profile' and all 'dyn' used with all compilers
       cxx-compiler-flags: [] # Compiler flags enabled for all 'profile' and all 'dyn' used with all compilers
     # For all 'profile' and all 'lib' project used with all compilers
@@ -33,7 +33,7 @@ compilers:
       projects:
         # For 'debug' and all 'bin' project used with all compilers
         bin:
-          enable-compiler-features: [ Z ] # Feature enabled for all compilers for 'debug' profile and 'bin' projects types
+          enable-compiler-features: [] # Feature enabled for all compilers for 'debug' profile and 'bin' projects types
           cxx-linker-flags: [] # Linker flags enabled for all compilers for 'debug' profile and 'bin' project types
           cxx-compiler-flags: [] # Compiler flags enabled for all compilers for 'debug' profile and 'bin' project types
         # For 'debug' and all 'dyn' project used with all compilers

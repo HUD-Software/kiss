@@ -351,10 +351,15 @@ class ProjectTypeNodeList:
         self.project_type_set.add(project_type_node)
     
     # Retrieves the project specific with the given project type, if not found return None
-    def get(self, project_type_node: ProjectTypeNode) -> Optional[ProjectTypeNode]:
-        for p in self.project_type_set:
-            if p.project_type_name == project_type_node.project_type_name:
-                return p
+    def get(self, item: str | ProjectTypeNode) -> Optional[ProjectTypeNode]:
+        if isinstance(item, str):
+            for p in self.project_type_set:
+                if p.project_type_name == item:
+                    return p
+        elif isinstance(item, ProjectTypeNode):
+            for p in self.project_type_set:
+                if p.project_type_name == item.project_type_name:
+                    return p
         return None 
        
     def merge_with_commons(self, 

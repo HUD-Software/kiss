@@ -194,8 +194,8 @@ class Compiler:
         compiler_node : CompilerNode = compiler_node
         print(compiler_node)
         new_compiler = Compiler(name=compiler_node.name,
-                                cxx_path=compiler_node.cxx_path or Path(),
-                                c_path=compiler_node.c_path or Path(),
+                                cxx_path=compiler_node.cxx_path,
+                                c_path=compiler_node.c_path,
                                 compiler_info=compiler_node)
         for profile in compiler_node.profile_list:
             profile : ProfileNode = profile

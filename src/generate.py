@@ -69,7 +69,7 @@ class KissGenerateContext(KissBaseContext):
                                           project_name=cli_args.project_name,
                                           generator_name=cli_args.generator_name,
                                           toolchain=toolchain,
-                                          profile_name=cli_args.profile_name)
+                                          profile_name=cli_args.profile)
        
 
 def cmd_generate(cli_args: argparse.Namespace) -> bool:
@@ -80,10 +80,11 @@ def cmd_generate(cli_args: argparse.Namespace) -> bool:
     
     if(kiss_generate_context := KissGenerateContext.from_cli_args(cli_args=cli_args)) is None:
         return None
-    
+    kiss_generate_context : KissGenerateContext = kiss_generate_context
+
     console.print_step(f"Generating '{kiss_generate_context.project.name}' with \n"
                        f" - Builder : {generator.name}\n"
-                       f" - Profile : {kiss_generate_context.toolchain.profile.name}\n"
+                       f" - Profile : {kiss_generate_context.profile_name}\n"
                        f" - Target : {kiss_generate_context.toolchain.target.name}\n"
                        f" - Compiler : {kiss_generate_context.toolchain.compiler.name}")
     

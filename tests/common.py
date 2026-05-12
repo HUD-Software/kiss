@@ -58,12 +58,13 @@ def find_cmake_files(root):
 def validate_cmakelist_path(cmake_filepath: Path,
                             project_name:str, 
                             toolchain: Toolchain,
+                            profile_name:str,
                             cmake_generator_name:CMakeGeneratorName  ):
     
     assert cmake_filepath.exists()
     assert cmake_filepath.name == "CMakeLists.txt"
     if cmake_generator_name.is_single_profile():
-        assert cmake_filepath.parent.name == toolchain.profile.name
+        assert cmake_filepath.parent.name == profile_name
         assert project_name in cmake_filepath.parent.parent.name
         assert cmake_filepath.parent.parent.parent.name == "cmake"
         assert cmake_filepath.parent.parent.parent.parent.name == toolchain.compiler.name
@@ -92,6 +93,7 @@ def validate_build( cmake_filepath: Path,
     validate_cmakelist_path(cmake_filepath=cmake_filepath,
                             project_name=project_name,
                             toolchain=toolchain,
+                            profile_name=profile_name,
                             cmake_generator_name=cmake_generator_name)
     if cmake_generator_name.is_single_profile():
         match project_type:

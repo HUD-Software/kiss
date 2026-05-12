@@ -15,4 +15,4 @@ targets:
     abi: gnu # msvc, gnu, musl, none
     pointer-width: 32 # 32 or 64
     endianness: little # or big
-    enable-compiler-features: [TARG ET_X86]
+    enable-compiler-features: [TARGET_X86]

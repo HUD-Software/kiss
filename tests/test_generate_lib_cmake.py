@@ -51,8 +51,7 @@ def test_generate_lib_default_inner(runtime_dir):
     files = find_cmake_files(RUNTIME_DIR)
     assert len(files) == 1
     toolchain  = Toolchain.create(compiler_name=DEFAULT_COMPILER_NAME, 
-                                  target_name=DEFAULT_TARGET_NAME,
-                                  profile_name=DEFAULT_PROFILE_NAME)
+                                  target_name=DEFAULT_TARGET_NAME)
     cmake_generator_name =  CMakeGeneratorName.create(toolchain=toolchain)
     validate_cmakelist_path(cmake_filepath=files[0],
                             project_name=lib_name,

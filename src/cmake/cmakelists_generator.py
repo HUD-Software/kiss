@@ -15,10 +15,17 @@ from project import  BinProject, LibProject, Project, ProjectType
 from toolchain import Toolchain
 
 class CMakeListsGenerateContext(KissGenerateContext):
-    def __init__(self, current_directory:Path, project: Project, generator_name: str, toolchain: Toolchain, cmake_generator_name:str):
+    def __init__(self, 
+                 current_directory:Path, 
+                 project: Project, 
+                 generator_name: str, 
+                 profile_name:str,
+                 toolchain: Toolchain, 
+                 cmake_generator_name:str):
         super().__init__(current_directory=current_directory,
                          project=project,
                          generator_name=generator_name,
+                         profile_name=profile_name,
                          toolchain=toolchain)
         self._cmake_context = CMakeContext(current_directory=current_directory, 
                                            toolchain=toolchain, 
@@ -64,7 +71,13 @@ class CMakeListsGenerateContext(KissGenerateContext):
         return self._cmake_context.output_directory_for_profile(config)
         
     @classmethod
-    def create(cls, current_directory: Path, project_name: str, generator_name: str, toolchain: Toolchain, cmake_generator_name:str) -> Self | None:
+    def create(cls, 
+               current_directory: Path, 
+               project_name: str, 
+               generator_name: str, 
+               toolchain: Toolchain, 
+               profile_name: str,
+               cmake_generator_name:str) -> Self | None:
         project_to_generate = super().find_target_project(current_directory, project_name)
         if not project_to_generate:
             return None
@@ -72,6 +85,7 @@ class CMakeListsGenerateContext(KissGenerateContext):
         return cls(current_directory=current_directory, 
                    project=project_to_generate, 
                    generator_name=generator_name, 
+                   profile_name=profile_name,
                    toolchain=toolchain,
                    cmake_generator_name=cmake_generator_name)
     
@@ -82,7 +96,8 @@ class CMakeListsGenerateContext(KissGenerateContext):
                                          project=kiss_generate_context.project,
                                          generator_name=kiss_generate_context.generator_name,
                                          toolchain=kiss_generate_context.toolchain,
-                                         cmake_generator_name=cmake_generator_name)
+                                         cmake_generator_name=cmake_generator_name,
+                                         profile_name=kiss_generate_context.profile_name)
     
 
 

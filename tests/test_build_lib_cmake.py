@@ -12,14 +12,14 @@ def test_build_lib_default(runtime_dir):
     files = find_cmake_files(RUNTIME_DIR)
     assert len(files) == 1
     toolchain  = Toolchain.create(compiler_name=DEFAULT_COMPILER_NAME, 
-                                  target_name=DEFAULT_TARGET_NAME, 
-                                  profile_name=DEFAULT_PROFILE_NAME)
+                                  target_name=DEFAULT_TARGET_NAME)
     cmake_generator_name =  CMakeGeneratorName.create(toolchain=toolchain)
     validate_build(cmake_filepath=files[0],
                    project_name=lib_name,
                    project_type=lib_type,
                    toolchain=toolchain,
-                   cmake_generator_name=cmake_generator_name)
+                   cmake_generator_name=cmake_generator_name,
+                   profile_name=DEFAULT_PROFILE_NAME)
     
 # Test build of a two lib project in the same root directory
 # But without dependency
@@ -39,15 +39,15 @@ def test_build_lib_default_inner(runtime_dir):
     files = find_cmake_files(RUNTIME_DIR)
     assert len(files) == 1
     toolchain  = Toolchain.create(compiler_name=DEFAULT_COMPILER_NAME, 
-                                  target_name=DEFAULT_TARGET_NAME,
-                                  profile_name=DEFAULT_PROFILE_NAME)
+                                  target_name=DEFAULT_TARGET_NAME)
     cmake_generator_name =  CMakeGeneratorName.create(toolchain=toolchain)
 
     validate_build(cmake_filepath=files[0],
                    project_name=lib_name,
                    project_type=lib_type,
                    toolchain=toolchain,
-                   cmake_generator_name=cmake_generator_name)
+                   cmake_generator_name=cmake_generator_name,
+                   profile_name=DEFAULT_PROFILE_NAME)
     
     assert build_project(directory=RUNTIME_DIR/lib_name/lib_2_name) == 0
 
@@ -55,8 +55,7 @@ def test_build_lib_default_inner(runtime_dir):
     files = find_cmake_files(RUNTIME_DIR)
     assert len(files) == 2
     toolchain  = Toolchain.create(compiler_name=DEFAULT_COMPILER_NAME, 
-                                  target_name=DEFAULT_TARGET_NAME,
-                                  profile_name=DEFAULT_PROFILE_NAME)
+                                  target_name=DEFAULT_TARGET_NAME)
     cmake_generator_name =  CMakeGeneratorName.create(toolchain=toolchain)
     if cmake_generator_name.is_single_profile():
         lib_file = [f for f in files if lib_name in str(f.parent.parent.name)]
@@ -64,26 +63,30 @@ def test_build_lib_default_inner(runtime_dir):
                     project_name=lib_name,
                     project_type=lib_type,
                     toolchain=toolchain,
-                    cmake_generator_name=cmake_generator_name)
+                    cmake_generator_name=cmake_generator_name,
+                    profile_name=DEFAULT_PROFILE_NAME)
         lib_2_file = [f for f in files if lib_2_name in str(f.parent.parent.name)]
         validate_build(cmake_filepath=lib_2_file[0],
                     project_name=lib_2_name,
                     project_type=lib_type,
                     toolchain=toolchain,
-                    cmake_generator_name=cmake_generator_name)
+                    cmake_generator_name=cmake_generator_name,
+                    profile_name=DEFAULT_PROFILE_NAME)
     elif cmake_generator_name.is_multi_profile():
         lib_file = [f for f in files if lib_name in str(f.parent.name)]
         validate_build(cmake_filepath=lib_file[0],
                     project_name=lib_name,
                     project_type=lib_type,
                     toolchain=toolchain,
-                    cmake_generator_name=cmake_generator_name)
+                    cmake_generator_name=cmake_generator_name,
+                    profile_name=DEFAULT_PROFILE_NAME)
         lib_2_file = [f for f in files if lib_2_name in str(f.parent.name)]
         validate_build(cmake_filepath=lib_2_file[0],
                     project_name=lib_2_name,
                     project_type=lib_type,
                     toolchain=toolchain,
-                    cmake_generator_name=cmake_generator_name)
+                    cmake_generator_name=cmake_generator_name,
+                    profile_name=DEFAULT_PROFILE_NAME)
     else:
         assert False
 
@@ -118,14 +121,14 @@ def test_build_lib_no_depends(runtime_dir):
     files = find_cmake_files(RUNTIME_DIR)
     assert len(files) == 1
     toolchain  = Toolchain.create(compiler_name=DEFAULT_COMPILER_NAME, 
-                                  target_name=DEFAULT_TARGET_NAME,
-                                  profile_name=DEFAULT_PROFILE_NAME)
+                                  target_name=DEFAULT_TARGET_NAME)
     cmake_generator_name =  CMakeGeneratorName.create(toolchain=toolchain)
     validate_build(cmake_filepath=files[0],
                    project_name=lib_2_name,
                    project_type=lib_type,
                    toolchain=toolchain,
-                   cmake_generator_name=cmake_generator_name)
+                   cmake_generator_name=cmake_generator_name,
+                   profile_name=DEFAULT_PROFILE_NAME)
     
 # Test build of a two lib project in the same root directory
 # lib in root directory depends of inner lib, user must provide the name of the projec to build
@@ -156,8 +159,7 @@ def test_build_lib_depends(runtime_dir):
     files = find_cmake_files(RUNTIME_DIR)
     assert len(files) == 2
     toolchain  = Toolchain.create(compiler_name=DEFAULT_COMPILER_NAME, 
-                                  target_name=DEFAULT_TARGET_NAME,
-                                  profile_name=DEFAULT_PROFILE_NAME)
+                                  target_name=DEFAULT_TARGET_NAME)
     cmake_generator_name =  CMakeGeneratorName.create(toolchain=toolchain)
     if cmake_generator_name.is_single_profile():
         lib_file = [f for f in files if lib_name in str(f.parent.parent.name)]
@@ -165,26 +167,30 @@ def test_build_lib_depends(runtime_dir):
                     project_name=lib_name,
                     project_type=lib_type,
                     toolchain=toolchain,
-                    cmake_generator_name=cmake_generator_name)
+                    cmake_generator_name=cmake_generator_name,
+                    profile_name=DEFAULT_PROFILE_NAME)
         lib_2_file = [f for f in files if lib_2_name in str(f.parent.parent.name)]
         validate_build(cmake_filepath=lib_2_file[0],
                     project_name=lib_2_name,
                     project_type=lib_type,
                     toolchain=toolchain,
-                    cmake_generator_name=cmake_generator_name)
+                    cmake_generator_name=cmake_generator_name,
+                    profile_name=DEFAULT_PROFILE_NAME)
     elif cmake_generator_name.is_multi_profile():
         lib_file = [f for f in files if lib_name in str(f.parent.name)]
         validate_build(cmake_filepath=lib_file[0],
                     project_name=lib_name,
                     project_type=lib_type,
                     toolchain=toolchain,
-                    cmake_generator_name=cmake_generator_name)
+                    cmake_generator_name=cmake_generator_name,
+                    profile_name=DEFAULT_PROFILE_NAME)
         lib_2_file = [f for f in files if lib_2_name in str(f.parent.name)]
         validate_build(cmake_filepath=lib_2_file[0],
                     project_name=lib_2_name,
                     project_type=lib_type,
                     toolchain=toolchain,
-                    cmake_generator_name=cmake_generator_name)
+                    cmake_generator_name=cmake_generator_name,
+                    profile_name=DEFAULT_PROFILE_NAME)
     else:
         assert False
 
@@ -217,8 +223,7 @@ def test_build_lib_profile(runtime_dir):
     files = find_cmake_files(RUNTIME_DIR)
     assert len(files) == 2
     toolchain  = Toolchain.create(compiler_name=DEFAULT_COMPILER_NAME, 
-                                  target_name=DEFAULT_TARGET_NAME,
-                                  profile_name=profile_name)
+                                  target_name=DEFAULT_TARGET_NAME)
     cmake_generator_name =  CMakeGeneratorName.create(toolchain=toolchain)
     if cmake_generator_name.is_single_profile():
         lib_file = [f for f in files if lib_name in str(f.parent.parent.name)]
@@ -226,26 +231,30 @@ def test_build_lib_profile(runtime_dir):
                        project_name=lib_name,
                        project_type=lib_type,
                        toolchain=toolchain,
-                       cmake_generator_name=cmake_generator_name)
+                       cmake_generator_name=cmake_generator_name,
+                       profile_name=profile_name)
         lib_2_file = [f for f in files if lib_2_name in str(f.parent.parent.name)]
         validate_build(cmake_filepath=lib_2_file[0],
                        project_name=lib_2_name,
                        project_type=lib_type,
                        toolchain=toolchain,
-                       cmake_generator_name=cmake_generator_name)
+                       cmake_generator_name=cmake_generator_name,
+                       profile_name=profile_name)
     elif cmake_generator_name.is_multi_profile():
         lib_file = [f for f in files if lib_name in str(f.parent.name)]
         validate_build(cmake_filepath=lib_file[0],
                        project_name=lib_name,
                        project_type=lib_type,
                        toolchain=toolchain,
-                       cmake_generator_name=cmake_generator_name)
+                       cmake_generator_name=cmake_generator_name,
+                       profile_name=profile_name)
         lib_2_file = [f for f in files if lib_2_name in str(f.parent.name)]
         validate_build(cmake_filepath=lib_2_file[0],
                        project_name=lib_2_name,
                        project_type=lib_type,
                        toolchain=toolchain,
-                       cmake_generator_name=cmake_generator_name)
+                       cmake_generator_name=cmake_generator_name,
+                       profile_name=profile_name)
     else:
         assert False
 
@@ -281,8 +290,7 @@ def test_build_lib_target(runtime_dir):
     files = find_cmake_files(RUNTIME_DIR)
     assert len(files) == 2
     toolchain  = Toolchain.create(compiler_name=DEFAULT_COMPILER_NAME, 
-                                  target_name=target_name,
-                                  profile_name=DEFAULT_PROFILE_NAME)
+                                  target_name=target_name)
     cmake_generator_name =  CMakeGeneratorName.create(toolchain=toolchain)
     if cmake_generator_name.is_single_profile():
         lib_file = [f for f in files if lib_name in str(f.parent.parent.name)]
@@ -290,26 +298,30 @@ def test_build_lib_target(runtime_dir):
                        project_name=lib_name,
                        project_type=lib_type,
                        toolchain=toolchain,
-                       cmake_generator_name=cmake_generator_name)
+                       cmake_generator_name=cmake_generator_name,
+                       profile_name=DEFAULT_PROFILE_NAME)
         lib_2_file = [f for f in files if lib_2_name in str(f.parent.parent.name)]
         validate_build(cmake_filepath=lib_2_file[0],
                        project_name=lib_2_name,
                        project_type=lib_type,
                        toolchain=toolchain,
-                       cmake_generator_name=cmake_generator_name)
+                       cmake_generator_name=cmake_generator_name,
+                       profile_name=DEFAULT_PROFILE_NAME)
     elif cmake_generator_name.is_multi_profile():
         lib_file = [f for f in files if lib_name in str(f.parent.name)]
         validate_build(cmake_filepath=lib_file[0],
                        project_name=lib_name,
                        project_type=lib_type,
                        toolchain=toolchain,
-                       cmake_generator_name=cmake_generator_name)
+                       cmake_generator_name=cmake_generator_name,
+                       profile_name=DEFAULT_PROFILE_NAME)
         lib_2_file = [f for f in files if lib_2_name in str(f.parent.name)]
         validate_build(cmake_filepath=lib_2_file[0],
                        project_name=lib_2_name,
                        project_type=lib_type,
                        toolchain=toolchain,
-                       cmake_generator_name=cmake_generator_name)
+                       cmake_generator_name=cmake_generator_name,
+                       profile_name=DEFAULT_PROFILE_NAME)
     else:
         assert False
     
@@ -344,8 +356,7 @@ def test_build_lib_compiler(runtime_dir):
     files = find_cmake_files(RUNTIME_DIR)
     assert len(files) == 2
     toolchain  = Toolchain.create(compiler_name=compiler_name, 
-                                  target_name=DEFAULT_TARGET_NAME,
-                                  profile_name=DEFAULT_PROFILE_NAME)
+                                  target_name=DEFAULT_TARGET_NAME)
     cmake_generator_name =  CMakeGeneratorName.create(toolchain=toolchain)
     if cmake_generator_name.is_single_profile():
         lib_file = [f for f in files if lib_name in str(f.parent.parent.name)]
@@ -353,26 +364,30 @@ def test_build_lib_compiler(runtime_dir):
                        project_name=lib_name,
                        project_type=lib_type,
                        toolchain=toolchain,
-                       cmake_generator_name=cmake_generator_name)
+                       cmake_generator_name=cmake_generator_name,
+                       profile_name=DEFAULT_PROFILE_NAME)
         lib_2_file = [f for f in files if lib_2_name in str(f.parent.parent.name)]
         validate_build(cmake_filepath=lib_2_file[0],
                        project_name=lib_2_name,
                        project_type=lib_type,
                        toolchain=toolchain,
-                       cmake_generator_name=cmake_generator_name)
+                       cmake_generator_name=cmake_generator_name,
+                       profile_name=DEFAULT_PROFILE_NAME)
     elif cmake_generator_name.is_multi_profile():
         lib_file = [f for f in files if lib_name in str(f.parent.name)]
         validate_build(cmake_filepath=lib_file[0],
                        project_name=lib_name,
                        project_type=lib_type,
                        toolchain=toolchain,
-                       cmake_generator_name=cmake_generator_name)
+                       cmake_generator_name=cmake_generator_name,
+                       profile_name=DEFAULT_PROFILE_NAME)
         lib_2_file = [f for f in files if lib_2_name in str(f.parent.name)]
         validate_build(cmake_filepath=lib_2_file[0],
                        project_name=lib_2_name,
                        project_type=lib_type,
                        toolchain=toolchain,
-                       cmake_generator_name=cmake_generator_name)
+                       cmake_generator_name=cmake_generator_name,
+                       profile_name=DEFAULT_PROFILE_NAME)
     else:
         assert False
 
@@ -404,14 +419,12 @@ def test_build_lib_all(runtime_dir):
                 files = find_cmake_files(RUNTIME_DIR)
                 assert len(files) == 1
                 toolchain  = Toolchain.create(compiler_name=compiler, 
-                                              target_name=target, 
-                                              profile_name=profile)
+                                              target_name=target)
                 cmake_generator_name =  CMakeGeneratorName.create(toolchain=toolchain)
                 validate_build(cmake_filepath=files[0],
                                project_name=lib_name,
                                project_type=lib_type,
                                toolchain=toolchain,
-                               cmake_generator_name=cmake_generator_name)
-        
-
+                               cmake_generator_name=cmake_generator_name,
+                               profile_name=profile)
         

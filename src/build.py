@@ -8,11 +8,17 @@ from project import Project
 from toolchain import Toolchain, Compiler, Target
 
 class KissBuildContext(KissBaseContext):
-    def __init__(self, current_directory:Path, project: Project, builder_name: str, toolchain: Toolchain):
+    def __init__(self, 
+                 current_directory:Path, 
+                 project: Project, 
+                 builder_name: str, 
+                 toolchain: Toolchain,
+                 profile_name: str):
         super().__init__(current_directory)
         self._project = project
         self._builder_name = builder_name
         self._toolchain = toolchain
+        self._profile_name = profile_name
         
     @property
     def project(self) -> Project:
@@ -26,16 +32,26 @@ class KissBuildContext(KissBaseContext):
     def toolchain(self) -> Toolchain:
         return self._toolchain
 
+    @property
+    def profile_name(self) -> str:
+        return self._profile_name
+
     @classmethod
-    def create(cls, current_directory: Path, project_name: str, builder_name: str, toolchain: Toolchain) -> Optional[Self] :
+    def create(cls, 
+               current_directory: Path, 
+               project_name: str, 
+               builder_name: str, 
+               toolchain: Toolchain, 
+               profile_name: str) -> Optional[Self] :
         project_to_build = super().find_target_project(current_directory, project_name)
         if not project_to_build:
             console.print_error(f"No project '{project_name}' found in {str(current_directory)}")
             return None
         return KissBuildContext(current_directory=current_directory, 
-                            project=project_to_build, 
-                            builder_name=builder_name, 
-                            toolchain=toolchain)
+                                project=project_to_build, 
+                                builder_name=builder_name, 
+                                toolchain=toolchain,
+                                profile_name=profile_name)
 
 
     @staticmethod
@@ -46,13 +62,15 @@ class KissBuildContext(KissBaseContext):
             if(compiler_name := Compiler.default_compiler_name()) is None:
                 console.print_error(f"Default compiler not found")
                 return None
-        if( toolchain := Toolchain.create(compiler_name=compiler_name, target_name=target_name, profile_name=cli_args.profile)) is None:
+        if( toolchain := Toolchain.create(compiler_name=compiler_name, 
+                                          target_name=target_name)) is None:
             return None
             
         return KissBuildContext.create(current_directory=cli_args.directory,
-                                        project_name=cli_args.project_name,
-                                        builder_name=cli_args.builder,
-                                        toolchain=toolchain)
+                                       project_name=cli_args.project_name,
+                                       builder_name=cli_args.builder,
+                                       toolchain=toolchain,
+                                       profile_name=cli_args.profile)
 
 def cmd_build(cli_args: argparse.Namespace) -> bool:
     if( builder := BuilderRegistry.builders.get(cli_args.builder)) is None:
@@ -61,10 +79,11 @@ def cmd_build(cli_args: argparse.Namespace) -> bool:
     
     if(kiss_build_context := KissBuildContext.from_cli_args(cli_args=cli_args)) is None:
         return None
+    kiss_build_context : KissBuildContext = kiss_build_context
     
     console.print_step(f"Building '{kiss_build_context.project.name}' with \n"
                        f" - Builder : {builder.name}\n"
-                       f" - Profile : {kiss_build_context.toolchain.profile.name}\n"
+                       f" - Profile : {kiss_build_context.profile_name}\n"
                        f" - Target : {kiss_build_context.toolchain.target.name}\n"
                        f" - Compiler : {kiss_build_context.toolchain.compiler.name}")
 

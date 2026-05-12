@@ -1,5 +1,6 @@
 
 
+from json import tool
 import os
 from pathlib import Path
 from typing import Self
@@ -9,22 +10,28 @@ from toolchain.compiler.compiler_registry import Profile
 from toolchain.target import Target
 from toolchain.target.target_registry import TargetRegistry
 from toolchain.toolchain_yaml_loader import ToolchainYamlFile
+from toolchain.toolset import Toolset
 
 
 class Toolchain:
-    def __init__(self, compiler: Compiler, target: Target, profile: Profile):
-        self.compiler = compiler
+    def __init__(self, 
+                 target: Target, 
+                 toolset : Toolset):
         self.target = target
-        self.profile = profile
+        self.toolset = toolset
+    
+    @property
+    def compiler(self) -> Compiler:
+        return self.toolset.compiler
     
     def get_profile(self, profile_name: str) -> Profile | None:
-        return self.compiler.get_profile(profile_name)
+        return self.toolset.compiler.get_profile(profile_name)
     
     def is_profile_exist(self, profile_name: str) -> bool:
-        return self.compiler.is_profile_exist(profile_name)
+        return self.toolset.compiler.is_profile_exist(profile_name)
     
     def profile_name_list(self) -> list[str] : 
-        return self.compiler.profile_name_list()
+        return self.toolset.compiler.profile_name_list()
     
     #
     # Detects if the host machine is a 64-bit x86 architecture (x86_64/AMD64) on Windows.
@@ -49,27 +56,25 @@ class Toolchain:
         return arch in ("x86", "i386", "i686") and arch_w6432 == ""
 
     @staticmethod
-    def create(compiler_name: str, target_name : str, profile_name: str)-> Self | None:
+    def create(compiler_name: str, target_name: str)-> Self | None:
         # Find the target
         target = TargetRegistry.get(target_name)
         if not target:
             console.print_error(f"Target '{target_name}' not found  : {{{', '.join(TargetRegistry.target_name_list())}}}")
             return None
         
+        # Create the toolset
         # Find the compiler
-        compiler = Compiler.create(compiler_name, target=target)
-        if not compiler:
-            console.print_error(f"Fail to create toolchain with compiler '{compiler_name}'")
-            return None
+        toolset = Toolset.create(compiler_name=compiler_name, 
+                                 target=target)
+      
+        # # Ensure we request a valid profile 
+        # if not compiler.is_profile_exist(profile_name):
+        #     console.print_error(f"Profile '{profile_name}' not found in the toolchain : {{{', '.join(compiler.profile_name_list())}}}")
+        #     return None
         
-        print(compiler)
-        
-        # Ensure we request a valid profile 
-        if not compiler.is_profile_exist(profile_name):
-            console.print_error(f"Profile '{profile_name}' not found in the toolchain : {{{', '.join(compiler.profile_name_list())}}}")
-            return None
-        
-        return Toolchain(compiler, target, compiler.get_profile(profile_name))
+        return Toolchain(target=target,
+                         toolset=toolset)
 
     @staticmethod
     def load_all_toolchains_in_directory(directory: Path) -> bool :
@@ -93,12 +98,10 @@ class Toolchain:
     @classmethod
     def default_toolchain(cls) -> Self | None:
         if not hasattr(cls, "_default_toolchain"):
-            target = Toolchain.default_target()
-            if(compiler := Toolchain.default_compiler(target)) is None:
-                console.print_error(f"Default toolchain not found")
-                return None
-            cls._default_toochain = Toolchain(compiler=compiler, 
-                                              target=target)
+
+            cls._default_toolchain = Toolchain.create(compiler_name=Toolchain.default_compiler_name(),
+                                                     target_name=Toolchain.default_target_name())
+                                                     
         return cls._default_toolchain
     
     

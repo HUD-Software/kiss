@@ -8,12 +8,18 @@ from project import Project
 from toolchain import Toolchain, Target, Compiler, TargetRegistry
 
 class KissGenerateContext(KissBaseContext):
-    def __init__(self, current_directory:Path, project: Project, generator_name: str, toolchain: Toolchain):
+    def __init__(self, 
+                 current_directory:Path, 
+                 project: Project, 
+                 generator_name: str, 
+                 profile_name:str,
+                 toolchain: Toolchain):
         super().__init__(current_directory)
         self._project = project
         self._generator_name = generator_name
         self._toolchain = toolchain
-    
+        self._profile_name = profile_name
+
     @property
     def project(self) -> Project:
         return self._project
@@ -26,8 +32,16 @@ class KissGenerateContext(KissBaseContext):
     def toolchain(self) -> Toolchain:
         return self._toolchain
 
+    @property
+    def profile_name(self) -> str:
+        return self._profile_name
     @classmethod
-    def create(cls, current_directory: Path, project_name: str, generator_name: str, toolchain: Toolchain) -> Optional[Self] :
+    def create(cls, 
+               current_directory: Path, 
+               project_name: str, 
+               generator_name: str,
+               profile_name:str,
+               toolchain: Toolchain) -> Optional[Self] :
         project_to_generate = super().find_target_project(current_directory, project_name)
         if not project_to_generate:
             return None
@@ -35,6 +49,7 @@ class KissGenerateContext(KissBaseContext):
         return KissGenerateContext(current_directory=current_directory,
                                    project=project_to_generate,
                                    generator_name=generator_name,
+                                   profile_name=profile_name,
                                    toolchain=toolchain)
 
 
@@ -47,14 +62,14 @@ class KissGenerateContext(KissBaseContext):
                 console.print_error(f"Default compiler not found")
                 return None
         if( toolchain := Toolchain.create(compiler_name=compiler_name, 
-                                          target_name=target_name, 
-                                          profile_name=cli_args.profile)) is None:
+                                          target_name=target_name)) is None:
             return None
             
         return KissGenerateContext.create(current_directory=cli_args.directory,
-                          project_name=cli_args.project_name,
-                          generator_name=cli_args.generator_name,
-                          toolchain=toolchain)
+                                          project_name=cli_args.project_name,
+                                          generator_name=cli_args.generator_name,
+                                          toolchain=toolchain,
+                                          profile_name=cli_args.profile_name)
        
 
 def cmd_generate(cli_args: argparse.Namespace) -> bool:

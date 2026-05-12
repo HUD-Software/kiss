@@ -1,15 +1,13 @@
 
 from typing import Optional, Self
 import console
-from toolchain import target
 from toolchain.target.target_registry import Target
 from toolchain.toolchain import Toolchain
-from visual_studio import VSToolset
+from toolchain.toolset import GNUToolset, VSToolset
 
 class CMakeGeneratorName:
-    def __init__(self, name: str, vstoolset : Optional[VSToolset] = None): 
+    def __init__(self, name: str): 
         self.name = name
-        self.vstoolset = vstoolset
 
     def is_visual_studio(self) -> bool:
         return self.name.startswith("Visual Studio")
@@ -86,20 +84,16 @@ class CMakeGeneratorName:
         
     @staticmethod
     def create(toolchain: Toolchain) -> Optional[Self]:
-        if toolchain.target.is_windows_os():
-            from visual_studio import get_windows_latest_toolset
-            if( toolset := get_windows_latest_toolset(toolchain.compiler)) is None:
-                return None
-            year = toolset.product_year
-            if toolset.major_version == 18:
+        if isinstance(toolchain.toolset, VSToolset):
+            year = toolchain.toolset.product_year
+            if toolchain.toolset.major_version == 18:
                 year = 2026
             if not year:
-                year = int(toolset.product_line_version)
-            return CMakeGeneratorName(f"{toolset.product_name} {toolset.major_version} {year}", 
-                                      vstoolset=toolset)
-        elif toolchain.target.is_linux_os():
-            return CMakeGeneratorName("Unix Makefiles")
+                year = int(toolchain.toolset.product_line_version)
+            return CMakeGeneratorName(f"{toolchain.toolset.product_name} {toolchain.toolset.major_version} {year}")
+        elif isinstance(toolchain.toolset, GNUToolset):
+           return CMakeGeneratorName("Unix Makefiles")
         else:
-            console.print_error(f"Unsupported target platform: {toolchain.target.platform}")
+            console.print_error(f"Unsupported toolset: {toolchain.toolset.__class__.__name__}")
             return None
         

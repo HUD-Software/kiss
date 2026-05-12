@@ -85,7 +85,8 @@ def validate_build( cmake_filepath: Path,
                     project_name:str,
                     project_type:str,
                     toolchain: Toolchain,
-                    cmake_generator_name:CMakeGeneratorName                    
+                    cmake_generator_name:CMakeGeneratorName,
+                    profile_name:str                   
                     ):
 
     validate_cmakelist_path(cmake_filepath=cmake_filepath,
@@ -106,13 +107,13 @@ def validate_build( cmake_filepath: Path,
     elif cmake_generator_name.is_multi_profile():
         match project_type:
             case "bin":
-                artifact_path = cmake_filepath.parent / toolchain.profile.name / f"{project_name}.exe"
+                artifact_path = cmake_filepath.parent / profile_name / f"{project_name}.exe"
                 assert artifact_path.exists()
             case "dyn":
-                artifact_path = cmake_filepath.parent / toolchain.profile.name / f"{project_name}.dll"
+                artifact_path = cmake_filepath.parent / profile_name / f"{project_name}.dll"
                 assert artifact_path.exists()
             case "lib":
-                artifact_path = cmake_filepath.parent / toolchain.profile.name / f"{project_name}.lib"
+                artifact_path = cmake_filepath.parent / profile_name / f"{project_name}.lib"
                 assert artifact_path.exists()
     else:
         assert False
@@ -127,9 +128,11 @@ def validate_run( cmake_filepath: Path,
                     project_name:str,
                     project_type:str,
                     toolchain: Toolchain,
-                    cmake_generator_name:CMakeGeneratorName):
+                    cmake_generator_name:CMakeGeneratorName,
+                    profile_name:str):
     validate_build(cmake_filepath=cmake_filepath,
                    project_name=project_name,
                    project_type=project_type,
                    toolchain=toolchain,
-                   cmake_generator_name=cmake_generator_name)
+                   cmake_generator_name=cmake_generator_name,
+                   profile_name=profile_name)

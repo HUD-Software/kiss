@@ -35,6 +35,7 @@ class KissGenerateContext(KissBaseContext):
     @property
     def profile_name(self) -> str:
         return self._profile_name
+    
     @classmethod
     def create(cls, 
                current_directory: Path, 

@@ -10,11 +10,17 @@ from toolchain import Toolchain, Compiler, Target, TargetRegistry
 
 
 class KissRunContext(KissBaseContext):
-    def __init__(self, current_directory:Path, project: Project, runner_name: str, toolchain: Toolchain):
+    def __init__(self, 
+                 current_directory:Path, 
+                 project: Project, 
+                 runner_name: str, 
+                 profile_name:str,
+                 toolchain: Toolchain):
         super().__init__(current_directory)
         self._project = project
         self._runner_name = runner_name
         self._toolchain = toolchain
+        self._profile_name = profile_name
 
     @property
     def project(self) -> Project:
@@ -27,14 +33,27 @@ class KissRunContext(KissBaseContext):
     @property
     def toolchain(self) -> Toolchain:
         return self._toolchain
-        
+    
+    @property
+    def profile_name(self) -> str:
+        return self._profile_name
+    
     @classmethod
-    def create(cls, current_directory: Path, project_name: str, runner_name: str, toolchain: Toolchain) -> Self :
+    def create(cls, 
+               current_directory: Path, 
+               project_name: str, 
+               runner_name: str, 
+               profile_name: str,
+               toolchain: Toolchain) -> Self :
         project_to_run = super().find_target_project(current_directory=current_directory, project_name=project_name, filter=ProjectType.bin)
         if not project_to_run:
             console.print_error(f"No project found in {str(current_directory)}")
             exit(1)
-        return KissRunContext(current_directory=current_directory, project=project_to_run, runner_name=runner_name, toolchain=toolchain)
+        return KissRunContext(current_directory=current_directory, 
+                              project=project_to_run, 
+                              runner_name=runner_name,
+                              profile_name=profile_name,
+                              toolchain=toolchain)
 
 
     @staticmethod
@@ -45,13 +64,15 @@ class KissRunContext(KissBaseContext):
             if(compiler_name := Compiler.default_compiler_name()) is None:
                 console.print_error(f"Default compiler not found")
                 return None
-        if( toolchain := Toolchain.create(compiler_name=compiler_name, target_name=target_name, profile_name=cli_args.profile)) is None:
+        if( toolchain := Toolchain.create(compiler_name=compiler_name, 
+                                          target_name=target_name)) is None:
             return None
             
         run_context: KissRunContext = KissRunContext.create(current_directory=cli_args.directory,
-                                                    project_name=cli_args.project_name,
-                                                    runner_name=cli_args.runner,
-                                                    toolchain=toolchain)
+                                                            project_name=cli_args.project_name,
+                                                            runner_name=cli_args.runner,
+                                                            profile_name=cli_args.profile,
+                                                            toolchain=toolchain)
         
         
 

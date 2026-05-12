@@ -2,7 +2,9 @@ from pathlib import Path
 import platform
 from typing import Optional, Self
 import console
+import toolchain
 from toolchain.compiler.compiler_info import CompilerNode, CompilerNodeRegistry, FeatureNode, ProfileNode
+from toolchain.target.target_registry import Target
 
 
 class ProjectType:
@@ -139,14 +141,14 @@ class Compiler:
         # The compiler info node from which the compiler is created
         self._compiler_info = compiler_info
     
-    def is_derived_from(self, compiler_name: Self) -> bool:
-        return  self._compiler_info.is_derived_from(compiler_name)
+    def is_based_on(self, compiler_name: Self) -> bool:
+        return  self._compiler_info.is_based_on(compiler_name)
 
     def is_cl_based(self) -> bool:
-        return  self._compiler_info.is_derived_from("cl")
+        return  self._compiler_info.is_based_on("cl")
     
     def is_clangcl_based(self) -> bool:
-        return  self._compiler_info.is_derived_from("clangcl")
+        return  self._compiler_info.is_based_on("clangcl")
     
     def get_profile(self, profile_name: str) -> Optional[Profile]:
         # Check if we already create the profile
@@ -187,12 +189,12 @@ class Compiler:
         return profile.compiler_flags_for_project_type(project_type_name=project_type_name)
 
     @staticmethod
-    def create(name :str) -> Optional[Self]:
+    def create(name :str, target: Target) -> Optional[Self]:
         if(compiler_node := CompilerNodeRegistry.get_extended(name)) is None:
             return None
-        
         compiler_node : CompilerNode = compiler_node
-        print(compiler_node)
+
+        
         new_compiler = Compiler(name=compiler_node.name,
                                 cxx_path=compiler_node.cxx_path,
                                 c_path=compiler_node.c_path,
@@ -228,6 +230,25 @@ class Compiler:
                                                      cxx_compiler_flags=cxx_compiler_flags,
                                                      enabled_feature_list=enabled_feature_list))
                 new_compiler.profiles.add(new_profile)
+
+        if target.is_windows_os():
+            from visual_studio import get_windows_latest_toolset
+            if( toolset := get_windows_latest_toolset(new_compiler)) is None:
+                return None
+            year = toolset.product_year
+            if toolset.major_version == 18:
+                year = 2026
+            if not year:
+                year = int(toolset.product_line_version)
+                pass
+            # return CMakeGeneratorName(f"{toolset.product_name} {toolset.major_version} {year}", 
+            #                           vstoolset=toolset)
+        elif target.is_linux_os():
+            pass
+            #return CMakeGeneratorName("Unix Makefiles")
+        else:
+            console.print_error(f"Unsupported target platform: {target.platform}")
+            return None
         return new_compiler
     
     @classmethod

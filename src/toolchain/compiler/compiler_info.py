@@ -961,7 +961,9 @@ class CompilerNode:
         # C compiler path
         self.c_path : Optional[Path] = None
 
-    def is_derived_from(self, compiler_name: Self) -> bool:
+    def is_based_on(self, compiler_name: Self) -> bool:
+        if self.name == compiler_name:
+            return True
         for extends in self.extends_ordered_list:
             if extends.name == compiler_name: return True
         return False

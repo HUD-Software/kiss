@@ -50,19 +50,19 @@ class Toolchain:
 
     @staticmethod
     def create(compiler_name: str, target_name : str, profile_name: str)-> Self | None:
-        # Find the compiler
-        compiler = Compiler.create(compiler_name)
-        if not compiler:
-            console.print_error(f"Fail to create toolchain with compiler '{compiler_name}'")
-            return None
-        
-        print(compiler)
-        
         # Find the target
         target = TargetRegistry.get(target_name)
         if not target:
             console.print_error(f"Target '{target_name}' not found  : {{{', '.join(TargetRegistry.target_name_list())}}}")
             return None
+        
+        # Find the compiler
+        compiler = Compiler.create(compiler_name, target=target)
+        if not compiler:
+            console.print_error(f"Fail to create toolchain with compiler '{compiler_name}'")
+            return None
+        
+        print(compiler)
         
         # Ensure we request a valid profile 
         if not compiler.is_profile_exist(profile_name):

@@ -224,7 +224,7 @@ class CMakeListsGenerator(BaseGenerator):
                             return False
                         f.write(f"set(ASAN_LIB \"{asan_lib_path}\")\n")
                     for profile in toolchain.compiler.profiles:
-                        if profile.is_feature_enabled(project_type=project.type, 
+                        if profile.is_feature_enabled(project_type_name=project.type, 
                                                       feature_name="ASAN"):
                             if toolchain.compiler.is_clangcl_based():
                                 if toolchain.target.is_i686():

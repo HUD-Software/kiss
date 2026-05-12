@@ -10,9 +10,9 @@
                 "-s", // pour voir les print()
                 "-v", // verbose
                 "-x", // Stop first failure
-                //"${workspaceFolder}/tests", // dossier contenant tes tests
+                "${workspaceFolder}/tests", // dossier contenant les tests
                 //"tests/test_generate_lib_cmake.py"
-                "tests/test_run_cmake.py::test_run_bin_default" // Specific project
+                //"tests/test_run_cmake.py::test_run_bin_default" // Specific project
             ],
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}"

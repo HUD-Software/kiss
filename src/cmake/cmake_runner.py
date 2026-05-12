@@ -56,7 +56,7 @@ class CMakeRunner(BaseRunner):
            
             # Add ASAN path
             cmakelist_generate_context = cmake_build_context.cmakelist_generate_context 
-            if cmakelist_generate_context.toolchain.profile.is_feature_enabled(project_type=cmakelist_generate_context.project.type, 
+            if cmakelist_generate_context.toolchain.profile.is_feature_enabled(project_type_name=cmakelist_generate_context.project.type, 
                                                                                feature_name="ASAN"):
                 if (dll_path := asan.get_msvc_asan_dynamic_dll_path(cmakelist_generate_context.toolchain)) is None:
                     exit(1)

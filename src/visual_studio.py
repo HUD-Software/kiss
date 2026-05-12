@@ -40,7 +40,7 @@ def get_windows_latest_toolset(compiler:Compiler) -> Optional[VSToolset] :
     # ---------------------------------------------------
     # 🔎 If compiler paths are already set, verify they belong to a valid Visual Studio installation
     # ---------------------------------------------------
-    if compiler.cxx_path != Path() or compiler.c_path != Path():
+    if compiler.cxx_path or compiler.c_path:
         cxx_path = Path(compiler.cxx_path).resolve()
 
         if compiler.cxx_path != Path() and compiler.c_path != Path() and compiler.cxx_path != compiler.c_path:
@@ -139,4 +139,6 @@ def get_windows_latest_toolset(compiler:Compiler) -> Optional[VSToolset] :
                          product_line_version=json_catalog.get('productLineVersion'),
                          product_year=json_catalog.get('featureReleaseYear'),
                          installation_path=latest_installation_path)
+    else:
+        console.print_error(f"Unsupported compiler for Visual Studio toolset: {compiler.name}")
     return None

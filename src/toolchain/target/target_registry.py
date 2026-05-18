@@ -108,7 +108,7 @@ class Target:
         return cls._default_target_name
     def _build_repr(self) -> str:
         lines = [
-            f"Target: {self.name}",
+            f"{self.name} :",
             f"  - arch: {self.arch}",
             f"  - vendor: {self.vendor}",
             f"  - os: {self.os}",

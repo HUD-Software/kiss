@@ -33,6 +33,20 @@ class Toolchain:
     def profile_name_list(self) -> list[str] : 
         return self.toolset.compiler.profile_name_list()
     
+    def _build_repr(self) -> str:
+        lines = [f"Toolchain:",
+                f"  target:",
+                f"    {self.target},\n",
+                f"  toolset:",
+                f"    {self.toolset}\n"]
+        return "\n".join(lines)
+
+    def __repr__(self) -> str:
+        return self._build_repr()
+
+    def __str__(self) -> str:
+        return self._build_repr()
+    
     #
     # Detects if the host machine is a 64-bit x86 architecture (x86_64/AMD64) on Windows.
     # PROCESSOR_ARCHITECTURE indicates the current process architecture.
@@ -64,15 +78,9 @@ class Toolchain:
             return None
         
         # Create the toolset
-        # Find the compiler
         toolset = Toolset.create(compiler_name=compiler_name, 
                                  target=target)
-      
-        # # Ensure we request a valid profile 
-        # if not compiler.is_profile_exist(profile_name):
-        #     console.print_error(f"Profile '{profile_name}' not found in the toolchain : {{{', '.join(compiler.profile_name_list())}}}")
-        #     return None
-        
+
         return Toolchain(target=target,
                          toolset=toolset)
 

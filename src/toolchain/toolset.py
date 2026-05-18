@@ -13,7 +13,7 @@ class Toolset:
         self.compiler: Compiler=compiler
 
     def __str__(self):
-        return f"Toolset:\n{self.compiler}"
+        return f"{self.compiler}"
     
 
     @staticmethod
@@ -22,11 +22,11 @@ class Toolset:
         if not compiler:
             console.print_error(f"Fail to create toolchain with compiler '{compiler_name}'")
             return None
-        print(compiler)
         if target.is_windows_os():
             return VSToolset.create(compiler=compiler)
         elif target.is_linux_os():
             return GNUToolset(compiler=compiler)
+
         console.print_error(f"Unsupported target platform: {target.os}")
         return None
 
@@ -42,14 +42,22 @@ class VSToolset(Toolset):
         self.installation_path=installation_path
 
 
-    def __str__(self):
-        return f"""VSToolset(
-  major_version={self.major_version},
-  product_name={self.product_name},
-  product_line_version={self.product_line_version}
-  product_year={self.product_year}
-  installation_path={self.installation_path}
-)"""
+    def _build_repr(self) -> str:
+        lines = [f"Visual Studio Toolset :",
+                f"  - major_version={self.major_version},",
+                f"  - product_name={self.product_name},",
+                f"  - product_line_version={self.product_line_version},",
+                f"  - product_year={self.product_year},",
+                f"  - installation_path={self.installation_path}",
+                f"  - compiler={self.compiler}"]
+        return "\n".join(lines)
+
+    def __repr__(self) -> str:
+        return self._build_repr()
+
+    def __str__(self) -> str:
+        return self._build_repr()
+    
     def create(compiler: Compiler) -> Optional[Self]:
         import vswhere
         # ---------------------------------------------------
@@ -166,7 +174,17 @@ class GNUToolset(Toolset):
                          compiler=compiler
                          )
 
+    def _build_repr(self) -> str:
+        lines = [f"GNU Toolset :",
+                f"  compiler={self.compiler}"]
+        return "\n".join(lines)
 
+    def __repr__(self) -> str:
+        return self._build_repr()
+
+    def __str__(self) -> str:
+        return self._build_repr()
+            
     def create(compiler: Compiler) -> Optional[Self]:
         if compiler.is_gnu_based():
             # Retrives version of the compiler by running "gcc --version" or "clang --version"
@@ -174,3 +192,4 @@ class GNUToolset(Toolset):
         else:
             console.print_error(f"Unsupported compiler for GNU toolset: {compiler.name}")
         return None
+    

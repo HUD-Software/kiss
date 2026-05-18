@@ -65,7 +65,7 @@ class KissBuildContext(KissBaseContext):
         if( toolchain := Toolchain.create(compiler_name=compiler_name, 
                                           target_name=target_name)) is None:
             return None
-            
+        print(toolchain)
         return KissBuildContext.create(current_directory=cli_args.directory,
                                        project_name=cli_args.project_name,
                                        builder_name=cli_args.builder,

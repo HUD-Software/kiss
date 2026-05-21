@@ -32,21 +32,23 @@ class CMakeRunner(BaseRunner):
             console.print_error(f"Builder {cmake_builder.name} not found")
             exit(1)
         cmake_build_context = CMakeBuildContext.create(current_directory=run_context.current_directory,
-                                                        project_name=run_context.project.name,
-                                                        builder_name=run_context.runner_name,
-                                                        toolchain=run_context.toolchain,
-                                                        cmake_generator_name=None)
+                                                       project_name=run_context.project.name,
+                                                       builder_name=run_context.runner_name,
+                                                       profile_name=run_context.profile_name,
+                                                       toolchain=run_context.toolchain,
+                                                       cmake_generator_name=None)
         cmake_builder.build_project(cmake_build_context)
         
         context = CMakeContext(current_directory=run_context.current_directory, 
                             toolchain=run_context.toolchain, 
                             project=run_context.project,
-                            cmake_generator_name=None)
+                            cmake_generator_name=None,
+                            profile_name=run_context.profile_name)
         
         if run_context.toolchain.target.is_windows_os():
-            binary_path = Path(cmake_build_context.output_directory_for_profile(run_context.toolchain.profile.name)) / f"{run_context.project.name}.exe"
+            binary_path = Path(cmake_build_context.output_directory_for_profile(run_context.profile_name)) / f"{run_context.project.name}.exe"
         else:
-            binary_path = Path(cmake_build_context.output_directory_for_profile(run_context.toolchain.profile.name)) / run_context.project.name
+            binary_path = Path(cmake_build_context.output_directory_for_profile(run_context.profile_name)) / run_context.project.name
         console.print_step(f"▶ Run {Path(*binary_path.parts[-2:])} ({context.toolchain.compiler.name})...")
 
         # Add DLL path to PATH on Windows
@@ -55,9 +57,10 @@ class CMakeRunner(BaseRunner):
             existing_path = os.environ.get("PATH", "")
            
             # Add ASAN path
-            cmakelist_generate_context = cmake_build_context.cmakelist_generate_context 
-            if cmakelist_generate_context.toolchain.profile.is_feature_enabled(project_type_name=cmakelist_generate_context.project.type, 
-                                                                               feature_name="ASAN"):
+            cmakelist_generate_context = cmake_build_context.cmakelist_generate_context
+            profile = cmakelist_generate_context.toolchain.get_profile(profile_name=run_context.profile_name)
+            if profile.is_feature_enabled(project_type_name=cmakelist_generate_context.project.type,
+                                          feature_name="ASAN"):
                 if (dll_path := asan.get_msvc_asan_dynamic_dll_path(cmakelist_generate_context.toolchain)) is None:
                     exit(1)
                 asan_lib_path = str(Path(dll_path).parent)
@@ -70,8 +73,10 @@ class CMakeRunner(BaseRunner):
                     # Add the DLL path to PATH
                     proj_context = CMakeContext(current_directory=run_context.current_directory, 
                                                 toolchain=run_context.toolchain, 
-                                                project=project)
-                    dll_paths.append(proj_context.output_directory_for_profile(run_context.toolchain.profile.name))  
+                                                project=project,
+                                                profile_name=run_context.profile_name,
+                                                cmake_generator_name=None)
+                    dll_paths.append(proj_context.output_directory_for_profile(run_context.profile_name))  
 
             new_path = ";".join(dll_paths + [existing_path])
             if dll_paths:  

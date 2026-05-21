@@ -4,7 +4,7 @@ import sys
 from typing import Optional, Self
 
 import console
-from toolchain.compiler import Compiler
+from toolchain.compiler import Compiler, ProfileList
 from toolchain.target import Target
 
 
@@ -14,7 +14,6 @@ class Toolset:
 
     def __str__(self):
         return f"{self.compiler}"
-    
 
     @staticmethod
     def create(compiler_name: str, target: Target) -> Optional[Self]:

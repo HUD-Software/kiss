@@ -372,10 +372,12 @@ class CMakeListsGenerator(BaseGenerator):
                 dep_cmakelist_dir = CMakeContext.resolveCMakeListsDirectory(current_directory=cmakelist_generate_context.current_directory,
                                                                         toolchain=toolchain,
                                                                         project=dep_project,
+                                                                        profile_name=cmakelist_generate_context.profile_name,
                                                                         cmake_generator_name=cmakelist_generate_context.cmake_generator_name)
                 dep_build_dir = CMakeContext.resolveProjectBuildDirectory(current_directory=cmakelist_generate_context.current_directory,
                                                                         toolchain=toolchain,
                                                                         project=dep_project,
+                                                                        profile_name=cmakelist_generate_context.profile_name,
                                                                         cmake_generator_name=cmakelist_generate_context.cmake_generator_name)
                 f.write(f"# Add {dep_project.name} dependency\n")
                 f.write(f"if(NOT TARGET {dep_project.name})\n")
@@ -530,10 +532,12 @@ class CMakeListsGenerator(BaseGenerator):
                 dep_cmakelist_dir = CMakeContext.resolveCMakeListsDirectory(current_directory=cmakelist_generate_context.current_directory,
                                                                         toolchain=toolchain,
                                                                         project=dep_project,
+                                                                        profile_name=cmakelist_generate_context.profile_name,
                                                                         cmake_generator_name=cmakelist_generate_context.cmake_generator_name)
                 dep_build_dir = CMakeContext.resolveProjectBuildDirectory(current_directory=cmakelist_generate_context.current_directory,
                                                                         toolchain=toolchain,
                                                                         project=dep_project,
+                                                                        profile_name=cmakelist_generate_context.profile_name,
                                                                         cmake_generator_name=cmakelist_generate_context.cmake_generator_name)
                 f.write(f"# Add {dep_project.name} dependency\n")
                 f.write(f"if(NOT TARGET {dep_project.name})\n")

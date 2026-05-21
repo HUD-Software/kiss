@@ -101,10 +101,10 @@ def validate_build( cmake_filepath: Path,
                 artifact_path = cmake_filepath.parent / project_name
                 assert artifact_path.exists()
             case "dyn":
-                artifact_path = cmake_filepath.parent / f"{project_name}.so"
+                artifact_path = cmake_filepath.parent / f"lib{project_name}.so"
                 assert artifact_path.exists()
             case "lib":
-                artifact_path = cmake_filepath.parent / f"{project_name}.a"
+                artifact_path = cmake_filepath.parent / f"lib{project_name}.a"
                 assert artifact_path.exists()
     elif cmake_generator_name.is_multi_profile():
         match project_type:

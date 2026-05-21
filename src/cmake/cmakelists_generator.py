@@ -30,6 +30,7 @@ class CMakeListsGenerateContext(KissGenerateContext):
         self._cmake_context = CMakeContext(current_directory=current_directory, 
                                            toolchain=toolchain, 
                                            project=project,
+                                           profile_name=profile_name,
                                            cmake_generator_name=cmake_generator_name)
     
     @property
@@ -65,6 +66,7 @@ class CMakeListsGenerateContext(KissGenerateContext):
         self._cmake_context = CMakeContext(current_directory=self._cmake_context.current_directory, 
                                            toolchain=self._cmake_context.toolchain, 
                                            project=value,
+                                           profile_name=self.profile_name,
                                            cmake_generator_name=self.cmake_generator_name)
 
     def output_directory_for_profile(self, config: str) -> str: 
@@ -222,8 +224,8 @@ class CMakeListsGenerator(BaseGenerator):
                     cxx_linker_flags = profile.linker_flags_for_project_type(project.type)
                     f.write(f"set(CMAKE_EXE_LINKER_FLAGS_{upper_profile_name} \"{' '.join(cxx_linker_flags)}\" CACHE STRING \"\" FORCE)\n")                    
             else:
-                if( profile := toolchain.get_profile(cmakelist_generate_context.toolchain.profile.name)) is None:
-                    console.print_warning(f"Profile {cmakelist_generate_context.toolchain.profile.name} not found in {self.name}")
+                if( profile := toolchain.get_profile(cmakelist_generate_context.profile_name)) is None:
+                    console.print_warning(f"Profile {cmakelist_generate_context.profile_name} not found in {self.name}")
                     return False
                 cxx_compiler_flags = profile.compiler_flags_for_project_type(project.type)
                 f.write(f"target_compile_options({project.name} PRIVATE {' '.join(cxx_compiler_flags)})\n")
@@ -263,7 +265,7 @@ class CMakeListsGenerator(BaseGenerator):
             else:
                 f.write(f"set_target_properties({project.name} PROPERTIES OUTPUT_NAME {project.name})\n")
                 f.write(f"set_target_properties({project.name} PROPERTIES\n")
-                output_directory = cmakelist_generate_context.output_directory_for_profile(cmakelist_generate_context.toolchain.profile.name)
+                output_directory = cmakelist_generate_context.output_directory_for_profile(cmakelist_generate_context.profile_name)
                 f.write(f"  RUNTIME_OUTPUT_DIRECTORY   \"{output_directory}\"\n")
                 f.write(")\n")
             f.write("\n")
@@ -273,10 +275,12 @@ class CMakeListsGenerator(BaseGenerator):
                 dep_cmakelist_dir = CMakeContext.resolveCMakeListsDirectory(current_directory=cmakelist_generate_context.current_directory,
                                                                         toolchain=toolchain,
                                                                         project=dep_project,
+                                                                        profile_name=cmakelist_generate_context.profile_name,
                                                                         cmake_generator_name=cmakelist_generate_context.cmake_generator_name)
                 dep_build_dir = CMakeContext.resolveProjectBuildDirectory(current_directory=cmakelist_generate_context.current_directory,
                                                                         toolchain=toolchain,
                                                                         project=dep_project, 
+                                                                        profile_name=cmakelist_generate_context.profile_name,
                                                                         cmake_generator_name=cmakelist_generate_context.cmake_generator_name)
             
                 f.write(f"# Add {dep_project.name} dependency\n")
@@ -331,8 +335,8 @@ class CMakeListsGenerator(BaseGenerator):
                     cxx_compiler_flags = profile.compiler_flags_for_project_type(project.type)
                     f.write(f"set(CMAKE_CXX_FLAGS_{upper_profile_name} \"{' '.join(cxx_compiler_flags)}\" CACHE STRING \"\" FORCE)\n")
             else:
-                if( profile := toolchain.get_profile(cmakelist_generate_context.toolchain.profile.name)) is None:
-                    console.print_error(f"Profile {cmakelist_generate_context.toolchain.profile.name} not found in {self.name}")
+                if( profile := toolchain.get_profile(cmakelist_generate_context.profile_name)) is None:
+                    console.print_error(f"Profile {cmakelist_generate_context.profile_name} not found in {self.name}")
                     return False
                 cxx_compiler_flags = profile.compiler_flags_for_project_type(project.type)
                 f.write(f"target_compile_options({project.name} PRIVATE {' '.join(cxx_compiler_flags)})\n")
@@ -358,7 +362,7 @@ class CMakeListsGenerator(BaseGenerator):
             else:
                 f.write(f"set_target_properties({project.name} PROPERTIES OUTPUT_NAME {project.name})\n")
                 f.write(f"set_target_properties({project.name} PROPERTIES\n")
-                output_directory = cmakelist_generate_context.output_directory_for_profile(cmakelist_generate_context.toolchain.profile.name)
+                output_directory = cmakelist_generate_context.output_directory_for_profile(cmakelist_generate_context.profile_name)
                 f.write(f"  ARCHIVE_OUTPUT_DIRECTORY   \"{output_directory}\"\n")
                 f.write(")\n")
             f.write("\n")
@@ -468,8 +472,8 @@ class CMakeListsGenerator(BaseGenerator):
                     cxx_compiler_flags = profile.compiler_flags_for_project_type(project.type)
                     f.write(f"set(CMAKE_CXX_FLAGS_{upper_profile_name} \"{' '.join(cxx_compiler_flags)}\" CACHE STRING \"\" FORCE)\n")
             else:
-                if( profile := toolchain.get_profile(cmakelist_generate_context.toolchain.profile.name)) is None:
-                    console.print_error(f"Profile {cmakelist_generate_context.toolchain.profile.name} not found in {self.name}")
+                if( profile := toolchain.get_profile(cmakelist_generate_context.profile_name)) is None:
+                    console.print_error(f"Profile {cmakelist_generate_context.profile_name} not found in {self.name}")
                     return False
                 cxx_compiler_flags = profile.compiler_flags_for_project_type(project.type)
                 f.write(f"target_compile_options({project.name} PRIVATE {' '.join(cxx_compiler_flags)})\n")
@@ -515,7 +519,7 @@ class CMakeListsGenerator(BaseGenerator):
             else:
                 f.write(f"set_target_properties({project.name} PROPERTIES OUTPUT_NAME {project.name})\n")
                 f.write(f"set_target_properties({project.name} PROPERTIES\n")
-                output_directory = cmakelist_generate_context.output_directory_for_profile(cmakelist_generate_context.toolchain.profile.name)
+                output_directory = cmakelist_generate_context.output_directory_for_profile(cmakelist_generate_context.profile_name)
                 f.write(f"  LIBRARY_OUTPUT_DIRECTORY   \"{output_directory}\"\n")
                 f.write(f"  RUNTIME_OUTPUT_DIRECTORY   \"{output_directory}\"\n")
                 f.write(")\n")
@@ -606,7 +610,8 @@ class CMakeListsGenerator(BaseGenerator):
             # If the project is not fresh anymore add it to refresh
             if not (fingerprint.is_fresh_file(CMakeContext.resolveCMakefile(current_directory=cmakelist_generate_context.current_directory, 
                                                                             toolchain=cmakelist_generate_context.toolchain, 
-                                                                            project=project, 
+                                                                            project=project,
+                                                                            profile_name=cmakelist_generate_context.profile_name,
                                                                             cmake_generator_name=cmakelist_generate_context.cmake_generator_name)) and fingerprint.is_fresh_file(project.file)):
                 unfreshflags[i] = True
             else:

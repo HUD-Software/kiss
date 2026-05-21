@@ -4,16 +4,24 @@ from project import Project
 from toolchain import Toolchain
 
 class CMakeContext:
-    def __init__(self, current_directory: Path, toolchain: Toolchain, project: Project, cmake_generator_name:str):
+    def __init__(self, 
+                 current_directory: Path, 
+                 toolchain: Toolchain, 
+                 project: Project, 
+                 profile_name:str,
+                 cmake_generator_name:str):
         self._current_directory = current_directory
         self._cmake_generator_name = cmake_generator_name or CMakeGeneratorName.create(toolchain=toolchain)
         self._root_build_directory = self.resolveRootBuildDirectory(current_directory=current_directory)
         self._build_directory = self.resolveProjectBuildDirectory(current_directory=current_directory, 
-                                                                  toolchain=toolchain, project=project, 
+                                                                  toolchain=toolchain, 
+                                                                  project=project,
+                                                                  profile_name=profile_name,
                                                                   cmake_generator_name=self._cmake_generator_name)
         self._cmakelists_directory =  self.resolveCMakeListsDirectory(current_directory=current_directory, 
                                                                       toolchain=toolchain, 
-                                                                      project=project, 
+                                                                      project=project,
+                                                                      profile_name=profile_name,
                                                                       cmake_generator_name=self._cmake_generator_name)
         self._project = project
         self._toolchain = toolchain
@@ -28,34 +36,52 @@ class CMakeContext:
         return  current_directory / "build"
         
     @staticmethod
-    def resolveCMakeBuildDirectory(current_directory: Path, toolchain: Toolchain) -> Path:
+    def resolveCMakeBuildDirectory(current_directory: Path, 
+                                   toolchain: Toolchain) -> Path:
         return CMakeContext.resolveRootBuildDirectory(current_directory=current_directory) / toolchain.target.name / toolchain.compiler.name / "cmake"
     
     @staticmethod
-    def resolveProjectBuildDirectory(current_directory: Path, toolchain: Toolchain, project: Project, cmake_generator_name: CMakeGeneratorName) -> Path:
+    def resolveProjectBuildDirectory(current_directory: Path, 
+                                     toolchain: Toolchain, 
+                                     project: Project, 
+                                     profile_name:str,
+                                     cmake_generator_name: CMakeGeneratorName) -> Path:
         return CMakeContext.resolveCMakeListsDirectory(current_directory=current_directory, 
                                                        toolchain=toolchain, 
                                                        project=project,
+                                                       profile_name=profile_name,
                                                        cmake_generator_name=cmake_generator_name) / "build"
     
     @staticmethod   
-    def resolveCMakeListsDirectory(current_directory: Path, toolchain: Toolchain, project: Project, cmake_generator_name: CMakeGeneratorName) -> Path:
+    def resolveCMakeListsDirectory(current_directory: Path, 
+                                   toolchain: Toolchain, 
+                                   project: Project, 
+                                   profile_name:str,
+                                   cmake_generator_name: CMakeGeneratorName) -> Path:
         if cmake_generator_name.is_single_profile():
             return CMakeContext.resolveCMakeBuildDirectory(current_directory=current_directory, 
-                                                           toolchain=toolchain) / f"{project.name}_{project.filehash_short:08x}" / toolchain.profile.name
+                                                           toolchain=toolchain) / f"{project.name}_{project.filehash_short:08x}" / profile_name
         else:
            return CMakeContext.resolveCMakeBuildDirectory(current_directory=current_directory, 
                                                           toolchain=toolchain) / f"{project.name}_{project.filehash_short:08x}"
     
     @staticmethod   
-    def resolveCMakefile(current_directory: Path, toolchain: Toolchain, project: Project, cmake_generator_name: CMakeGeneratorName) -> Path:
+    def resolveCMakefile(current_directory: Path, 
+                         toolchain: Toolchain, 
+                         project: Project,
+                         profile_name:str,
+                         cmake_generator_name: CMakeGeneratorName) -> Path:
         return CMakeContext.resolveCMakeListsDirectory(current_directory=current_directory, 
                                                        toolchain=toolchain, 
                                                        project=project, 
+                                                       profile_name=profile_name,
                                                        cmake_generator_name=cmake_generator_name) / "CMakeLists.txt"
     
     @staticmethod
-    def resolveCMakeCacheDirectory(current_directory: Path, toolchain: Toolchain, project: Project, cmake_generator_name: CMakeGeneratorName):
+    def resolveCMakeCacheDirectory(current_directory: Path, 
+                                   toolchain: Toolchain, 
+                                   project: Project, 
+                                   cmake_generator_name: CMakeGeneratorName):
         return CMakeContext.resolveProjectBuildDirectory(current_directory=current_directory, 
                                                          toolchain=toolchain, 
                                                          project=project, 

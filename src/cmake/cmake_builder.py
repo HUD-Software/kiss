@@ -153,6 +153,7 @@ class CMakeBuilder(BaseBuilder):
         context = CMakeContext(current_directory=cmake_build_context.current_directory, 
                                toolchain=cmake_build_context.toolchain, 
                                project=cmake_build_context.project,
+                               profile_name=cmake_build_context.profile_name,
                                cmake_generator_name=cmake_build_context.cmake_generator_name)
         
         if generate_context.cmake_generator_name.is_visual_studio():

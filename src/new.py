@@ -251,16 +251,32 @@ def __new_dyn_project_in_project_file(new_context: KissNewContext):
             f.write(f'#endif // {project.name.upper()}_H\n')
         # dyn_exports.h
         with open(absolute_export_header, "w", encoding="utf-8") as f:
-            f.write(f'#ifndef {project.name.upper()}_EXPORTS_H\n')
-            f.write(f'#define {project.name.upper()}_EXPORTS_H\n\n')
+            name = project.name.upper()
+            f.write(f'#ifndef {name}_EXPORTS_H\n')
+            f.write(f'#define {name}_EXPORTS_H\n\n')
+
+            # Windows
             f.write('#if defined(_WIN32) || defined(__CYGWIN__)\n')
-            f.write(f'  #ifdef {project.name.upper()}_EXPORTS\n')
-            f.write(f'    #define {project.name.upper()}_API __declspec(dllexport)\n')
-            f.write(f'  #else\n')
-            f.write(f'    #define {project.name.upper()}_API __declspec(dllimport)\n')
-            f.write(f'  #endif\n')
-            f.write(f'#endif\n\n')
-            f.write(f'#endif // {project.name.upper()}_EXPORTS_H\n')
+            f.write(f'    #ifdef {name}_EXPORTS\n')
+            f.write(f'        #define {name}_API __declspec(dllexport)\n')
+            f.write(f'    #else\n')
+            f.write(f'        #define {name}_API __declspec(dllimport)\n')
+            f.write(f'    #endif\n\n')
+
+            # Linux / macOS
+            f.write('#elif defined(__GNUC__) || defined(__clang__)\n')
+            f.write(f'    #ifdef {name}_EXPORTS\n')
+            f.write(f'        #define {name}_API __attribute__((visibility("default")))\n')
+            f.write(f'    #else\n')
+            f.write(f'        #define {name}_API\n')
+            f.write(f'    #endif\n\n')
+
+            # Autres compilateurs
+            f.write('#else\n')
+            f.write(f'    #define {name}_API\n')
+            f.write('#endif\n\n')
+
+            f.write(f'#endif // {name}_EXPORTS_H\n')
 
 def cmd_new(cli_args: argparse.Namespace):
     new_context = KissNewContext.from_cli_args(cli_args)

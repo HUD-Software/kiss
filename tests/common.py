@@ -7,8 +7,9 @@ import console
 from src.cmake.cmake_generator_name import CMakeGeneratorName
 from src.toolchain.toolchain import Toolchain
 from src.toolchain.target import Target
-from src.toolchain.compiler import Compiler
 import pytest
+
+from toolchain.compiler.compiler_registry import Compiler
 cwd = os.getcwd()
 print("Current working directory:", cwd)
 if platform.system() == "Windows":
@@ -18,7 +19,7 @@ else:
 
 RUNTIME_DIR = Path("tests/runtime")
 DEFAULT_PROFILE_NAME = "debug"
-DEFAULT_COMPILER_NAME = "clang"
+DEFAULT_COMPILER_NAME = Compiler.default_compiler_name()
 DEFAULT_TARGET_NAME = Target.default_target_name()
 
 

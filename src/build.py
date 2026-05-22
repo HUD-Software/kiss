@@ -43,9 +43,8 @@ class KissBuildContext(KissBaseContext):
                builder_name: str, 
                toolchain: Toolchain, 
                profile_name: str) -> Optional[Self] :
-        project_to_build = super().find_target_project(current_directory, project_name)
-        if not project_to_build:
-            console.print_error(f"No project '{project_name}' found in {str(current_directory)}")
+        if (project_to_build := super().find_target_project(current_directory, project_name)) is None:
+            console.print_error(f"No project found in {str(current_directory)}")
             return None
         return KissBuildContext(current_directory=current_directory, 
                                 project=project_to_build, 

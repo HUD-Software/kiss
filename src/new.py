@@ -22,8 +22,8 @@ class KissNewContext(KissBaseContext):
     @classmethod
     def from_cli_args(cls, cli_args: argparse.Namespace) -> Self:
         if cli_args.existing:
-            project_dir = cli_args.directory / cli_args.project_name
-            project_file =  cli_args.directory / PROJECT_FILE_NAME
+            project_dir = Path(cli_args.directory / cli_args.project_name)
+            project_file =  Path(cli_args.directory / PROJECT_FILE_NAME)
             console.print_step(f"Creating a new {cli_args.project_type} project named `{cli_args.project_name}` in existing project file `{project_file}`")
             if project_dir.exists():
                 console.print_error(f"Error: Project directory '{project_dir}' already exists")
@@ -34,8 +34,8 @@ class KissNewContext(KissBaseContext):
                 exit(1)
         else:
             # Create the file PROJECT_FILE_NAME in the specified directory or add the project to this file if not exists
-            project_dir = cli_args.directory / cli_args.project_name
-            project_file = project_dir / PROJECT_FILE_NAME
+            project_dir = Path(cli_args.directory / cli_args.project_name)
+            project_file = Path(project_dir / PROJECT_FILE_NAME)
             console.print_step(f"Creating a new {cli_args.project_type} project named `{cli_args.project_name}` in `{project_file}`")
             if project_dir.exists():
                 console.print_error(f"Error: Project directory '{project_dir}' already exists")

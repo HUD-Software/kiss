@@ -17,8 +17,7 @@ class Toolset:
 
     @staticmethod
     def create(compiler_name: str, target: Target) -> Optional[Self]:
-        compiler = Compiler.create(name=compiler_name)
-        if not compiler:
+        if( compiler := Compiler.create(name=compiler_name)) is None:
             console.print_error(f"Fail to create toolchain with compiler '{compiler_name}'")
             return None
         if target.is_windows_os():

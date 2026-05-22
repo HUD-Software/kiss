@@ -302,3 +302,6 @@ class CompilerList:
             if t.name == name:
                 return t
         return None
+    
+    def compiler_name_list(self) -> list[str] :
+        return [c.name for c in self.compilers]

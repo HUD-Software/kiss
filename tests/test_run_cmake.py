@@ -7,7 +7,10 @@ def test_run_bin_default(runtime_dir):
     bin_name = "my_bin"
     new_project([bin_type, bin_name])
 
-    assert run_project(directory=RUNTIME_DIR/bin_name) == 0
+    assert run_project(directory=RUNTIME_DIR/bin_name,
+                       args=["-c", DEFAULT_COMPILER_NAME,
+                             "-t", DEFAULT_TARGET_NAME,
+                             "--profile", DEFAULT_PROFILE_NAME]) == 0
 
     files = find_cmake_files(RUNTIME_DIR)
     assert len(files) == 1
@@ -15,7 +18,7 @@ def test_run_bin_default(runtime_dir):
     
     toolchain  = Toolchain.create(compiler_name=DEFAULT_COMPILER_NAME, 
                                   target_name=DEFAULT_TARGET_NAME)
-    cmake_generator_name =  CMakeGeneratorName.create(toolchain=toolchain)
+    cmake_generator_name : CMakeGeneratorName = CMakeGeneratorName.create(toolchain=toolchain)
     validate_run(cmake_filepath=files[0],
                  project_name=bin_name,
                  project_type=bin_type,
@@ -35,14 +38,17 @@ def test_run_bin_default_inner(runtime_dir):
     new_inner_project(bin_name, [bin_type, bin_2_name])
 
     ## TEST
-    assert run_project(directory=RUNTIME_DIR/bin_name) == 0
+    assert run_project(directory=RUNTIME_DIR/bin_name,
+                       args=["-c", DEFAULT_COMPILER_NAME,
+                             "-t", DEFAULT_TARGET_NAME,
+                             "--profile", DEFAULT_PROFILE_NAME]) == 0
 
     # Find CMakeLists.txt
     files = find_cmake_files(RUNTIME_DIR)
     assert len(files) == 1
     toolchain  = Toolchain.create(compiler_name=DEFAULT_COMPILER_NAME, 
                                   target_name=DEFAULT_TARGET_NAME)
-    cmake_generator_name =  CMakeGeneratorName.create(toolchain=toolchain)
+    cmake_generator_name : CMakeGeneratorName = CMakeGeneratorName.create(toolchain=toolchain)
 
     validate_run(cmake_filepath=files[0],
                  project_name=bin_name,
@@ -51,7 +57,10 @@ def test_run_bin_default_inner(runtime_dir):
                  cmake_generator_name=cmake_generator_name,
                  profile_name=DEFAULT_PROFILE_NAME)
     
-    assert run_project(directory=RUNTIME_DIR/bin_name/bin_2_name) == 0
+    assert run_project(directory=RUNTIME_DIR/bin_name/bin_2_name,
+                       args=["-c", DEFAULT_COMPILER_NAME,
+                             "-t", DEFAULT_TARGET_NAME,
+                             "--profile", DEFAULT_PROFILE_NAME]) == 0
 
     # Find CMakeLists.txt
     files = find_cmake_files(RUNTIME_DIR)

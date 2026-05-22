@@ -7,21 +7,28 @@ def test_generate_bin_default(runtime_dir):
     bin_name = "my_bin"
     new_project([bin_type, bin_name])
 
-    assert generate_project(directory=RUNTIME_DIR/bin_name) == 0
+    assert generate_project(directory=RUNTIME_DIR/bin_name,
+                            args=["-c", DEFAULT_COMPILER_NAME,
+                                  "-t", DEFAULT_TARGET_NAME,
+                                  "--profile", DEFAULT_PROFILE_NAME]) == 0
+    
 
     # Find CMakeLists.txt
     files = find_cmake_files(RUNTIME_DIR)
     assert len(files) == 1
-    toolchain  = Toolchain.create(compiler_name=DEFAULT_COMPILER_NAME, 
-                                    target_name=DEFAULT_TARGET_NAME)
-    cmake_generator_name =  CMakeGeneratorName.create(toolchain=toolchain)
+    toolchain  = Toolchain.create(compiler_name=DEFAULT_COMPILER_NAME,
+                                  target_name=DEFAULT_TARGET_NAME)
+    cmake_generator_name : CMakeGeneratorName = CMakeGeneratorName.create(toolchain=toolchain)
     validate_cmakelist_path(cmake_filepath=files[0],
                             project_name=bin_name,
                             toolchain=toolchain,
                             cmake_generator_name=cmake_generator_name,
                             profile_name=DEFAULT_PROFILE_NAME)
 
-    assert generate_project(directory=RUNTIME_DIR/bin_name) == 0
+    assert generate_project(directory=RUNTIME_DIR/bin_name,
+                            args=["-c", DEFAULT_COMPILER_NAME,
+                                  "-t", DEFAULT_TARGET_NAME,
+                                  "--profile", DEFAULT_PROFILE_NAME]) == 0
 
     # Find CMakeLists.txt
     files = find_cmake_files(RUNTIME_DIR)
@@ -45,21 +52,27 @@ def test_generate_bin_default_inner(runtime_dir):
     new_inner_project(bin_name, [bin_type, bin_2_name])
 
     ## TEST
-    assert generate_project(directory=RUNTIME_DIR/bin_name) == 0
+    assert generate_project(directory=RUNTIME_DIR/bin_name,
+                            args=["-c", DEFAULT_COMPILER_NAME,
+                                  "-t", DEFAULT_TARGET_NAME,
+                                  "--profile", DEFAULT_PROFILE_NAME]) == 0
 
     # Find CMakeLists.txt
     files = find_cmake_files(RUNTIME_DIR)
     assert len(files) == 1
     toolchain  = Toolchain.create(compiler_name=DEFAULT_COMPILER_NAME, 
                                   target_name=DEFAULT_TARGET_NAME)
-    cmake_generator_name =  CMakeGeneratorName.create(toolchain=toolchain)
+    cmake_generator_name : CMakeGeneratorName =  CMakeGeneratorName.create(toolchain=toolchain)
     validate_cmakelist_path(cmake_filepath=files[0],
                             project_name=bin_name,
                             toolchain=toolchain,
                             cmake_generator_name=cmake_generator_name,
                             profile_name=DEFAULT_PROFILE_NAME)
     
-    assert generate_project(directory=RUNTIME_DIR/bin_name/bin_2_name) == 0
+    assert generate_project(directory=RUNTIME_DIR/bin_name/bin_2_name,
+                            args=["-c", DEFAULT_COMPILER_NAME,
+                                  "-t", DEFAULT_TARGET_NAME,
+                                  "--profile", DEFAULT_PROFILE_NAME]) == 0
 
     # Find CMakeLists.txt
     files = find_cmake_files(RUNTIME_DIR)
@@ -113,11 +126,17 @@ def test_generate_bin_no_depends(runtime_dir):
 
     ## TEST
     # If no name is given, kiss must fail
-    assert generate_project(directory=RUNTIME_DIR/bin_name) == 1
+    assert generate_project(directory=RUNTIME_DIR/bin_name,
+                            args=["-c", DEFAULT_COMPILER_NAME,
+                                  "-t", DEFAULT_TARGET_NAME,
+                                  "--profile", DEFAULT_PROFILE_NAME]) == 1
     
     # user must specify a name to generate
     assert generate_project(directory=RUNTIME_DIR/bin_name,
-                            args= ["-p", "my_inner_bin"]) == 0
+                            args= ["-p", "my_inner_bin",
+                                   "-c", DEFAULT_COMPILER_NAME,
+                                   "-t", DEFAULT_TARGET_NAME,
+                                   "--profile", DEFAULT_PROFILE_NAME]) == 0
 
     # Find CMakeLists.txt
     # Only one must be present because my_inner_bin depends on nothing
@@ -125,7 +144,7 @@ def test_generate_bin_no_depends(runtime_dir):
     assert len(files) == 1
     toolchain  = Toolchain.create(compiler_name=DEFAULT_COMPILER_NAME, 
                                     target_name=DEFAULT_TARGET_NAME)
-    cmake_generator_name =  CMakeGeneratorName.create(toolchain=toolchain)
+    cmake_generator_name : CMakeGeneratorName = CMakeGeneratorName.create(toolchain=toolchain)
     validate_cmakelist_path(cmake_filepath=files[0],
                             project_name=bin_2_name,
                             toolchain=toolchain,
@@ -151,11 +170,17 @@ def test_generate_bin_depends(runtime_dir):
 
     ## TEST
     # If no name is given, kiss must fail
-    assert generate_project(directory=RUNTIME_DIR/bin_name) == 1
+    assert generate_project(directory=RUNTIME_DIR/bin_name,
+                            args=["-c", DEFAULT_COMPILER_NAME,
+                                  "-t", DEFAULT_TARGET_NAME,
+                                  "--profile", DEFAULT_PROFILE_NAME]) == 1
     
     # user must specify a name to generate
     assert generate_project(directory=RUNTIME_DIR/bin_name,
-                            args= ["-p", "my_bin"]) == 0
+                            args= ["-p", "my_bin",
+                                   "-c", DEFAULT_COMPILER_NAME,
+                                   "-t", DEFAULT_TARGET_NAME,
+                                   "--profile", DEFAULT_PROFILE_NAME]) == 0
 
     # Find CMakeLists.txt
     # Only one must be present because my_inner_bin depends on nothing
@@ -163,7 +188,7 @@ def test_generate_bin_depends(runtime_dir):
     assert len(files) == 2
     toolchain  = Toolchain.create(compiler_name=DEFAULT_COMPILER_NAME, 
                                   target_name=DEFAULT_TARGET_NAME)
-    cmake_generator_name =  CMakeGeneratorName.create(toolchain=toolchain)
+    cmake_generator_name : CMakeGeneratorName = CMakeGeneratorName.create(toolchain=toolchain)
     if cmake_generator_name.is_single_profile():
         bin_file = [f for f in files if bin_name in str(f.parent.parent.name)]
         validate_cmakelist_path(cmake_filepath=bin_file[0],
@@ -215,7 +240,10 @@ def test_generate_bin_profile(runtime_dir):
 
     # user must specify a name to generate
     assert generate_project(directory=RUNTIME_DIR/bin_name,
-                            args= ["-p", "my_bin", "--profile", profile_name]) == 0
+                            args= ["-p", "my_bin",
+                                   "-c", DEFAULT_COMPILER_NAME,
+                                   "-t", DEFAULT_TARGET_NAME,
+                                   "--profile", profile_name]) == 0
 
     # Find CMakeLists.txt
     # Only one must be present because my_inner_bin depends on nothing
@@ -223,7 +251,7 @@ def test_generate_bin_profile(runtime_dir):
     assert len(files) == 2
     toolchain  = Toolchain.create(compiler_name=DEFAULT_COMPILER_NAME,  
                                   target_name=DEFAULT_TARGET_NAME)
-    cmake_generator_name =  CMakeGeneratorName.create(toolchain=toolchain)
+    cmake_generator_name : CMakeGeneratorName = CMakeGeneratorName.create(toolchain=toolchain)
     if cmake_generator_name.is_single_profile():
         bin_file = [f for f in files if bin_name in str(f.parent.parent.name)]
         validate_cmakelist_path(cmake_filepath=bin_file[0],
@@ -275,9 +303,13 @@ def test_generate_bin_target(runtime_dir):
     else:
         target_name = "i686-unknown-linux-gnu"
     assert target_name != DEFAULT_TARGET_NAME
+    
     # user must specify a name to generate
     assert generate_project(directory=RUNTIME_DIR/bin_name,
-                            args= ["-p", "my_bin", "--target", target_name]) == 0
+                            args= ["-p", "my_bin", 
+                                   "-c", DEFAULT_COMPILER_NAME,
+                                   "--target", target_name,
+                                   "--profile", DEFAULT_PROFILE_NAME]) == 0
 
     # Find CMakeLists.txt
     # Only one must be present because my_inner_bin depends on nothing
@@ -285,7 +317,7 @@ def test_generate_bin_target(runtime_dir):
     assert len(files) == 2
     toolchain  = Toolchain.create(compiler_name=DEFAULT_COMPILER_NAME, 
                                   target_name=target_name)
-    cmake_generator_name =  CMakeGeneratorName.create(toolchain=toolchain)
+    cmake_generator_name : CMakeGeneratorName = CMakeGeneratorName.create(toolchain=toolchain)
     if cmake_generator_name.is_single_profile():
         bin_file = [f for f in files if bin_name in str(f.parent.parent.name)]
         validate_cmakelist_path(cmake_filepath=bin_file[0],
@@ -336,10 +368,13 @@ def test_generate_bin_compiler(runtime_dir):
         compiler_name = "clangcl"
     else:
         compiler_name = "clang"
-    assert compiler_name != DEFAULT_COMPILER_NAME
+    
     # user must specify a name to generate
     assert generate_project(directory=RUNTIME_DIR/bin_name,
-                            args= ["-p", "my_bin", "--compiler", compiler_name]) == 0
+                            args= ["-p", "my_bin", 
+                                   "--compiler", compiler_name,
+                                   "-t", DEFAULT_TARGET_NAME,
+                                   "--profile", DEFAULT_PROFILE_NAME]) == 0
 
     # Find CMakeLists.txt
     # Only one must be present because my_inner_bin depends on nothing
@@ -347,7 +382,7 @@ def test_generate_bin_compiler(runtime_dir):
     assert len(files) == 2
     toolchain  = Toolchain.create(compiler_name=compiler_name, 
                                   target_name=DEFAULT_TARGET_NAME)
-    cmake_generator_name =  CMakeGeneratorName.create(toolchain=toolchain)
+    cmake_generator_name : CMakeGeneratorName = CMakeGeneratorName.create(toolchain=toolchain)
     if cmake_generator_name.is_single_profile():
         bin_file = [f for f in files if bin_name in str(f.parent.parent.name)]
         validate_cmakelist_path(cmake_filepath=bin_file[0],
@@ -378,3 +413,57 @@ def test_generate_bin_compiler(runtime_dir):
         assert False
 
 
+
+
+def test_generate_bin_all(runtime_dir):
+    profiles = ["debug", "release", "asan"]
+    if platform.system() == "Windows":
+        compilers = ["clangcl", "cl"]
+        targets = ["x86_64-pc-windows-msvc", "i686-pc-windows-msvc"]
+    elif platform.system() == "Linux":
+        compilers = ["clang", "gcc"]
+        targets = ["x86_64-unknown-linux-gnu", "i686-unknown-linux-gnu"]
+    else:
+        assert False
+
+    for target in  targets:
+        for compiler in compilers:
+            for profile in profiles:
+                delete_runtime_dir()
+
+                bin_type = "bin"
+                bin_name = "my_bin"
+                new_project([bin_type, bin_name])
+
+                assert generate_project(directory=RUNTIME_DIR/bin_name,
+                                        args=["-c", compiler,
+                                              "-t", target,
+                                              "--profile", profile]) == 0
+                
+
+                # Find CMakeLists.txt
+                files = find_cmake_files(RUNTIME_DIR)
+                assert len(files) == 1
+                toolchain  = Toolchain.create(compiler_name=compiler,
+                                              target_name=target)
+                cmake_generator_name : CMakeGeneratorName = CMakeGeneratorName.create(toolchain=toolchain)
+                validate_cmakelist_path(cmake_filepath=files[0],
+                                        project_name=bin_name,
+                                        toolchain=toolchain,
+                                        cmake_generator_name=cmake_generator_name,
+                                        profile_name=profile)
+
+                assert generate_project(directory=RUNTIME_DIR/bin_name,
+                                        args=["-c", compiler,
+                                              "-t", target,
+                                              "--profile", profile]) == 0
+
+                # Find CMakeLists.txt
+                files = find_cmake_files(RUNTIME_DIR)
+                assert len(files) == 1
+
+                validate_cmakelist_path(cmake_filepath=files[0],
+                                        project_name=bin_name,
+                                        toolchain=toolchain,
+                                        cmake_generator_name=cmake_generator_name,
+                                        profile_name=profile)

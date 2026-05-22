@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Self
 import console
 from toolchain.compiler import Compiler
-from toolchain.compiler.compiler_registry import Profile
+from toolchain.compiler.compiler_registry import CompilerList, Profile
 from toolchain.target import Target
 from toolchain.target.target_registry import TargetRegistry
 from toolchain.toolchain_yaml_loader import ToolchainYamlFile
@@ -72,14 +72,15 @@ class Toolchain:
     @staticmethod
     def create(compiler_name: str, target_name: str)-> Self | None:
         # Find the target
-        target = TargetRegistry.get(target_name)
-        if not target:
+        if (target := TargetRegistry.get(target_name)) is None:
             console.print_error(f"Target '{target_name}' not found  : {{{', '.join(TargetRegistry.target_name_list())}}}")
             return None
         
         # Create the toolset
-        toolset = Toolset.create(compiler_name=compiler_name, 
-                                 target=target)
+        if( toolset := Toolset.create(compiler_name=compiler_name, 
+                                      target=target)) is None:
+            console.print_error(f"Failed to create toolset")
+            return None
 
         return Toolchain(target=target,
                          toolset=toolset)

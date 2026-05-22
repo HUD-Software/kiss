@@ -18,7 +18,7 @@ else:
 
 RUNTIME_DIR = Path("tests/runtime")
 DEFAULT_PROFILE_NAME = "debug"
-DEFAULT_COMPILER_NAME = Compiler.default_compiler_name()
+DEFAULT_COMPILER_NAME = "clang"
 DEFAULT_TARGET_NAME = Target.default_target_name()
 
 
@@ -82,13 +82,12 @@ def build_project(directory: str, args: list[str] = []) -> int:
     result = subprocess.run(["python", "src/kiss.py", "-d", str(directory), "build"] + args)
     return result.returncode
 
-def validate_build( cmake_filepath: Path, 
-                    project_name:str,
-                    project_type:str,
-                    toolchain: Toolchain,
-                    cmake_generator_name:CMakeGeneratorName,
-                    profile_name:str                   
-                    ):
+def validate_build(cmake_filepath: Path, 
+                   project_name:str,
+                   project_type:str,
+                   toolchain: Toolchain,
+                   cmake_generator_name:CMakeGeneratorName,
+                   profile_name:str):
 
     validate_cmakelist_path(cmake_filepath=cmake_filepath,
                             project_name=project_name,
@@ -126,15 +125,37 @@ def run_project(directory: str, args: list[str] = []) -> int:
     return result.returncode
 
 
-def validate_run( cmake_filepath: Path, 
-                    project_name:str,
-                    project_type:str,
-                    toolchain: Toolchain,
-                    cmake_generator_name:CMakeGeneratorName,
-                    profile_name:str):
+def validate_run(cmake_filepath: Path, 
+                 project_name:str,
+                 project_type:str,
+                 toolchain: Toolchain,
+                 cmake_generator_name:CMakeGeneratorName,
+                 profile_name:str):
     validate_build(cmake_filepath=cmake_filepath,
                    project_name=project_name,
                    project_type=project_type,
                    toolchain=toolchain,
                    cmake_generator_name=cmake_generator_name,
                    profile_name=profile_name)
+    
+
+def validate_generate(cmake_filepath: Path,
+                      project_name:str,
+                      project_type:str,
+                      toolchain: Toolchain,
+                      cmake_generator_name:CMakeGeneratorName,
+                      profile_name:str):
+    if cmake_generator_name.is_single_profile():
+        file = [f for f in files if project_name in str(f.parent.parent.name)]
+        validate_cmakelist_path(cmake_filepath=file[0],
+                                project_name=project_name,
+                                toolchain=toolchain,
+                                cmake_generator_name=cmake_generator_name,
+                                profile_name=DEFAULT_PROFILE_NAME)
+    elif cmake_generator_name.is_multi_profile():
+        file = [f for f in files if project_name in str(f.parent.name)]
+        validate_cmakelist_path(cmake_filepath=file[0],
+                                project_name=bin_name,
+                                toolchain=toolchain,
+                                cmake_generator_name=cmake_generator_name,
+                                profile_name=DEFAULT_PROFILE_NAME)

@@ -1,0 +1,60 @@
+# Optional: custom profiles specific to this project
+profiles:
+  - name: perf
+    description: Performance profile
+    extends: release
+    compilers:
+      defines: [KISS_PERF]
+      msvc-compiler:
+        enable-features: [WARNING_AS_ERROR]
+    linkers:
+      enable-features: []
+    projects:
+      bin:
+        compilers:
+          enable-features: [OMIT_FRAME_POINTER]
+
+# Optional: custom project types specific to this project
+projects:
+  - name: benchmark
+    description: Benchmark binary
+    extends: bin
+    compilers:
+      enable-features: []
+      defines: [KISS_BENCHMARK]
+    linkers:
+      enable-features: []
+
+# Binaries
+bin:
+  - name: my_bin
+    version: 0.1.0
+    sources:
+      - src/main.cpp
+      - src/utils.cpp
+    dependencies:
+      - my_lib # internal dependency
+      - my_dll # internal dependency
+
+# Static libraries
+lib:
+  - name: my_lib
+    version: 0.1.0
+    sources:
+      - src/lib.cpp
+
+# Dynamic libraries
+dyn:
+  - name: my_dll
+    version: 0.1.0
+    sources:
+      - src/dll.cpp
+
+# Custom project types
+benchmark:
+  - name: my_bench
+    version: 0.1.0
+    sources:
+      - src/bench.cpp
+    dependencies:
+      - my_lib

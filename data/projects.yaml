@@ -1,0 +1,22 @@
+projects:
+  - name: bin
+    description: Executable binary
+    compilers:
+      enable-features: [] # Compiler feature to enable when compiling this project
+      defines: [KISS_BIN] # Preprocessor definitions to add when compiling with this project
+    linkers:
+      enable-features: [] # Linker feature to enable when compiling this project
+  - name: lib
+    description: Static library
+    compilers:
+      enable-features: [] # Compiler feature to enable when compiling this project
+      defines: [KISS_LIB] # Preprocessor definitions to add when compiling with this project
+    linkers:
+      enable-features: [] # Linker feature to enable when compiling this project
+  - name: dyn
+    description: Dynamic library
+    compilers:
+      enable-features: [] # Compiler feature to enable when compiling this project
+      defines: [KISS_DYN_LIB] # Preprocessor definitions to add when compiling with this project
+    linkers:
+      enable-features: [] # Linker feature to enable when compiling this project

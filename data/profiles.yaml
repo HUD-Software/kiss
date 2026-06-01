@@ -1,0 +1,56 @@
+profiles:
+  - name: debug
+    description: Debug profile with debug informations and no optimization
+    compilers:
+      enable-features: [] # Compiler feature to enable when compiling with this profiles
+      defines: [KISS_DEBUG] # Preprocessor definitions to add when compiling with this profile
+      msvc-compiler:
+        enable-features: [OPT_LEVEL_0, WINDOWS_DLL_RUNTIME_DEBUG] # MSVC based compiler feature to enable when compiling this profile
+        defines: [] # MSVC based preprocessor definitions to add when compiling with this profile
+    linkers:
+      enable-features: [ENABLE_INCREMENTAL_LINK] # Linker feature to enable when compiling this profile
+      msvc-linker:
+        enable-features: [] # MSVC based linker feature to enable when compiling this profile
+    projects:
+      dyn:
+        compilers:
+          enable-features: [DYNAMIC_LIBRARY_DEBUG] # Compiler feature to enable when compiling with this profiles for dyn project
+          defines: [] # Preprocessor definitions to add when compiling with this profile for dyn project
+          msvc-compiler:
+            enable-features: [] # MSVC based compiler feature to enable when compiling this profile for dyn project
+            defines: [] # MSVC based preprocessor definitions to add when compiling with this profile for dyn project
+        linkers:
+          enable-features: [] # Linker feature to enable when compiling this profile for dyn project
+          msvc-linker:
+            enable-features: [] # MSVC based linker feature to enable when compiling this profile for dyn project
+
+  - name: release
+    description: Release profile with optimizations and no debug informations
+    compilers:
+      defines: [KISS_RELEASE] # Preprocessor definitions to add when compiling with this profile
+      msvc-compiler:
+        enable-features: [OPT_LEVEL_3, WINDOWS_DLL_RUNTIME_RELEASE] # MSVC based compiler feature to enable when compiling this profile
+    linkers:
+      enable-features: [DISABLE_INCREMENTAL_LINK] # Linker feature to enable when compiling this profile
+      msvc-linker:
+        enable-features: [REMOVE_DEAD_CODE] # MSVC based linker feature to enable when compiling this profile
+    projects:
+      dyn:
+        compilers:
+          enable-features: [DYNAMIC_LIBRARY_RELEASE] # This feature is only enabled for 'dyn' project
+
+  - name: asan
+    description: AddressSanitizer profile
+    extends: debug # This profile extends the 'debug' profile, it will inherit all its features and can override them
+    compilers:
+      defines: [KISS_ASAN] # Preprocessor definitions to add when compiling with this profile
+      msvc-compiler:
+        enable-features: [ASAN] # MSVC based compiler feature to enable when compiling this profile
+    linkers:
+      enable-features: [] # Linker feature to enable when compiling this profile
+      msvc-linker:
+        enable-features: [] # MSVC based linker feature to enable when compiling this profile
+    projects:
+      dyn:
+        compilers:
+          enable-features: [DYNAMIC_LIBRARY_RELEASE] # AddressSanitizer doesn't support linking with debug runtime libraries yet

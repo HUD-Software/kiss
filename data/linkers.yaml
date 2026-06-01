@@ -1,0 +1,65 @@
+linkers:
+  - name: msvc-linker
+    is_abstract: true
+    features:
+      # Remove dead code
+      - name: REMOVE_DEAD_CODE
+        description: Remove dead code
+        flags: [/OPT:REF, /OPT:ICF]
+
+      # Optimisations
+      - name: OPT_LEVEL_0
+        description: No optimization
+        flags: [/DEBUG]
+
+      # Whole program optimization
+      - name: LTO
+        description: Whole program optimization
+        flags: [/LTCG]
+
+      # Incremental link
+      - name: ENABLE_INCREMENTAL_LINK
+        description: Enable incremental linking
+        flags: [/INCREMENTAL]
+      - name: DISABLE_INCREMENTAL_LINK
+        description: Disable incremental linking
+        flags: [/INCREMENTAL:NO]
+
+      # Target Architecture
+      - name: TARGET_X64
+        description: Enable 64 bits (AMD64 / Intel64) link
+        flags: [/MACHINE:X64]
+      - name: TARGET_X86
+        description: Enable 32 bits (x86) link
+        flags: [/MACHINE:X86]
+
+      # Link with library
+      - name: LINK
+        description: Link with library. Use 'LINK:my_lib.lib' to link with a single lib, or 'LINK:my_lib.lib,other.lib' for multiple
+        args:
+          min: 1 # At least one argument is required
+          max: ~ # No limit to the amount of arguments
+          separator: "," # Arguments are separated by a comma
+          pattern: "*.lib" # Each argument must match this pattern
+        flags: [/link <args>]
+
+    # Features rules
+    # only-one rule : Only 1 rules is allowed in 'features'. Multiple in the same target is not allowed.
+    # incompatible : The 'feature' is incompatible with all feature in 'with'
+    feature-rules:
+      # OPT_LEVEL_0 is incompatible with LTO
+      - incompatible: no_opt
+        feature: OPT_LEVEL_0
+        with: [LTO]
+      # Only one incremental link mode
+      - only-one: incremental
+        features: [ENABLE_INCREMENTAL_LINK, DISABLE_INCREMENTAL_LINK]
+      # Only one target mode
+      - only-one: target
+        features: [TARGET_X64, TARGET_X86]
+
+  - name: link
+    extends: msvc-linker
+
+  - name: lld-link
+    extends: msvc-linker

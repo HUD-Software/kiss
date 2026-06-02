@@ -104,7 +104,7 @@ def compilers_cmd(ctx: typer.Context):
     kiss_ctx: KissContext = ctx.obj["ctx"]
     lists = kiss_ctx.known_compilers()
     for compiler in lists:
-        if compiler == kiss_ctx.default_compiler():
+        if compiler == kiss_ctx.default_compiler(kiss_ctx.default_target()):
             typer.echo(typer.style(f"* {compiler['name']} (default)", fg=typer.colors.GREEN))
         else:
             typer.echo(f"  {compiler['name']}")
@@ -119,7 +119,7 @@ def linkers_cmd(ctx: typer.Context):
     kiss_ctx: KissContext = ctx.obj["ctx"]
     lists = kiss_ctx.known_linkers()
     for linker in lists:
-        if linker == kiss_ctx.default_linker():
+        if linker == kiss_ctx.default_linker(kiss_ctx.default_target()):
             typer.echo(typer.style(f"* {linker['name']} (default)", fg=typer.colors.GREEN))
         else:
             typer.echo(f"  {linker['name']}")

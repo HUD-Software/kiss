@@ -1,11 +1,19 @@
-from generator.cmake.cmake_generator import CMakeGenerator
 from generator.generator import BaseGenerator
+from generator.cmake.cmake_generator import CMakeGenerator
 
+# Registry of all available generators
 GENERATORS: dict[str, type[BaseGenerator]] = {
-    CMakeGenerator.name(): CMakeGenerator,
+    "cmake": CMakeGenerator,
 }
 
+
 def get_generator(name: str) -> BaseGenerator:
+    """Instantiate a generator by name. Raises ValueError if unknown."""
     if name not in GENERATORS:
-        raise ValueError(f"Unknown generator: {name!r}. Available: {list(GENERATORS.keys())}")
+        available = ", ".join(GENERATORS.keys())
+        raise ValueError(f"Unknown generator '{name}'. Available: {available}")
     return GENERATORS[name]()
+
+
+def available_generators() -> list[str]:
+    return list(GENERATORS.keys())

@@ -1,19 +1,20 @@
 from abc import ABC, abstractmethod
+from pathlib import Path
+
 
 class BaseGenerator(ABC):
 
     @abstractmethod
-    def generate(self, workspace, resolved) -> None:
-        """Generate build files from resolved workspace."""
-        pass
-    @classmethod
-    @abstractmethod
     def name(self) -> str:
-        """Generator name (e.g. 'cmake', 'meson')."""
-        pass
-    
-    @classmethod
+        """Generator identifier, e.g. 'cmake'."""
+
     @abstractmethod
+    def generate(self, project: dict, project_dir: Path) -> None:
+        """Generate build files for the given project inside project_dir."""
+
+    @abstractmethod
+    def build(self, project: dict, project_dir: Path, profile: str) -> int:
+        """Invoke the build system. Returns the process exit code."""
+
     def supported_targets(self) -> list[str]:
-        """List of supported targets (e.g. ['x86_64-pc-windows-msvc'])."""
-        pass
+        return ["*"]

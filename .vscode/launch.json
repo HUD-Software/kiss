@@ -30,15 +30,11 @@
             //     "-d"
             // ],
             // --> Create bin project in directory
-            // "args": [
-            //     "-d",
-            //     "tests",
-            //     "new",
-            //     "bin",
-            //     "my_bin",
-            //     "--description",
-            //     "This is my_bin"
-            // ],
+            "args": [
+                "new",
+                "bin",
+                "my_bin",
+            ],
             // --> Create lib project in directory
             // "args": [
             //     "-d",

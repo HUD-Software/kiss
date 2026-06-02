@@ -9,13 +9,10 @@
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}",
             //   -> List everything
-            // "args": [
-            //     "-d",
-            //     "tests",
-            //     "list",
-            //     "-r",
-            //     "-d"
-            // ],
+            "args": [
+                "list",
+                "compilers"
+            ],
             //-> List projects in my_bin without dependencies
             // "args": [
             //     "-d",
@@ -30,13 +27,13 @@
             //     "-d"
             // ],
             // --> Create bin project in directory
-            "args": [
-                "-d",
-                "tests",
-                "new",
-                "bin",
-                "my_bin",
-            ],
+            // "args": [
+            //     "-d",
+            //     "tests",
+            //     "new",
+            //     "bin",
+            //     "my_bin",
+            // ],
             // --> Create lib project in directory
             // "args": [
             //     "-d",

@@ -2,11 +2,10 @@ import subprocess
 import typer
 from pathlib import Path
 from typing import Optional
-from cli.utils import load_kiss_yaml, resolve_project_name, ok, info, error, warn
+from context import KissContext
 
 
 def _find_executable(project_dir: Path, name: str, profile: str) -> Path | None:
-    """Search for the compiled binary in common build output locations."""
     candidates = [
         project_dir / "build" / profile / name,
         project_dir / "build" / profile / f"{name}.exe",
@@ -18,40 +17,64 @@ def _find_executable(project_dir: Path, name: str, profile: str) -> Path | None:
             return c
     return None
 
+# ── kiss run ──────────────────────────────────────────────────────────
 
 def run_cmd(
+    ctx:          typer.Context,
     project_name: Optional[str] = typer.Argument(None, help="Project name (optional if only one project)"),
-    profile:      str           = typer.Option("debug", "--profile", "-p", help="Build profile to run"),
-    directory:    Optional[str] = typer.Option(".", "--directory", "-d", help="Directory containing kiss.yaml"),
+    profile:      Optional[str] = typer.Option(
+                      None, "--profile", "-p",
+                      help="Profile to run (default: debug). Available profiles loaded from toolchain.",
+                  ),
     args:         Optional[str] = typer.Option(None, "--args", "-a", help="Arguments to pass to the executable"),
 ):
     """Run a compiled binary project."""
+    kiss_ctx: KissContext = ctx.obj["ctx"]
 
-    project_dir = Path(directory).resolve()
-    kiss_data   = load_kiss_yaml(str(project_dir))
-    project     = resolve_project_name(kiss_data, project_name)
+    if not kiss_ctx.has_kiss_yaml():
+        typer.echo(typer.style("error: no kiss.yaml found in directory", fg=typer.colors.RED), err=True)
+        raise typer.Exit(1)
+
+    project     = kiss_ctx.get_project(project_name)
+    profile_use = profile or kiss_ctx.kiss_data.get("default-profile", "debug")
 
     ptype = project.get("_type", "bin")
     if ptype != "bin":
-        error(f"project '{project['name']}' is of type '{ptype}', only 'bin' projects can be run")
+        typer.echo(
+            typer.style(f"error: '{project['name']}' is of type '{ptype}', only 'bin' projects can be run", fg=typer.colors.RED),
+            err=True,
+        )
         raise typer.Exit(1)
 
-    exe = _find_executable(project_dir, project["name"], profile)
+    # Validate profile
+    names = kiss_ctx.profile_names()
+    if profile_use not in names:
+        typer.echo(
+            typer.style(f"error: unknown profile '{profile_use}'. Available: {', '.join(names)}", fg=typer.colors.RED),
+            err=True,
+        )
+        raise typer.Exit(1)
+
+    exe = _find_executable(kiss_ctx.directory, project["name"], profile_use)
     if exe is None:
-        error(f"executable not found for '{project['name']}' [{profile}]. Run 'kiss build' first.")
+        typer.echo(
+            typer.style(
+                f"error: executable not found for '{project['name']}' [{profile_use}].\n"
+                f"  Run 'kiss build' first.",
+                fg=typer.colors.RED,
+            ),
+            err=True,
+        )
         raise typer.Exit(1)
 
-    cmd = [str(exe)]
-    if args:
-        cmd += args.split()
+    cmd = [str(exe)] + (args.split() if args else [])
 
-    typer.echo(f"\nRunning '{project['name']}' [{profile}]…\n")
-    info(f"$ {' '.join(cmd)}")
+    typer.echo(f"\nRunning '{project['name']}' [{profile_use}]…\n")
+    typer.echo(typer.style(f"  · $ {' '.join(cmd)}", fg=typer.colors.CYAN))
     typer.echo()
 
     ret = subprocess.call(cmd)
-
     typer.echo()
     if ret != 0:
-        error(f"process exited with code {ret}")
+        typer.echo(typer.style(f"  ✗ process exited with code {ret}", fg=typer.colors.RED), err=True)
         raise typer.Exit(ret)

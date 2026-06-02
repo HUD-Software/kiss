@@ -1,13 +1,10 @@
-import os
 import typer
 import yaml
 from pathlib import Path
 from typing import Optional
-from cli.utils import BUILTIN_PROJECT_TYPES, ok, info, error, load_kiss_yaml, get_project_types
+from context import KissContext
 
-# ── C++ source templates ──────────────────────────────────────────────────────
-
-MAIN_BIN = """\
+MAIN_BIN = '''\
 #include <iostream>
 
 int main(int argc, char* argv[])
@@ -15,9 +12,9 @@ int main(int argc, char* argv[])
     std::cout << "Hello from {name}!" << std::endl;
     return 0;
 }}
-"""
+'''
 
-MAIN_LIB = """\
+MAIN_LIB = '''\
 #include "{name}.hpp"
 #include <iostream>
 
@@ -25,15 +22,15 @@ void {name}_hello()
 {{
     std::cout << "Hello from {name}!" << std::endl;
 }}
-"""
+'''
 
-HEADER_LIB = """\
+HEADER_LIB = '''\
 #pragma once
 
 void {name}_hello();
-"""
+'''
 
-MAIN_DYN = """\
+MAIN_DYN = '''\
 #include "{name}.hpp"
 #include <iostream>
 
@@ -47,9 +44,9 @@ MAIN_DYN = """\
 {{
     std::cout << "Hello from {name} (dynamic library)!" << std::endl;
 }}
-"""
+'''
 
-HEADER_DYN = """\
+HEADER_DYN = '''\
 #pragma once
 
 #ifdef _WIN32
@@ -63,111 +60,88 @@ HEADER_DYN = """\
 #endif
 
 {NAME}_API void {name}_hello();
-"""
+'''
 
 
 def _write(path: Path, content: str):
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(content)
-    ok(f"created {path}")
+    typer.echo(typer.style(f"  ✓ created {path}", fg=typer.colors.GREEN))
 
 
-def _create_bin(project_dir: Path, name: str):
-    _write(project_dir / "src" / "main.cpp", MAIN_BIN.format(name=name))
-
-
-def _create_lib(project_dir: Path, name: str):
-    _write(project_dir / "src" / f"{name}.cpp", MAIN_LIB.format(name=name))
-    _write(project_dir / "include" / f"{name}.hpp", HEADER_LIB.format(name=name))
-
-
-def _create_dyn(project_dir: Path, name: str):
-    NAME = name.upper()
-    _write(project_dir / "src" / f"{name}.cpp", MAIN_DYN.format(name=name, NAME=NAME))
-    _write(project_dir / "include" / f"{name}.hpp", HEADER_DYN.format(name=name, NAME=NAME))
+def _create_sources(ptype: str, project_dir: Path, name: str):
+    if ptype == "bin":
+        _write(project_dir / "src" / "main.cpp", MAIN_BIN.format(name=name))
+    elif ptype == "lib":
+        _write(project_dir / "src" / f"{name}.cpp", MAIN_LIB.format(name=name))
+        _write(project_dir / "include" / f"{name}.hpp", HEADER_LIB.format(name=name))
+    elif ptype == "dyn":
+        NAME = name.upper()
+        _write(project_dir / "src" / f"{name}.cpp", MAIN_DYN.format(name=name, NAME=NAME))
+        _write(project_dir / "include" / f"{name}.hpp", HEADER_DYN.format(name=name, NAME=NAME))
+    else:
+        # Custom type: generic bin layout
+        _write(project_dir / "src" / "main.cpp", MAIN_BIN.format(name=name))
+        typer.echo(typer.style(f"  · custom type '{ptype}' — generated a generic bin layout", fg=typer.colors.CYAN))
 
 
 def _kiss_yaml(ptype: str, name: str) -> dict:
-    """Build the initial kiss.yaml content for the new project."""
     entry: dict = {"name": name, "version": "0.1.0"}
-
     if ptype == "bin":
         entry["sources"] = ["src/main.cpp"]
-    elif ptype == "lib":
-        entry["sources"] = [f"src/{name}.cpp"]
-        entry["includes"] = ["include"]
-    elif ptype == "dyn":
+    elif ptype in ("lib", "dyn"):
         entry["sources"] = [f"src/{name}.cpp"]
         entry["includes"] = ["include"]
     else:
-        # Custom type: generic sources
         entry["sources"] = ["src/main.cpp"]
-
     return {ptype: [entry]}
 
 
+# ── kiss new ──────────────────────────────────────────────────────────
+
 def new_cmd(
-    project_type: str,
-    project_name: str,
-    directory: str,
+    ctx:          typer.Context,
+    project_type: str           = typer.Argument(..., help="Project type (use 'kiss new --help' for available types)"),
+    project_name: str           = typer.Argument(..., help="Name of the new project"),
 ):
-    """Create a new C++ project with a kiss.yaml and starter source files."""
+    """Create a new C++ project with kiss.yaml and starter source files."""
+    kiss_ctx: KissContext = ctx.obj["ctx"]
 
-    base_dir = Path(directory).resolve()
-
-    # Determine valid project types
-    # If a kiss.yaml already exists in base_dir, load custom types from it
-    kiss_yaml_path = base_dir / "kiss.yaml"
-    valid_types = set(BUILTIN_PROJECT_TYPES)
-    if kiss_yaml_path.exists():
-        try:
-            existing = load_kiss_yaml(str(base_dir))
-            valid_types |= get_project_types(existing)
-        except Exception:
-            pass
+    valid_types = set(kiss_ctx.known_project_types())
 
     if project_type not in valid_types:
-        error(f"unknown project type '{project_type}'. Valid types: {', '.join(sorted(valid_types))}")
+        typer.echo(
+            typer.style(
+                f"error: unknown project type '{project_type}'.\n"
+                f"  Available: {', '.join(sorted(valid_types))}",
+                fg=typer.colors.RED,
+            ), err=True
+        )
         raise typer.Exit(1)
 
-    project_dir = base_dir / project_name
+    project_dir = kiss_ctx.directory / project_name
 
     if project_dir.exists():
-        error(f"directory '{project_dir}' already exists")
+        typer.echo(typer.style(f"error: '{project_dir}' already exists", fg=typer.colors.RED), err=True)
         raise typer.Exit(1)
 
     typer.echo(f"\nCreating {project_type} project '{project_name}'…\n")
 
-    # Create directory structure
     project_dir.mkdir(parents=True)
-    ok(f"created {project_dir}/")
+    typer.echo(typer.style(f"  ✓ created {project_dir}/", fg=typer.colors.GREEN))
 
-    # Generate source files based on type
-    if project_type == "bin":
-        _create_bin(project_dir, project_name)
-    elif project_type == "lib":
-        _create_lib(project_dir, project_name)
-    elif project_type == "dyn":
-        _create_dyn(project_dir, project_name)
-    else:
-        # Custom type: treat like bin (user can customise)
-        _create_bin(project_dir, project_name)
-        info(f"custom type '{project_type}' — generated a generic bin layout")
+    _create_sources(project_type, project_dir, project_name)
 
-    # Write kiss.yaml
-    kiss_content = _kiss_yaml(project_type, project_name)
     kiss_path = project_dir / "kiss.yaml"
-    kiss_path.write_text(
-        yaml.dump(kiss_content, default_flow_style=False, sort_keys=False)
-    )
-    ok(f"created {kiss_path}")
+    kiss_path.write_text(yaml.dump(_kiss_yaml(project_type, project_name), default_flow_style=False, sort_keys=False))
+    typer.echo(typer.style(f"  ✓ created {kiss_path}", fg=typer.colors.GREEN))
 
     typer.echo()
     typer.echo(typer.style(f"  Project '{project_name}' ready!", fg=typer.colors.GREEN, bold=True))
     typer.echo()
-    info(f"cd {project_name}")
-    info(f"kiss generate")
-    info(f"kiss build")
+    typer.echo(typer.style(f"  · cd {project_name}", fg=typer.colors.CYAN))
+    typer.echo(typer.style(f"  · kiss generate", fg=typer.colors.CYAN))
+    typer.echo(typer.style(f"  · kiss build", fg=typer.colors.CYAN))
     if project_type == "bin":
-        info(f"kiss run")
+        typer.echo(typer.style(f"  · kiss run", fg=typer.colors.CYAN))
     typer.echo()

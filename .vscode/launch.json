@@ -31,6 +31,8 @@
             // ],
             // --> Create bin project in directory
             "args": [
+                "-d",
+                "tests",
                 "new",
                 "bin",
                 "my_bin",

@@ -1,4 +1,4 @@
-from .node import Node
+from .node import Node, PropertyBool
 
 class ProfileCompilerOverrideNode(Node):
     """Represents a compiler-specific override block inside a profile.
@@ -8,7 +8,6 @@ class ProfileCompilerOverrideNode(Node):
       defines: []
     """
     pass
-
 
 class ProfileLinkerOverrideNode(Node):
     """Represents a linker-specific override block inside a profile.
@@ -42,7 +41,7 @@ class ProfileLinkerNode(Node):
     pass
 
 
-class ProfileProjectNode(Node):
+class ProfileProjectTypeNode(Node):
     """Represents a project-type override block inside a profile.
 
     dyn:
@@ -52,7 +51,6 @@ class ProfileProjectNode(Node):
         enable-features: []
     """
     pass
-
 
 class ProfileNode(Node):
     """Represents a profile entry.
@@ -64,4 +62,18 @@ class ProfileNode(Node):
       linkers: ...
       projects: ...
     """
-    pass
+    @property
+    def is_abstract(self) -> bool :
+        prop = self.get_property_as("is_abstract", PropertyBool)
+        return prop.value if prop else False
+
+    # def merge_with_parent(self, parent: 'ProfileNode') -> 'ProfileNode':
+    #     result = ProfileNode(self.name)
+    #     for name, prop in self.properties.items():
+    #         parent_prop = parent.get_property(name)
+    #         # Add props if not in parent
+    #         if not parent_prop:
+    #             result.add_property(prop.clone())
+    #         else:
+    #             result.add_property(prop.merge_with_parent(parent_prop))
+    #     return result

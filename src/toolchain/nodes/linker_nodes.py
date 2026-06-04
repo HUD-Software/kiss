@@ -1,6 +1,6 @@
 
 
-from .node import Node
+from .node import Node, PropertyBool
 
 class LinkerFeatureArgsNode(Node):
     """Represents the 'args' block inside a linker feature with arguments.
@@ -24,7 +24,6 @@ class LinkerFeatureNode(Node):
     """
     pass
 
-
 class LinkerFeatureRuleNode(Node):
     """Represents a feature rule (only-one or incompatible)."""
     pass
@@ -32,7 +31,21 @@ class LinkerFeatureRuleNode(Node):
 
 class LinkerNode(Node):
     """Represents a linker entry (abstract or concrete).
-
     e.g. msvc-linker, link, lld-link
     """
-    pass
+
+    @property
+    def is_abstract(self) -> bool :
+        prop = self.get_property_as("is_abstract", PropertyBool)
+        return prop.value if prop else False
+
+    # def merge_with_parent(self, parent: 'LinkerNode') -> 'LinkerNode':
+    #     result = LinkerNode(self.name)
+    #     for name, prop in self.properties.items():
+    #         parent_prop = parent.get_property(name)
+    #         # Add props if not in parent
+    #         if not parent_prop:
+    #             result.add_property(prop.clone())
+    #         else:
+    #             result.add_property(prop.merge_with_parent(parent_prop))
+    #     return result

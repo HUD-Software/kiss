@@ -1,8 +1,33 @@
 import typer
 
 from context import KissContext
+from toolchain.nodes.node import PropertyBool, PropertyNodeDict, PropertyNodeList, PropertyStr, PropertyStrList
 
 
+def print_node(node, is_default: bool = False, indent: int = 0 ):
+    """Recursively print a node and its properties."""
+    prefix = "  " * indent
+    if is_default:
+        print(typer.style(f"{prefix}{node.name!r} (default)", fg=typer.colors.GREEN))
+    else:
+        print(f"{prefix}{node.name!r}")
+
+    for prop in node.properties.values():
+        if isinstance(prop, PropertyNodeList):
+            print(f"{prefix}  .{prop.name}:")
+            for child in prop.nodes:
+                print_node(child, indent=indent + 2)
+        elif isinstance(prop, PropertyNodeDict):
+            print(f"{prefix}  .{prop.name}:")
+            for key, child in prop.entries.items():
+                print_node(child, indent=indent + 2)
+        elif isinstance(prop, PropertyStrList):
+            print(f"{prefix}  .{prop.name}: {prop.values}")
+        elif isinstance(prop, PropertyStr):
+            print(f"{prefix}  .{prop.name}: {prop.value!r}")
+        elif isinstance(prop, PropertyBool):
+            print(f"{prefix}  .{prop.name}: {prop.value}")
+#         
 project_app = typer.Typer(
     help="List project information.",
 )
@@ -60,9 +85,14 @@ list_app = typer.Typer(
 
 @list_app.callback(invoke_without_command=True)
 def list_callback(ctx: typer.Context):
+    
+    ctx.ensure_object(dict)
+
+
     if ctx.invoked_subcommand is None:
         typer.echo(ctx.get_help())
         raise typer.Exit()
+
     
 list_app.add_typer(
     project_app,
@@ -71,18 +101,23 @@ list_app.add_typer(
 
 # ── kiss list type ──────────────────────────────────────────────────────────
 @list_app.command("types")
-def types_cmd(ctx: typer.Context):
+def types_cmd(ctx: typer.Context,
+              detail: bool = typer.Option(False, "--detail", "-d", help="Show detailed output")):
     """
     List available project types.
     """
 
     kiss_ctx: KissContext = ctx.obj["ctx"]
 
-    for project_type in sorted(kiss_ctx.known_project_types()):
-        typer.echo(project_type)
+    for t in kiss_ctx.known_project_types():
+        if detail:
+            print_node(t)
+        else:
+            typer.echo(f"{t.icon} {t.name}")
 
 @list_app.command("targets")
-def targets_cmd(ctx: typer.Context):
+def targets_cmd(ctx: typer.Context,
+                detail: bool = typer.Option(False, "--detail", "-d", help="Show detailed output")):
     """
     List available project targets.
     """
@@ -90,13 +125,18 @@ def targets_cmd(ctx: typer.Context):
     kiss_ctx: KissContext = ctx.obj["ctx"]
 
     for target in kiss_ctx.known_targets():
-        if target == kiss_ctx.default_target():
-            typer.echo(typer.style(f"* {target['name']} (default)", fg=typer.colors.GREEN))
+        is_default = target == kiss_ctx.default_target()
+        if detail:
+            print_node(target, is_default)
         else:
-            typer.echo(f"  {target['name']}")
+            if is_default:  
+                typer.echo(typer.style(f"* {target.name} (default)", fg=typer.colors.GREEN))
+            else:
+                typer.echo(f"  {target.name}")
 
 @list_app.command("compilers")
-def compilers_cmd(ctx: typer.Context):
+def compilers_cmd(ctx: typer.Context,
+                  detail: bool = typer.Option(False, "--detail", "-d", help="Show detailed output")):
     """
     List available compilers.
     """
@@ -104,14 +144,19 @@ def compilers_cmd(ctx: typer.Context):
     kiss_ctx: KissContext = ctx.obj["ctx"]
     lists = kiss_ctx.known_compilers()
     for compiler in lists:
-        if compiler == kiss_ctx.default_compiler(kiss_ctx.default_target()):
-            typer.echo(typer.style(f"* {compiler['name']} (default)", fg=typer.colors.GREEN))
+        is_default = (compiler == kiss_ctx.default_compiler(kiss_ctx.default_target().name))
+        if detail:
+            print_node(compiler, is_default)
         else:
-            typer.echo(f"  {compiler['name']}")
+            if is_default:
+                typer.echo(typer.style(f"* {compiler.name} (default)", fg=typer.colors.GREEN))
+            else:
+                typer.echo(f"  {compiler.name}")
 
 
 @list_app.command("linkers")
-def linkers_cmd(ctx: typer.Context):
+def linkers_cmd(ctx: typer.Context,
+                detail: bool = typer.Option(False, "--detail", "-d", help="Show detailed output")):
     """
     List available linkers.
     """
@@ -119,7 +164,31 @@ def linkers_cmd(ctx: typer.Context):
     kiss_ctx: KissContext = ctx.obj["ctx"]
     lists = kiss_ctx.known_linkers()
     for linker in lists:
-        if linker == kiss_ctx.default_linker(kiss_ctx.default_target()):
-            typer.echo(typer.style(f"* {linker['name']} (default)", fg=typer.colors.GREEN))
+        is_default = (linker == kiss_ctx.default_compiler(kiss_ctx.default_target().name))
+        if detail:
+            print_node(linker, is_default)
         else:
-            typer.echo(f"  {linker['name']}")
+            if is_default:
+                typer.echo(typer.style(f"* {linker.name} (default)", fg=typer.colors.GREEN))
+            else:
+                typer.echo(f"  {linker.name}")
+
+
+@list_app.command("profiles")
+def linkers_cmd(ctx: typer.Context,
+                detail: bool = typer.Option(False, "--detail", "-d", help="Show detailed output")):
+    """
+    List available profiles.
+    """
+
+    kiss_ctx: KissContext = ctx.obj["ctx"]
+    lists = kiss_ctx.known_profiles()
+    for profile in lists:
+        is_default = kiss_ctx.default_profile()
+        if detail:
+            print_node(profile, is_default)
+        else:
+            if is_default:
+                typer.echo(typer.style(f"* {profile.name} (default)", fg=typer.colors.GREEN))
+            else:
+                typer.echo(f"  {profile.name}")

@@ -18,6 +18,7 @@ profiles:
 projects:
   - name: benchmark
     description: Benchmark binary
+    icon: 📊
     extends: bin
     compilers:
       enable-features: []

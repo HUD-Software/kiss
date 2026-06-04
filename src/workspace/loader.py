@@ -2,14 +2,14 @@ import yaml
 from toolchain.nodes.node import PropertyStr, PropertyStrList, PropertyNodeList, PropertyNodeDict
 from toolchain.parsers.profile_parser import parse_profile
 from toolchain.parsers.project_parser import parse_project
-from .nodes.workspace_nodes import KissWorkspaceNode, KissProjectNode, SourceNode, DependencyNode
+from .nodes.workspace_nodes import KissWorkspaceNode, KissProjectTypeNode, SourceNode, DependencyNode
 
 
 # Built-in project types that kiss knows about natively
 BUILTIN_PROJECT_TYPES = {"bin", "lib", "dyn"}
 
 
-def parse_kiss_project(name: str, project_data: dict) -> KissProjectNode:
+def parse_kiss_project(name: str, project_data: dict) -> KissProjectTypeNode:
     """Parse a single project entry in kiss.yaml.
 
     - name: my_bin
@@ -19,7 +19,7 @@ def parse_kiss_project(name: str, project_data: dict) -> KissProjectNode:
       dependencies:
         - my_lib
     """
-    node = KissProjectNode(name=name)
+    node = KissProjectTypeNode(name=name)
 
     if "version" in project_data:
         node.add_property(PropertyStr("version", project_data["version"]))

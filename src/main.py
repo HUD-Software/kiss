@@ -1,7 +1,6 @@
 import sys
 import os
 
-
 sys.path.insert(0, os.path.dirname(__file__))
 
 from cli.app import app
@@ -85,7 +84,7 @@ if __name__ == "__main__":
 #                 for profile_data in data.get("profiles", []):
 #                     profiles.append(parse_profile(profile_data))
                 
-#                 """Load and parse projects.yaml, returning a list of ProjectNode."""
+#                 """Load and parse projects.yaml, returning a list of ProjectTypeNode."""
 #                 for project_data in data.get("projects", []):
 #                     projects.append(parse_project(project_data))
                 

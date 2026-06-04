@@ -107,7 +107,7 @@ def new_cmd(
     """Create a new C++ project with kiss.yaml and starter source files."""
     kiss_ctx: KissContext = ctx.obj["ctx"]
 
-    valid_types = set(kiss_ctx.known_project_types())
+    valid_types = set(ptype.name for ptype in kiss_ctx.known_project_types())
 
     if project_type not in valid_types:
         typer.echo(

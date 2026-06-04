@@ -18,7 +18,7 @@ class DependencyNode(Node):
     pass
 
 
-class KissProjectNode(Node):
+class KissProjectTypeNode(Node):
     """Represents a project entry in kiss.yaml (bin, lib, dyn or custom type).
 
     - name: my_bin

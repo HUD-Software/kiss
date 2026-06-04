@@ -1,108 +1,65 @@
-from toolchain.nodes.linker_nodes import LinkerFeatureRuleNode, LinkerFeatureArgsNode, LinkerFeatureNode, LinkerNode
-from toolchain.nodes.node import PropertyBool, PropertyNodeList, PropertyStr, PropertyStrList
+import yaml
+from toolchain.nodes.node import PropertyStr, PropertyStrList, PropertyNodeList
+from toolchain.nodes.linker_nodes import LinkerNode, LinkerFeatureNode, LinkerFeatureArgsNode, LinkerFeatureRuleNode
+from toolchain.parsers.parse_utils import parse_property
 
 
-def parse_linker_feature_args(args_data: dict) -> LinkerFeatureArgsNode:
-    """Parse the 'args:' block inside a linker feature.
-
-    args:
-      min: 1
-      max: ~
-      separator: ","
-      pattern: "*.lib"
-    """
+def parse_linker_feature_args(data: dict) -> LinkerFeatureArgsNode:
     node = LinkerFeatureArgsNode(name="args")
-
-    if "min" in args_data:
-        node.add_property(PropertyStr("min", str(args_data["min"])))
-    if "max" in args_data and args_data["max"] is not None:
-        node.add_property(PropertyStr("max", str(args_data["max"])))
-    if "separator" in args_data:
-        node.add_property(PropertyStr("separator", args_data["separator"]))
-    if "pattern" in args_data:
-        node.add_property(PropertyStr("pattern", args_data["pattern"]))
-
+    for key, value in data.items():
+        prop = parse_property(key, value if value is not None else "")
+        if prop:
+            node.add_property(prop)
     return node
 
 
-def parse_linker_feature(feature_data: dict) -> LinkerFeatureNode:
-    """Parse a single linker feature entry.
-
-    - name: LINK
-      description: Link with library
-      args:
-        min: 1
-        max: ~
-        separator: ","
-        pattern: "*.lib"
-      flags: [/link {args}]
-    """
-    node = LinkerFeatureNode(name=feature_data["name"])
-
-    if "description" in feature_data:
-        node.add_property(PropertyStr("description", feature_data["description"]))
-
-    if "flags" in feature_data:
-        node.add_property(PropertyStrList("flags", feature_data["flags"] or []))
-
-    if "enable-features" in feature_data:
-        node.add_property(PropertyStrList("enable-features", feature_data["enable-features"] or []))
-
-    if "args" in feature_data:
-        args_node = parse_linker_feature_args(feature_data["args"])
-        node.add_property(PropertyNodeList("args", [args_node]))
-
-    return node
-
-
-def parse_feature_rule(rule_data: dict) -> LinkerFeatureRuleNode:
-    """Parse a single feature rule (only-one or incompatible).
-
-    - only-one: optimization
-      features: [OPT_LEVEL_0, OPT_LEVEL_3]
-
-    - incompatible: no_opt
-      feature: OPT_LEVEL_0
-      with: [LTO]
-    """
-    if "only-one" in rule_data:
-        node = LinkerFeatureRuleNode(name=rule_data["only-one"])
+def parse_feature_rule(data: dict) -> LinkerFeatureRuleNode:
+    if "only-one" in data:
+        node = LinkerFeatureRuleNode(name=data["only-one"])
         node.add_property(PropertyStr("type", "only-one"))
-        node.add_property(PropertyStrList("features", rule_data.get("features", [])))
-    elif "incompatible" in rule_data:
-        node = LinkerFeatureRuleNode(name=rule_data["incompatible"])
+        node.add_property(PropertyStrList("features", data.get("features", [])))
+    elif "incompatible" in data:
+        node = LinkerFeatureRuleNode(name=data["incompatible"])
         node.add_property(PropertyStr("type", "incompatible"))
-        node.add_property(PropertyStr("feature", rule_data["feature"]))
-        node.add_property(PropertyStrList("with", rule_data.get("with", [])))
+        node.add_property(PropertyStr("feature", data["feature"]))
+        node.add_property(PropertyStrList("with", data.get("with", [])))
     else:
-        raise ValueError(f"Unknown feature rule type: {rule_data}")
-
+        raise ValueError(f"Unknown feature rule: {data}")
     return node
 
 
-def parse_linker(linker_data: dict) -> LinkerNode:
-    """Parse a single linker entry.
-
-    - name: msvc-linker
-      is_abstract: true
-      extends: ...
-      features: [...]
-      feature-rules: [...]
-    """
-    node = LinkerNode(name=linker_data["name"])
-
-    if "is_abstract" in linker_data:
-        node.add_property(PropertyBool("is_abstract", linker_data["is_abstract"]))
-
-    if "extends" in linker_data:
-        node.add_property(PropertyStr("extends", linker_data["extends"]))
-
-    if "features" in linker_data and linker_data["features"]:
-        features = [parse_linker_feature(f) for f in linker_data["features"]]
-        node.add_property(PropertyNodeList("features", features))
-
-    if "feature-rules" in linker_data:
-        rules = [parse_feature_rule(r) for r in linker_data["feature-rules"]]
-        node.add_property(PropertyNodeList("feature-rules", rules))
-
+def parse_linker_feature(data: dict) -> LinkerFeatureNode:
+    node = LinkerFeatureNode(name=data["name"])
+    for key, value in data.items():
+        if key == "name":
+            continue
+        if key == "args" and isinstance(value, dict):
+            node.add_property(PropertyNodeList("args", [parse_linker_feature_args(value)]))
+            continue
+        prop = parse_property(key, value)
+        if prop:
+            node.add_property(prop)
     return node
+
+
+def parse_linker(data: dict) -> LinkerNode:
+    node = LinkerNode(name=data["name"])
+    for key, value in data.items():
+        if key == "name":
+            continue
+        if key == "features" and isinstance(value, list):
+            node.add_property(PropertyNodeList("features", [parse_linker_feature(f) for f in (value or [])]))
+            continue
+        if key == "feature-rules" and isinstance(value, list):
+            node.add_property(PropertyNodeList("feature-rules", [parse_feature_rule(r) for r in value]))
+            continue
+        prop = parse_property(key, value)
+        if prop:
+            node.add_property(prop)
+    return node
+
+
+def load_linkers(path: str) -> list[LinkerNode]:
+    with open(path) as f:
+        data = yaml.safe_load(f)
+    return [parse_linker(l) for l in data.get("linkers", [])]

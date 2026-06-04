@@ -9,24 +9,27 @@ Passed to every command via typer's context mechanism.
 import yaml
 from dataclasses import dataclass, field
 from pathlib import Path
-from resolver.extends_resolver import resolve_extends
-
-
-def _load_yaml(path: str) -> list[dict]:
-    with open(path) as f:
-        data = yaml.safe_load(f) or {}
-    return list(data.values())[0] if data else []
-
+from toolchain.nodes.compiler_nodes import CompilerNode
+from toolchain.nodes.linker_nodes import LinkerNode
+from toolchain.nodes.profile_nodes import ProfileNode
+from toolchain.nodes.project_type_nodes import ProjectTypeNode
+from toolchain.nodes.target_nodes import TargetNode
+from toolchain.parsers.compiler_parser import load_compilers
+from toolchain.parsers.linker_parser   import load_linkers
+from toolchain.parsers.profile_parser  import load_profiles, parse_profile
+from toolchain.parsers.project_parser  import load_projects, parse_project
+from toolchain.parsers.target_parser   import load_targets
+from resolver.extends_resolver         import resolve_extends
 
 @dataclass
 class KissContext:
     directory:     Path
     kiss_data:     dict        = field(default_factory=dict)
-    compilers:     list[dict]  = field(default_factory=list)
-    linkers:       list[dict]  = field(default_factory=list)
-    profiles:      list[dict]  = field(default_factory=list)
-    project_types: list[dict]  = field(default_factory=list)
-    targets:       list[dict]  = field(default_factory=list)
+    compilers:     list[CompilerNode]  = field(default_factory=list)
+    linkers:       list[LinkerNode]  = field(default_factory=list)
+    profiles:      list[ProfileNode]  = field(default_factory=list)
+    project_types: list[ProjectTypeNode]  = field(default_factory=list)
+    targets:       list[TargetNode]  = field(default_factory=list)
 
     # ── helpers ───────────────────────────────────────────────────────
 
@@ -43,7 +46,7 @@ class KissContext:
         """All project names declared in kiss.yaml."""
         names = []
         for ptype in self.known_project_types():
-            for entry in self.kiss_data.get(ptype, []):
+            for entry in self.kiss_data.get(ptype.name, []):
                 names.append(entry["name"])
         return names
 
@@ -73,22 +76,19 @@ class KissContext:
         typer.echo(f"error: multiple projects found, specify one: {names}", err=True)
         raise typer.Exit(1)
 
-    def known_project_types(self) -> list[str]:
-        """Built-in + custom project types from projects.yaml + kiss.yaml."""
-        builtin = [p["name"] for p in self.project_types]
-        custom  = [p["name"] for p in self.kiss_data.get("projects", [])]
-        return list(dict.fromkeys(builtin + custom))  # deduplicated, ordered
+    def known_project_types(self) -> list[ProjectTypeNode]:
+        return [t for t in self.project_types]
 
     # ── Targets ───────────────────────────────────────────────────────
 
 
     def target_names(self) -> list[str]:
-        return [t["name"] for t in self.targets]
+        return [t.name for t in self.targets]
     
-    def known_targets(self) -> list[dict]:
+    def known_targets(self) -> list[TargetNode]:
         return [t for t in self.targets]
        
-    def default_target(self) -> dict | None:
+    def default_target(self) -> TargetNode | None:
         return self.targets[0] if self.targets else None
     
    
@@ -96,56 +96,54 @@ class KissContext:
     # ── Profiles ───────────────────────────────────────────────────────    
 
     def profile_names(self) -> list[str]:
-        return [p["name"] for p in self.profiles if not p.get("is_abstract")]
+        return [p.name for p in self.known_profiles()]
 
-    def known_profiles(self) -> list[dict]:
-        return [p for p in self.profiles if not p.get("is_abstract")]
+    def known_profiles(self) -> list[ProfileNode]:    
+        return [p for p in self.profiles if not p.is_abstract]
     
-    def default_profile(self) -> dict | None:
-        return next((p for p in self.profiles if p.get("is_default")), None)
+    def default_profile(self) -> ProfileNode | None:
+        return next((p for p in self.profiles if p.name == "debug"), None)
     
     # ── Compilers ───────────────────────────────────────────────────────
 
     def compiler_names(self) -> list[str]:
-        return [c["name"] for c in self.compilers if not c.get("is_abstract")]
+        return [c.name for c in self.known_compilers()]
 
-    def known_compilers(self) -> list[dict]:
-        return [c for c in self.compilers if not c.get("is_abstract")]
+    def known_compilers(self) -> list[CompilerNode]:
+        return [ c for c in self.compilers if not c.is_abstract]
     
-    def default_compiler(self, target_name: str) -> str | None:
-        target = next((t for t in self.targets if t["name"] == target_name), None)
+    def default_compiler(self, target_name: str) -> CompilerNode | None:
+        target = next((t for t in self.targets if t.name == target_name), None)
         if not target:
             return None
-        return target.get("default-compiler") or (
-            target.get("supported-compilers", [None])[0]
-        )
+        return target.default_compiler_name
 
     # ── Linkers ───────────────────────────────────────────────────────
     
     def linker_names(self) -> list[str]:
-        return [l["name"] for l in self.linkers if not l.get("is_abstract")]
+        return [c.name for c in self.known_compilers()]
     
-    def known_linkers(self) -> list[dict]:
-        return [l for l in self.linkers if not l.get("is_abstract")]
+    def known_linkers(self) -> list[LinkerNode]:
+        return [l for l in self.linkers if not l.is_abstract]
     
-    def default_linker(self, target_name: str) -> dict | None:
+    def default_linker(self, target_name: str) -> LinkerNode | None:
        default_compiler = self.default_compiler(target_name)
        if not default_compiler:
            return None
-       compiler = next((c for c in self.compilers if c["name"] == default_compiler), None)
+       compiler = next((c for c in self.compilers if c.name == default_compiler), None)
        if not compiler:
            return None
-       default_linker_name = compiler.get("default-linker")
+       default_linker_name = compiler.default_linker_name
        if not default_linker_name:
            return None
-       return next((l for l in self.linkers if l["name"] ==  default_linker_name), None)
+       return next((l for l in self.linkers if l.name ==  default_linker_name), None)
     
     # ── Private ───────────────────────────────────────────────────────────────
 
-    def _all_projects(self) -> list[dict]:
+    def _all_projects(self) -> list[ProjectTypeNode]:
         projects = []
         for ptype in self.known_project_types():
-            for entry in self.kiss_data.get(ptype, []):
+            for entry in self.kiss_data.get(ptype.name, []):
                 projects.append({**entry, "_type": ptype})
         return projects
 
@@ -153,20 +151,14 @@ class KissContext:
 # ── Loader ────────────────────────────────────────────────────────────────────
 
 def load_context(directory: str) -> KissContext:
-    """
-    Load all toolchain YAML files + kiss.yaml from directory.
-    kiss.yaml is optional (needed only for build/run/generate).
-    """
     project_dir = Path(directory).resolve()
+    src_dir     = Path(__file__).parent
+    data_dir    = src_dir.parent / "data"
 
-    # Locate data/ directory relative to this file (src/context.py → data/)
-    src_dir  = Path(__file__).parent
-    data_dir = src_dir.parent / "data"
-
-    compilers     = resolve_extends(_load_yaml(str(data_dir / "compilers.yaml")))
-    linkers       = resolve_extends(_load_yaml(str(data_dir / "linkers.yaml")))
-    project_types = _load_yaml(str(data_dir / "projects.yaml"))
-    targets       = _load_yaml(str(data_dir / "targets.yaml"))
+    compilers     = resolve_extends(load_compilers(str(data_dir / "compilers.yaml")))
+    linkers       = resolve_extends(load_linkers(str(data_dir / "linkers.yaml")))
+    project_types = load_projects(str(data_dir / "projects.yaml"))
+    targets       = load_targets(str(data_dir / "targets.yaml"))
 
     # Load kiss.yaml if present
     kiss_yaml = project_dir / "kiss.yaml"
@@ -175,16 +167,15 @@ def load_context(directory: str) -> KissContext:
         with open(kiss_yaml) as f:
             kiss_data = yaml.safe_load(f) or {}
 
-    # Merge profiles: built-in + custom from kiss.yaml
-    profiles = resolve_extends(_load_yaml(str(data_dir / "profiles.yaml")))
-    for p in kiss_data.get("profiles", []):
-        profiles.append(p)
+    # Built-in profiles + custom from kiss.yaml
+    profiles = resolve_extends(load_profiles(str(data_dir / "profiles.yaml")))
     if kiss_data.get("profiles"):
-        profiles = resolve_extends(profiles)
+        custom = [parse_profile(p) for p in kiss_data["profiles"]]
+        profiles = resolve_extends(profiles + custom)
 
-    # Merge project types: built-in + custom from kiss.yaml
-    for pt in kiss_data.get("projects", []):
-        project_types.append(pt)
+    # Custom project types from kiss.yaml
+    if kiss_data.get("projects"):
+        project_types = project_types + [parse_project(p) for p in kiss_data["projects"]]
 
     return KissContext(
         directory     = project_dir,

@@ -8,10 +8,9 @@
             "program": "${workspaceFolder}/src/main.py",
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}",
-            //   -> List everything
             "args": [
                 "list",
-                "compilers"
+                "linkers"
             ],
             //-> List projects in my_bin without dependencies
             // "args": [

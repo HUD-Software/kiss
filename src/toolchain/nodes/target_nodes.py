@@ -1,4 +1,4 @@
-from .node import Node
+from .node import Node, PropertyStr, PropertyStrList
 
 
 class TargetLinkerNode(Node):
@@ -47,4 +47,12 @@ class TargetNode(Node):
       linkers: ...
       compilers: ...
     """
-    pass
+
+    @property
+    def default_compiler_name(self) -> str | None:
+        return self.get_property_as("default-compiler", PropertyStr) or self.supported_compiler_names[0]
+
+    @property
+    def supported_compiler_names(self) -> list[str]:
+        prop = self.get_property_as("supported-compilers", PropertyStrList)
+        return prop.values if prop else []

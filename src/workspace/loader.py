@@ -49,7 +49,7 @@ def load_workspace(path: str) -> KissWorkspaceNode:
     with open(path, encoding="utf-8") as f:
         data = yaml.safe_load(f)
 
-    workspace = KissWorkspaceNode(name="workspace")
+    workspace = KissWorkspaceNode(name=str(path))
 
     # Optional custom profiles
     if "profiles" in data:

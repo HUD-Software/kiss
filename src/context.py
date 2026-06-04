@@ -91,7 +91,8 @@ class KissContext:
     def default_target(self) -> TargetNode | None:
         return self.targets[0] if self.targets else None
     
-   
+    def get_target(self, name: str) -> TargetNode | None:
+        return next((t for t in self.targets if t.name == name), None)
     
     # ── Profiles ───────────────────────────────────────────────────────    
 
@@ -103,6 +104,9 @@ class KissContext:
     
     def default_profile(self) -> ProfileNode | None:
         return next((p for p in self.profiles if p.name == "debug"), None)
+    
+    def get_profile(self, name: str) -> ProfileNode | None:
+        return next((p for p in self.profiles if p.name == name), None)
     
     # ── Compilers ───────────────────────────────────────────────────────
 
@@ -118,6 +122,9 @@ class KissContext:
             return None
         return target.default_compiler_name
 
+    def get_compiler(self, name: str) -> CompilerNode | None:
+        return next((c for c in self.compilers if c.name == name), None)
+    
     # ── Linkers ───────────────────────────────────────────────────────
     
     def linker_names(self) -> list[str]:
@@ -137,6 +144,9 @@ class KissContext:
        if not default_linker_name:
            return None
        return next((l for l in self.linkers if l.name ==  default_linker_name), None)
+    
+    def get_linker(self, name: str) -> LinkerNode | None:
+        return next((l for l in self.linkers if l.name == name), None)
     
     # ── Private ───────────────────────────────────────────────────────────────
 

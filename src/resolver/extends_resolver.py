@@ -7,7 +7,7 @@ Delegates all merge logic to Property.merge_with_parent().
 The resolver itself is now only responsible for:
   1. Building the inheritance chain (extends)
   2. Detecting circular dependencies
-  3. Calling Node.merge(child) in the right order
+  3. Calling node.merge_with_parent(parent) in the right order
 
 All merge semantics live in the Property subclasses (node.py).
 """

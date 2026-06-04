@@ -164,7 +164,7 @@ def load_context(directory: str) -> KissContext:
     kiss_yaml = project_dir / "kiss.yaml"
     kiss_data: dict = {}
     if kiss_yaml.exists():
-        with open(kiss_yaml) as f:
+        with open(kiss_yaml, encoding="utf-8") as f:
             kiss_data = yaml.safe_load(f) or {}
 
     # Built-in profiles + custom from kiss.yaml

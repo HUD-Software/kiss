@@ -40,6 +40,6 @@ def parse_project(data: dict) -> ProjectTypeNode:
 
 
 def load_projects(path: str) -> list[ProjectTypeNode]:
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         data = yaml.safe_load(f)
     return [parse_project(p) for p in data.get("projects", [])]

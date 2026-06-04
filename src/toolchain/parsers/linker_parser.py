@@ -60,6 +60,6 @@ def parse_linker(data: dict) -> LinkerNode:
 
 
 def load_linkers(path: str) -> list[LinkerNode]:
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         data = yaml.safe_load(f)
     return [parse_linker(l) for l in data.get("linkers", [])]

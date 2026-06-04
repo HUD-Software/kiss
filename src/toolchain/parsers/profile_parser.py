@@ -86,6 +86,6 @@ def parse_profile(data: dict) -> ProfileNode:
 
 
 def load_profiles(path: str) -> list[ProfileNode]:
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         data = yaml.safe_load(f)
     return [parse_profile(p) for p in data.get("profiles", [])]

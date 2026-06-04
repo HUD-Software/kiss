@@ -20,7 +20,7 @@ def find_kiss_yaml(directory: str) -> Path:
 def load_kiss_yaml(directory: str) -> dict:
     """Load and return the parsed kiss.yaml from directory."""
     path = find_kiss_yaml(directory)
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         return yaml.safe_load(f) or {}
 
 

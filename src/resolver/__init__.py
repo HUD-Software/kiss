@@ -12,7 +12,7 @@ from resolver.resolved import ResolvedFlags
 
 
 def _load_yaml(path: str) -> list[dict]:
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         data = yaml.safe_load(f) or {}
     return list(data.values())[0] if data else []
 

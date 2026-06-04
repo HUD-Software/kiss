@@ -46,7 +46,7 @@ def load_workspace(path: str) -> KissWorkspaceNode:
       dyn:             # list of dynamic library projects
       <custom-type>:   # list of custom project type entries
     """
-    with open(path, "r") as f:
+    with open(path, encoding="utf-8") as f:
         data = yaml.safe_load(f)
 
     workspace = KissWorkspaceNode(name="workspace")

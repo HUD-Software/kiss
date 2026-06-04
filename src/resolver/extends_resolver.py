@@ -33,7 +33,6 @@ def _resolve_chain(name: str, index: dict[str, Node], visited: set, resolved: di
         parent_name = extends_prop.value
         parent      = _resolve_chain(parent_name, index, visited, resolved)
         node        = node.merge_with_parent(parent)
-        #node        = parent.merge(node)
 
     visited.discard(name)
     resolved[name] = node

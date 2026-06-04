@@ -81,7 +81,6 @@ def parse_compiler_feature(data: dict) -> CompilerFeatureNode:
         prop = parse_property(key, value)
         if prop:
             node.add_property(prop)
-
     return node
 
 
@@ -106,6 +105,6 @@ def parse_compiler(data: dict) -> CompilerNode:
 
 
 def load_compilers(path: str) -> list[CompilerNode]:
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         data = yaml.safe_load(f)
     return [parse_compiler(c) for c in data.get("compilers", [])]

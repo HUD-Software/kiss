@@ -57,6 +57,6 @@ def parse_target(data: dict) -> TargetNode:
 
 
 def load_targets(path: str) -> list[TargetNode]:
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         data = yaml.safe_load(f)
     return [parse_target(t) for t in data.get("targets", [])]

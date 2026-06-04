@@ -1,33 +1,140 @@
+from xml.etree.ElementTree import indent
+
 import typer
 
 from context import KissContext
-from toolchain.nodes.node import PropertyBool, PropertyNodeDict, PropertyNodeList, PropertyStr, PropertyStrList
+from toolchain.nodes.node import Node, PropertyBool, PropertyNodeDict, PropertyNodeList, PropertyStr, PropertyStrList
 
+from wcwidth import wcswidth
+def flatten_block(block: str, indent: str = "") -> list[str]:
+    return [(indent + line) for line in block.split("\n")]
 
-def print_node(node, is_default: bool = False, indent: int = 0 ):
-    """Recursively print a node and its properties."""
-    prefix = "  " * indent
-    if is_default:
-        print(typer.style(f"{prefix}{node.name!r} (default)", fg=typer.colors.GREEN))
-    else:
-        print(f"{prefix}{node.name!r}")
+def vis_len(s: str) -> int:
+        return wcswidth(s)
 
-    for prop in node.properties.values():
-        if isinstance(prop, PropertyNodeList):
-            print(f"{prefix}  .{prop.name}:")
-            for child in prop.nodes:
-                print_node(child, indent=indent + 2)
-        elif isinstance(prop, PropertyNodeDict):
-            print(f"{prefix}  .{prop.name}:")
-            for key, child in prop.entries.items():
-                print_node(child, indent=indent + 2)
+def indent_block(block: str, indent: str) -> list[str]:
+    return [(indent + line) for line in block.split("\n")]
+
+def box(title: str, lines: list[str]) -> list[str]:
+    content_width = max((vis_len(line) for line in lines), default=0)
+
+    title = f" {title} "
+    top_width = max(content_width, vis_len(title))
+
+    top = f"╭─{title}" + "─" * (top_width - vis_len(title) + 1) + "╮"
+    bottom = "╰" + "─" * (len(top) - 2) + "╯"
+
+    out = [top]
+
+    for line in lines:
+        padding = content_width - vis_len(line)
+        out.append(f"│ {line}{' ' * padding} │")
+
+    out.append(bottom)
+    return out
+
+def inner_box(title: str, lines: list[str]) -> str:
+    
+    content_width = max((vis_len(line) for line in lines), default=0)
+
+    title = f"{title} "
+    top_width = max(content_width, vis_len(title)) + 2
+
+    top = f"{title}" + "─" * (top_width - vis_len(title) + 1) + "╮"
+    bottom = "╰" + "─" * (len(top) -2) + "╯"
+
+    out = [top]
+
+    for line in lines:
+        padding = content_width - vis_len(line)
+        out.append(f"│ {line}{' ' * padding} │")
+
+    out.append(bottom)
+    return "\n".join(out)
+
+def split_props(properties):
+    leaf = []
+    nodes = []
+
+    for prop in properties.values():
+        if isinstance(prop, (PropertyStr, PropertyStrList, PropertyBool)):
+            leaf.append(prop)
+        else:
+            nodes.append(prop)
+
+    return leaf, nodes
+
+def node_to_inner_box(node: Node):
+    title = node.name
+    lines = []
+
+    leaf_props, node_props = split_props(node.properties)
+
+    # LEAF PROPERTIES FIRST ─────────────────────────────
+    for prop in leaf_props:
+
+        if isinstance(prop, PropertyStr):
+            lines.append(f"{prop.name}: {prop.value!r}")
+
         elif isinstance(prop, PropertyStrList):
-            print(f"{prefix}  .{prop.name}: {prop.values}")
-        elif isinstance(prop, PropertyStr):
-            print(f"{prefix}  .{prop.name}: {prop.value!r}")
+            lines.append(f"{prop.name}: {prop.values}")
+
         elif isinstance(prop, PropertyBool):
-            print(f"{prefix}  .{prop.name}: {prop.value}")
-#         
+            lines.append(f"{prop.name}: {prop.value}")
+
+    # NODE PROPERTIES AFTER ─────────────────────────────
+    for prop in node_props:
+        if isinstance(prop, PropertyNodeList):
+            for child in prop.nodes:
+                child_box = node_to_inner_box(child)
+                lines.extend(flatten_block(child_box))
+        elif isinstance(prop, PropertyNodeDict):
+             for _, child in prop.entries.items():
+                child_box = node_to_inner_box(child)
+                lines.extend(flatten_block(child_box))
+    return inner_box(title, lines)
+
+def node_to_box(node: Node, is_default=False):
+    title = node.name + (" (default)" if is_default else "")
+    lines = []
+    
+    leaf_props, node_props = split_props(node.properties)
+    
+    # LEAF PROPERTIES FIRST ─────────────────────────────
+    for prop in leaf_props:
+        if isinstance(prop, PropertyStr):
+            lines.append(f"{prop.name}: {prop.value!r}")
+        elif isinstance(prop, PropertyStrList):
+            lines.append(f"{prop.name}: {prop.values}")
+        elif isinstance(prop, PropertyBool):
+            lines.append(f"{prop.name}: {prop.value}")
+
+    # NODE PROPERTIES AFTER ─────────────────────────────
+    for prop in node_props:
+        if isinstance(prop, PropertyNodeList):
+            inner_lines = []
+            for child in prop.nodes:
+                child_box = node_to_inner_box(child)
+                inner_lines.extend(flatten_block(child_box))
+
+            prop_box = inner_box(prop.name, inner_lines)
+            lines.extend(flatten_block(prop_box))
+        elif isinstance(prop, PropertyNodeDict):
+            inner_lines = []
+            for _, child in prop.entries.items():
+                child_box = node_to_inner_box(child)
+                inner_lines.extend(flatten_block(child_box))
+
+            prop_box = inner_box(prop.name, inner_lines)
+            lines.extend(flatten_block(prop_box))
+
+    return box(title, lines)
+
+def print_node_boxed(node, is_default: bool = False, indent: int = 0 ):
+    lines = node_to_box(node, is_default)
+    for line in lines:
+        typer.echo(line)
+
 project_app = typer.Typer(
     help="List project information.",
 )
@@ -111,7 +218,7 @@ def types_cmd(ctx: typer.Context,
 
     for t in kiss_ctx.known_project_types():
         if detail:
-            print_node(t)
+            print_node_boxed(t)
         else:
             typer.echo(f"{t.icon} {t.name}")
 
@@ -127,7 +234,7 @@ def targets_cmd(ctx: typer.Context,
     for target in kiss_ctx.known_targets():
         is_default = target == kiss_ctx.default_target()
         if detail:
-            print_node(target, is_default)
+            print_node_boxed(target, is_default)
         else:
             if is_default:  
                 typer.echo(typer.style(f"* {target.name} (default)", fg=typer.colors.GREEN))
@@ -146,7 +253,7 @@ def compilers_cmd(ctx: typer.Context,
     for compiler in lists:
         is_default = (compiler == kiss_ctx.default_compiler(kiss_ctx.default_target().name))
         if detail:
-            print_node(compiler, is_default)
+            print_node_boxed(compiler, is_default)
         else:
             if is_default:
                 typer.echo(typer.style(f"* {compiler.name} (default)", fg=typer.colors.GREEN))
@@ -166,7 +273,7 @@ def linkers_cmd(ctx: typer.Context,
     for linker in lists:
         is_default = (linker == kiss_ctx.default_compiler(kiss_ctx.default_target().name))
         if detail:
-            print_node(linker, is_default)
+            print_node_boxed(linker, is_default)
         else:
             if is_default:
                 typer.echo(typer.style(f"* {linker.name} (default)", fg=typer.colors.GREEN))
@@ -184,9 +291,9 @@ def linkers_cmd(ctx: typer.Context,
     kiss_ctx: KissContext = ctx.obj["ctx"]
     lists = kiss_ctx.known_profiles()
     for profile in lists:
-        is_default = kiss_ctx.default_profile()
+        is_default = kiss_ctx.default_profile() == profile
         if detail:
-            print_node(profile, is_default)
+            print_node_boxed(profile, is_default)
         else:
             if is_default:
                 typer.echo(typer.style(f"* {profile.name} (default)", fg=typer.colors.GREEN))

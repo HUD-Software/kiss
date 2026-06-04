@@ -10,7 +10,8 @@
             "cwd": "${workspaceFolder}",
             "args": [
                 "list",
-                "linkers"
+                "compilers",
+                "--detail"
             ],
             //-> List projects in my_bin without dependencies
             // "args": [

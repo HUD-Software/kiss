@@ -12,7 +12,7 @@
                 "list",
                 "compilers",
                 "--mode",
-                "json"
+                "boxed"
             ],
             //-> List projects in my_bin without dependencies
             // "args": [

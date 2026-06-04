@@ -12,7 +12,7 @@ from cli.commands.new      import new_cmd
 from cli.commands.generate import generate_cmd
 from cli.commands.build    import build_cmd
 from cli.commands.run      import run_cmd
-from cli.commands.list     import list_app
+from cli.commands.list.list     import list_app
 app = typer.Typer(
     name="kiss",
     help="Kiss — a cargo-like build tool for C++",

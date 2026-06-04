@@ -1,3 +1,6 @@
+import json
+from platform import node
+from statistics import mode
 from xml.etree.ElementTree import indent
 
 import typer
@@ -135,10 +138,83 @@ def print_node_boxed(node, is_default: bool = False, indent: int = 0 ):
     for line in lines:
         typer.echo(line)
 
+def node_to_lines(node: Node, indent: int = 0) -> list[str]:
+    prefix = "  " * indent
+    lines = []
+
+    leaf_props, node_props = split_props(node.properties)
+
+    #  NODE HEADER ─────────────────────────────
+    lines.append(f"{prefix}{node.name}")
+
+    # LEAF PROPS FIRST ─────────────────────────
+    for prop in leaf_props:
+        if isinstance(prop, PropertyStr):
+            lines.append(f"{prefix}  {prop.name}: {prop.value!r}")
+        elif isinstance(prop, PropertyStrList):
+            lines.append(f"{prefix}  {prop.name}: {prop.values}")
+        elif isinstance(prop, PropertyBool):
+            lines.append(f"{prefix}  {prop.name}: {prop.value}")
+
+    # NODE PROPS AFTER ────────────────────────
+    for prop in node_props:
+        if isinstance(prop, PropertyNodeList):
+            lines.append(f"{prefix}  {prop.name}:")
+
+            for child in prop.nodes:
+                lines.extend(node_to_lines(child, indent + 2))
+        elif isinstance(prop, PropertyNodeDict):
+            lines.append(f"{prefix}  {prop.name}:")
+
+            for key, child in prop.entries.items():
+                lines.append(f"{prefix}    {key}:")
+                lines.extend(node_to_lines(child, indent + 3))
+
+    return lines
+
+def node_to_json(node: Node) -> dict:
+    leaf_props, node_props = split_props(node.properties)
+
+    result = {
+        "name": node.name,
+    }
+
+    # LEAF PROPERTIES ─────────────────────────────
+    for prop in leaf_props:
+        if isinstance(prop, PropertyStr):
+            result[prop.name] = prop.value
+        elif isinstance(prop, PropertyStrList):
+            result[prop.name] = prop.values
+        elif isinstance(prop, PropertyBool):
+            result[prop.name] = prop.value
+
+    # NODE LISTS ─────────────────────────────
+    for prop in node_props:
+        if isinstance(prop, PropertyNodeList):
+            result[prop.name] = []
+            for node in prop.nodes:
+                result[prop.name].append(node_to_json(node))
+        elif isinstance(prop, PropertyNodeDict):
+            result[prop.name] = {}
+            for name, node in prop.entries.items():
+                result[prop.name][name] = node_to_json(node)
+
+    return result
+
+from enum import Enum
+
+class OutputMode(str, Enum):
+    plain = "plain"
+    detail = "detail"
+    boxed = "boxed"
+    json = "json"
+
 project_app = typer.Typer(
     help="List project information.",
 )
 
+
+    
 # ── kiss list project ──────────────────────────────────────────────────────────
 
 @project_app.callback(invoke_without_command=True)
@@ -173,15 +249,11 @@ def project_name_cmd(ctx: typer.Context):
     """
     List project names only.
     """
-
     kiss_ctx: KissContext = ctx.obj["ctx"]
-
     names = sorted(kiss_ctx.project_names())
-
     if not names:
         typer.echo("No projects defined.")
         return
-
     for name in names:
         typer.echo(name)
 
@@ -192,10 +264,7 @@ list_app = typer.Typer(
 
 @list_app.callback(invoke_without_command=True)
 def list_callback(ctx: typer.Context):
-    
     ctx.ensure_object(dict)
-
-
     if ctx.invoked_subcommand is None:
         typer.echo(ctx.get_help())
         raise typer.Exit()
@@ -209,22 +278,28 @@ list_app.add_typer(
 # ── kiss list type ──────────────────────────────────────────────────────────
 @list_app.command("types")
 def types_cmd(ctx: typer.Context,
-              detail: bool = typer.Option(False, "--detail", "-d", help="Show detailed output")):
+              mode: OutputMode = typer.Option(OutputMode.plain, "--mode", "-m", help="Select the output mode")):
     """
     List available project types.
     """
-
     kiss_ctx: KissContext = ctx.obj["ctx"]
-
-    for t in kiss_ctx.known_project_types():
-        if detail:
-            print_node_boxed(t)
-        else:
-            typer.echo(f"{t.icon} {t.name}")
+    if mode == OutputMode.json:
+        data = [node_to_json(t) for t in kiss_ctx.known_project_types()]
+        typer.echo(json.dumps(data, indent=2, ensure_ascii=False))
+    else:
+        for project_type in kiss_ctx.known_project_types():
+            if mode == OutputMode.plain:
+                typer.echo(f"{project_type.icon} {project_type.name}")
+            elif mode == OutputMode.detail:
+                lines = node_to_lines(project_type)
+                for line in lines:
+                    typer.echo(line)
+            elif mode == OutputMode.boxed:
+                print_node_boxed(project_type)
 
 @list_app.command("targets")
 def targets_cmd(ctx: typer.Context,
-                detail: bool = typer.Option(False, "--detail", "-d", help="Show detailed output")):
+                mode: OutputMode = typer.Option(OutputMode.plain, "--mode", "-m", help="Select the output mode")):
     """
     List available project targets.
     """
@@ -232,18 +307,25 @@ def targets_cmd(ctx: typer.Context,
     kiss_ctx: KissContext = ctx.obj["ctx"]
 
     for target in kiss_ctx.known_targets():
-        is_default = target == kiss_ctx.default_target()
-        if detail:
-            print_node_boxed(target, is_default)
-        else:
-            if is_default:  
+        if mode == OutputMode.plain:
+            is_default = target == kiss_ctx.default_target()
+            if is_default:
                 typer.echo(typer.style(f"* {target.name} (default)", fg=typer.colors.GREEN))
             else:
                 typer.echo(f"  {target.name}")
-
+        elif mode == OutputMode.detail:
+            lines = node_to_lines(target)
+            for line in lines:
+                typer.echo(line)
+        elif mode == OutputMode.boxed:
+            print_node_boxed(target)
+        elif mode == OutputMode.json:
+            data = node_to_json(target)
+            typer.echo(json.dumps(data, indent=2, ensure_ascii=False))
+        
 @list_app.command("compilers")
 def compilers_cmd(ctx: typer.Context,
-                  detail: bool = typer.Option(False, "--detail", "-d", help="Show detailed output")):
+                  mode: OutputMode = typer.Option(OutputMode.plain, "--mode", "-m", help="Select the output mode")):
     """
     List available compilers.
     """
@@ -251,19 +333,25 @@ def compilers_cmd(ctx: typer.Context,
     kiss_ctx: KissContext = ctx.obj["ctx"]
     lists = kiss_ctx.known_compilers()
     for compiler in lists:
-        is_default = (compiler == kiss_ctx.default_compiler(kiss_ctx.default_target().name))
-        if detail:
-            print_node_boxed(compiler, is_default)
-        else:
+        if mode == OutputMode.plain:
+            is_default = (compiler == kiss_ctx.default_compiler(kiss_ctx.default_target().name))
             if is_default:
                 typer.echo(typer.style(f"* {compiler.name} (default)", fg=typer.colors.GREEN))
             else:
                 typer.echo(f"  {compiler.name}")
-
+        elif mode == OutputMode.detail:
+            lines = node_to_lines(compiler)
+            for line in lines:
+                typer.echo(line)
+        elif mode == OutputMode.boxed:
+            print_node_boxed(compiler)
+        elif mode == OutputMode.json:
+            data = node_to_json(compiler)
+            typer.echo(json.dumps(data, indent=2, ensure_ascii=False))
 
 @list_app.command("linkers")
 def linkers_cmd(ctx: typer.Context,
-                detail: bool = typer.Option(False, "--detail", "-d", help="Show detailed output")):
+                mode: OutputMode = typer.Option(OutputMode.plain, "--mode", "-m", help="Select the output mode")):
     """
     List available linkers.
     """
@@ -271,19 +359,26 @@ def linkers_cmd(ctx: typer.Context,
     kiss_ctx: KissContext = ctx.obj["ctx"]
     lists = kiss_ctx.known_linkers()
     for linker in lists:
-        is_default = (linker == kiss_ctx.default_compiler(kiss_ctx.default_target().name))
-        if detail:
-            print_node_boxed(linker, is_default)
-        else:
+        if mode == OutputMode.plain:
+            is_default = (linker == kiss_ctx.default_compiler(kiss_ctx.default_target().name))
             if is_default:
                 typer.echo(typer.style(f"* {linker.name} (default)", fg=typer.colors.GREEN))
             else:
                 typer.echo(f"  {linker.name}")
+        elif mode == OutputMode.detail:
+            lines = node_to_lines(linker)
+            for line in lines:
+                typer.echo(line)
+        elif mode == OutputMode.boxed:
+            print_node_boxed(linker)
+        elif mode == OutputMode.json:
+            data = node_to_json(linker)
+            typer.echo(json.dumps(data, indent=2, ensure_ascii=False))
 
 
 @list_app.command("profiles")
-def linkers_cmd(ctx: typer.Context,
-                detail: bool = typer.Option(False, "--detail", "-d", help="Show detailed output")):
+def profiles_cmd(ctx: typer.Context,
+                 mode: OutputMode = typer.Option(OutputMode.plain, "--mode", "-m", help="Select the output mode")):
     """
     List available profiles.
     """
@@ -291,11 +386,18 @@ def linkers_cmd(ctx: typer.Context,
     kiss_ctx: KissContext = ctx.obj["ctx"]
     lists = kiss_ctx.known_profiles()
     for profile in lists:
-        is_default = kiss_ctx.default_profile() == profile
-        if detail:
-            print_node_boxed(profile, is_default)
-        else:
+        if mode == OutputMode.plain:
+            is_default = kiss_ctx.default_profile() == profile
             if is_default:
                 typer.echo(typer.style(f"* {profile.name} (default)", fg=typer.colors.GREEN))
             else:
                 typer.echo(f"  {profile.name}")
+        elif mode == OutputMode.detail:
+            lines = node_to_lines(profile)
+            for line in lines:
+                typer.echo(line)
+        elif mode == OutputMode.boxed:
+            print_node_boxed(profile)
+        elif mode == OutputMode.json:
+            data = node_to_json(profile)
+            typer.echo(json.dumps(data, indent=2, ensure_ascii=False))

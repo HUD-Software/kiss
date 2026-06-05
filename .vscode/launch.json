@@ -12,7 +12,7 @@
                 "-d",
                 "tests",
                 "list",
-                "compilers",
+                "linkers",
                 "--mode",
                 "boxed"
             ],

@@ -1,7 +1,7 @@
-from .node import Node, PropertyStr, PropertyStrList
+from .node import PropertyDict, PropertyStr, PropertyStrList
 
 
-class TargetLinkerNode(Node):
+class TargetLinkerNode(PropertyDict):
     """Represents the 'linkers:' block inside a target.
 
     linkers:
@@ -10,7 +10,7 @@ class TargetLinkerNode(Node):
     pass
 
 
-class TargetCompilerOverrideNode(Node):
+class TargetCompilerOverrideNode(PropertyDict):
     """Represents a compiler-specific override block inside a target.
 
     clangcl:
@@ -22,7 +22,7 @@ class TargetCompilerOverrideNode(Node):
     pass
 
 
-class TargetCompilerFeatureOverrideNode(Node):
+class TargetCompilerFeatureOverrideNode(PropertyDict):
     """Represents a feature override for a specific compiler inside a target.
 
     - name: ASAN
@@ -32,7 +32,7 @@ class TargetCompilerFeatureOverrideNode(Node):
     pass
 
 
-class TargetNode(Node):
+class TargetNode(PropertyDict):
     """Represents a build target entry.
 
     - name: x86_64-pc-windows-msvc

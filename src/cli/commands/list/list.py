@@ -4,7 +4,7 @@ import typer
 from cli.commands.list.formatter import format_node_to_boxed_lines, format_node_to_json, format_node_to_lines
 from context import KissContext
 from enum import Enum
-from toolchain.nodes.node import Node
+from toolchain.nodes.node import PropertyDict
 
 # Output mode used when list --mode is invoked ────────────────────────────────────
 class OutputMode(str, Enum):
@@ -15,7 +15,7 @@ class OutputMode(str, Enum):
 
 
 # Print all nodes in the correct mode ─────────────────────────────────────────────
-def _print(it :Iterable[Node], mode: OutputMode = OutputMode.plain):
+def _print(it :Iterable[PropertyDict], mode: OutputMode = OutputMode.plain):
     if mode == OutputMode.json:
         data = [format_node_to_json(t) for t in it]
         typer.echo(json.dumps(data, indent=2))

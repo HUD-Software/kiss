@@ -12,10 +12,10 @@ The resolver itself is now only responsible for:
 All merge semantics live in the Property subclasses (node.py).
 """
 
-from toolchain.nodes.node import Node
+from toolchain.nodes.node import PropertyDict
 
 
-def _resolve_chain(name: str, index: dict[str, Node], visited: set, resolved: dict[str, Node]) -> Node:
+def _resolve_chain(name: str, index: dict[str, PropertyDict], visited: set, resolved: dict[str, PropertyDict]) -> PropertyDict:
     if name in resolved:
         return resolved[name]
 
@@ -39,7 +39,7 @@ def _resolve_chain(name: str, index: dict[str, Node], visited: set, resolved: di
     return node
 
 from typing import TypeVar
-T = TypeVar("T", bound=Node)
+T = TypeVar("T", bound=PropertyDict)
 
 def resolve_extends(nodes: list[T]) -> list[T]:
     """
@@ -47,8 +47,8 @@ def resolve_extends(nodes: list[T]) -> list[T]:
     Returns a new list of fully merged nodes in original order.
     Each node's properties are merged via Property.merge_with_parent().
     """
-    index: dict[str, Node] = {n.name: n for n in nodes}
-    resolved: dict[str, Node] = {}
+    index: dict[str, PropertyDict] = {n.name: n for n in nodes}
+    resolved: dict[str, PropertyDict] = {}
 
     for node in nodes:
         _resolve_chain(node.name, index, set(), resolved)

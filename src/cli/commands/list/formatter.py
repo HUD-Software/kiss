@@ -1,6 +1,6 @@
 
 from wcwidth import wcswidth
-from toolchain.nodes.node import Node, PropertyBool, PropertyNodeDict, PropertyNodeList, PropertyStr, PropertyStrList
+from toolchain.nodes.node import PropertyDict, PropertyBool,  PropertyNodeList, PropertyStr, PropertyStrList
 
 
 # PRIVATE ──────────────────────────────────────────────────────────────────────
@@ -108,7 +108,7 @@ def _split_props(properties):
 
     return leaf, nodes
 
-def _node_to_inner_box(node: Node, ignore_empty: bool = True):
+def _node_to_inner_box(node: PropertyDict, ignore_empty: bool = True):
     """
     Recursively format a Node into a nested inner-box structure.
 
@@ -130,7 +130,6 @@ def _node_to_inner_box(node: Node, ignore_empty: bool = True):
 
     # LEAF PROPERTIES FIRST ─────────────────────────────
     for prop in leaf_props:
-
         if isinstance(prop, PropertyStr):
             if prop.value or not ignore_empty:
                 lines.append(f"{prop.name}: {prop.value!r}")
@@ -148,11 +147,15 @@ def _node_to_inner_box(node: Node, ignore_empty: bool = True):
                 for child in prop.nodes:
                     child_box = _node_to_inner_box(child, ignore_empty)
                     lines.extend(_flatten_block(child_box))
-        elif isinstance(prop, PropertyNodeDict):
-            if prop.entries or not ignore_empty:
-                for _, child in prop.entries.items():
-                    child_box = _node_to_inner_box(child, ignore_empty)
-                    lines.extend(_flatten_block(child_box))
+        elif isinstance(prop, PropertyDict):
+            if prop.properties or not ignore_empty:
+                child_box = _node_to_inner_box(prop, ignore_empty)
+                lines.extend(_flatten_block(child_box))
+
+            # if prop.properties or not ignore_empty:
+            #     for _, child in prop.properties.items():
+            #         child_box = _node_to_inner_box(child, ignore_empty)
+            #         lines.extend(_flatten_block(child_box))
     return _inner_box(title, lines)
 
 # PUBLIC ──────────────────────────────────────────────────────────────────────
@@ -190,9 +193,6 @@ def format_node_to_boxed_lines(node, ignore_empty:bool = True, is_default: bool 
 
     # NODE PROPERTIES AFTER ─────────────────────────────
     for prop in node_props:
-        if isinstance(prop, Node):
-            if prop.properties or not ignore_empty:
-                lines.extend(format_node_to_boxed_lines(prop, ignore_empty))
         if isinstance(prop, PropertyNodeList):
             if prop.nodes or not ignore_empty:
                 inner_lines = []
@@ -202,19 +202,13 @@ def format_node_to_boxed_lines(node, ignore_empty:bool = True, is_default: bool 
 
                 prop_box = _inner_box(prop.name, inner_lines)
                 lines.extend(_flatten_block(prop_box))
-        elif isinstance(prop, PropertyNodeDict):
-            if prop.entries or not ignore_empty:
-                inner_lines = []
-                for _, child in prop.entries.items():
-                    child_box = _node_to_inner_box(child, ignore_empty)
-                    inner_lines.extend(_flatten_block(child_box))
-
-                prop_box = _inner_box(prop.name, inner_lines)
-                lines.extend(_flatten_block(prop_box))
-
+        elif isinstance(prop, PropertyDict):
+            if prop.properties or not ignore_empty:
+                child_box = _node_to_inner_box(prop, ignore_empty)
+                lines.extend(_flatten_block(child_box))
     return _box(title, lines)
 
-def format_node_to_lines(node: Node, ignore_empty:bool = True, indent: int = 0) -> list[str]:
+def format_node_to_lines(node: PropertyDict, ignore_empty:bool = True, indent: int = 0) -> list[str]:
     """
     Format a Node into a plain indented tree representation.
 
@@ -256,17 +250,17 @@ def format_node_to_lines(node: Node, ignore_empty:bool = True, indent: int = 0) 
 
                 for child in prop.nodes:
                     lines.extend(format_node_to_lines(child, ignore_empty, indent + 2))
-        elif isinstance(prop, PropertyNodeDict):
-            if prop.entries or not ignore_empty:
+        elif isinstance(prop, PropertyDict):
+            if prop.properties or not ignore_empty:
                 lines.append(f"{prefix}  {prop.name}:")
 
-                for key, child in prop.entries.items():
+                for key, child in prop.properties.items():
                     lines.append(f"{prefix}    {key}:")
                     lines.extend(format_node_to_lines(child, ignore_empty, indent + 3))
 
     return lines
 
-def format_node_to_json(node: Node, ignore_empty:bool = True) -> dict:
+def format_node_to_json(node: PropertyDict, ignore_empty:bool = True) -> dict:
     """
     Format a Node into a JSON-compatible dictionary.
 
@@ -298,10 +292,10 @@ def format_node_to_json(node: Node, ignore_empty:bool = True) -> dict:
                 result[prop_name] = []
                 for node in prop.nodes:
                     result[prop_name].append(format_node_to_json(node))
-        elif isinstance(prop, PropertyNodeDict):
-            if prop.entries or not ignore_empty:
+        elif isinstance(prop, PropertyDict):
+            if prop.properties or not ignore_empty:
                 result[prop_name] = {}
-                for node_name, node in prop.entries.items():
+                for node_name, node in prop.properties.items():
                     result[prop_name][node_name] = format_node_to_json(node)
 
     return result

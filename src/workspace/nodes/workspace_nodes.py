@@ -1,7 +1,7 @@
-from toolchain.nodes.node import Node
+from toolchain.nodes.node import PropertyDict
 
 
-class SourceNode(Node):
+class SourceNode(PropertyDict):
     """Represents a source file entry.
 
     - src/main.cpp
@@ -9,7 +9,7 @@ class SourceNode(Node):
     pass
 
 
-class DependencyNode(Node):
+class DependencyNode(PropertyDict):
     """Represents a dependency entry.
 
     - my_lib
@@ -18,7 +18,7 @@ class DependencyNode(Node):
     pass
 
 
-class KissProjectTypeNode(Node):
+class KissProjectTypeNode(PropertyDict):
     """Represents a project entry in kiss.yaml (bin, lib, dyn or custom type).
 
     - name: my_bin
@@ -31,7 +31,7 @@ class KissProjectTypeNode(Node):
     pass
 
 
-class KissWorkspaceNode(Node):
+class KissWorkspaceNode(PropertyDict):
     """Represents the root of kiss.yaml.
 
     Contains all project entries grouped by type,

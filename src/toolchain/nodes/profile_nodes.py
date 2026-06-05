@@ -1,6 +1,6 @@
-from .node import Node, PropertyBool
+from .node import PropertyDict, PropertyBool
 
-class ProfileCompilerOverrideNode(Node):
+class ProfileCompilerOverrideNode(PropertyDict):
     """Represents a compiler-specific override block inside a profile.
 
     msvc-compiler:
@@ -9,7 +9,7 @@ class ProfileCompilerOverrideNode(Node):
     """
     pass
 
-class ProfileLinkerOverrideNode(Node):
+class ProfileLinkerOverrideNode(PropertyDict):
     """Represents a linker-specific override block inside a profile.
 
     msvc-linker:
@@ -18,7 +18,7 @@ class ProfileLinkerOverrideNode(Node):
     pass
 
 
-class ProfileCompilersNode(Node):
+class ProfileCompilersNode(PropertyDict):
     """Represents the 'compilers:' block inside a profile.
 
     compilers:
@@ -30,7 +30,7 @@ class ProfileCompilersNode(Node):
     pass
 
 
-class ProfileLinkerNode(Node):
+class ProfileLinkerNode(PropertyDict):
     """Represents the 'linkers:' block inside a profile.
 
     linkers:
@@ -41,7 +41,7 @@ class ProfileLinkerNode(Node):
     pass
 
 
-class ProfileProjectTypeNode(Node):
+class ProfileProjectTypeNode(PropertyDict):
     """Represents a project-type override block inside a profile.
 
     dyn:
@@ -52,7 +52,7 @@ class ProfileProjectTypeNode(Node):
     """
     pass
 
-class ProfileNode(Node):
+class ProfileNode(PropertyDict):
     """Represents a profile entry.
 
     - name: debug

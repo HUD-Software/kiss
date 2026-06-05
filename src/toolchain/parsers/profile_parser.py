@@ -1,5 +1,5 @@
 import yaml
-from toolchain.nodes.node import PropertyNodeDict, PropertyNodeList
+from toolchain.nodes.node import PropertyDict, PropertyNodeList
 from toolchain.nodes.profile_nodes import ProfileCompilerOverrideNode, ProfileCompilersNode, ProfileLinkerNode, ProfileLinkerOverrideNode, ProfileNode, ProfileProjectTypeNode
 from toolchain.parsers.parse_utils import parse_property
 
@@ -36,7 +36,7 @@ def parse_profile_compilers(data: dict) -> ProfileCompilersNode:
         elif isinstance(value, dict):
             overrides[key] = parse_compiler_override(key, value)
     if overrides:
-        node.add_property(PropertyNodeDict("overrides", overrides))
+        node.add_property(PropertyDict("overrides", overrides))
     return node
 
 
@@ -51,7 +51,7 @@ def parse_profile_linkers(data: dict) -> ProfileLinkerNode:
         elif isinstance(value, dict):
             overrides[key] = parse_linker_override(key, value)
     if overrides:
-        node.add_property(PropertyNodeDict("overrides", overrides))
+        node.add_property(PropertyDict("overrides", overrides))
     return node
 
 
@@ -77,7 +77,7 @@ def parse_profile(data: dict) -> ProfileNode:
             continue
         if key == "projects" and isinstance(value, dict):
             projects = {k: parse_profile_project(k, v or {}) for k, v in value.items()}
-            node.add_property(PropertyNodeDict("projects", projects))
+            node.add_property(PropertyDict("projects", projects))
             continue
         prop = parse_property(key, value)
         if prop:

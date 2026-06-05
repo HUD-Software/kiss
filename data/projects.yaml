@@ -6,7 +6,7 @@ projects:
       enable-features: [] # Compiler feature to enable when compiling this project
       defines: [KISS_BIN] # Preprocessor definitions to add when compiling with this project
       msvc-compiler:
-        enable-features: []
+        enable-features: [T]
         defines: []
     linkers:
       enable-features: [] # Linker feature to enable when compiling this project

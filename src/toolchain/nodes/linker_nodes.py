@@ -1,8 +1,8 @@
 
 
-from .node import Node, PropertyBool
+from .node import PropertyDict, PropertyBool
 
-class LinkerFeatureArgsNode(Node):
+class LinkerFeatureArgsNode(PropertyDict):
     """Represents the 'args' block inside a linker feature with arguments.
 
     args:
@@ -14,7 +14,7 @@ class LinkerFeatureArgsNode(Node):
     pass
 
 
-class LinkerFeatureNode(Node):
+class LinkerFeatureNode(PropertyDict):
     """Represents a single linker feature entry.
 
     - name: LINK
@@ -24,12 +24,12 @@ class LinkerFeatureNode(Node):
     """
     pass
 
-class LinkerFeatureRuleNode(Node):
+class LinkerFeatureRuleNode(PropertyDict):
     """Represents a feature rule (only-one or incompatible)."""
     pass
 
 
-class LinkerNode(Node):
+class LinkerNode(PropertyDict):
     """Represents a linker entry (abstract or concrete).
     e.g. msvc-linker, link, lld-link
     """

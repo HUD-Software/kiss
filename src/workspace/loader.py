@@ -75,8 +75,8 @@ def load_workspace(path: str) -> KissWorkspaceNode:
     if projects_by_type:
         type_dict = {}
         for type_name, project_list in projects_by_type.items():
-            from toolchain.nodes.node import Node
-            container = Node(name=type_name)
+            from toolchain.nodes.node import PropertyDict
+            container = PropertyDict(name=type_name)
             container.add_property(PropertyNodeList("entries", project_list))
             type_dict[type_name] = container
         workspace.add_property(PropertyNodeDict("project-entries", type_dict))

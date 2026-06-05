@@ -1,6 +1,6 @@
-from .node import Node, PropertyBool, PropertyNodeList, PropertyStr
+from .node import PropertyDict, PropertyBool, PropertyNodeList, PropertyStr
 
-class ProjectTypeCompilerNode(Node):
+class ProjectTypeCompilerNode(PropertyDict):
     """Represents the 'compilers:' block inside a project type.
 
     compilers:
@@ -10,8 +10,8 @@ class ProjectTypeCompilerNode(Node):
     """
     pass
 
-class ProjectTypeCompilerOverrideNode(Node):
-    """Represents the 'compilers:' block inside a project type.
+class ProjectTypeCompilerOverrideNode(PropertyDict):
+    """Represents the linker override block inside 'compilers:' block inside a project type.
 
     compilers:
       enable-features: []
@@ -21,7 +21,7 @@ class ProjectTypeCompilerOverrideNode(Node):
     pass
 
 
-class ProjectTypeLinkerNode(Node):
+class ProjectTypeLinkerNode(PropertyDict):
     """Represents the 'linkers:' block inside a project type.
 
     linkers:
@@ -30,8 +30,17 @@ class ProjectTypeLinkerNode(Node):
     """
     pass
 
+class ProjectTypeLinkerOverrideNode(PropertyDict):
+    """Represents the 'linkers:' block inside a project type.
 
-class ProjectTypeNode(Node):
+    compilers:
+      enable-features: []
+      defines: [KISS_BIN]
+      ...
+    """
+    pass
+
+class ProjectTypeNode(PropertyDict):
     """Represents a project type entry (bin, lib, dyn or custom).
 
     - name: my_bin

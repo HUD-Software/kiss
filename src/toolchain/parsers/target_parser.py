@@ -1,5 +1,5 @@
 import yaml
-from toolchain.nodes.node import PropertyNodeList, PropertyNodeDict
+from toolchain.nodes.node import PropertyDict, PropertyNodeList
 from toolchain.nodes.target_nodes import (
     TargetNode, TargetLinkerNode,
     TargetCompilerOverrideNode, TargetCompilerFeatureOverrideNode,
@@ -48,7 +48,7 @@ def parse_target(data: dict) -> TargetNode:
             continue
         if key == "compilers" and isinstance(value, dict):
             overrides = {k: parse_target_compiler_override(k, v or {}) for k, v in value.items()}
-            node.add_property(PropertyNodeDict("overrides", overrides))
+            node.add_property(PropertyDict("overrides", overrides))
             continue
         prop = parse_property(key, value)
         if prop:

@@ -1,21 +1,21 @@
-from toolchain.nodes.node import Node, PropertyBool, PropertyStr
+from toolchain.nodes.node import PropertyDict, PropertyBool, PropertyStr
 
 
-class CompilerLinkerOverrideNode(Node):
+class CompilerLinkerOverrideNode(PropertyDict):
     """Represents a per-linker feature override inside a compiler feature.
     e.g. link: { enable-features: [OPT_LEVEL_0] }
     """
     pass
 
 
-class CompilerFeatureLinkerNode(Node):
+class CompilerFeatureLinkerNode(PropertyDict):
     """Represents the 'linkers:' block inside a compiler feature.
     Contains global enable-features + per-linker overrides.
     """
     pass
 
 
-class CompilerFeatureNode(Node):
+class CompilerFeatureNode(PropertyDict):
     """Represents a single compiler feature entry.
     e.g. - name: OPT_LEVEL_0
            flags: [/Od]
@@ -25,12 +25,12 @@ class CompilerFeatureNode(Node):
     pass
 
 
-class CompilerFeatureRuleNode(Node):
+class CompilerFeatureRuleNode(PropertyDict):
     """Represents a feature rule (only-one or incompatible)."""
     pass
 
 
-class CompilerNode(Node):
+class CompilerNode(PropertyDict):
     """Represents a compiler entry (abstract or concrete).
     e.g. msvc-compiler, cl, clangcl
     """

@@ -1,7 +1,7 @@
 import yaml
 from toolchain.nodes.node import (
-    PropertyStr, PropertyStrList,
-    PropertyNodeList, PropertyNodeDict,
+    PropertyDict, PropertyStr, PropertyStrList,
+    PropertyNodeList,
 )
 from toolchain.nodes.compiler_nodes import (
     CompilerLinkerOverrideNode, CompilerNode, CompilerFeatureNode, CompilerFeatureLinkerNode, CompilerFeatureRuleNode
@@ -9,7 +9,7 @@ from toolchain.nodes.compiler_nodes import (
 from toolchain.parsers.parse_utils import parse_property
 
 
-def parse_linker_overrides(data: dict) -> CompilerFeatureLinkerNode:
+def parse_linker_overrides(name: str, data: dict) -> CompilerFeatureLinkerNode:
     """Parse the 'linkers:' block inside a compiler feature.
 
     linkers:
@@ -19,24 +19,42 @@ def parse_linker_overrides(data: dict) -> CompilerFeatureLinkerNode:
       lld-link:
         enable-features: [OPT_LEVEL_0]
     """
-    node     = CompilerFeatureLinkerNode(name="linkers")
+    node     = CompilerFeatureLinkerNode(name)
     overrides: dict = {}
 
     for key, value in data.items():
-        if key == "enable-features":
-            node.add_property(PropertyStrList("enable-features", value or []))
+        prop = parse_property(key, value)
+        if prop:
+            node.add_property(prop)
         elif isinstance(value, dict):
-            override = CompilerLinkerOverrideNode(name=key)
-            for k, v in value.items():
-                prop = parse_property(k, v)
+            override = CompilerFeatureLinkerNode(key)
+            for key, value in value.items():
+                prop = parse_property(key, value)
                 if prop:
                     override.add_property(prop)
             overrides[key] = override
-
     if overrides:
-        node.add_property(PropertyNodeDict("overrides", overrides))
-
+        node.add_property(PropertyDict("overrides", overrides))
     return node
+
+    # node     = CompilerFeatureLinkerNode(name="linkers")
+    # overrides: dict = {}
+
+    # for key, value in data.items():
+    #     if key == "enable-features":
+    #         node.add_property(PropertyStrList("enable-features", value or []))
+    #     elif isinstance(value, dict):
+    #         override = CompilerLinkerOverrideNode(name=key)
+    #         for k, v in value.items():
+    #             prop = parse_property(k, v)
+    #             if prop:
+    #                 override.add_property(prop)
+    #         overrides[key] = override
+
+    # if overrides:
+    #     node.add_property(PropertyDict("overrides", overrides))
+
+    # return node
 
 
 def parse_feature_rule(data: dict) -> CompilerFeatureRuleNode:
@@ -70,15 +88,14 @@ def parse_compiler_feature(data: dict) -> CompilerFeatureNode:
         link:
           enable-features: [OPT_LEVEL_0]
     """
-
-    node = CompilerFeatureNode(name=data["name"])
+    node = CompilerFeatureNode(data["name"])
 
     for key, value in data.items():
         if key == "name":
             continue
         if key == "linkers" and isinstance(value, dict):
-            linker_node = parse_linker_overrides(value)
-            node.add_property(PropertyNodeList("linkers", [linker_node]))
+            linker_prop = parse_linker_overrides(key, value)
+            node.add_property(linker_prop)
             continue
         prop = parse_property(key, value)
         if prop:
@@ -89,7 +106,7 @@ def parse_compiler_feature(data: dict) -> CompilerFeatureNode:
 def parse_compiler(data: dict) -> CompilerNode:
     """Parse a single compiler entry."""
 
-    node = CompilerNode(name=data["name"])
+    node = CompilerNode(data["name"])
     for key, value in data.items():
         if key == "name":
             continue

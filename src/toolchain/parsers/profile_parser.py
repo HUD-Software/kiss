@@ -36,7 +36,7 @@ def parse_profile_compilers(data: dict) -> ProfileCompilersNode:
         elif isinstance(value, dict):
             overrides[key] = parse_compiler_override(key, value)
     if overrides:
-        node.add_property(PropertyNodeDict("compiler-overrides", overrides))
+        node.add_property(PropertyNodeDict("overrides", overrides))
     return node
 
 
@@ -51,7 +51,7 @@ def parse_profile_linkers(data: dict) -> ProfileLinkerNode:
         elif isinstance(value, dict):
             overrides[key] = parse_linker_override(key, value)
     if overrides:
-        node.add_property(PropertyNodeDict("linker-overrides", overrides))
+        node.add_property(PropertyNodeDict("overrides", overrides))
     return node
 
 

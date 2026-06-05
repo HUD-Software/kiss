@@ -9,8 +9,12 @@
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}",
             "args": [
-                "generate",
-                "my_bin"
+                "-d",
+                "tests",
+                "list",
+                "compilers",
+                "--mode",
+                "boxed"
             ],
             //-> List projects in my_bin without dependencies
             // "args": [

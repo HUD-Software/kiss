@@ -60,6 +60,11 @@ linkers:
 
   - name: link
     extends: msvc-linker
+    features:
+      # Test
+      - name: TEST
+        description: Test
+        flags: [/TesT, /QQQ]
 
   - name: lld-link
     extends: msvc-linker

@@ -1,11 +1,22 @@
 from .node import Node, PropertyBool, PropertyNodeList, PropertyStr
 
-class ProjectTypeCompilersNode(Node):
+class ProjectTypeCompilerNode(Node):
     """Represents the 'compilers:' block inside a project type.
 
     compilers:
       enable-features: []
       defines: [KISS_BIN]
+      ...
+    """
+    pass
+
+class ProjectTypeCompilerOverrideNode(Node):
+    """Represents the 'compilers:' block inside a project type.
+
+    compilers:
+      enable-features: []
+      defines: [KISS_BIN]
+      ...
     """
     pass
 
@@ -15,6 +26,7 @@ class ProjectTypeLinkerNode(Node):
 
     linkers:
       enable-features: []
+      ...
     """
     pass
 
@@ -46,7 +58,7 @@ class ProjectTypeNode(Node):
         return prop.value if prop else ""
     
     @property
-    def compilers(self) -> list[ProjectTypeCompilersNode]:
+    def compilers(self) -> list[ProjectTypeCompilerNode]:
         prop = self.get_property_as("compilers", PropertyNodeList)
         if prop.nodes:
             return [c for c in prop.nodes]

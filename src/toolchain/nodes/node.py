@@ -11,8 +11,6 @@ The child (self) drives the merge — it knows what it wants from the parent.
 Default behaviors:
   Property / PropertyStr / PropertyBool  → child replaces parent
   PropertyStrList                        → child replaces parent (override)
-  PropertyStrListAppend                  → append child items to parent
-  PropertyStrListRemove                  → remove child items from parent
   PropertyNodeList                       → merged by 'name' key
   PropertyNodeDict                       → merged by dict key
 
@@ -97,35 +95,52 @@ class PropertyStrList(Property):
     def merge_with_parent(self, parent: PropertyStrList) -> PropertyStrList:
         return PropertyStrList(self.name, list(self.values))
     
-    @staticmethod
-    def _append(base: list[str], extra: list[str]) -> list[str]:
-        result = list(base)
-        for item in extra:
-            if item not in result:
-                result.append(item)
-        return result
+    def apply_modifier_prop(self, mod : PropertyStrListModifier):
+        if mod.operation == StrListModifierOperation.APPEND:
+            for value in mod.values:
+                if value not in self.values:
+                    self.values.append(value)
+        elif mod.operation == StrListModifierOperation.REMOVE:
+           for value in mod.values:
+                if value in self.values:
+                    self.values.remove(value)
 
     def __repr__(self):
         return f"PropertyStrList(name={self.name!r}, values={self.values})"
 
+from enum import Enum
+class StrListModifierOperation(Enum):
+    APPEND = "append"
+    REMOVE = "remove"
 
-class PropertyStrListAppend(PropertyStrList):
-    """Created by parser from 'append-foo'. Appends to parent list."""
+class PropertyStrListModifier(PropertyStrList):
+    def __init__(self, name, list_name, values,  operation: StrListModifierOperation):
+        super().__init__(name, values, False)
+        self.list_name = list_name
+        self.operation = operation
+    
+    def __repr__(self):
+        return (
+            f"PropertyStrListModifier("
+            f"name={self.name!r}, "
+            f"values={self.values}, "
+            f"operation={self.operation.value!r})"
+        )
 
-    def merge_with_parent(self, parent: PropertyStrList) -> PropertyStrList:
-        merged = self._append(parent.values, self.values)
-        return PropertyStrList(self.name, merged)  # consumed → plain list
+# class PropertyNode(Property):
+#     def __init__(self, name: str, node: Node, inheritable : bool = True):
+#         super().__init__(name, inheritable)
+#         self.node = node
 
-
-class PropertyStrListRemove(PropertyStrList):
-    """Created by parser from 'remove-foo'. Removes items from parent list."""
-
-    def merge_with_parent(self, parent: PropertyStrList) -> PropertyStrList:
-        to_remove = set(self.values)
-        remaining = [v for v in parent.values if v not in to_remove]
-        return PropertyStrList(self.name, remaining)  # consumed → plain list
-
-
+#     def clone(self) -> PropertyBool:
+#         return PropertyNode(self.name, self.node.clone())
+    
+#     def merge_with_parent(self, parent: PropertyNode) -> PropertyNode:
+#         return PropertyNode(self.name, self.node.merge_with_parent(parent), self.inheritable)
+    
+#     def __repr__(self):
+#         return f"PropertyNode(name={self.name!r}, node={self.node!r})"
+    
 # ── Node lists ────────────────────────────────────────────────────────────────
 
 class PropertyNodeList(Property):
@@ -170,7 +185,7 @@ class PropertyNodeDict(Property):
     def __init__(self, name: str, entries: dict):
         super().__init__(name)
         self.entries: dict[str, Node] = dict(entries)
-
+    
     def merge_with_parent(self, parent: PropertyNodeDict) -> PropertyNodeDict:
         result = {}
         # Check all parents entries
@@ -200,14 +215,14 @@ class PropertyNodeDict(Property):
 from typing import Optional, TypeVar, Type
 T = TypeVar("T", bound=Property)
 
-class Node(ABC):
+class Node(Property):
     """
     Base class for all Kiss nodes.
     get_property() returns the last property with the given name.
     """
 
-    def __init__(self, name: str):
-        self.name = name
+    def __init__(self, name: str, inheritable = True):
+        super().__init__(name, inheritable)
         self.properties: dict[str, Property] = {}
 
     def clone(self) -> Node:
@@ -231,79 +246,98 @@ class Node(ABC):
             return prop
         return None
 
-    # def merge(self, child: "Node") -> "Node":
-    #     """
-    #     Merge self with child.
-    #     Child drives every property merge via merge_with_parent().
-    #     NON_INHERITABLE_KEYS are taken from child only.
-    #     Multiple ops on the same key are applied sequentially in order.
-    #     """
-    #     result = child.__class__(child.name)
-
-    #     # Non-inheritable: from child only
-    #     for prop in child._props:
-    #         if prop.name in NON_INHERITABLE_KEYS:
-    #             result.add_property(prop)
-
-    #     # Build parent lookup (last value per key)
-    #     parent_lookup: dict[str, Property] = {
-    #         p.name: p for p in self._props
-    #         if p.name not in NON_INHERITABLE_KEYS
-    #     }
-
-    #     # Apply child ops in declaration order, tracking running result per key
-    #     running: dict[str, Property] = {}
-    #     touched: set[str] = set()
-
-    #     for prop in child._props:
-    #         if prop.name in NON_INHERITABLE_KEYS:
-    #             continue
-    #         key = prop.name
-
-    #         # Current base: previous op result, or parent value, or empty placeholder
-    #         if key in running:
-    #             current = running[key]
-    #         elif key in parent_lookup:
-    #             current = parent_lookup[key]
-    #         else:
-    #             # No parent — treat as empty base of same type
-    #             current = prop.__class__(key, [] if hasattr(prop, 'values') else {})
-
-    #         running[key] = prop.merge_with_parent(current)
-    #         touched.add(key)
-
-    #     # Add all resolved child ops
-    #     for key, prop in running.items():
-    #         result.add_property(prop)
-
-    #     # Inherit parent keys not touched by any child op
-    #     for key, prop in parent_lookup.items():
-    #         if key not in touched:
-    #             result.add_property(prop)
-
-    #     return result
 
     def merge_with_parent(self, parent: Node) -> Node:
+        """
+        Merge the current node (child) with a parent node and returns a new resolved node.
+
+        The merge follows inheritance rules:
+        - Properties defined in the parent are inherited by default.
+        - If the child redefines a property, it overrides or merges with the parent version.
+        - Non-inheritable properties (e.g. abstract markers or internal modifiers)
+        are ignored during inheritance.
+        - List properties can be post-processed using explicit modifier properties
+        (append/remove), allowing fine-grained inheritance control.
+
+        The merge process is performed in three steps:
+
+        1. Parent inheritance pass:
+        - Iterate over all parent properties.
+        - If the child defines the same property, merge both definitions.
+        - Otherwise, clone and inherit the parent property.
+        - Skip properties marked as non-inheritable.
+
+        2. Child-only properties collection:
+        - Iterate over child properties.
+        - Direct properties not present in the parent are copied directly.
+        - Modifier properties (e.g. PropertyStrListModifier) are NOT added directly;
+            they are collected for later application.
+
+        3. Post-processing of list modifiers:
+        - Apply all collected list modifiers on the merged result.
+        - This allows child nodes to:
+            - append values to inherited lists
+            - remove values from inherited lists
+        - If the target list property does not exist yet, it is created.
+
+        This design ensures that:
+        - inheritance remains predictable and deterministic
+        - child nodes can refine inherited list-based properties
+        - modifier logic is decoupled from structural merging
+        """
+        
         result = self.__class__(self.name)
+
         # For all property that are in parents
         # If in self (child), merge it
         # If not in self (child), add it
         for name, parent_prop in parent.properties.items():
-            # Do not inherite property if not inheritable
+            # Do not inherit property if not inheritable (e.g. PropertyStrListModifier, is_abstract)
             if not parent_prop.inheritable:
                 continue
+
             self_prop = self.get_property(name)
             if self_prop:
                 result.add_property(self_prop.merge_with_parent(parent_prop))
             else:
                 result.add_property(parent_prop.clone())
-                
 
-        # For all property that are in self (child) and not is parent
-        # Keep it in self (child)
-        for name, self_prop in self.properties.items(): 
-            if name not in parent.properties: 
+        # List of all modifiers present in self (child)
+        list_mod_props = {}
+
+        # Collect child-only properties and list modifiers
+        for name, self_prop in self.properties.items():
+            if isinstance(self_prop, PropertyStrListModifier):
+                list_mod_props.setdefault(self_prop.operation, []).append(self_prop)
+
+            elif name not in parent.properties:
                 result.add_property(self_prop.clone())
+
+        # Apply append modifiers
+        for append_mod_prop in list_mod_props.get(StrListModifierOperation.APPEND, []):
+            list_prop_to_modify = result.get_property_as(
+                append_mod_prop.list_name,
+                PropertyStrList
+            )
+
+            if not list_prop_to_modify:
+                list_prop_to_modify = PropertyStrList(append_mod_prop.list_name, [])
+                result.add_property(list_prop_to_modify)
+
+            list_prop_to_modify.apply_modifier_prop(append_mod_prop)
+
+        # Apply remove modifiers
+        for remove_mod_prop in list_mod_props.get(StrListModifierOperation.REMOVE, []):
+            list_prop_to_modify = result.get_property_as(
+                remove_mod_prop.list_name,
+                PropertyStrList
+            )
+
+            if not list_prop_to_modify:
+                list_prop_to_modify = PropertyStrList(remove_mod_prop.list_name, [])
+                result.add_property(list_prop_to_modify)
+
+            list_prop_to_modify.apply_modifier_prop(remove_mod_prop)
 
         return result
 

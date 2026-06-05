@@ -190,6 +190,9 @@ def format_node_to_boxed_lines(node, ignore_empty:bool = True, is_default: bool 
 
     # NODE PROPERTIES AFTER ─────────────────────────────
     for prop in node_props:
+        if isinstance(prop, Node):
+            if prop.properties or not ignore_empty:
+                lines.extend(format_node_to_boxed_lines(prop, ignore_empty))
         if isinstance(prop, PropertyNodeList):
             if prop.nodes or not ignore_empty:
                 inner_lines = []

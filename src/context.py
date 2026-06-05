@@ -167,7 +167,7 @@ def load_context(directory: str) -> KissContext:
 
     compilers     = resolve_extends(load_compilers(str(data_dir / "compilers.yaml")))
     linkers       = resolve_extends(load_linkers(str(data_dir / "linkers.yaml")))
-    project_types = load_projects(str(data_dir / "projects.yaml"))
+    project_types = resolve_extends(load_projects(str(data_dir / "projects.yaml")))
     targets       = load_targets(str(data_dir / "targets.yaml"))
 
     # Load kiss.yaml if present
@@ -177,15 +177,16 @@ def load_context(directory: str) -> KissContext:
         with open(kiss_yaml, encoding="utf-8") as f:
             kiss_data = yaml.safe_load(f) or {}
 
-    # Built-in profiles + custom from kiss.yaml
+    # Load profile defined in the user kiss.yaml and resolve extends
     profiles = resolve_extends(load_profiles(str(data_dir / "profiles.yaml")))
     if kiss_data.get("profiles"):
-        custom = [parse_profile(p) for p in kiss_data["profiles"]]
-        profiles = resolve_extends(profiles + custom)
+        user_profiles = [parse_profile(p) for p in kiss_data["profiles"]]
+        profiles = resolve_extends(profiles + user_profiles)
 
-    # Custom project types from kiss.yaml
+    # Load project types defined in the user kiss.yaml
     if kiss_data.get("projects"):
-        project_types = project_types + [parse_project(p) for p in kiss_data["projects"]]
+        user_projects = [parse_project(p) for p in kiss_data["projects"]]
+        project_types = resolve_extends(project_types + user_projects)
 
     return KissContext(
         directory     = project_dir,

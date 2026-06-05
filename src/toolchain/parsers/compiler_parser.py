@@ -34,13 +34,14 @@ def parse_linker_overrides(data: dict) -> CompilerFeatureLinkerNode:
             overrides[key] = override
 
     if overrides:
-        node.add_property(PropertyNodeDict("linker-overrides", overrides))
+        node.add_property(PropertyNodeDict("overrides", overrides))
 
     return node
 
 
 def parse_feature_rule(data: dict) -> CompilerFeatureRuleNode:
     """Parse a single feature rule (only-one or incompatible)."""
+
     if "only-one" in data:
         node = CompilerFeatureRuleNode(name=data["only-one"])
         node.add_property(PropertyStr("type", "only-one"))
@@ -69,6 +70,7 @@ def parse_compiler_feature(data: dict) -> CompilerFeatureNode:
         link:
           enable-features: [OPT_LEVEL_0]
     """
+
     node = CompilerFeatureNode(name=data["name"])
 
     for key, value in data.items():
@@ -86,8 +88,8 @@ def parse_compiler_feature(data: dict) -> CompilerFeatureNode:
 
 def parse_compiler(data: dict) -> CompilerNode:
     """Parse a single compiler entry."""
-    node = CompilerNode(name=data["name"])
 
+    node = CompilerNode(name=data["name"])
     for key, value in data.items():
         if key == "name":
             continue

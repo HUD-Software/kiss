@@ -28,3 +28,12 @@ projects:
       defines: [KISS_DYN_LIB] # Preprocessor definitions to add when compiling with this project
     linkers:
       enable-features: [] # Linker feature to enable when compiling this project
+  - name: test
+    description: Test binary
+    icon: 🧪
+    extends: bin
+    compilers:
+      append-defines: [KISS_TEST]
+      remove-enable-features: [KISS_BIN]
+    linkers:
+      enable-features: []

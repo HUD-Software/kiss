@@ -1,4 +1,4 @@
-from toolchain.nodes.node import PropertyDict
+from toolchain.nodes.property import PropertyDict
 
 
 class SourceNode(PropertyDict):

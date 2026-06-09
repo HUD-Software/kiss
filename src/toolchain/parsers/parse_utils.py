@@ -12,7 +12,7 @@ Key detection rules (applied in order):
   foo: dict   → parsed recursively as a child Node
 """
 
-from toolchain.nodes.node import (
+from toolchain.nodes.property import (
     Property,
     PropertyStr,
     PropertyBool,

@@ -1,5 +1,5 @@
 import yaml
-from toolchain.nodes.node import PropertyStr, PropertyStrList, PropertyNodeList, PropertyNodeDict
+from toolchain.nodes.property import PropertyStr, PropertyStrList, PropertyNodeList, PropertyNodeDict
 from toolchain.parsers.profile_parser import parse_profile
 from toolchain.parsers.project_parser import parse_project
 from .nodes.workspace_nodes import KissWorkspaceNode, KissProjectTypeNode, SourceNode, DependencyNode
@@ -75,7 +75,7 @@ def load_workspace(path: str) -> KissWorkspaceNode:
     if projects_by_type:
         type_dict = {}
         for type_name, project_list in projects_by_type.items():
-            from toolchain.nodes.node import PropertyDict
+            from toolchain.nodes.property import PropertyDict
             container = PropertyDict(name=type_name)
             container.add_property(PropertyNodeList("entries", project_list))
             type_dict[type_name] = container

@@ -1,5 +1,5 @@
 import yaml
-from toolchain.nodes.node import PropertyDict, PropertyNodeList
+from toolchain.nodes.property import PropertyDict, PropertyNodeList
 from toolchain.nodes.target_nodes import (
     TargetNode, TargetLinkerNode,
     TargetCompilerOverrideNode, TargetCompilerFeatureOverrideNode,

@@ -1,6 +1,6 @@
 
 from wcwidth import wcswidth
-from toolchain.nodes.node import PropertyDict, PropertyBool,  PropertyNodeList, PropertyStr, PropertyStrList
+from toolchain.nodes.property import PropertyDict, PropertyBool,  PropertyNodeList, PropertyStr, PropertyStrList
 
 
 # PRIVATE ──────────────────────────────────────────────────────────────────────

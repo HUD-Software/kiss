@@ -1,15 +1,15 @@
 import yaml
-from toolchain.nodes.node import (
+from toolchain.nodes.property import (
     PropertyDict, PropertyStr, PropertyStrList,
     PropertyNodeList,
 )
 from toolchain.nodes.compiler_nodes import (
-    CompilerLinkerOverrideNode, CompilerNode, CompilerFeatureNode, CompilerFeatureLinkerNode, CompilerFeatureRuleNode
+    CompilerLinkerOverrideNode, CompilerNode, CompilerFeatureNode, CompilerFeatureLinkersNode, CompilerFeatureRuleNode
 )
 from toolchain.parsers.parse_utils import parse_property
 
 
-def parse_linker_overrides(name: str, data: dict) -> CompilerFeatureLinkerNode:
+def parse_feature_linkers(name: str, data: dict) -> CompilerFeatureLinkersNode:
     """Parse the 'linkers:' block inside a compiler feature.
 
     linkers:
@@ -19,53 +19,34 @@ def parse_linker_overrides(name: str, data: dict) -> CompilerFeatureLinkerNode:
       lld-link:
         enable-features: [OPT_LEVEL_0]
     """
-    node     = CompilerFeatureLinkerNode(name)
-    overrides: dict = {}
+    node     = CompilerFeatureLinkersNode(name, data)
+    overrides = PropertyDict("overrides")
 
     for key, value in data.items():
         prop = parse_property(key, value)
         if prop:
             node.add_property(prop)
         elif isinstance(value, dict):
-            override = CompilerFeatureLinkerNode(key)
-            for key, value in value.items():
-                prop = parse_property(key, value)
+            override = CompilerLinkerOverrideNode(key)
+            for override_key, override_value in value.items():
+                prop = parse_property(override_key, override_value)
                 if prop:
                     override.add_property(prop)
-            overrides[key] = override
-    if overrides:
-        node.add_property(PropertyDict("overrides", overrides))
+            overrides.add_property(override)
+    if overrides.properties:
+        node.add_property(overrides)
     return node
 
-    # node     = CompilerFeatureLinkerNode(name="linkers")
-    # overrides: dict = {}
 
-    # for key, value in data.items():
-    #     if key == "enable-features":
-    #         node.add_property(PropertyStrList("enable-features", value or []))
-    #     elif isinstance(value, dict):
-    #         override = CompilerLinkerOverrideNode(name=key)
-    #         for k, v in value.items():
-    #             prop = parse_property(k, v)
-    #             if prop:
-    #                 override.add_property(prop)
-    #         overrides[key] = override
-
-    # if overrides:
-    #     node.add_property(PropertyDict("overrides", overrides))
-
-    # return node
-
-
-def parse_feature_rule(data: dict) -> CompilerFeatureRuleNode:
+def yaml_parse_feature_rule(data: dict) -> CompilerFeatureRuleNode:
     """Parse a single feature rule (only-one or incompatible)."""
 
     if "only-one" in data:
-        node = CompilerFeatureRuleNode(name=data["only-one"])
+        node = CompilerFeatureRuleNode(data["only-one"])
         node.add_property(PropertyStr("type", "only-one"))
         node.add_property(PropertyStrList("features", data.get("features", [])))
     elif "incompatible" in data:
-        node = CompilerFeatureRuleNode(name=data["incompatible"])
+        node = CompilerFeatureRuleNode(data["incompatible"])
         node.add_property(PropertyStr("type", "incompatible"))
         node.add_property(PropertyStr("feature", data["feature"]))
         node.add_property(PropertyStrList("with", data.get("with", [])))
@@ -74,7 +55,7 @@ def parse_feature_rule(data: dict) -> CompilerFeatureRuleNode:
     return node
 
 
-def parse_compiler_feature(data: dict) -> CompilerFeatureNode:
+def yaml_parse_compiler_feature(data: dict) -> CompilerFeatureNode:
     """Parse a single compiler feature entry.
 
     - name: OPT_LEVEL_0
@@ -94,28 +75,38 @@ def parse_compiler_feature(data: dict) -> CompilerFeatureNode:
         if key == "name":
             continue
         if key == "linkers" and isinstance(value, dict):
-            linker_prop = parse_linker_overrides(key, value)
-            node.add_property(linker_prop)
+            node.add_property(parse_feature_linkers(key, value))
             continue
+        
         prop = parse_property(key, value)
         if prop:
             node.add_property(prop)
     return node
 
 
-def parse_compiler(data: dict) -> CompilerNode:
+def yaml_parse_compiler(data: dict) -> CompilerNode:
     """Parse a single compiler entry."""
-
+    
     node = CompilerNode(data["name"])
+
     for key, value in data.items():
         if key == "name":
             continue
         if key == "features" and isinstance(value, list):
-            node.add_property(PropertyNodeList("features", [parse_compiler_feature(f) for f in value]))
+            features = PropertyDict(key)
+            for f in value:
+                features.add_property(yaml_parse_compiler_feature(f))
+            if features.properties:
+                node.add_property(features)
             continue
         if key == "feature-rules" and isinstance(value, list):
-            node.add_property(PropertyNodeList("feature-rules", [parse_feature_rule(r) for r in value]))
+            feature_rules = PropertyDict("feature-rules")
+            for fr in value:
+                feature_rules.add_property(yaml_parse_feature_rule(fr))
+            if feature_rules.properties:
+                node.add_property(feature_rules)
             continue
+        
         prop = parse_property(key, value)
         if prop:
             node.add_property(prop)
@@ -123,7 +114,13 @@ def parse_compiler(data: dict) -> CompilerNode:
     return node
 
 
-def load_compilers(path: str) -> list[CompilerNode]:
+def load_compilers(path: str) -> dict[str, CompilerNode]:
     with open(path, encoding="utf-8") as f:
         data = yaml.safe_load(f)
-    return [parse_compiler(c) for c in data.get("compilers", [])]
+    compilers = {}
+    for c in data.get("compilers", []):
+        compiler = yaml_parse_compiler(c)
+        compilers[compiler.name] = compiler
+    return compilers
+
+    #return [yaml_parse_compiler(c) for c in data.get("compilers", [])]

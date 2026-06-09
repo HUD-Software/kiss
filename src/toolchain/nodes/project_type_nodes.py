@@ -1,4 +1,4 @@
-from .node import PropertyDict, PropertyBool, PropertyNodeList, PropertyStr
+from .property import PropertyDict, PropertyBool, PropertyNodeList, PropertyStr
 
 class ProjectTypeCompilerNode(PropertyDict):
     """Represents the 'compilers:' block inside a project type.

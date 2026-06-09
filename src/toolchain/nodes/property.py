@@ -172,7 +172,7 @@ class PropertyNodeList(Property):
 
         return PropertyNodeList(self.name, result)
 
-    def clone(self) -> "PropertyNodeList":
+    def clone(self) -> "PropertyNodeList":  
         return PropertyNodeList(self.name, [n.clone() for n in self.nodes])
     
     def __repr__(self):
@@ -318,9 +318,9 @@ class PropertyDict(Property):
     get_property() returns the last property with the given name.
     """
 
-    def __init__(self, name: str, properties:dict[str, Property] = None, inheritable = True):
+    def __init__(self, name: str, inheritable = True):
         super().__init__(name, inheritable)
-        self.properties: dict[str, Property] = properties if properties else {}
+        self.properties: dict[str, Property] = {}
 
     def clone(self) -> PropertyDict:
         result = self.__class__(self.name)
@@ -440,3 +440,5 @@ class PropertyDict(Property):
 
     def __repr__(self):
         return f"{self.__class__.__name__}(name={self.name!r}, properties={list(self.properties.keys())})"
+
+

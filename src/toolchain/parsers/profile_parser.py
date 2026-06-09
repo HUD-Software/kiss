@@ -1,5 +1,5 @@
 import yaml
-from toolchain.nodes.node import PropertyDict, PropertyNodeList
+from toolchain.nodes.property import PropertyDict, PropertyNodeList
 from toolchain.nodes.profile_nodes import ProfileCompilerOverrideNode, ProfileCompilersNode, ProfileLinkerNode, ProfileLinkerOverrideNode, ProfileNode, ProfileProjectTypeNode
 from toolchain.parsers.parse_utils import parse_property
 

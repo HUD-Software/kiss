@@ -1,5 +1,5 @@
 import yaml
-from toolchain.nodes.node import PropertyDict
+from toolchain.nodes.property import PropertyDict
 from toolchain.nodes.project_type_nodes import ProjectTypeCompilerOverrideNode, ProjectTypeLinkerOverrideNode, ProjectTypeNode, ProjectTypeCompilerNode, ProjectTypeLinkerNode
 from toolchain.parsers.parse_utils import parse_property
 

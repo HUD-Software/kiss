@@ -1,4 +1,4 @@
-from .node import PropertyDict, PropertyBool
+from .property import PropertyDict, PropertyBool
 
 class ProfileCompilerOverrideNode(PropertyDict):
     """Represents a compiler-specific override block inside a profile.

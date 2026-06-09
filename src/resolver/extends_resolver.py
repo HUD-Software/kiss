@@ -12,7 +12,7 @@ The resolver itself is now only responsible for:
 All merge semantics live in the Property subclasses (node.py).
 """
 
-from toolchain.nodes.node import PropertyDict
+from toolchain.nodes.property import PropertyDict
 
 
 def _resolve_chain(name: str, index: dict[str, PropertyDict], visited: set, resolved: dict[str, PropertyDict]) -> PropertyDict:

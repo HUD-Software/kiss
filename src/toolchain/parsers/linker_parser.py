@@ -1,11 +1,11 @@
 import yaml
-from toolchain.nodes.node import PropertyStr, PropertyStrList, PropertyNodeList
+from toolchain.nodes.property import PropertyStr, PropertyStrList, PropertyNodeList
 from toolchain.nodes.linker_nodes import LinkerNode, LinkerFeatureNode, LinkerFeatureArgsNode, LinkerFeatureRuleNode
 from toolchain.parsers.parse_utils import parse_property
 
 
 def parse_linker_feature_args(data: dict) -> LinkerFeatureArgsNode:
-    node = LinkerFeatureArgsNode(name="args")
+    node = LinkerFeatureArgsNode(data)
     for key, value in data.items():
         prop = parse_property(key, value if value is not None else "")
         if prop:
@@ -15,11 +15,11 @@ def parse_linker_feature_args(data: dict) -> LinkerFeatureArgsNode:
 
 def parse_feature_rule(data: dict) -> LinkerFeatureRuleNode:
     if "only-one" in data:
-        node = LinkerFeatureRuleNode(name=data["only-one"])
+        node = LinkerFeatureRuleNode(data["only-one"])
         node.add_property(PropertyStr("type", "only-one"))
         node.add_property(PropertyStrList("features", data.get("features", [])))
     elif "incompatible" in data:
-        node = LinkerFeatureRuleNode(name=data["incompatible"])
+        node = LinkerFeatureRuleNode(data["incompatible"])
         node.add_property(PropertyStr("type", "incompatible"))
         node.add_property(PropertyStr("feature", data["feature"]))
         node.add_property(PropertyStrList("with", data.get("with", [])))
@@ -29,7 +29,7 @@ def parse_feature_rule(data: dict) -> LinkerFeatureRuleNode:
 
 
 def parse_linker_feature(data: dict) -> LinkerFeatureNode:
-    node = LinkerFeatureNode(name=data["name"])
+    node = LinkerFeatureNode(data)
     for key, value in data.items():
         if key == "name":
             continue
@@ -43,7 +43,7 @@ def parse_linker_feature(data: dict) -> LinkerFeatureNode:
 
 
 def parse_linker(data: dict) -> LinkerNode:
-    node = LinkerNode(name=data["name"])
+    node = LinkerNode(data)
     for key, value in data.items():
         if key == "name":
             continue

@@ -1,4 +1,4 @@
-from .node import PropertyDict, PropertyStr, PropertyStrList
+from .property import PropertyDict, PropertyStr, PropertyStrList
 
 
 class TargetLinkerNode(PropertyDict):

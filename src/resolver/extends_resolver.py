@@ -41,16 +41,15 @@ def _resolve_chain(name: str, index: dict[str, PropertyDict], visited: set, reso
 from typing import TypeVar
 T = TypeVar("T", bound=PropertyDict)
 
-def resolve_extends(nodes: list[T]) -> list[T]:
+def resolve_extends(nodes: dict[str, T]) -> dict[str, T]:
     """
     Resolve all 'extends' chains in a list of nodes.
     Returns a new list of fully merged nodes in original order.
     Each node's properties are merged via Property.merge_with_parent().
     """
-    index: dict[str, PropertyDict] = {n.name: n for n in nodes}
     resolved: dict[str, PropertyDict] = {}
 
-    for node in nodes:
-        _resolve_chain(node.name, index, set(), resolved)
+    for name, node in nodes.items():
+        _resolve_chain(name, nodes, set(), resolved)
 
-    return [resolved[n.name] for n in nodes]
+    return resolved

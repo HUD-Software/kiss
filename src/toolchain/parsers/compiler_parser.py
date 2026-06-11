@@ -1,15 +1,14 @@
 import yaml
-from toolchain.nodes.property import (
-    PropertyDict, PropertyStr, PropertyStrList,
-    PropertyNodeList,
-)
+from toolchain.nodes.feature_node import FeatureNode
+from toolchain.nodes.property import PropertyDict
 from toolchain.nodes.compiler_nodes import (
-    CompilerLinkerOverrideNode, CompilerNode, CompilerFeatureNode, CompilerFeatureLinkersNode, CompilerFeatureRuleNode
+    CompilerLinkerOverrideNode, CompilerNode, CompilerFeatureLinkersNode
 )
+from toolchain.parsers.feature_parser import yaml_parse_feature, yaml_parse_feature_rule
 from toolchain.parsers.parse_utils import parse_property
 
 
-def parse_feature_linkers(name: str, data: dict) -> CompilerFeatureLinkersNode:
+def parse_compiler_feature_linkers(name: str, data: dict) -> CompilerFeatureLinkersNode:
     """Parse the 'linkers:' block inside a compiler feature.
 
     linkers:
@@ -38,24 +37,7 @@ def parse_feature_linkers(name: str, data: dict) -> CompilerFeatureLinkersNode:
     return node
 
 
-def yaml_parse_feature_rule(data: dict) -> CompilerFeatureRuleNode:
-    """Parse a single feature rule (only-one or incompatible)."""
-
-    if "only-one" in data:
-        node = CompilerFeatureRuleNode(data["only-one"])
-        node.add_property(PropertyStr("type", "only-one"))
-        node.add_property(PropertyStrList("features", data.get("features", [])))
-    elif "incompatible" in data:
-        node = CompilerFeatureRuleNode(data["incompatible"])
-        node.add_property(PropertyStr("type", "incompatible"))
-        node.add_property(PropertyStr("feature", data["feature"]))
-        node.add_property(PropertyStrList("with", data.get("with", [])))
-    else:
-        raise ValueError(f"Unknown feature rule: {data}")
-    return node
-
-
-def yaml_parse_compiler_feature(data: dict) -> CompilerFeatureNode:
+def yaml_parse_compiler_feature(data: dict) -> FeatureNode:
     """Parse a single compiler feature entry.
 
     - name: OPT_LEVEL_0
@@ -69,18 +51,12 @@ def yaml_parse_compiler_feature(data: dict) -> CompilerFeatureNode:
         link:
           enable-features: [OPT_LEVEL_0]
     """
-    node = CompilerFeatureNode(data["name"])
+
+    node = yaml_parse_feature(data)
 
     for key, value in data.items():
-        if key == "name":
-            continue
         if key == "linkers" and isinstance(value, dict):
-            node.add_property(parse_feature_linkers(key, value))
-            continue
-        
-        prop = parse_property(key, value)
-        if prop:
-            node.add_property(prop)
+            node.add_property(parse_compiler_feature_linkers(key, value))
     return node
 
 
@@ -122,5 +98,3 @@ def load_compilers(path: str) -> dict[str, CompilerNode]:
         compiler = yaml_parse_compiler(c)
         compilers[compiler.name] = compiler
     return compilers
-
-    #return [yaml_parse_compiler(c) for c in data.get("compilers", [])]

@@ -1,65 +1,43 @@
 import yaml
-from toolchain.nodes.property import PropertyStr, PropertyStrList, PropertyNodeList
-from toolchain.nodes.linker_nodes import LinkerNode, LinkerFeatureNode, LinkerFeatureArgsNode, LinkerFeatureRuleNode
+from toolchain.nodes.property import PropertyDict
+from toolchain.nodes.linker_nodes import LinkerNode
+from toolchain.parsers.feature_parser import yaml_parse_feature, yaml_parse_feature_rule
 from toolchain.parsers.parse_utils import parse_property
 
 
-def parse_linker_feature_args(data: dict) -> LinkerFeatureArgsNode:
-    node = LinkerFeatureArgsNode(data)
-    for key, value in data.items():
-        prop = parse_property(key, value if value is not None else "")
-        if prop:
-            node.add_property(prop)
-    return node
-
-
-def parse_feature_rule(data: dict) -> LinkerFeatureRuleNode:
-    if "only-one" in data:
-        node = LinkerFeatureRuleNode(data["only-one"])
-        node.add_property(PropertyStr("type", "only-one"))
-        node.add_property(PropertyStrList("features", data.get("features", [])))
-    elif "incompatible" in data:
-        node = LinkerFeatureRuleNode(data["incompatible"])
-        node.add_property(PropertyStr("type", "incompatible"))
-        node.add_property(PropertyStr("feature", data["feature"]))
-        node.add_property(PropertyStrList("with", data.get("with", [])))
-    else:
-        raise ValueError(f"Unknown feature rule: {data}")
-    return node
-
-
-def parse_linker_feature(data: dict) -> LinkerFeatureNode:
-    node = LinkerFeatureNode(data)
-    for key, value in data.items():
-        if key == "name":
-            continue
-        if key == "args" and isinstance(value, dict):
-            node.add_property(PropertyNodeList("args", [parse_linker_feature_args(value)]))
-            continue
-        prop = parse_property(key, value)
-        if prop:
-            node.add_property(prop)
-    return node
-
-
-def parse_linker(data: dict) -> LinkerNode:
-    node = LinkerNode(data)
+def yaml_parse_linker(data: dict) -> LinkerNode:
+    node = LinkerNode(data["name"])
     for key, value in data.items():
         if key == "name":
             continue
         if key == "features" and isinstance(value, list):
-            node.add_property(PropertyNodeList("features", [parse_linker_feature(f) for f in (value or [])]))
+            features = PropertyDict(key)
+            for f in value:
+                features.add_property(yaml_parse_feature(f))
+            if features.properties:
+                node.add_property(features)
             continue
         if key == "feature-rules" and isinstance(value, list):
-            node.add_property(PropertyNodeList("feature-rules", [parse_feature_rule(r) for r in value]))
+            feature_rules = PropertyDict("feature-rules")
+            for fr in value:
+                feature_rules.add_property(yaml_parse_feature_rule(fr))
+            if feature_rules.properties:
+                node.add_property(feature_rules)
             continue
+        
         prop = parse_property(key, value)
         if prop:
             node.add_property(prop)
     return node
 
 
-def load_linkers(path: str) -> list[LinkerNode]:
+def load_linkers(path: str) -> dict[str, LinkerNode]:
     with open(path, encoding="utf-8") as f:
         data = yaml.safe_load(f)
-    return [parse_linker(l) for l in data.get("linkers", [])]
+
+    linkers = {}
+    for l in data.get("linkers", []):
+        linker = yaml_parse_linker(l)
+        linkers[linker.name] = linker
+    return linkers
+''

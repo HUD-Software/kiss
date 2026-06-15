@@ -11,7 +11,7 @@ profiles:
       enable-features: [ENABLE_INCREMENTAL_LINK] # Linker feature to enable when compiling this profile
       msvc-linker:
         enable-features: [] # MSVC based linker feature to enable when compiling this profile
-    projects:
+    project-types:
       dyn:
         compilers:
           enable-features: [DYNAMIC_LIBRARY_DEBUG] # Compiler feature to enable when compiling with this profiles for dyn project
@@ -34,7 +34,7 @@ profiles:
       enable-features: [DISABLE_INCREMENTAL_LINK] # Linker feature to enable when compiling this profile
       msvc-linker:
         enable-features: [REMOVE_DEAD_CODE] # MSVC based linker feature to enable when compiling this profile
-    projects:
+    project-types:
       dyn:
         compilers:
           enable-features: [DYNAMIC_LIBRARY_RELEASE] # This feature is only enabled for 'dyn' project

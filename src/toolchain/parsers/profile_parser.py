@@ -1,83 +1,98 @@
 import yaml
-from toolchain.nodes.property import PropertyDict, PropertyNodeList
-from toolchain.nodes.profile_nodes import ProfileCompilerOverrideNode, ProfileCompilersNode, ProfileLinkerNode, ProfileLinkerOverrideNode, ProfileNode, ProfileProjectTypeNode
+from toolchain.nodes.profile_nodes import ProfileNode, ProfileSpecificOverrideNode, ProfilesOverrideNode
+from toolchain.nodes.property import PropertyDict
+from toolchain.parsers.compiler_parser import yaml_parse_compilers_overrides
+from toolchain.parsers.linker_parser import yaml_parse_linkers_overrides
 from toolchain.parsers.parse_utils import parse_property
+from toolchain.parsers.project_type_parser import yaml_parse_project_types_overrides
 
-RESERVED_COMPILER = {"enable-features", "defines"}
-RESERVED_LINKER   = {"enable-features"}
+def yaml_parse_profile_overrides(name: str, data: dict) -> ProfilesOverrideNode:
+    """Parse a 'profiles:' block inside a target entry.
 
+    Handles a dict of profile-specific overrides, each containing compiler
+    and linker configuration scoped to that profile. This is the deepest
+    specialization layer in the resolution pipeline, capable of expressing
+    intersections like "clangcl + dyn + release on x86_64 only" when combined
+    with the project-type overrides nested inside each profile.
 
-def parse_compiler_override(name: str, data: dict) -> ProfileCompilerOverrideNode:
-    node = ProfileCompilerOverrideNode(name=name)
-    for k, v in data.items():
-        prop = parse_property(k, v)
+    Expected structure:
+      profiles:
+        release:                      # → ProfileSpecificOverrideNode
+          compilers:
+            enable-features: [...]
+            clangcl:
+              enable-features: [...]
+          linkers:
+            enable-features: [...]
+          project-types:
+            dyn:
+              compilers:
+                enable-features: [...]
+        debug:                        # → ProfileSpecificOverrideNode
+          compilers:
+            enable-features: [...]
+    """
+    
+    node     = ProfilesOverrideNode(name, data)
+    overrides = PropertyDict("overrides")
+
+    for key, value in data.items():
+        prop = parse_property(key, value)
         if prop:
             node.add_property(prop)
-    return node
-
-
-def parse_linker_override(name: str, data: dict) -> ProfileLinkerOverrideNode:
-    node = ProfileLinkerOverrideNode(name=name)
-    for k, v in data.items():
-        prop = parse_property(k, v)
-        if prop:
-            node.add_property(prop)
-    return node
-
-
-def parse_profile_compilers(data: dict) -> ProfileCompilersNode:
-    node      = ProfileCompilersNode(name="compilers")
-    overrides = {}
-    for key, value in data.items():
-        if key in RESERVED_COMPILER or key.startswith("append-") or key.startswith("remove-"):
-            prop = parse_property(key, value)
-            if prop:
-                node.add_property(prop)
         elif isinstance(value, dict):
-            overrides[key] = parse_compiler_override(key, value)
-    if overrides:
-        node.add_property(PropertyDict("overrides", overrides))
+            override = ProfileSpecificOverrideNode(key)
+            for override_key, override_value in value.items():
+                prop = parse_property(override_key, override_value)
+                if prop:
+                    override.add_property(prop)
+            overrides.add_property(override)
+    if overrides.properties:
+        node.add_property(overrides)
     return node
 
 
-def parse_profile_linkers(data: dict) -> ProfileLinkerNode:
-    node      = ProfileLinkerNode(name="linkers")
-    overrides = {}
-    for key, value in data.items():
-        if key in RESERVED_LINKER or key.startswith("append-") or key.startswith("remove-"):
-            prop = parse_property(key, value)
-            if prop:
-                node.add_property(prop)
-        elif isinstance(value, dict):
-            overrides[key] = parse_linker_override(key, value)
-    if overrides:
-        node.add_property(PropertyDict("overrides", overrides))
-    return node
+def yaml_parse_profile(data: dict) -> ProfileNode:
+    """Parse a single profile entry from profiles.yaml.
 
+    Handles the top-level keys of a profile, dispatching each to its
+    dedicated parser. Unknown keys are parsed as generic properties.
 
-def parse_profile_project(name: str, data: dict) -> ProfileProjectTypeNode:
-    node = ProfileProjectTypeNode(name=name)
-    if "compilers" in data:
-        node.add_property(PropertyNodeList("compilers", [parse_profile_compilers(data["compilers"])]))
-    if "linkers" in data:
-        node.add_property(PropertyNodeList("linkers",   [parse_profile_linkers(data["linkers"])]))
-    return node
-
-
-def parse_profile(data: dict) -> ProfileNode:
+    Expected structure:
+      - name: release
+        description: ...
+        extends: ...
+        compilers:        # → yaml_parse_compilers_overrides()
+          enable-features: [...]
+          defines: [...]
+          msvc-compiler:
+            enable-features: [...]
+        linkers:          # → yaml_parse_linkers_overrides()
+          enable-features: [...]
+          msvc-linker:
+            enable-features: [...]
+        project-types:    # → yaml_parse_project_types_overrides()
+          dyn:
+            compilers:
+              enable-features: [...]
+            linkers:
+              enable-features: [...]
+    """
     node = ProfileNode(name=data["name"])
     for key, value in data.items():
         if key == "name":
             continue
         if key == "compilers" and isinstance(value, dict):
-            node.add_property(PropertyNodeList("compilers", [parse_profile_compilers(value)]))
+            compiler_node = yaml_parse_compilers_overrides(key, value)
+            node.add_property(compiler_node)
             continue
         if key == "linkers" and isinstance(value, dict):
-            node.add_property(PropertyNodeList("linkers", [parse_profile_linkers(value)]))
+            linker_node = yaml_parse_linkers_overrides(key, value)
+            node.add_property(linker_node)
             continue
-        if key == "projects" and isinstance(value, dict):
-            projects = {k: parse_profile_project(k, v or {}) for k, v in value.items()}
-            node.add_property(PropertyDict("projects", projects))
+        if key == "project-types" and isinstance(value, dict):
+            project_types = yaml_parse_project_types_overrides(key, value)
+            node.add_property(project_types)
             continue
         prop = parse_property(key, value)
         if prop:
@@ -88,4 +103,10 @@ def parse_profile(data: dict) -> ProfileNode:
 def load_profiles(path: str) -> list[ProfileNode]:
     with open(path, encoding="utf-8") as f:
         data = yaml.safe_load(f)
-    return [parse_profile(p) for p in data.get("profiles", [])]
+
+        
+    profiles = {}
+    for p in data.get("profiles", []):
+        profile = yaml_parse_profile(p)
+        profiles[profile.name] = profile
+    return profiles

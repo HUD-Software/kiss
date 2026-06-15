@@ -3,22 +3,23 @@ from toolchain.nodes.feature_node import FeatureNode, FeatureRuleNode
 from toolchain.nodes.property import Property, PropertyBool, PropertyDict, PropertyStr, PropertyStrList
 from toolchain.parsers.parse_utils import parse_property
 
-class CompilerLinkerOverrideNode(PropertyDict):
-    """Represents a per-linker feature override inside a compiler feature.
-    e.g. link: { enable-features: [OPT_LEVEL_0] }
-    """
-    pass
-
-class CompilerFeatureLinkersNode(PropertyDict):
-    """Represents the 'linkers:' block inside a compiler feature.
-    Contains global enable-features + per-linker overrides.
-    """
-    pass
-
 
 class CompilerNode(PropertyDict):
-    """Represents a compiler entry (abstract or concrete).
-    e.g. msvc-compiler, cl, clangcl
+    """Represents a compiler definition in compilers.yaml.
+
+    A compiler node can be abstract (base template, e.g. 'msvc-compiler') or concrete
+    (e.g. 'cl', 'clangcl'). Concrete compilers can extend an abstract one via 'extends',
+    inheriting its features and feature-rules while adding or overriding their own.
+
+    Key attributes:
+    - supported_linkers: list of linker names compatible with this compiler
+    - default_linker: preferred linker when multiple supported linkers are available
+    - is_abstract: if True, this node is a base template and cannot be used directly
+    - features: compiler flags grouped by named capability (e.g. OPT_LEVEL_2, ASAN)
+    - feature_rules: constraints between features (only-one and incompatible)
+
+    Features can cascade to the linker layer via their 'linkers' sub-key,
+    enabling linker-specific features when a given compiler feature is activated.
     """
 
     @property
@@ -38,3 +39,25 @@ class CompilerNode(PropertyDict):
     
     
     
+class CompilerSpecificOverrideNode(PropertyDict):
+    """Represents a per-compiler override inside a 'compilers:' node.
+
+    compilers:
+      gcc : # CompilerSpecificOverrideNode
+        enable-features: []
+        defines: []
+      ...
+    """
+    pass
+
+class CompilersOverrideNode(PropertyDict):
+    """Represents the 'compilers:' block.
+    Contains global enable-features + per-compiler overrides 'CompilerSpecificOverrideNode' nodes.
+
+    compilers: # CompilersOverrideNode
+      gcc : 
+        enable-features: []
+        defines: []
+      ...
+    """
+    pass

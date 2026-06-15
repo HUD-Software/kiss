@@ -1,54 +1,29 @@
-from .property import PropertyDict, PropertyBool, PropertyNodeList, PropertyStr
+from toolchain.nodes.compiler_nodes import CompilersOverrideNode
+from toolchain.nodes.linker_nodes import LinkersOverrideNode
 
-class ProjectTypeCompilerNode(PropertyDict):
-    """Represents the 'compilers:' block inside a project type.
-
-    compilers:
-      enable-features: []
-      defines: [KISS_BIN]
-      ...
-    """
-    pass
-
-class ProjectTypeCompilerOverrideNode(PropertyDict):
-    """Represents the linker override block inside 'compilers:' block inside a project type.
-
-    compilers:
-      enable-features: []
-      defines: [KISS_BIN]
-      ...
-    """
-    pass
-
-
-class ProjectTypeLinkerNode(PropertyDict):
-    """Represents the 'linkers:' block inside a project type.
-
-    linkers:
-      enable-features: []
-      ...
-    """
-    pass
-
-class ProjectTypeLinkerOverrideNode(PropertyDict):
-    """Represents the 'linkers:' block inside a project type.
-
-    compilers:
-      enable-features: []
-      defines: [KISS_BIN]
-      ...
-    """
-    pass
+from .property import PropertyDict, PropertyBool, PropertyStr
 
 class ProjectTypeNode(PropertyDict):
-    """Represents a project type entry (bin, lib, dyn or custom).
+    """Represents a project type definition in projects.yaml.
 
-    - name: my_bin
-      description: Executable binary
-      extends: ...
-      compilers: ...
-      linkers: ...
+    A project type describes the nature of a build output (e.g. 'bin', 'lib', 'dyn', 'test')
+    and can be abstract or concrete. Concrete types can extend another via 'extends',
+    inheriting and overriding its compiler/linker configuration.
+
+    Key attributes:
+    - is_abstract: if True, this node is a base template and cannot be used directly
+    - icon: emoji or symbol used for display purposes (e.g. 🚀 for bin, 📦 for lib)
+    - description: human-readable label for the project type
+    - compilers: compiler-side overrides applied when building this project type,
+                 including features to enable and preprocessor defines — can be
+                 specified globally or per compiler (e.g. under 'msvc-compiler')
+    - linkers: linker-side overrides applied when building this project type,
+               including features to enable — can be specified globally or per linker
+
+    Compiler and linker overrides support the standard append/remove operations
+    (e.g. 'append-defines', 'remove-enable-features') for fine-grained inheritance control.
     """
+    
     @property
     def is_abstract(self) -> bool :
         prop = self.get_property_as("is_abstract", PropertyBool)
@@ -67,19 +42,56 @@ class ProjectTypeNode(PropertyDict):
         return prop.value if prop else ""
     
     @property
-    def compilers(self) -> list[ProjectTypeCompilerNode]:
-        prop = self.get_property_as("compilers", PropertyNodeList)
-        if prop.nodes:
-            return [c for c in prop.nodes]
-        return []
+    def compilers(self) -> CompilersOverrideNode:
+        self.get_property_as("compilers", CompilersOverrideNode)
     
-    # def merge_with_parent(self, parent: 'ProjectTypeNode') -> 'ProjectTypeNode':
-    #     result = ProjectTypeNode(self.name)
-    #     for name, prop in self.properties.items():
-    #         parent_prop = parent.get_property(name)
-    #         # Add props if not in parent
-    #         if not parent_prop:
-    #             result.add_property(prop.clone())
-    #         else:
-    #             result.add_property(prop.merge_with_parent(parent_prop))
-    #     return result
+    @property
+    def linkers(self) -> LinkersOverrideNode:
+        self.get_property_as("linkers", LinkersOverrideNode)
+    
+class ProjectSpecificOverrideNode(PropertyDict):
+    """Represents a per-project-type override inside a 'projects:' node.
+      
+    projects:
+        dyn: # ProjectSpecificOverrideNode
+            compilers:
+            enable-features: []
+            defines: []
+            msvc-compiler:
+                enable-features: []
+            linkers:
+            enable-features: []
+        lib: # ProjectSpecificOverrideNode
+            compilers:
+            enable-features: []
+            defines: []
+            msvc-compiler:
+                enable-features: []
+            linkers:
+            enable-features: []
+    """
+    pass
+
+class ProjectsOverrideNode(PropertyDict):
+    """Represents the 'projects:' block.
+    Contains global enable-features + per-project-type overrides 'LinkerSpecificOverrideNode' nodes.
+
+    projects: # ProjectsOverrideNode
+        dyn:
+            compilers:
+            enable-features: []
+            defines: []
+            msvc-compiler:
+                enable-features: []
+            linkers:
+            enable-features: []
+        lib:
+            compilers:
+            enable-features: []
+            defines: []
+            msvc-compiler:
+                enable-features: []
+            linkers:
+            enable-features: []
+    """
+    pass

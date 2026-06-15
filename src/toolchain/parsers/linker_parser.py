@@ -1,8 +1,37 @@
 import yaml
 from toolchain.nodes.property import PropertyDict
-from toolchain.nodes.linker_nodes import LinkerNode
+from toolchain.nodes.linker_nodes import LinkerNode, LinkerSpecificOverrideNode, LinkersOverrideNode
 from toolchain.parsers.feature_parser import yaml_parse_feature, yaml_parse_feature_rule
 from toolchain.parsers.parse_utils import parse_property
+
+
+def yaml_parse_linkers_overrides(name: str, data: dict) -> LinkersOverrideNode:
+    """Parse the 'linkers:' block inside a compiler feature.
+
+    linkers:
+      enable-features: []
+      link:
+        enable-features: [OPT_LEVEL_0]
+      lld-link:
+        enable-features: [OPT_LEVEL_0]
+    """
+    node     = LinkersOverrideNode(name, data)
+    overrides = PropertyDict("overrides")
+
+    for key, value in data.items():
+        prop = parse_property(key, value)
+        if prop:
+            node.add_property(prop)
+        elif isinstance(value, dict):
+            override = LinkerSpecificOverrideNode(key)
+            for override_key, override_value in value.items():
+                prop = parse_property(override_key, override_value)
+                if prop:
+                    override.add_property(prop)
+            overrides.add_property(override)
+    if overrides.properties:
+        node.add_property(overrides)
+    return node
 
 
 def yaml_parse_linker(data: dict) -> LinkerNode:
@@ -40,4 +69,4 @@ def load_linkers(path: str) -> dict[str, LinkerNode]:
         linker = yaml_parse_linker(l)
         linkers[linker.name] = linker
     return linkers
-''
+

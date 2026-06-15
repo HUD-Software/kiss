@@ -85,7 +85,7 @@ if __name__ == "__main__":
 #                     profiles.append(parse_profile(profile_data))
                 
 #                 """Load and parse projects.yaml, returning a list of ProjectTypeNode."""
-#                 for project_data in data.get("projects", []):
+#                 for project_data in data.get("project-types", []):
 #                     projects.append(parse_project(project_data))
                 
 #                 """Load and parse targets.yaml, returning a list of TargetNode."""

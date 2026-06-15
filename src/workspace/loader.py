@@ -1,7 +1,7 @@
 import yaml
 from toolchain.nodes.property import PropertyStr, PropertyStrList, PropertyNodeList, PropertyNodeDict
 from toolchain.parsers.profile_parser import parse_profile
-from toolchain.parsers.project_parser import parse_project
+from toolchain.parsers.project_type_parser import parse_project
 from .nodes.workspace_nodes import KissWorkspaceNode, KissProjectTypeNode, SourceNode, DependencyNode
 
 
@@ -40,7 +40,7 @@ def load_workspace(path: str) -> KissWorkspaceNode:
 
     kiss.yaml structure:
       profiles:        # optional custom profiles
-      projects:        # optional custom project types
+      project-types:   # optional custom project types
       bin:             # list of binary projects
       lib:             # list of static library projects
       dyn:             # list of dynamic library projects
@@ -57,13 +57,13 @@ def load_workspace(path: str) -> KissWorkspaceNode:
         workspace.add_property(PropertyNodeList("profiles", custom_profiles))
 
     # Optional custom project types
-    if "projects" in data:
-        custom_projects = [parse_project(p) for p in data["projects"]]
+    if "project-types" in data:
+        custom_projects = [parse_project(p) for p in data["project-types"]]
         workspace.add_property(PropertyNodeList("project-types", custom_projects))
 
     # All project entries (built-in types + custom types)
     # We collect all keys that are not reserved metadata keys
-    reserved_keys = {"profiles", "projects"}
+    reserved_keys = {"profiles", "project-types"}
     projects_by_type: dict[str, list] = {}
 
     for key, entries in data.items():

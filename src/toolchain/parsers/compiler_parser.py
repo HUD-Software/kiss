@@ -1,24 +1,24 @@
 import yaml
+from toolchain.nodes.compiler_nodes import CompilerNode, CompilersOverrideNode, CompilerSpecificOverrideNode
 from toolchain.nodes.feature_node import FeatureNode
 from toolchain.nodes.property import PropertyDict
-from toolchain.nodes.compiler_nodes import (
-    CompilerLinkerOverrideNode, CompilerNode, CompilerFeatureLinkersNode
-)
 from toolchain.parsers.feature_parser import yaml_parse_feature, yaml_parse_feature_rule
+from toolchain.parsers.linker_parser import yaml_parse_linkers_overrides
 from toolchain.parsers.parse_utils import parse_property
 
 
-def parse_compiler_feature_linkers(name: str, data: dict) -> CompilerFeatureLinkersNode:
-    """Parse the 'linkers:' block inside a compiler feature.
 
-    linkers:
+def yaml_parse_compilers_overrides(name: str, data: dict) -> CompilersOverrideNode:
+    """Parse the 'compilers:' block inside a compiler feature.
+
+    compilers:
       enable-features: []
-      link:
+      gcc:
         enable-features: [OPT_LEVEL_0]
-      lld-link:
+      clang:
         enable-features: [OPT_LEVEL_0]
     """
-    node     = CompilerFeatureLinkersNode(name, data)
+    node     = CompilersOverrideNode(name, data)
     overrides = PropertyDict("overrides")
 
     for key, value in data.items():
@@ -26,7 +26,7 @@ def parse_compiler_feature_linkers(name: str, data: dict) -> CompilerFeatureLink
         if prop:
             node.add_property(prop)
         elif isinstance(value, dict):
-            override = CompilerLinkerOverrideNode(key)
+            override = CompilerSpecificOverrideNode(key)
             for override_key, override_value in value.items():
                 prop = parse_property(override_key, override_value)
                 if prop:
@@ -35,7 +35,6 @@ def parse_compiler_feature_linkers(name: str, data: dict) -> CompilerFeatureLink
     if overrides.properties:
         node.add_property(overrides)
     return node
-
 
 def yaml_parse_compiler_feature(data: dict) -> FeatureNode:
     """Parse a single compiler feature entry.
@@ -56,7 +55,7 @@ def yaml_parse_compiler_feature(data: dict) -> FeatureNode:
 
     for key, value in data.items():
         if key == "linkers" and isinstance(value, dict):
-            node.add_property(parse_compiler_feature_linkers(key, value))
+            node.add_property(yaml_parse_linkers_overrides(key, value))
     return node
 
 

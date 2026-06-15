@@ -21,14 +21,14 @@ def _load_all(data_dir: str, kiss_data: dict | None = None) -> dict:
     compilers     = resolve_extends(_load_yaml(os.path.join(data_dir, "compilers.yaml")))
     linkers       = resolve_extends(_load_yaml(os.path.join(data_dir, "linkers.yaml")))
     profiles      = resolve_extends(_load_yaml(os.path.join(data_dir, "profiles.yaml")))
-    project_types = _load_yaml(os.path.join(data_dir, "projects.yaml"))
+    project_types = _load_yaml(os.path.join(data_dir, "project-types.yaml"))
     targets       = _load_yaml(os.path.join(data_dir, "targets.yaml"))
 
     if kiss_data:
         for p in kiss_data.get("profiles", []):
             profiles.append(p)
         profiles = resolve_extends(profiles)
-        for pt in kiss_data.get("projects", []):
+        for pt in kiss_data.get("project-types", []):
             project_types.append(pt)
 
     return dict(

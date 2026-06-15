@@ -1,57 +1,5 @@
 from .property import PropertyDict, PropertyBool
 
-class ProfileCompilerOverrideNode(PropertyDict):
-    """Represents a compiler-specific override block inside a profile.
-
-    msvc-compiler:
-      enable-features: [OPT_LEVEL_0, WINDOWS_DLL_RUNTIME_DEBUG]
-      defines: []
-    """
-    pass
-
-class ProfileLinkerOverrideNode(PropertyDict):
-    """Represents a linker-specific override block inside a profile.
-
-    msvc-linker:
-      enable-features: [REMOVE_DEAD_CODE]
-    """
-    pass
-
-
-class ProfileCompilersNode(PropertyDict):
-    """Represents the 'compilers:' block inside a profile.
-
-    compilers:
-      enable-features: []
-      defines: [KISS_DEBUG]
-      msvc-compiler:
-        enable-features: [OPT_LEVEL_0]
-    """
-    pass
-
-
-class ProfileLinkerNode(PropertyDict):
-    """Represents the 'linkers:' block inside a profile.
-
-    linkers:
-      enable-features: [ENABLE_INCREMENTAL_LINK]
-      msvc-linker:
-        enable-features: []
-    """
-    pass
-
-
-class ProfileProjectTypeNode(PropertyDict):
-    """Represents a project-type override block inside a profile.
-
-    dyn:
-      compilers:
-        enable-features: [DYNAMIC_LIBRARY_DEBUG]
-      linkers:
-        enable-features: []
-    """
-    pass
-
 class ProfileNode(PropertyDict):
     """Represents a profile entry.
 
@@ -77,3 +25,10 @@ class ProfileNode(PropertyDict):
     #         else:
     #             result.add_property(prop.merge_with_parent(parent_prop))
     #     return result
+
+
+class ProfileSpecificOverrideNode(PropertyDict):
+    pass
+
+class ProfilesOverrideNode(PropertyDict):
+    pass

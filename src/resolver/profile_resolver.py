@@ -99,7 +99,7 @@ def _features_from_profile_project(
     from profile.projects.<project_type> block.
     Returns (compiler_features, defines, linker_features).
     """
-    projects_block = profile.get("projects", {})
+    projects_block = profile.get("project-types", {})
     proj_block = projects_block.get(project_type, {})
     if not proj_block:
         return [], [], []

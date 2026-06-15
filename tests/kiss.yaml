@@ -13,6 +13,9 @@ profiles:
       bin:
         compilers:
           enable-features: [OMIT_FRAME_POINTER]
+  - name: debug
+    compilers:
+      enable-features: [OPT_LEVEL_3]
 
 # Optional: custom project types specific to this project
 projects:

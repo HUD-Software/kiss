@@ -27,7 +27,7 @@ def load_kiss_yaml(directory: str) -> dict:
 def get_project_types(kiss_data: dict) -> set[str]:
     """Return all known project types: built-in + custom from kiss.yaml."""
     custom = set()
-    for p in kiss_data.get("projects", []):
+    for p in kiss_data.get("project-types", []):
         if "name" in p:
             custom.add(p["name"])
     return BUILTIN_PROJECT_TYPES | custom

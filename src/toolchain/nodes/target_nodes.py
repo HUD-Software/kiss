@@ -1,51 +1,38 @@
 from .property import PropertyDict, PropertyStr, PropertyStrList
 
 
-class TargetLinkerNode(PropertyDict):
-    """Represents the 'linkers:' block inside a target.
-
-    linkers:
-      enable-features: [TARGET_X64]
-    """
-    pass
-
-
-class TargetCompilerOverrideNode(PropertyDict):
-    """Represents a compiler-specific override block inside a target.
-
-    clangcl:
-      features:
-        - name: ASAN
-          linkers:
-            enable-features: [LINK:msvcrt.lib]
-    """
-    pass
-
-
-class TargetCompilerFeatureOverrideNode(PropertyDict):
-    """Represents a feature override for a specific compiler inside a target.
-
-    - name: ASAN
-      linkers:
-        enable-features: [LINK:msvcrt.lib]
-    """
-    pass
-
-
 class TargetNode(PropertyDict):
-    """Represents a build target entry.
+    """Represents a build target definition in targets.yaml.
 
-    - name: x86_64-pc-windows-msvc
-      arch: x86_64
-      vendor: pc
-      os: windows
-      abi: msvc
-      pointer-width: 64
-      endianness: little
-      supported-compilers: [clangcl, cl]
-      default-compiler: cl
-      linkers: ...
-      compilers: ...
+    A target describes a fully-qualified compilation platform using a triple-like
+    convention (e.g. 'x86_64-pc-windows-msvc'), combining architecture, vendor,
+    OS and ABI. It is the most specific layer in the resolution pipeline:
+
+        linker → compiler → target → project-type → profile
+
+    As such, it can specialize compiler and linker configuration at every level,
+    making it the only layer capable of expressing intersections like
+    "clangcl + dyn + release on x86_64 only".
+
+    Key attributes:
+    - arch: target architecture (x86_64, i686, aarch64, arm)
+    - vendor: platform vendor (pc, unknown)
+    - os: operating system (windows, linux, macos, none)
+    - abi: binary interface (msvc, gnu, musl, none)
+    - pointer-width: 32 or 64 bits
+    - endianness: little or big
+    - supported-compilers: list of compiler names compatible with this target
+    - default-compiler: compiler selected when multiple supported compilers are available
+    - compilers: compiler-side overrides scoped to this target, optionally
+                 specialized per compiler (e.g. clangcl:)
+    - linkers: linker-side overrides scoped to this target, optionally
+               specialized per linker (e.g. msvc-linker:)
+    - project-types: compiler/linker overrides scoped to a specific project type,
+                     optionally specialized per compiler and per linker
+                     (e.g. project-types.dyn.compilers.clangcl:)
+    - profiles: compiler/linker overrides scoped to a specific profile, optionally
+                specialized per compiler, per linker and per project-type
+                (e.g. profiles.release.project-types.dyn.compilers.clangcl:)
     """
 
     @property

@@ -1,4 +1,5 @@
 import yaml
+from toolchain.nodes.feature_node import FeatureNodeList, FeatureRuleNodeList
 from toolchain.nodes.property import PropertyDict
 from toolchain.nodes.linker_nodes import LinkerNode, LinkerSpecificOverrideNode, LinkersOverrideNode
 from toolchain.parsers.feature_parser import yaml_parse_feature, yaml_parse_feature_rule
@@ -39,15 +40,15 @@ def yaml_parse_linker(data: dict) -> LinkerNode:
     for key, value in data.items():
         if key == "name":
             continue
-        if key == "features" and isinstance(value, list):
-            features = PropertyDict(key)
+        if key == FeatureNodeList.NAME and isinstance(value, list):
+            features = FeatureNodeList()
             for f in value:
                 features.add_property(yaml_parse_feature(f))
             if features.properties:
                 node.add_property(features)
             continue
-        if key == "feature-rules" and isinstance(value, list):
-            feature_rules = PropertyDict("feature-rules")
+        if key == FeatureRuleNodeList.NAME and isinstance(value, list):
+            feature_rules = FeatureRuleNodeList()
             for fr in value:
                 feature_rules.add_property(yaml_parse_feature_rule(fr))
             if feature_rules.properties:

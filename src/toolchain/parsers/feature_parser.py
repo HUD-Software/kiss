@@ -1,4 +1,4 @@
-from toolchain.nodes.feature_node import FeatureArgsNode, FeatureNode, FeatureRuleNode
+from toolchain.nodes.feature_node import FeatureArgsNode, FeatureNode, FeatureNodeList, FeatureRuleNode
 from toolchain.nodes.property import PropertyStr, PropertyStrList
 from toolchain.parsers.parse_utils import parse_property
 
@@ -21,6 +21,7 @@ def yaml_parse_feature(data: dict) -> FeatureNode:
             node.add_property(prop)
     return node
 
+
 def yaml_parse_feature_rule(data: dict) -> FeatureRuleNode:
     """Parse a single feature rule (only-one or incompatible)."""
 
@@ -36,3 +37,5 @@ def yaml_parse_feature_rule(data: dict) -> FeatureRuleNode:
     else:
         raise ValueError(f"Unknown feature rule: {data}")
     return node
+
+

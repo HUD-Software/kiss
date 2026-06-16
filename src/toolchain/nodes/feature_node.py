@@ -1,3 +1,4 @@
+from __future__ import annotations
 from toolchain.nodes.property import PropertyDict
 
 class FeatureArgsNode(PropertyDict):
@@ -19,6 +20,21 @@ class FeatureNode(PropertyDict):
     """
     pass
 
+class FeatureNodeList(PropertyDict):
+    """Represents the 'features:' block."""
+    NAME = "features"
+
+    def __init__(self, name:str=NAME):
+        super().__init__(name)
+
+
 class FeatureRuleNode(PropertyDict):
     """Represents a feature rule (only-one or incompatible)."""
     pass
+
+class FeatureRuleNodeList(PropertyDict):
+    """Represents the 'feature-rules:' block."""
+    NAME = "feature-rules"
+
+    def __init__(self, name :str = NAME):
+        super().__init__(name)

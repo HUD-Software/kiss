@@ -43,9 +43,14 @@ def yaml_parse_profile_overrides(name: str, data: dict) -> ProfilesOverrideNode:
         elif isinstance(value, dict):
             override = ProfileSpecificOverrideNode(key)
             for override_key, override_value in value.items():
-                prop = parse_property(override_key, override_value)
-                if prop:
-                    override.add_property(prop)
+                if override_key == "compilers" and isinstance(override_value, dict):
+                    override.add_property(yaml_parse_compilers_overrides(override_key, override_value))
+                elif override_key == "linkers" and isinstance(override_value, dict):
+                    override.add_property(yaml_parse_linkers_overrides(override_key, override_value))
+                else:
+                    prop = parse_property(override_key, override_value)
+                    if prop:
+                        override.add_property(prop)
             overrides.add_property(override)
     if overrides.properties:
         node.add_property(overrides)

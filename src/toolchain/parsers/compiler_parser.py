@@ -1,6 +1,6 @@
 import yaml
 from toolchain.nodes.compiler_nodes import CompilerNode, CompilersOverrideNode, CompilerSpecificOverrideNode
-from toolchain.nodes.feature_node import FeatureNode
+from toolchain.nodes.feature_node import FeatureNode, FeatureNodeList, FeatureRuleNodeList
 from toolchain.nodes.property import PropertyDict
 from toolchain.parsers.feature_parser import yaml_parse_feature, yaml_parse_feature_rule
 from toolchain.parsers.linker_parser import yaml_parse_linkers_overrides
@@ -53,9 +53,9 @@ def yaml_parse_compiler_feature(data: dict) -> FeatureNode:
 
     node = yaml_parse_feature(data)
 
-    for key, value in data.items():
-        if key == "linkers" and isinstance(value, dict):
-            node.add_property(yaml_parse_linkers_overrides(key, value))
+    linkers_value = data.get("linkers")
+    if linkers_value and isinstance(linkers_value, dict):
+        node.add_property(yaml_parse_linkers_overrides("linkers", linkers_value))
     return node
 
 
@@ -67,15 +67,15 @@ def yaml_parse_compiler(data: dict) -> CompilerNode:
     for key, value in data.items():
         if key == "name":
             continue
-        if key == "features" and isinstance(value, list):
-            features = PropertyDict(key)
+        if key == FeatureNodeList.NAME and isinstance(value, list):
+            features = FeatureNodeList()
             for f in value:
                 features.add_property(yaml_parse_compiler_feature(f))
             if features.properties:
                 node.add_property(features)
             continue
-        if key == "feature-rules" and isinstance(value, list):
-            feature_rules = PropertyDict("feature-rules")
+        if key == FeatureRuleNodeList.NAME and isinstance(value, list):
+            feature_rules = FeatureRuleNodeList()
             for fr in value:
                 feature_rules.add_property(yaml_parse_feature_rule(fr))
             if feature_rules.properties:

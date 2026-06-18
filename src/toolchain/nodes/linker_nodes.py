@@ -1,8 +1,8 @@
 from __future__ import annotations
 from toolchain.nodes.feature_node import FeatureNodeList, FeatureRuleNodeList
-from toolchain.nodes.property import PropertyBool, PropertyDict
+from toolchain.nodes.property import PropertyBool, PropertyDict, Property
 
-class LinkerNode(PropertyDict):
+class LinkerNode(Property):
     """Represents a linker definition in linkers.yaml.
 
     A linker node can be abstract (base template, e.g. 'msvc-linker') or concrete
@@ -19,42 +19,56 @@ class LinkerNode(PropertyDict):
     Linker features can also be activated indirectly by compiler features via their
     'linkers' sub-key in compilers.yaml.
     """
-
+    def __init__(self, name : str):
+        super().__init__(name)
+        self._properties = PropertyDict()
+      
+    @property
+    def properties(self) -> PropertyDict:
+        return self._properties
+    
     @property
     def is_abstract(self) -> bool :
-        prop = self.get_property_as("is_abstract", PropertyBool)
+        prop = self.properties.get_property_as("is_abstract", PropertyBool)
         return prop.value if prop else False
     
     @property
     def features(self) -> FeatureNodeList:
-        prop = self.get_property_as(FeatureNodeList.NAME, FeatureNodeList)
+        prop = self.properties.get_property_as(FeatureNodeList.NAME, FeatureNodeList)
         return prop
     
     @property
     def feature_rules(self) -> FeatureRuleNodeList:
-        prop = self.get_property_as(FeatureRuleNodeList.NAME, FeatureRuleNodeList)
+        prop = self.properties.get_property_as(FeatureRuleNodeList.NAME, FeatureRuleNodeList)
         return prop
     
+    def get_property(self, name: str) -> Property | None:
+        return self.properties.get_property(name)
+    
+    def add_property(self, property):
+        self.properties.add_property(property)
 
+    def clone(self) -> LinkerNode:
+        cloned  = LinkerNode(self.name)
+        cloned.properties = self._properties.clone()
+        return cloned
+    
+    def merge_with_parent(self, parent):
+        assert type(parent) is type(self), "Type mismatch"
+        merged = LinkerNode(self.name)
+        merged._properties = self.properties.merge_with_parent(parent.properties)
+        return merged
+    
     def dispatch_globals(self) -> LinkerNode:
-       # Linker have no specialisation.
-       # Unlike compiler or profile, we don't have compiler block with global to dispatch to specifics
-       # like in compilers we have:
-       # - name: OPT_LEVEL_0
-       #   description: No optimization # Description of the feature
-       #   flags: [/Od]
-       #   enable-features: [DEBUG_INFO]
-       #   linkers:
-       #     enable-features: []
-       #     link:
-       #       enable-features: [OPT_LEVEL_0]
-       #     lld-link:
-       #       enable-features: [OPT_LEVEL_0]
-       #
-       pass 
+        dispatched = LinkerNode(self.name)
+        for property_name, property in self.properties.items():
+            if property_name == FeatureNodeList.NAME or property_name == FeatureRuleNodeList.NAME:
+                property = property.dispatch_globals()
+            dispatched.add_property(property)
+        return dispatched
         
 
-class LinkerSpecificOverrideNode(PropertyDict):
+class LinkerSpecificOverrideNode(Property):
   
     """Represents a per-linker override inside a 'linkers:' node.
     
@@ -68,7 +82,7 @@ class LinkerSpecificOverrideNode(PropertyDict):
     """
     pass
 
-class LinkersOverrideNode(PropertyDict):
+class LinkersOverrideNode(Property):
     """Represents the 'linkers:' block.
     Contains global enable-features + per-linker overrides 'LinkerSpecificOverrideNode' nodes.
 

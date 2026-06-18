@@ -36,28 +36,34 @@ def yaml_parse_linkers_overrides(name: str, data: dict) -> LinkersOverrideNode:
 
 
 def yaml_parse_linker(data: dict) -> LinkerNode:
+    # Linker need 'name'
+    name = data.get("name")
+    if not name or not isinstance(name, str):
+        raise ValueError("Missing 'name' for linker as string")
+    
+    
+    # Create the linker and load informations
     node = LinkerNode(data["name"])
     for key, value in data.items():
-        if key == "name":
-            continue
-        if key == FeatureNodeList.NAME and isinstance(value, list):
-            features = FeatureNodeList()
-            for f in value:
-                features.add_property(yaml_parse_feature(f))
-            if features.properties:
-                node.add_property(features)
-            continue
-        if key == FeatureRuleNodeList.NAME and isinstance(value, list):
-            feature_rules = FeatureRuleNodeList()
-            for fr in value:
-                feature_rules.add_property(yaml_parse_feature_rule(fr))
-            if feature_rules.properties:
-                node.add_property(feature_rules)
-            continue
-        
-        prop = parse_property(key, value)
-        if prop:
-            node.add_property(prop)
+        match key:
+            case "name":
+                pass
+            case FeatureNodeList.NAME:
+                features = FeatureNodeList()
+                for f in value:
+                    features.add_feature(yaml_parse_feature(f))
+                if features.features:
+                    node.add_property(features)
+            case FeatureRuleNodeList.NAME:
+                feature_rules = FeatureRuleNodeList()
+                for fr in value:
+                    feature_rules.add_feature_rule(yaml_parse_feature_rule(fr))
+                if feature_rules.feature_rules:
+                    node.add_property(feature_rules)
+            case _:
+                prop = parse_property(key, value)
+                if prop:
+                    node.add_property(prop)
     return node
 
 

@@ -1,6 +1,6 @@
 import yaml
-from toolchain.nodes.compiler_nodes import CompilerNode, CompilersOverrideNode, CompilerSpecificOverrideNode
-from toolchain.nodes.feature_node import FeatureNode, FeatureNodeList, FeatureRuleNodeList
+from toolchain.nodes.compiler_nodes import CompilerFeatureNode, CompilerNode, CompilersOverrideNode, CompilerSpecificOverrideNode
+from toolchain.nodes.feature_node import FeatureArgsNode, FeatureNode, FeatureNodeList, FeatureRuleNodeList
 from toolchain.nodes.property import PropertyDict
 from toolchain.parsers.feature_parser import yaml_parse_feature, yaml_parse_feature_rule
 from toolchain.parsers.linker_parser import yaml_parse_linkers_overrides
@@ -36,7 +36,7 @@ def yaml_parse_compilers_overrides(name: str, data: dict) -> CompilersOverrideNo
         node.add_property(overrides)
     return node
 
-def yaml_parse_compiler_feature(data: dict) -> FeatureNode:
+def yaml_parse_compiler_feature(data: dict) -> CompilerFeatureNode:
     """Parse a single compiler feature entry.
 
     - name: OPT_LEVEL_0
@@ -50,8 +50,7 @@ def yaml_parse_compiler_feature(data: dict) -> FeatureNode:
         link:
           enable-features: [OPT_LEVEL_0]
     """
-
-    node = yaml_parse_feature(data)
+    node = yaml_parse_feature(data, CompilerFeatureNode)
 
     linkers_value = data.get("linkers")
     if linkers_value and isinstance(linkers_value, dict):
@@ -61,31 +60,33 @@ def yaml_parse_compiler_feature(data: dict) -> FeatureNode:
 
 def yaml_parse_compiler(data: dict) -> CompilerNode:
     """Parse a single compiler entry."""
+    # Compiler need 'name'
+    name = data.get("name")
+    if not name or not isinstance(name, str):
+        raise ValueError("Missing 'name' for compiler as string")
     
+    # Create the compiler and load informations
     node = CompilerNode(data["name"])
-
     for key, value in data.items():
-        if key == "name":
-            continue
-        if key == FeatureNodeList.NAME and isinstance(value, list):
-            features = FeatureNodeList()
-            for f in value:
-                features.add_property(yaml_parse_compiler_feature(f))
-            if features.properties:
-                node.add_property(features)
-            continue
-        if key == FeatureRuleNodeList.NAME and isinstance(value, list):
-            feature_rules = FeatureRuleNodeList()
-            for fr in value:
-                feature_rules.add_property(yaml_parse_feature_rule(fr))
-            if feature_rules.properties:
-                node.add_property(feature_rules)
-            continue
-        
-        prop = parse_property(key, value)
-        if prop:
-            node.add_property(prop)
-
+        match key:
+            case "name":
+                pass
+            case FeatureNodeList.NAME:
+                features = FeatureNodeList()
+                for f in value:
+                    features.add_feature(yaml_parse_compiler_feature(f))
+                if features.features:
+                    node.add_property(features)
+            case FeatureRuleNodeList.NAME:
+                feature_rules = FeatureRuleNodeList()
+                for fr in value:
+                    feature_rules.add_feature_rule(yaml_parse_feature_rule(fr))
+                if feature_rules.feature_rules:
+                    node.add_property(feature_rules)
+            case _:
+                prop = parse_property(key, value)
+                if prop:
+                    node.add_property(prop)
     return node
 
 

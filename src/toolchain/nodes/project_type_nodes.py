@@ -1,7 +1,7 @@
 from toolchain.nodes.compiler_nodes import CompilersOverrideNode
 from toolchain.nodes.linker_nodes import LinkersOverrideNode
 
-from .property import PropertyDict, PropertyBool, PropertyStr
+from .property import Property, PropertyDict, PropertyBool, PropertyStr
 
 class ProjectTypeNode(PropertyDict):
     """Represents a project type definition in projects.yaml.
@@ -49,7 +49,7 @@ class ProjectTypeNode(PropertyDict):
     def linkers(self) -> LinkersOverrideNode:
         self.get_property_as("linkers", LinkersOverrideNode)
     
-class ProjectSpecificOverrideNode(PropertyDict):
+class ProjectSpecificOverrideNode(Property):
     """Represents a per-project-type override inside a 'projects:' node.
       
     projects:
@@ -70,9 +70,35 @@ class ProjectSpecificOverrideNode(PropertyDict):
             linkers:
             enable-features: []
     """
-    pass
+    def __init__(self, name : str):
+      super().__init__(name)
+      self._properties = PropertyDict()
 
-class ProjectsOverrideNode(PropertyDict):
+    @property
+    def properties(self) -> PropertyDict:
+        return self._properties
+    
+    def get_property(self, name: str) -> Property | None:
+        return self.properties.get_property(name)
+    
+    def add_property(self, property):
+        self.properties.add_property(property)
+
+    def clone(self) -> ProjectSpecificOverrideNode:
+        cloned  = ProjectSpecificOverrideNode(self.name)
+        cloned._properties = self._properties.clone()
+        return cloned
+    
+    def merge_with_parent(self, parent):
+        assert type(parent) is type(self), "Type mismatch"
+        merged = ProjectSpecificOverrideNode(self.name)
+        merged._properties = self.properties.merge_with_parent(parent.properties)
+        return merged
+
+    def dispatch_globals(self) -> ProjectSpecificOverrideNode:
+       return self.clone()
+
+class ProjectsOverrideNode(Property):
     """Represents the 'projects:' block.
     Contains global enable-features + per-project-type overrides 'LinkerSpecificOverrideNode' nodes.
 
@@ -94,4 +120,31 @@ class ProjectsOverrideNode(PropertyDict):
             linkers:
             enable-features: []
     """
-    pass
+    NAME = "projects"
+    def __init__(self, name : str= NAME):
+      super().__init__(name)
+      self._properties = PropertyDict()
+
+    @property
+    def properties(self) -> PropertyDict:
+        return self._properties
+    
+    def get_property(self, name: str) -> Property | None:
+        return self.properties.get_property(name)
+    
+    def add_property(self, property):
+        self.properties.add_property(property)
+
+    def clone(self) -> ProjectsOverrideNode:
+        cloned  = ProjectsOverrideNode(self.name)
+        cloned._properties = self._properties.clone()
+        return cloned
+    
+    def merge_with_parent(self, parent):
+        assert type(parent) is type(self), "Type mismatch"
+        merged = ProjectsOverrideNode(self.name)
+        merged._properties = self.properties.merge_with_parent(parent.properties)
+        return merged
+    
+    def dispatch_globals(self) -> ProjectsOverrideNode:
+       return self.clone()

@@ -26,7 +26,7 @@ class KissContext:
     directory:     Path
     kiss_data:     dict        = field(default_factory=dict)
     compilers:     list[CompilerNode]  = field(default_factory=list)
-    linkers:       list[LinkerNode]  = field(default_factory=list)
+    linkers:       dict[str, LinkerNode]  = field(default_factory=dict)
     profiles:      list[ProfileNode]  = field(default_factory=list)
     project_types: list[ProjectTypeNode]  = field(default_factory=list)
     targets:       list[TargetNode]  = field(default_factory=list)
@@ -131,7 +131,7 @@ class KissContext:
         return [c.name for c in self.known_compilers()]
     
     def known_linkers(self) -> list[LinkerNode]:
-        return [l for l in self.linkers if not l.is_abstract]
+        return [l for l in self.linkers.values() if not l.is_abstract]
     
     def default_linker(self, target_name: str) -> LinkerNode | None:
        default_compiler = self.default_compiler(target_name)

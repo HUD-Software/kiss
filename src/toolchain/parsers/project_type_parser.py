@@ -1,11 +1,13 @@
 import yaml
-from toolchain.nodes.project_type_nodes import ProjectSpecificOverrideNode, ProjectTypeNode, ProjectsOverrideNode
+from toolchain.nodes.compiler_nodes import CompilersOverrideNode
+from toolchain.nodes.linker_nodes import LinkersOverrideNode
+from toolchain.nodes.project_type_nodes import ProjectTypeNode, ProjectsOverrideNode
 from toolchain.nodes.property import PropertyDict
 from toolchain.parsers.compiler_parser import yaml_parse_compilers_overrides
 from toolchain.parsers.linker_parser import yaml_parse_linkers_overrides
 from toolchain.parsers.parse_utils import parse_property
 
-def yaml_parse_project_types_overrides(name: str, data: dict) -> ProjectsOverrideNode:
+def yaml_parse_project_types_overrides(data: dict) -> ProjectsOverrideNode:
     """Parse the 'project-types:' block inside a profile entry.
 
     Handles a dict of project-type-specific overrides, each containing
@@ -24,29 +26,24 @@ def yaml_parse_project_types_overrides(name: str, data: dict) -> ProjectsOverrid
           msvc-linker:
             enable-features: []
     """
-    node     = ProjectsOverrideNode(name, data)
-    overrides = PropertyDict("overrides")
-
+    node = ProjectsOverrideNode()
     for key, value in data.items():
         prop = parse_property(key, value)
         if prop:
             node.add_property(prop)
         elif isinstance(value, dict):
-            override = ProjectSpecificOverrideNode(key)
-            for override_key, override_value in value.items():
-                if override_key == "compilers" and isinstance(override_value, dict):
-                    override.add_property(yaml_parse_compilers_overrides(override_key, override_value))
-                elif override_key == "linkers" and isinstance(override_value, dict):
-                    override.add_property(yaml_parse_linkers_overrides(override_key, override_value))
-                else:
-                    prop = parse_property(override_key, override_value)
-                    if prop:
-                        override.add_property(prop)
-            overrides.add_property(override)
-    if overrides.properties:
-        node.add_property(overrides)
-    return node
+            for key_p, value_p in value.items():
+                match key_p:
+                    case CompilersOverrideNode.NAME:
+                        node.add_property(yaml_parse_compilers_overrides(value_p))
+                    case LinkersOverrideNode.NAME:
+                        node.add_property(yaml_parse_linkers_overrides(value_p))
+                    case _:
+                        prop = parse_property(key_p, value_p)
+                        if prop:
+                            node.add_property(prop)
 
+    return node
 def yaml_parse_project_type(data: dict) -> ProjectTypeNode:
     """Parse a project type entry (bin, lib, dyn or custom).
 
@@ -56,21 +53,25 @@ def yaml_parse_project_type(data: dict) -> ProjectTypeNode:
       compilers: ...
       linkers: ...
     """
-    node = ProjectTypeNode(data["name"])
+    # Project type need 'name'
+    name = data.get("name")
+    if not name or not isinstance(name, str):
+        raise ValueError("Missing 'name' for profile as string")
+    
+    # Create the project type and load informations
+    node = ProjectTypeNode(name)
     for key, value in data.items():
-        if key == "name":
-            continue
-        if key == "compilers" and isinstance(value, dict):
-            compiler_node = yaml_parse_compilers_overrides(key, value)
-            node.add_property(compiler_node)
-            continue
-        if key == "linkers" and isinstance(value, dict):
-            linker_node = yaml_parse_linkers_overrides(key, value)
-            node.add_property(linker_node)
-            continue
-        prop = parse_property(key, value)
-        if prop:
-            node.add_property(prop)
+        match key:
+            case "name":
+                continue
+            case CompilersOverrideNode.NAME:
+                node.add_property(yaml_parse_compilers_overrides(value))
+            case LinkersOverrideNode.NAME:
+                node.add_property(yaml_parse_linkers_overrides(value))
+            case _:
+                prop = parse_property(key, value)
+                if prop:
+                    node.add_property(prop)
     return node
 
 

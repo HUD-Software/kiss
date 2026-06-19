@@ -56,13 +56,13 @@ class PropertyStr(Property):
         self.value = value
 
     def clone(self) -> PropertyStr:
-        return PropertyStr(self.name, self.value)
+        return PropertyStr(self.name, self.value, self.inheritable)
     
     def merge_with_parent(self, parent: PropertyStr) -> PropertyStr:
-        return PropertyStr(self.name, self.value)
+        return PropertyStr(self.name, self.value, self.inheritable)
     
     def __repr__(self):
-        return f"PropertyStr(name={self.name!r}, value={self.value!r})"
+        return f"PropertyStr(name={self.name!r}, value={self.value!r}, inheritable={self.inheritable!r})"
 
 
 class PropertyBool(Property):
@@ -71,13 +71,13 @@ class PropertyBool(Property):
         self.value = value
 
     def clone(self) -> PropertyBool:
-        return PropertyBool(self.name, self.value)
+        return PropertyBool(self.name, self.value, self.inheritable)
     
     def merge_with_parent(self, parent: PropertyStr) -> PropertyStr:
-        return PropertyBool(self.name, self.value)
+        return PropertyBool(self.name, self.value, self.inheritable)
     
     def __repr__(self):
-        return f"PropertyBool(name={self.name!r}, value={self.value!r})"
+        return f"PropertyBool(name={self.name!r}, value={self.value!r}, inheritable={self.inheritable!r})"
 
 
 # ── String lists ──────────────────────────────────────────────────────────────
@@ -90,10 +90,10 @@ class PropertyStrList(Property):
         self.values: list[str] = list(values)
 
     def clone(self) -> PropertyStrList:
-        return PropertyStrList(self.name, self.values.copy())
+        return PropertyStrList(self.name, self.values.copy(), self.inheritable)
     
     def merge_with_parent(self, parent: PropertyStrList) -> PropertyStrList:
-        return PropertyStrList(self.name, list(self.values))
+        return PropertyStrList(self.name, list(self.values), self.inheritable)
     
     def apply_modifier_prop(self, mod : PropertyStrListModifier):
         if mod.operation == StrListModifierOperation.APPEND:
@@ -106,7 +106,7 @@ class PropertyStrList(Property):
                     self.values.remove(value)
 
     def __repr__(self):
-        return f"PropertyStrList(name={self.name!r}, values={self.values})"
+        return f"PropertyStrList(name={self.name!r}, values={self.values}, inheritable={self.inheritable!r})"
 
 from enum import Enum
 class StrListModifierOperation(Enum):
@@ -127,20 +127,6 @@ class PropertyStrListModifier(PropertyStrList):
             f"operation={self.operation.value!r})"
         )
 
-# class PropertyNode(Property):
-#     def __init__(self, name: str, node: Node, inheritable : bool = True):
-#         super().__init__(name, inheritable)
-#         self.node = node
-
-#     def clone(self) -> PropertyBool:
-#         return PropertyNode(self.name, self.node.clone())
-    
-#     def merge_with_parent(self, parent: PropertyNode) -> PropertyNode:
-#         return PropertyNode(self.name, self.node.merge_with_parent(parent), self.inheritable)
-    
-#     def __repr__(self):
-#         return f"PropertyNode(name={self.name!r}, node={self.node!r})"
-    
 # ── Node lists ────────────────────────────────────────────────────────────────
 
 class PropertyNodeList(Property):
@@ -170,13 +156,13 @@ class PropertyNodeList(Property):
             if not parent_node:
                 result.append(self_node.clone())
 
-        return PropertyNodeList(self.name, result)
+        return PropertyNodeList(self.name, result, self.inheritable)
 
     def clone(self) -> "PropertyNodeList":  
-        return PropertyNodeList(self.name, [n.clone() for n in self.nodes])
+        return PropertyNodeList(self.name, [n.clone() for n in self.nodes], self.inheritable)
     
     def __repr__(self):
-        return f"PropertyNodeList(name={self.name!r}, nodes={[n.name for n in self.nodes]})"
+        return f"PropertyNodeList(name={self.name!r}, nodes={[n.name for n in self.nodes]}, inheritable={self.inheritable!r})"
 
 
 # ── PropertyDict ──────────────────────────────────────────────────────────────────────

@@ -1,4 +1,5 @@
 import yaml
+from toolchain.nodes.linker_nodes import LinkersOverrideNode
 from toolchain.nodes.target_nodes import TargetNode
 from toolchain.parsers.compiler_parser import yaml_parse_compilers_overrides
 from toolchain.parsers.linker_parser import yaml_parse_linkers_overrides
@@ -10,11 +11,11 @@ def yaml_parse_target(data: dict) -> TargetNode:
     for key, value in data.items():
         if key == "name":
             continue
-        if key == "linkers" and isinstance(value, dict):
-            node.add_property(yaml_parse_linkers_overrides(key, value))
+        if key == LinkersOverrideNode.NAME:
+            node.add_property(yaml_parse_linkers_overrides(value))
             continue
         if key == "compilers" and isinstance(value, dict):
-            node.add_property(yaml_parse_compilers_overrides(key, value))
+            node.add_property(yaml_parse_compilers_overrides(value))
             continue
         prop = parse_property(key, value)
         if prop:

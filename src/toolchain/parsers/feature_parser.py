@@ -14,7 +14,7 @@ def yaml_parse_feature(data: dict, node_cls: Type[T] = FeatureNode) -> T:
         raise ValueError("Missing 'name' for feature as string")
 
     # Create the feature and load informations
-    node = node_cls(data["name"])
+    node = node_cls(name)
     for key, value in data.items():
         match key:
             case "name":
@@ -30,24 +30,6 @@ def yaml_parse_feature(data: dict, node_cls: Type[T] = FeatureNode) -> T:
                 if prop:
                     node.add_property(prop)
     return node
-
-    # node = FeatureNode(data["name"])
-    # for key, value in data.items():
-    #     if key == "name":
-    #         continue
-    #     if key == "args" and isinstance(value, dict):
-    #         arg_node = FeatureArgsNode(key)
-    #         for key, value in data.items():
-    #             prop = parse_property(key, value if value is not None else "")
-    #             if prop:
-    #                 arg_node.add_property(prop)
-    #         node.add_property(arg_node)
-    #         continue
-    #     prop = parse_property(key, value)
-    #     if prop:
-    #         node.add_property(prop)
-    # return node
-
 
 def yaml_parse_feature_rule(data: dict) -> FeatureRuleNode:
     """Parse a single feature rule (only-one or incompatible)."""

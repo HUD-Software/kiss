@@ -1,5 +1,8 @@
 import yaml
+from toolchain.nodes.compiler_nodes import CompilersOverrideNode
+from toolchain.nodes.linker_nodes import LinkersOverrideNode
 from toolchain.nodes.profile_nodes import ProfileNode, ProfileSpecificOverrideNode, ProfilesOverrideNode
+from toolchain.nodes.project_type_nodes import ProjectsOverrideNode
 from toolchain.nodes.property import PropertyDict
 from toolchain.parsers.compiler_parser import yaml_parse_compilers_overrides
 from toolchain.parsers.linker_parser import yaml_parse_linkers_overrides
@@ -15,21 +18,20 @@ def yaml_parse_profile_overrides(name: str, data: dict) -> ProfilesOverrideNode:
     intersections like "clangcl + dyn + release on x86_64 only" when combined
     with the project-type overrides nested inside each profile.
 
-    Expected structure:
-      profiles:
+    profiles:
         release:                      # → ProfileSpecificOverrideNode
-          compilers:
+            compilers:
             enable-features: [...]
             clangcl:
-              enable-features: [...]
-          linkers:
+                enable-features: [...]
+            linkers:
             enable-features: [...]
-          project-types:
+            project-types:
             dyn:
-              compilers:
+                compilers:
                 enable-features: [...]
         debug:                        # → ProfileSpecificOverrideNode
-          compilers:
+            compilers:
             enable-features: [...]
     """
     
@@ -83,25 +85,27 @@ def yaml_parse_profile(data: dict) -> ProfileNode:
             linkers:
               enable-features: [...]
     """
-    node = ProfileNode(name=data["name"])
+    # Profile need 'name'
+    name = data.get("name")
+    if not name or not isinstance(name, str):
+        raise ValueError("Missing 'name' for profile as string")
+    
+    # Create the profile and load informations
+    node = ProfileNode(data["name"])
     for key, value in data.items():
-        if key == "name":
-            continue
-        if key == "compilers" and isinstance(value, dict):
-            compiler_node = yaml_parse_compilers_overrides(key, value)
-            node.add_property(compiler_node)
-            continue
-        if key == "linkers" and isinstance(value, dict):
-            linker_node = yaml_parse_linkers_overrides(key, value)
-            node.add_property(linker_node)
-            continue
-        if key == "project-types" and isinstance(value, dict):
-            project_types = yaml_parse_project_types_overrides(key, value)
-            node.add_property(project_types)
-            continue
-        prop = parse_property(key, value)
-        if prop:
-            node.add_property(prop)
+        match key:
+            case "name":
+                continue
+            case CompilersOverrideNode.NAME:
+                node.add_property(yaml_parse_compilers_overrides(value))
+            case LinkersOverrideNode.NAME:
+                node.add_property(yaml_parse_linkers_overrides(value))
+            case ProjectsOverrideNode.NAME:
+                node.add_property(yaml_parse_project_types_overrides(value))
+            case _:
+                prop = parse_property(key, value)
+                if prop:
+                    node.add_property(prop)
     return node
 
 
@@ -109,7 +113,6 @@ def load_profiles(path: str) -> list[ProfileNode]:
     with open(path, encoding="utf-8") as f:
         data = yaml.safe_load(f)
 
-        
     profiles = {}
     for p in data.get("profiles", []):
         profile = yaml_parse_profile(p)

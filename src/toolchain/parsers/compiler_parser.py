@@ -1,14 +1,13 @@
 import yaml
 from toolchain.nodes.compiler_nodes import CompilerFeatureNode, CompilerNode, CompilersOverrideNode, CompilerSpecificOverrideNode
 from toolchain.nodes.feature_node import FeatureNodeList, FeatureRuleNodeList
+from toolchain.nodes.linker_nodes import LinkersOverrideNode
 from toolchain.nodes.property import PropertyDict
 from toolchain.parsers.feature_parser import yaml_parse_feature, yaml_parse_feature_rule
 from toolchain.parsers.linker_parser import yaml_parse_linkers_overrides
 from toolchain.parsers.parse_utils import parse_property
 
-
-
-def yaml_parse_compilers_overrides(name: str, data: dict) -> CompilersOverrideNode:
+def yaml_parse_compilers_overrides(data: dict) -> CompilersOverrideNode:
     """Parse the 'compilers:' block inside a compiler feature.
 
     compilers:
@@ -18,9 +17,7 @@ def yaml_parse_compilers_overrides(name: str, data: dict) -> CompilersOverrideNo
       clang:
         enable-features: [OPT_LEVEL_0]
     """
-    node     = CompilersOverrideNode(name, data)
-    overrides = PropertyDict("overrides")
-
+    node = CompilersOverrideNode()
     for key, value in data.items():
         prop = parse_property(key, value)
         if prop:
@@ -31,9 +28,7 @@ def yaml_parse_compilers_overrides(name: str, data: dict) -> CompilersOverrideNo
                 prop = parse_property(override_key, override_value)
                 if prop:
                     override.add_property(prop)
-            overrides.add_property(override)
-    if overrides.properties:
-        node.add_property(overrides)
+            node.add_property(override)
     return node
 
 def yaml_parse_compiler_feature(data: dict) -> CompilerFeatureNode:
@@ -52,9 +47,9 @@ def yaml_parse_compiler_feature(data: dict) -> CompilerFeatureNode:
     """
     node = yaml_parse_feature(data, CompilerFeatureNode)
 
-    linkers_value = data.get("linkers")
-    if linkers_value and isinstance(linkers_value, dict):
-        node.add_property(yaml_parse_linkers_overrides("linkers", linkers_value))
+    linkers_value = data.get(LinkersOverrideNode.NAME)
+    if linkers_value:
+        node.add_property(yaml_parse_linkers_overrides(linkers_value))
     return node
 
 
@@ -66,7 +61,7 @@ def yaml_parse_compiler(data: dict) -> CompilerNode:
         raise ValueError("Missing 'name' for compiler as string")
     
     # Create the compiler and load informations
-    node = CompilerNode(data["name"])
+    node = CompilerNode(name)
     for key, value in data.items():
         match key:
             case "name":

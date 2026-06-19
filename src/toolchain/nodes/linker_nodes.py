@@ -1,6 +1,8 @@
 from __future__ import annotations
 from toolchain.nodes.feature_node import FeatureNodeList, FeatureRuleNodeList
 from toolchain.nodes.property import PropertyBool, PropertyDict, Property
+from typing import TypeVar, Type
+T = TypeVar("T", bound=Property)
 
 class LinkerNode(Property):
     """Represents a linker definition in linkers.yaml.
@@ -48,6 +50,9 @@ class LinkerNode(Property):
     def add_property(self, property):
         self.properties.add_property(property)
 
+    def get_property_as(self, name: str, prop_type: Type[T]) -> T | None:
+        self.properties.get_property_as(name, prop_type)
+        
     def clone(self) -> LinkerNode:
         cloned  = LinkerNode(self.name)
         cloned._properties = self._properties.clone()
@@ -63,16 +68,8 @@ class LinkerNode(Property):
         # The feature linker have no feature or feature-rule globals to dispatch
         # Linker feature are indepandent of compilers, profiles, targets, etc...
         return self.clone()
-        # dispatched = LinkerNode(self.name)
-        # for property_name, property in self.properties.items():
-        #     if property_name == FeatureNodeList.NAME or property_name == FeatureRuleNodeList.NAME:
-        #       dispatched.add_property(property.dispatch_globals())
-        #     else:
-        #       dispatched.add_property(property.clone())
-        # return dispatched
         
 class LinkerSpecificOverrideNode(Property):
-  
     """Represents a per-linker override inside a 'linkers:' node.
     
     linkers:
@@ -107,7 +104,9 @@ class LinkerSpecificOverrideNode(Property):
         merged = LinkerSpecificOverrideNode(self.name)
         merged._properties = self.properties.merge_with_parent(parent.properties)
         return merged
-    
+
+    def dispatch_globals(self) -> LinkerSpecificOverrideNode:
+       return self.clone()
 
 class LinkersOverrideNode(Property):
     """Represents the 'linkers:' block.
@@ -145,3 +144,5 @@ class LinkersOverrideNode(Property):
         merged._properties = self.properties.merge_with_parent(parent.properties)
         return merged
     
+    def dispatch_globals(self) -> LinkersOverrideNode:
+       return self.clone()

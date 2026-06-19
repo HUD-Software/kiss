@@ -6,7 +6,7 @@ from toolchain.parsers.feature_parser import yaml_parse_feature, yaml_parse_feat
 from toolchain.parsers.parse_utils import parse_property
 
 
-def yaml_parse_linkers_overrides(name: str, data: dict) -> LinkersOverrideNode:
+def yaml_parse_linkers_overrides(data: dict) -> LinkersOverrideNode:
     """Parse the 'linkers:' block inside a compiler feature.
 
     linkers:
@@ -16,7 +16,7 @@ def yaml_parse_linkers_overrides(name: str, data: dict) -> LinkersOverrideNode:
       lld-link:
         enable-features: [OPT_LEVEL_0]
     """
-    node     = LinkersOverrideNode(name)
+    node = LinkersOverrideNode()
     for key, value in data.items():
         prop = parse_property(key, value)
         if prop:
@@ -28,8 +28,6 @@ def yaml_parse_linkers_overrides(name: str, data: dict) -> LinkersOverrideNode:
                 if prop:
                     override.add_property(prop)
             node.add_property(override)
-        # if overrides.properties:
-        #     node.add_property(overrides)
     return node
     
 
@@ -42,7 +40,7 @@ def yaml_parse_linker(data: dict) -> LinkerNode:
     
     
     # Create the linker and load informations
-    node = LinkerNode(data["name"])
+    node = LinkerNode(name)
     for key, value in data.items():
         match key:
             case "name":

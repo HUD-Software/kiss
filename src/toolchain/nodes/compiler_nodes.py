@@ -1,9 +1,9 @@
 
 from __future__ import annotations
-from toolchain.nodes.feature_node import FeatureNode, FeatureNodeList, FeatureRuleNode, FeatureRuleNodeList
+from toolchain.nodes.feature_node import FeatureNode, FeatureNodeList, FeatureRuleNodeList
 from toolchain.nodes.property import Property, PropertyBool, PropertyDict, PropertyStr, PropertyStrList
-from toolchain.parsers.parse_utils import parse_property
-
+from typing import TypeVar, Type
+T = TypeVar("T", bound=Property)
 
 class CompilerNode(Property):
     """Represents a compiler definition in compilers.yaml.
@@ -50,6 +50,9 @@ class CompilerNode(Property):
     
     def add_property(self, property):
         self.properties.add_property(property)
+    
+    def get_property_as(self, name: str, prop_type: Type[T]) -> T | None:
+        self.properties.get_property_as(name, prop_type)
 
     def clone(self) -> CompilerNode:
         cloned  = CompilerNode(self.name)
@@ -104,6 +107,9 @@ class CompilerSpecificOverrideNode(Property):
         merged._properties = self.properties.merge_with_parent(parent.properties)
         return merged
     
+    def dispatch_globals(self) -> CompilerSpecificOverrideNode:
+       return self.clone()
+    
 
 class CompilersOverrideNode(Property):
     """Represents the 'compilers:' block.
@@ -140,7 +146,9 @@ class CompilersOverrideNode(Property):
         merged = CompilersOverrideNode(self.name)
         merged._properties = self.properties.merge_with_parent(parent.properties)
         return merged
-
+    
+    def dispatch_globals(self) -> CompilersOverrideNode:
+       return self.clone()
 
 class CompilerFeatureNode(FeatureNode):
     def dispatch_globals(self) -> FeatureNodeList:

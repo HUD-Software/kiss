@@ -44,6 +44,10 @@ class FeatureNode(Property):
         super().__init__(name)
         self._properties = PropertyDict()
     
+    @property
+    def properties(self) -> PropertyDict:
+        return self._properties
+    
     def add_property(self, property: Property):
         self._properties.add_property(property)
 
@@ -101,6 +105,10 @@ class FeatureRuleNode(Property):
     def __init__(self, name:str):
         super().__init__(name)
         self._properties = PropertyDict()
+    
+    @property
+    def properties(self) -> PropertyDict:
+        return self._properties
     
     def add_property(self, property: Property):
         self._properties.add_property(property)

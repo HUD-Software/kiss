@@ -1,7 +1,8 @@
-from .property import PropertyDict, PropertyStr, PropertyStrList
+from __future__ import annotations
+from .property import Property, PropertyDict, PropertyStr, PropertyStrList
 
 
-class TargetNode(PropertyDict):
+class TargetNode(Property):
     """Represents a build target definition in targets.yaml.
 
     A target describes a fully-qualified compilation platform using a triple-like
@@ -34,7 +35,14 @@ class TargetNode(PropertyDict):
                 specialized per compiler, per linker and per project-type
                 (e.g. profiles.release.project-types.dyn.compilers.clangcl:)
     """
-
+    def __init__(self, name : str):
+        super().__init__(name)
+        self._properties = PropertyDict()
+    
+    @property
+    def properties(self) -> PropertyDict:
+        return self._properties
+    
     @property
     def default_compiler_name(self) -> str | None:
         return self.get_property_as("default-compiler", PropertyStr) or self.supported_compiler_names[0]
@@ -43,3 +51,28 @@ class TargetNode(PropertyDict):
     def supported_compiler_names(self) -> list[str]:
         prop = self.get_property_as("supported-compilers", PropertyStrList)
         return prop.values if prop else []
+    
+
+    def get_property(self, name: str) -> Property | None:
+        return self.properties.get_property(name)
+    
+    def add_property(self, property):
+        self.properties.add_property(property)
+
+    def clone(self) -> TargetNode:
+        cloned  = TargetNode(self.name)
+        cloned.properties = self._properties.clone()
+        return cloned
+    
+    def merge_with_parent(self, parent):
+        assert type(parent) is type(self), "Type mismatch"
+        merged = TargetNode(self.name)
+        merged._properties = self.properties.merge_with_parent(parent.properties)
+        return merged
+    
+    def dispatch_globals(self) -> TargetNode:
+        dispatched = TargetNode(self.name)
+        for property in self.properties.values():
+            property = property.dispatch_globals()
+            dispatched.add_property(property)
+        return dispatched

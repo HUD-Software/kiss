@@ -79,7 +79,31 @@ class CompilerSpecificOverrideNode(Property):
         defines: []
       ...
     """
-    pass
+    def __init__(self, name : str):
+      super().__init__(name)
+      self._properties = PropertyDict()
+
+    @property
+    def properties(self) -> PropertyDict:
+        return self._properties
+    
+    def get_property(self, name: str) -> Property | None:
+        return self.properties.get_property(name)
+    
+    def add_property(self, property):
+        self.properties.add_property(property)
+
+    def clone(self) -> CompilerSpecificOverrideNode:
+        cloned  = CompilerSpecificOverrideNode(self.name)
+        cloned._properties = self._properties.clone()
+        return cloned
+    
+    def merge_with_parent(self, parent):
+        assert type(parent) is type(self), "Type mismatch"
+        merged = CompilerSpecificOverrideNode(self.name)
+        merged._properties = self.properties.merge_with_parent(parent.properties)
+        return merged
+    
 
 class CompilersOverrideNode(Property):
     """Represents the 'compilers:' block.
@@ -91,7 +115,31 @@ class CompilersOverrideNode(Property):
         defines: []
       ...
     """
-    pass
+    NAME = "compilers"
+    def __init__(self, name : str= NAME):
+      super().__init__(name)
+      self._properties = PropertyDict()
+
+    @property
+    def properties(self) -> PropertyDict:
+        return self._properties
+    
+    def get_property(self, name: str) -> Property | None:
+        return self.properties.get_property(name)
+    
+    def add_property(self, property):
+        self.properties.add_property(property)
+
+    def clone(self) -> CompilersOverrideNode:
+        cloned  = CompilersOverrideNode(self.name)
+        cloned._properties = self._properties.clone()
+        return cloned
+    
+    def merge_with_parent(self, parent):
+        assert type(parent) is type(self), "Type mismatch"
+        merged = CompilersOverrideNode(self.name)
+        merged._properties = self.properties.merge_with_parent(parent.properties)
+        return merged
 
 
 class CompilerFeatureNode(FeatureNode):

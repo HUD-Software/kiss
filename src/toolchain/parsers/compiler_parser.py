@@ -1,6 +1,6 @@
 import yaml
 from toolchain.nodes.compiler_nodes import CompilerFeatureNode, CompilerNode, CompilersOverrideNode, CompilerSpecificOverrideNode
-from toolchain.nodes.feature_node import FeatureArgsNode, FeatureNode, FeatureNodeList, FeatureRuleNodeList
+from toolchain.nodes.feature_node import FeatureNodeList, FeatureRuleNodeList
 from toolchain.nodes.property import PropertyDict
 from toolchain.parsers.feature_parser import yaml_parse_feature, yaml_parse_feature_rule
 from toolchain.parsers.linker_parser import yaml_parse_linkers_overrides

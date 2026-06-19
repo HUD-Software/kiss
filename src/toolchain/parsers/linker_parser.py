@@ -16,9 +16,7 @@ def yaml_parse_linkers_overrides(name: str, data: dict) -> LinkersOverrideNode:
       lld-link:
         enable-features: [OPT_LEVEL_0]
     """
-    node     = LinkersOverrideNode(name, data)
-    overrides = PropertyDict("overrides")
-
+    node     = LinkersOverrideNode(name)
     for key, value in data.items():
         prop = parse_property(key, value)
         if prop:
@@ -29,10 +27,11 @@ def yaml_parse_linkers_overrides(name: str, data: dict) -> LinkersOverrideNode:
                 prop = parse_property(override_key, override_value)
                 if prop:
                     override.add_property(prop)
-            overrides.add_property(override)
-    if overrides.properties:
-        node.add_property(overrides)
+            node.add_property(override)
+        # if overrides.properties:
+        #     node.add_property(overrides)
     return node
+    
 
 
 def yaml_parse_linker(data: dict) -> LinkerNode:

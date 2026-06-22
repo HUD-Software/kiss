@@ -64,6 +64,9 @@ class PropertyStr(Property):
     def __repr__(self):
         return f"PropertyStr(name={self.name!r}, value={self.value!r}, inheritable={self.inheritable!r})"
 
+    def append_to_boxed_print(self, box, ignore_empty):
+        if self.value or not ignore_empty:
+            box.lines.append(f"{self.name}: {self.value!r}")
 
 class PropertyBool(Property):
     def __init__(self, name: str, value: bool, inheritable : bool = True):
@@ -79,6 +82,9 @@ class PropertyBool(Property):
     def __repr__(self):
         return f"PropertyBool(name={self.name!r}, value={self.value!r}, inheritable={self.inheritable!r})"
 
+    def append_to_boxed_print(self, box, ignore_empty):
+        if self.value or not ignore_empty:
+            box.lines.append(f"{self.name}: {self.value!r}")
 
 # ── String lists ──────────────────────────────────────────────────────────────
 
@@ -107,6 +113,10 @@ class PropertyStrList(Property):
 
     def __repr__(self):
         return f"PropertyStrList(name={self.name!r}, values={self.values}, inheritable={self.inheritable!r})"
+
+    def append_to_boxed_print(self, box, ignore_empty):
+        if self.values or not ignore_empty:
+            box.lines.append(f"{self.name}: {self.values!r}")
 
 from enum import Enum
 class StrListModifierOperation(Enum):

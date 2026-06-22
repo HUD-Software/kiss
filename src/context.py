@@ -100,7 +100,7 @@ class KissContext:
         return [p.name for p in self.known_profiles()]
 
     def known_profiles(self) -> list[ProfileNode]:    
-        return [p for p in self.profiles if not p.is_abstract]
+        return [p for p in self.profiles.values() if not p.is_abstract]
     
     def default_profile(self) -> ProfileNode | None:
         return next((p for p in self.profiles if p.name == "debug"), None)

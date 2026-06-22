@@ -76,8 +76,12 @@ class FeatureNodeList(Property):
         self._features = PropertyDict()
     
     @property
-    def features(self) -> PropertyDict:
+    def properties(self) -> PropertyDict:
         return self._features
+    
+    @property
+    def features(self) -> PropertyDict:
+        return self.properties
     
     def add_feature(self, feature : FeatureNode):
         self._features.add_property(feature)
@@ -105,6 +109,7 @@ class FeatureRuleNode(Property):
     def __init__(self, name:str):
         super().__init__(name)
         self._properties = PropertyDict()
+    
     
     @property
     def properties(self) -> PropertyDict:
@@ -139,8 +144,12 @@ class FeatureRuleNodeList(Property):
         self._feature_rules = PropertyDict()
 
     @property
-    def feature_rules(self) -> PropertyDict:
+    def properties(self) -> PropertyDict:
         return self._feature_rules
+
+    @property
+    def feature_rules(self) -> PropertyDict:
+        return self.properties
     
     def add_feature_rule(self, feature : FeatureRuleNode):
         self._feature_rules.add_property(feature)

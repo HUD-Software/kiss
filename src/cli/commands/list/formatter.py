@@ -26,6 +26,7 @@ class Box:
     TOP_RIGHT_ANGLE = "╮"
     BOTTOM_LEFT_ANGLE = "╰"
     BOTTOM_RIGHT_ANGLE = "╯"
+    DASH = "─"
 
     def __init__(self, title: str):
         self.title = title
@@ -52,8 +53,8 @@ class Box:
 
         # 3. Build top and bottom borders
         dashes = box_width - _vis_len(title)
-        top    = f"{Box.TOP_LEFT_ANGLE}{title}" + "─" * dashes + Box.TOP_RIGHT_ANGLE
-        bottom = f"{Box.BOTTOM_LEFT_ANGLE}" + "─" * box_width + Box.BOTTOM_RIGHT_ANGLE
+        top    = f"{Box.TOP_LEFT_ANGLE}{title}" + Box.DASH * dashes + Box.TOP_RIGHT_ANGLE
+        bottom = f"{Box.BOTTOM_LEFT_ANGLE}" + Box.DASH * box_width + Box.BOTTOM_RIGHT_ANGLE
 
         # 4. Assemble with padding
         out = [top]
@@ -62,9 +63,38 @@ class Box:
             out.append(f"{Box.LEFT_BORDER}{line}{' ' * padding}{Box.RIGHT_BORDER}")
         out.append(bottom)
         return out
+    
+    @staticmethod
+    def properties_to_box(title: str, properties, ignore_empty: bool = True) -> Box:
+        """
+        Recursively format a Node into a nested inner-box structure.
 
+        Properties are split into:
+        - leaf properties: simple scalar values (str, bool, lists)
+        - node properties: hierarchical structures requiring recursion
 
-def _split_props(properties):
+        Leaf properties are formatted first to improve readability, followed
+        by nested structures.
+
+        Node-based properties are recursively formatted as inner boxes and
+        flattened into the current layout.
+        """
+        box = Box(title)
+
+        leaf_props, node_props = split_props(properties)
+
+        # LEAF PROPERTIES FIRST ─────────────────────────────
+        for prop in leaf_props:
+            prop.append_to_boxed_print(box, ignore_empty)
+
+        # NODE PROPERTIES AFTER ─────────────────────────────
+        for prop in node_props:
+            child_box = Box.properties_to_box(prop.name, prop.properties,  ignore_empty)
+            box.inner_box.append(child_box)
+
+        return box
+
+def split_props(properties):
     """
     Split node properties into two categories:
 
@@ -86,59 +116,7 @@ def _split_props(properties):
 
     return leaf, nodes
 
-
-def _node_to_box(title: str, node, ignore_empty: bool = True) -> Box:
-    """
-    Recursively format a Node into a nested inner-box structure.
-
-    Properties are split into:
-    - leaf properties: simple scalar values (str, bool, lists)
-    - node properties: hierarchical structures requiring recursion
-
-    Leaf properties are formatted first to improve readability, followed
-    by nested structures.
-
-    Node-based properties are recursively formatted as inner boxes and
-    flattened into the current layout.
-    """
-    box = Box(title)
-
-    leaf_props, node_props = _split_props(node.properties)
-
-    # LEAF PROPERTIES FIRST ─────────────────────────────
-    for prop in leaf_props:
-        if isinstance(prop, PropertyStr):
-            if prop.value or not ignore_empty:
-                box.lines.append(f"{prop.name}: {prop.value!r}")
-        elif isinstance(prop, PropertyStrList):
-            if prop.values or not ignore_empty:
-                box.lines.append(f"{prop.name}: {prop.values}")
-        elif isinstance(prop, PropertyBool):
-            if prop.value or not ignore_empty:
-                box.lines.append(f"{prop.name}: {prop.value}")
-
-    # NODE PROPERTIES AFTER ─────────────────────────────
-    for prop in node_props:
-        if isinstance(prop, FeatureArgsNode):
-            if prop.properties or not ignore_empty:
-                child_box = _node_to_box(prop.name, prop,  ignore_empty)
-                box.inner_box.append(child_box)
-        elif isinstance(prop, LinkersOverrideNode):
-            if prop.properties or not ignore_empty:
-                child_box = _node_to_box(prop.name, prop,  ignore_empty)
-                box.inner_box.append(child_box)
-        elif isinstance(prop, LinkerSpecificOverrideNode):
-            if prop.properties or not ignore_empty:
-                child_box = _node_to_box(prop.name, prop,  ignore_empty)
-                box.inner_box.append(child_box)
-
-    # for inner_box in box.inner_box:
-    #     box.lines.extend(inner_box.lines)
-    return box
-
-# PUBLIC ──────────────────────────────────────────────────────────────────────
-
-def format_node_to_boxed_lines(node, ignore_empty:bool = True, is_default: bool = False) -> list[str]:
+def format_node_to_boxed_lines(title, properties, ignore_empty:bool = True, is_default: bool = False) -> list[str]:
     """
     Format a Node into a hierarchical boxed representation.
 
@@ -152,45 +130,8 @@ def format_node_to_boxed_lines(node, ignore_empty:bool = True, is_default: bool 
     ensuring visual hierarchy is preserved in terminal output.
     """
 
-    title = node.name + (" (default)" if is_default else "")
-    box = Box(title)
-
-    leaf_props, node_props = _split_props(node.properties)
-    
-    # LEAF PROPERTIES FIRST ─────────────────────────────
-    for prop in leaf_props:
-        if isinstance(prop, PropertyStr):
-            if prop.value or not ignore_empty:
-                box.lines.append(f"{prop.name}: {prop.value!r}")
-        elif isinstance(prop, PropertyStrList):
-            if prop.values or not ignore_empty:
-                box.lines.append(f"{prop.name}: {prop.values}")
-        elif isinstance(prop, PropertyBool):
-            if prop.value or not ignore_empty:
-                box.lines.append(f"{prop.name}: {prop.value}")
-
-    # NODE PROPERTIES AFTER ─────────────────────────────
-    for prop in node_props:
-        if isinstance(prop,FeatureNodeList):
-            if prop.features or not ignore_empty:
-                features_box = Box(FeatureNodeList.NAME)
-                for feature in prop.features.values():
-                    feature_box = _node_to_box(feature.name, feature,  ignore_empty)
-                    features_box.inner_box.append(feature_box)
-                box.inner_box.append(features_box)
-        elif isinstance(prop, FeatureRuleNodeList):
-            if prop.feature_rules or not ignore_empty:
-                feature_rules_box = Box(FeatureRuleNodeList.NAME)
-                for feature_rule in prop.feature_rules.values():
-                    feature_rule_box = _node_to_box(feature_rule.name, feature_rule,  ignore_empty)
-                    feature_rules_box.inner_box.append(feature_rule_box)
-                box.inner_box.append(feature_rules_box)
-
-    # for inner_box in box.inner_box:
-    #     line = inner_box.to_boxed_string()
-    #     for inner_box in box.inner_box:
-    #         box.lines.extend(inner_box)
-    #     box.lines.extend()
+    title = title + (" (default)" if is_default else "")
+    box = Box.properties_to_box(title, properties, ignore_empty)
     return box.to_boxed_strings()
 
 def format_node_to_lines(node: PropertyDict, ignore_empty:bool = True, indent: int = 0) -> list[str]:
@@ -210,7 +151,7 @@ def format_node_to_lines(node: PropertyDict, ignore_empty:bool = True, indent: i
     prefix = "  " * indent
     lines = []
 
-    leaf_props, node_props = _split_props(node.properties)
+    leaf_props, node_props = split_props(node.properties)
 
     #  NODE HEADER ─────────────────────────────
     lines.append(f"{prefix}{node.name}")

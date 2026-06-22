@@ -7,7 +7,6 @@ from typing import Type, TypeVar
 T = TypeVar("T", bound="FeatureNode")
 
 def yaml_parse_feature(data: dict, node_cls: Type[T] = FeatureNode) -> T:
-
     # Feature need 'name'
     name = data.get("name")
     if not name or not isinstance(name, str):

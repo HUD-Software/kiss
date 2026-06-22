@@ -1,3 +1,4 @@
+from __future__ import annotations
 from toolchain.nodes.compiler_nodes import CompilersOverrideNode
 from toolchain.nodes.linker_nodes import LinkersOverrideNode
 from toolchain.nodes.project_type_nodes import ProjectsOverrideNode
@@ -58,8 +59,90 @@ class ProfileNode(Property):
             dispatched.add_property(property)
         return dispatched
 
-class ProfileSpecificOverrideNode(PropertyDict):
-    pass
+class ProfileSpecificOverrideNode(Property):
+    """Represents a per-profile override inside a 'profiles:' node.
+      
+    profiles:
+        debug: # ProfileSpecificOverrideNode
+            description:
+            compilers: 
+            linkers:
+            project-types:
+        release: # ProfileSpecificOverrideNode
+            description:
+            compilers: 
+            linkers:
+            project-types:
+    """
+    def __init__(self, name : str):
+      super().__init__(name)
+      self._properties = PropertyDict()
 
-class ProfilesOverrideNode(PropertyDict):
-    pass
+    @property
+    def properties(self) -> PropertyDict:
+        return self._properties
+    
+    def get_property(self, name: str) -> Property | None:
+        return self.properties.get_property(name)
+    
+    def add_property(self, property):
+        self.properties.add_property(property)
+
+    def clone(self) -> ProfileSpecificOverrideNode:
+        cloned  = ProfileSpecificOverrideNode(self.name)
+        cloned._properties = self._properties.clone()
+        return cloned
+    
+    def merge_with_parent(self, parent):
+        assert type(parent) is type(self), "Type mismatch"
+        merged = ProfileSpecificOverrideNode(self.name)
+        merged._properties = self.properties.merge_with_parent(parent.properties)
+        return merged
+
+    def dispatch_globals(self) -> ProfileSpecificOverrideNode:
+       return self.clone()
+
+class ProfilesOverrideNode(Property):
+    """Represents the 'profiles:' block.
+    Contains global enable-features + per-profile overrides 'ProfileSpecificOverrideNode' nodes.
+
+    profiles: # ProfilesOverrideNode
+        debug:
+            description:
+            compilers: 
+            linkers:
+            project-types:
+        release:
+            description:
+            compilers: 
+            linkers:
+            project-types:
+    """
+    NAME = "profiles"
+    def __init__(self, name : str= NAME):
+      super().__init__(name)
+      self._properties = PropertyDict()
+
+    @property
+    def properties(self) -> PropertyDict:
+        return self._properties
+    
+    def get_property(self, name: str) -> Property | None:
+        return self.properties.get_property(name)
+    
+    def add_property(self, property):
+        self.properties.add_property(property)
+
+    def clone(self) -> ProfilesOverrideNode:
+        cloned  = ProfilesOverrideNode(self.name)
+        cloned._properties = self._properties.clone()
+        return cloned
+    
+    def merge_with_parent(self, parent):
+        assert type(parent) is type(self), "Type mismatch"
+        merged = ProfilesOverrideNode(self.name)
+        merged._properties = self.properties.merge_with_parent(parent.properties)
+        return merged
+    
+    def dispatch_globals(self) -> ProfilesOverrideNode:
+       return self.clone()

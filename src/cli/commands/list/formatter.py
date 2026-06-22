@@ -1,6 +1,6 @@
 
 from wcwidth import wcswidth
-from toolchain.nodes.feature_node import FeatureNodeList
+from toolchain.nodes.feature_node import FeatureArgsNode, FeatureNodeList, FeatureRuleNodeList
 from toolchain.nodes.property import PropertyDict, PropertyBool,  PropertyNodeList, PropertyStr, PropertyStrList
 
 
@@ -141,20 +141,10 @@ def _node_to_inner_box(title: str, node: PropertyDict, ignore_empty: bool = True
 
     # NODE PROPERTIES AFTER ─────────────────────────────
     for prop in node_props:
-        if isinstance(prop, PropertyNodeList):
-            if prop.nodes or not ignore_empty:
-                for child in prop.nodes:
-                    child_box = _node_to_inner_box(child, ignore_empty)
-                    lines.extend(_flatten_block(child_box))
-        elif isinstance(prop, PropertyDict):
+        if isinstance(prop, FeatureArgsNode):
             if prop.properties or not ignore_empty:
-                child_box = _node_to_inner_box(prop, ignore_empty)
+                child_box = _node_to_inner_box(prop.name, prop,  ignore_empty)
                 lines.extend(_flatten_block(child_box))
-
-            # if prop.properties or not ignore_empty:
-            #     for _, child in prop.properties.items():
-            #         child_box = _node_to_inner_box(child, ignore_empty)
-            #         lines.extend(_flatten_block(child_box))
     return _inner_box(title, lines)
 
 # PUBLIC ──────────────────────────────────────────────────────────────────────
@@ -200,19 +190,15 @@ def format_node_to_boxed_lines(node, ignore_empty:bool = True, is_default: bool 
                     inner_lines.extend(_flatten_block(child_box))
                 prop_box = _inner_box(prop.name, inner_lines)
                 lines.extend(_flatten_block(prop_box))
-        # if isinstance(prop, PropertyNodeList):
-        #     if prop.nodes or not ignore_empty:
-        #         inner_lines = []
-        #         for child in prop.nodes:
-        #             child_box = _node_to_inner_box(child, ignore_empty)
-        #             inner_lines.extend(_flatten_block(child_box))
+        elif isinstance(prop, FeatureRuleNodeList):
+            if prop.feature_rules or not ignore_empty:
+                inner_lines = []
+                for feature_rule in prop.feature_rules.values():
+                    child_box = _node_to_inner_box(feature_rule.name, feature_rule, ignore_empty)
+                    inner_lines.extend(_flatten_block(child_box))
+                prop_box = _inner_box(prop.name, inner_lines)
+                lines.extend(_flatten_block(prop_box))
 
-        #         prop_box = _inner_box(prop.name, inner_lines)
-        #         lines.extend(_flatten_block(prop_box))
-        # elif isinstance(prop, PropertyDict):
-        #     if prop.properties or not ignore_empty:
-        #         child_box = _node_to_inner_box(prop, ignore_empty)
-        #         lines.extend(_flatten_block(child_box))
     return _box(title, lines)
 
 def format_node_to_lines(node: PropertyDict, ignore_empty:bool = True, indent: int = 0) -> list[str]:

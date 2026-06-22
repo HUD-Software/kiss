@@ -1,3 +1,4 @@
+from __future__ import annotations
 from toolchain.nodes.compiler_nodes import CompilersOverrideNode
 from toolchain.nodes.linker_nodes import LinkersOverrideNode
 
@@ -100,7 +101,7 @@ class ProjectSpecificOverrideNode(Property):
 
 class ProjectsOverrideNode(Property):
     """Represents the 'projects:' block.
-    Contains global enable-features + per-project-type overrides 'LinkerSpecificOverrideNode' nodes.
+    Contains global enable-features + per-project-type overrides 'ProjectSpecificOverrideNode' nodes.
 
     projects: # ProjectsOverrideNode
         dyn:

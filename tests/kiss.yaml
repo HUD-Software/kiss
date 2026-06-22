@@ -1,3 +1,15 @@
+# Optional: custom project types specific to this project
+projects:
+  - name: benchmark
+    description: Benchmark binary
+    icon: 📊
+    extends: bin
+    compilers:
+      enable-features: []
+      defines: [KISS_BENCHMARK]
+    linkers:
+      enable-features: []
+
 # Optional: custom profiles specific to this project
 profiles:
   - name: perf
@@ -16,18 +28,6 @@ profiles:
   - name: debug
     compilers:
       enable-features: [OPT_LEVEL_3]
-
-# Optional: custom project types specific to this project
-projects:
-  - name: benchmark
-    description: Benchmark binary
-    icon: 📊
-    extends: bin
-    compilers:
-      enable-features: []
-      defines: [KISS_BENCHMARK]
-    linkers:
-      enable-features: []
 
 # Binaries
 bin:

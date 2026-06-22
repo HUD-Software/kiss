@@ -31,17 +31,17 @@ class LinkerNode(Property):
     
     @property
     def is_abstract(self) -> bool :
-        prop = self.properties.get_property_as("is_abstract", PropertyBool)
+        prop = self.get_property_as("is_abstract", PropertyBool)
         return prop.value if prop else False
     
     @property
     def features(self) -> FeatureNodeList:
-        prop = self.properties.get_property_as(FeatureNodeList.NAME, FeatureNodeList)
+        prop = self.get_property_as(FeatureNodeList.NAME, FeatureNodeList)
         return prop
     
     @property
     def feature_rules(self) -> FeatureRuleNodeList:
-        prop = self.properties.get_property_as(FeatureRuleNodeList.NAME, FeatureRuleNodeList)
+        prop = self.get_property_as(FeatureRuleNodeList.NAME, FeatureRuleNodeList)
         return prop
     
     def get_property(self, name: str) -> Property | None:
@@ -51,7 +51,7 @@ class LinkerNode(Property):
         self.properties.add_property(property)
 
     def get_property_as(self, name: str, prop_type: Type[T]) -> T | None:
-        self.properties.get_property_as(name, prop_type)
+        return self.properties.get_property_as(name, prop_type)
         
     def clone(self) -> LinkerNode:
         cloned  = LinkerNode(self.name)

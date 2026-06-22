@@ -25,7 +25,7 @@ from resolver.extends_resolver         import resolve_extends
 class KissContext:
     directory:     Path
     kiss_data:     dict        = field(default_factory=dict)
-    compilers:     list[CompilerNode]  = field(default_factory=list)
+    compilers:     dict[str, CompilerNode]  = field(default_factory=dict)
     linkers:       dict[str, LinkerNode]  = field(default_factory=dict)
     profiles:      list[ProfileNode]  = field(default_factory=list)
     project_types: list[ProjectTypeNode]  = field(default_factory=list)
@@ -114,7 +114,7 @@ class KissContext:
         return [c.name for c in self.known_compilers()]
 
     def known_compilers(self) -> list[CompilerNode]:
-        return [ c for c in self.compilers if not c.is_abstract]
+        return [ c for c in self.compilers.values() if not c.is_abstract]
     
     def default_compiler(self, target_name: str) -> CompilerNode | None:
         target = next((t for t in self.targets if t.name == target_name), None)

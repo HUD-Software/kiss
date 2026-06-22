@@ -52,7 +52,7 @@ class CompilerNode(Property):
         self.properties.add_property(property)
     
     def get_property_as(self, name: str, prop_type: Type[T]) -> T | None:
-        self.properties.get_property_as(name, prop_type)
+        return self.properties.get_property_as(name, prop_type)
 
     def clone(self) -> CompilerNode:
         cloned  = CompilerNode(self.name)

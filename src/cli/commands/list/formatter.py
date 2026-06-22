@@ -1,21 +1,11 @@
-
+from __future__ import annotations
 from wcwidth import wcswidth
 from toolchain.nodes.feature_node import FeatureArgsNode, FeatureNodeList, FeatureRuleNodeList
+from toolchain.nodes.linker_nodes import LinkerSpecificOverrideNode, LinkersOverrideNode
 from toolchain.nodes.property import PropertyDict, PropertyBool,  PropertyNodeList, PropertyStr, PropertyStrList
 
 
 # PRIVATE ──────────────────────────────────────────────────────────────────────
-def _flatten_block(block: str, indent: str = "") -> list[str]:
-    """
-    Flatten a multi-line block into a list of indented lines.
-
-    Each line of the input string is prefixed with the given indentation.
-    This is used to integrate pre-formatted box strings into a parent layout
-    while preserving visual alignment.
-    """
-
-    return [(indent + line) for line in block.split("\n")]
-
 def _vis_len(s: str) -> int:
     """
     Return the display width of a string as formatted in a terminal.
@@ -29,63 +19,50 @@ def _vis_len(s: str) -> int:
 
     return wcswidth(s)
 
-def _box(title: str, lines: list[str]) -> list[str]:
-    """
-    format a bordered box around a list of text lines.
+class Box:
+    LEFT_BORDER = "│ "
+    RIGHT_BORDER = " │"
+    TOP_LEFT_ANGLE = "╭"
+    TOP_RIGHT_ANGLE = "╮"
+    BOTTOM_LEFT_ANGLE = "╰"
+    BOTTOM_RIGHT_ANGLE = "╯"
 
-    The box width is computed using visual width (_vis_len) to properly
-    handle wide Unicode characters (e.g. emojis, CJK characters).
+    def __init__(self, title: str):
+        self.title = title
+        self.lines = list[str]()
+        self.inner_box = list[Box]()
+    @staticmethod
+    def _title_str(box: Box) -> str:
+        return f"{box.title} "
+    
+    def to_boxed_strings(self) -> list[str]:
+        # 1. Render all content lines (inner boxes are fully rendered first)
+        content_lines: list[str] = []
+        for line in self.lines:
+            content_lines.append(line)
+        for inner_box in self.inner_box:
+            for line in inner_box.to_boxed_strings():
+                content_lines.append(line)
 
-    The title is embedded in the top border.
-    Returns the box as a list of lines (not a single string) to allow
-    further composition in higher-level layouts.
-    """
+        # 2. Compute widths
+        title = f"{self.title} "
+        inner_width = max((_vis_len(line) for line in content_lines), default=0)
+        inner_width = max(inner_width, _vis_len(title))
+        box_width = inner_width + _vis_len(Box.TOP_LEFT_ANGLE) + _vis_len(Box.TOP_RIGHT_ANGLE)
 
-    content_width = max((_vis_len(line) for line in lines), default=0)
+        # 3. Build top and bottom borders
+        dashes = box_width - _vis_len(title)
+        top    = f"{Box.TOP_LEFT_ANGLE}{title}" + "─" * dashes + Box.TOP_RIGHT_ANGLE
+        bottom = f"{Box.BOTTOM_LEFT_ANGLE}" + "─" * box_width + Box.BOTTOM_RIGHT_ANGLE
 
-    title = f" {title} "
-    top_width = max(content_width, _vis_len(title))
+        # 4. Assemble with padding
+        out = [top]
+        for line in content_lines:
+            padding = max(0, inner_width - _vis_len(line))
+            out.append(f"{Box.LEFT_BORDER}{line}{' ' * padding}{Box.RIGHT_BORDER}")
+        out.append(bottom)
+        return out
 
-    top = f"╭─{title}" + "─" * (top_width - _vis_len(title) + 1) + "╮"
-    bottom = "╰" + "─" * (len(top) - 2) + "╯"
-
-    out = [top]
-
-    for line in lines:
-        padding = content_width - _vis_len(line)
-        out.append(f"│ {line}{' ' * padding} │")
-
-    out.append(bottom)
-    return out
-
-def _inner_box(title: str, lines: list[str]) -> str:
-    """
-    format a nested (inner) box used for hierarchical compositions.
-
-    Unlike _box, this function returns a single string instead of a list
-    of lines, making it suitable for embedding inside another box after
-    flattening.
-
-    It is primarily used for recursive node formatting where intermediate
-    box structures must be treated as atomic blocks.
-    """
-
-    content_width = max((_vis_len(line) for line in lines), default=0)
-
-    title = f"{title} "
-    top_width = max(content_width, _vis_len(title)) + 2
-
-    top = f"{title}" + "─" * (top_width - _vis_len(title) + 1) + "╮"
-    bottom = "╰" + "─" * (len(top) -2) + "╯"
-
-    out = [top]
-
-    for line in lines:
-        padding = content_width - _vis_len(line)
-        out.append(f"│ {line}{' ' * padding} │")
-
-    out.append(bottom)
-    return "\n".join(out)
 
 def _split_props(properties):
     """
@@ -109,7 +86,8 @@ def _split_props(properties):
 
     return leaf, nodes
 
-def _node_to_inner_box(title: str, node: PropertyDict, ignore_empty: bool = True):
+
+def _node_to_box(title: str, node, ignore_empty: bool = True) -> Box:
     """
     Recursively format a Node into a nested inner-box structure.
 
@@ -123,7 +101,7 @@ def _node_to_inner_box(title: str, node: PropertyDict, ignore_empty: bool = True
     Node-based properties are recursively formatted as inner boxes and
     flattened into the current layout.
     """
-    lines = []
+    box = Box(title)
 
     leaf_props, node_props = _split_props(node.properties)
 
@@ -131,21 +109,32 @@ def _node_to_inner_box(title: str, node: PropertyDict, ignore_empty: bool = True
     for prop in leaf_props:
         if isinstance(prop, PropertyStr):
             if prop.value or not ignore_empty:
-                lines.append(f"{prop.name}: {prop.value!r}")
+                box.lines.append(f"{prop.name}: {prop.value!r}")
         elif isinstance(prop, PropertyStrList):
             if prop.values or not ignore_empty:
-                lines.append(f"{prop.name}: {prop.values}")
+                box.lines.append(f"{prop.name}: {prop.values}")
         elif isinstance(prop, PropertyBool):
             if prop.value or not ignore_empty:
-                lines.append(f"{prop.name}: {prop.value}")
+                box.lines.append(f"{prop.name}: {prop.value}")
 
     # NODE PROPERTIES AFTER ─────────────────────────────
     for prop in node_props:
         if isinstance(prop, FeatureArgsNode):
             if prop.properties or not ignore_empty:
-                child_box = _node_to_inner_box(prop.name, prop,  ignore_empty)
-                lines.extend(_flatten_block(child_box))
-    return _inner_box(title, lines)
+                child_box = _node_to_box(prop.name, prop,  ignore_empty)
+                box.inner_box.append(child_box)
+        elif isinstance(prop, LinkersOverrideNode):
+            if prop.properties or not ignore_empty:
+                child_box = _node_to_box(prop.name, prop,  ignore_empty)
+                box.inner_box.append(child_box)
+        elif isinstance(prop, LinkerSpecificOverrideNode):
+            if prop.properties or not ignore_empty:
+                child_box = _node_to_box(prop.name, prop,  ignore_empty)
+                box.inner_box.append(child_box)
+
+    # for inner_box in box.inner_box:
+    #     box.lines.extend(inner_box.lines)
+    return box
 
 # PUBLIC ──────────────────────────────────────────────────────────────────────
 
@@ -164,42 +153,45 @@ def format_node_to_boxed_lines(node, ignore_empty:bool = True, is_default: bool 
     """
 
     title = node.name + (" (default)" if is_default else "")
-    lines = []
-    
+    box = Box(title)
+
     leaf_props, node_props = _split_props(node.properties)
     
     # LEAF PROPERTIES FIRST ─────────────────────────────
     for prop in leaf_props:
         if isinstance(prop, PropertyStr):
             if prop.value or not ignore_empty:
-                lines.append(f"{prop.name}: {prop.value!r}")
+                box.lines.append(f"{prop.name}: {prop.value!r}")
         elif isinstance(prop, PropertyStrList):
             if prop.values or not ignore_empty:
-                lines.append(f"{prop.name}: {prop.values}")
+                box.lines.append(f"{prop.name}: {prop.values}")
         elif isinstance(prop, PropertyBool):
             if prop.value or not ignore_empty:
-                lines.append(f"{prop.name}: {prop.value}")
+                box.lines.append(f"{prop.name}: {prop.value}")
 
     # NODE PROPERTIES AFTER ─────────────────────────────
     for prop in node_props:
         if isinstance(prop,FeatureNodeList):
             if prop.features or not ignore_empty:
-                inner_lines = []
+                features_box = Box(FeatureNodeList.NAME)
                 for feature in prop.features.values():
-                    child_box = _node_to_inner_box(feature.name, feature, ignore_empty)
-                    inner_lines.extend(_flatten_block(child_box))
-                prop_box = _inner_box(prop.name, inner_lines)
-                lines.extend(_flatten_block(prop_box))
+                    feature_box = _node_to_box(feature.name, feature,  ignore_empty)
+                    features_box.inner_box.append(feature_box)
+                box.inner_box.append(features_box)
         elif isinstance(prop, FeatureRuleNodeList):
             if prop.feature_rules or not ignore_empty:
-                inner_lines = []
+                feature_rules_box = Box(FeatureRuleNodeList.NAME)
                 for feature_rule in prop.feature_rules.values():
-                    child_box = _node_to_inner_box(feature_rule.name, feature_rule, ignore_empty)
-                    inner_lines.extend(_flatten_block(child_box))
-                prop_box = _inner_box(prop.name, inner_lines)
-                lines.extend(_flatten_block(prop_box))
+                    feature_rule_box = _node_to_box(feature_rule.name, feature_rule,  ignore_empty)
+                    feature_rules_box.inner_box.append(feature_rule_box)
+                box.inner_box.append(feature_rules_box)
 
-    return _box(title, lines)
+    # for inner_box in box.inner_box:
+    #     line = inner_box.to_boxed_string()
+    #     for inner_box in box.inner_box:
+    #         box.lines.extend(inner_box)
+    #     box.lines.extend()
+    return box.to_boxed_strings()
 
 def format_node_to_lines(node: PropertyDict, ignore_empty:bool = True, indent: int = 0) -> list[str]:
     """

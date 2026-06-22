@@ -31,18 +31,29 @@ class Box:
     def __init__(self, title: str):
         self.title = title
         self.lines = list[str]()
-        self.inner_box = list[Box]()
+        self.inner_boxes = list[Box]()
+        
     @staticmethod
     def _title_str(box: Box) -> str:
         return f"{box.title} "
     
+    def is_empty(self) -> bool:
+        # Empty if no line or not inner box or inner box are all empty 
+        return (
+        not self.lines
+        and all(box.is_empty() for box in self.inner_boxes)
+    )
+    
     def to_boxed_strings(self) -> list[str]:
+        if self.is_empty():
+            return []
+        
         # 1. Render all content lines (inner boxes are fully rendered first)
         content_lines: list[str] = []
         for line in self.lines:
             content_lines.append(line)
-        for inner_box in self.inner_box:
-            for line in inner_box.to_boxed_strings():
+        for inner_boxes in self.inner_boxes:
+            for line in inner_boxes.to_boxed_strings():
                 content_lines.append(line)
 
         # 2. Compute widths
@@ -65,7 +76,7 @@ class Box:
         return out
     
     @staticmethod
-    def properties_to_box(title: str, properties, ignore_empty: bool = True) -> Box:
+    def properties_to_box(title: str, properties, ignore_empty: bool = True) -> Box | None:
         """
         Recursively format a Node into a nested inner-box structure.
 
@@ -89,9 +100,9 @@ class Box:
 
         # NODE PROPERTIES AFTER ─────────────────────────────
         for prop in node_props:
-            child_box = Box.properties_to_box(prop.name, prop.properties,  ignore_empty)
-            box.inner_box.append(child_box)
-
+            if prop.properties or not ignore_empty:
+                child_box = Box.properties_to_box(prop.name, prop.properties,  ignore_empty)
+                box.inner_boxes.append(child_box)
         return box
 
 def split_props(properties):

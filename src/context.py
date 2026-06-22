@@ -28,7 +28,7 @@ class KissContext:
     compilers:     dict[str, CompilerNode]  = field(default_factory=dict)
     linkers:       dict[str, LinkerNode]  = field(default_factory=dict)
     profiles:      list[ProfileNode]  = field(default_factory=list)
-    project_types: list[ProjectTypeNode]  = field(default_factory=list)
+    project_types: dict[str, ProjectTypeNode]  = field(default_factory=dict)
     targets:       list[TargetNode]  = field(default_factory=list)
 
     # ── helpers ───────────────────────────────────────────────────────
@@ -77,7 +77,7 @@ class KissContext:
         raise typer.Exit(1)
 
     def known_project_types(self) -> list[ProjectTypeNode]:
-        return [t for t in self.project_types]
+        return [t for t in self.project_types.values()]
 
     # ── Targets ───────────────────────────────────────────────────────
 

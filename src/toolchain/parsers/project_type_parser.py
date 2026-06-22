@@ -44,6 +44,7 @@ def yaml_parse_project_types_overrides(data: dict) -> ProjectsOverrideNode:
                             node.add_property(prop)
 
     return node
+
 def yaml_parse_project_type(data: dict) -> ProjectTypeNode:
     """Parse a project type entry (bin, lib, dyn or custom).
 

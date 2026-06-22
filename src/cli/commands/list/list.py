@@ -98,7 +98,7 @@ list_app.add_typer(
 )
 
 # ── kiss list type ──────────────────────────────────────────────────────────
-@list_app.command("types")
+@list_app.command("project-types")
 def types_cmd(ctx: typer.Context,
               mode: OutputMode = typer.Option(OutputMode.plain, "--mode", "-m", help="Select the output mode")):
     """

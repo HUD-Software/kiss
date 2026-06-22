@@ -1,4 +1,4 @@
-projects:
+project-types:
   - name: bin
     description: Executable binary
     icon: 🚀

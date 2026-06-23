@@ -12,9 +12,9 @@
                 "-d",
                 "tests",
                 "list",
-                "project-types",
+                "linkers",
                 "--mode",
-                "boxed"
+                "detail"
             ],
             //-> List projects in my_bin without dependencies
             // "args": [

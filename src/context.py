@@ -27,9 +27,9 @@ class KissContext:
     kiss_data:     dict        = field(default_factory=dict)
     compilers:     dict[str, CompilerNode]  = field(default_factory=dict)
     linkers:       dict[str, LinkerNode]  = field(default_factory=dict)
-    profiles:      list[ProfileNode]  = field(default_factory=list)
+    profiles:      dict[str, ProfileNode]  = field(default_factory=dict)
     project_types: dict[str, ProjectTypeNode]  = field(default_factory=dict)
-    targets:       list[TargetNode]  = field(default_factory=list)
+    targets:       dict[str, TargetNode]  = field(default_factory=dict)
 
     # ── helpers ───────────────────────────────────────────────────────
 
@@ -89,10 +89,10 @@ class KissContext:
         return [t for t in self.targets]
        
     def default_target(self) -> TargetNode | None:
-        return self.targets[0] if self.targets else None
+        return next(iter(self.targets.values()), None)
     
     def get_target(self, name: str) -> TargetNode | None:
-        return next((t for t in self.targets if t.name == name), None)
+        return next((t for t in self.targets.values() if t.name == name), None)
     
     # ── Profiles ───────────────────────────────────────────────────────    
 
@@ -103,10 +103,10 @@ class KissContext:
         return [p for p in self.profiles.values() if not p.is_abstract]
     
     def default_profile(self) -> ProfileNode | None:
-        return next((p for p in self.profiles if p.name == "debug"), None)
+        return next((p for p in self.profiles.values() if p.name == "debug"), None)
     
     def get_profile(self, name: str) -> ProfileNode | None:
-        return next((p for p in self.profiles if p.name == name), None)
+        return next((p for p in self.profiles.values() if p.name == name), None)
     
     # ── Compilers ───────────────────────────────────────────────────────
 
@@ -117,13 +117,13 @@ class KissContext:
         return [ c for c in self.compilers.values() if not c.is_abstract]
     
     def default_compiler(self, target_name: str) -> CompilerNode | None:
-        target = next((t for t in self.targets if t.name == target_name), None)
+        target = next((t for t in self.targets.values() if t.name == target_name), None)
         if not target:
             return None
         return target.default_compiler_name
 
     def get_compiler(self, name: str) -> CompilerNode | None:
-        return next((c for c in self.compilers if c.name == name), None)
+        return next((c for c in self.compilers.values() if c.name == name), None)
     
     # ── Linkers ───────────────────────────────────────────────────────
     
@@ -137,16 +137,16 @@ class KissContext:
        default_compiler = self.default_compiler(target_name)
        if not default_compiler:
            return None
-       compiler = next((c for c in self.compilers if c.name == default_compiler), None)
+       compiler = next((c for c in self.compilers.values() if c.name == default_compiler), None)
        if not compiler:
            return None
        default_linker_name = compiler.default_linker_name
        if not default_linker_name:
            return None
-       return next((l for l in self.linkers if l.name ==  default_linker_name), None)
+       return next((l for l in self.linkers.values() if l.name ==  default_linker_name), None)
     
     def get_linker(self, name: str) -> LinkerNode | None:
-        return next((l for l in self.linkers if l.name == name), None)
+        return next((l for l in self.linkers.values() if l.name == name), None)
     
     # ── Private ───────────────────────────────────────────────────────────────
 

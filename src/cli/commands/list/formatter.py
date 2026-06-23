@@ -76,7 +76,7 @@ class Box:
         return out
     
     @staticmethod
-    def properties_to_box(title: str, properties, ignore_empty: bool = True) -> Box | None:
+    def properties_to_box(title: str, properties: PropertyDict, ignore_empty: bool = True) -> Box | None:
         """
         Recursively format a Node into a nested inner-box structure.
 
@@ -96,7 +96,7 @@ class Box:
 
         # LEAF PROPERTIES FIRST ─────────────────────────────
         for prop in leaf_props:
-            prop.append_to_boxed_print(box, ignore_empty)
+            prop.append_to_lines_print(box.lines, ignore_empty)
 
         # NODE PROPERTIES AFTER ─────────────────────────────
         for prop in node_props:
@@ -105,7 +105,7 @@ class Box:
                 box.inner_boxes.append(child_box)
         return box
 
-def split_props(properties):
+def split_props(properties: PropertyDict):
     """
     Split node properties into two categories:
 
@@ -127,7 +127,7 @@ def split_props(properties):
 
     return leaf, nodes
 
-def format_node_to_boxed_lines(title, properties, ignore_empty:bool = True, is_default: bool = False) -> list[str]:
+def format_properties_to_boxed_lines(title: str, properties: PropertyDict, ignore_empty:bool = True, is_default: bool = False) -> list[str]:
     """
     Format a Node into a hierarchical boxed representation.
 
@@ -145,7 +145,28 @@ def format_node_to_boxed_lines(title, properties, ignore_empty:bool = True, is_d
     box = Box.properties_to_box(title, properties, ignore_empty)
     return box.to_boxed_strings()
 
-def format_node_to_lines(node: PropertyDict, ignore_empty:bool = True, indent: int = 0) -> list[str]:
+
+def properties_to_lines(lines: list[str], title: str, properties: PropertyDict, indent: int, ignore_empty:bool = True):
+    leaf_props, node_props = split_props(properties)
+    
+    lines.append(f"{' ' * indent}{title}")
+    
+    for prop in leaf_props:
+        inner_lines = list[str]()
+        prop.append_to_lines_print(inner_lines, ignore_empty)
+        for inner_line in inner_lines:
+            lines.append(f"{' ' * (indent+1)}{inner_line}")
+    
+    
+
+    for prop in node_props:
+        if prop.properties or not ignore_empty:
+            inner_lines = list[str]()
+            properties_to_lines(lines=inner_lines, title=prop.name, properties=prop.properties, indent=indent+1, ignore_empty=ignore_empty)
+            for inner_line in inner_lines:
+                lines.append(inner_line)
+
+def format_properties_to_lines(title: str, properties: PropertyDict, ignore_empty:bool = True) -> list[str]:
     """
     Format a Node into a plain indented tree representation.
 
@@ -158,46 +179,24 @@ def format_node_to_lines(node: PropertyDict, ignore_empty:bool = True, indent: i
 
     NodeDict and NodeList are formatted as hierarchical branches.
     """
-     
-    prefix = "  " * indent
-    lines = []
-
-    leaf_props, node_props = split_props(node.properties)
-
-    #  NODE HEADER ─────────────────────────────
-    lines.append(f"{prefix}{node.name}")
-
-    # LEAF PROPS FIRST ─────────────────────────
-    for prop in leaf_props:
-        if isinstance(prop, PropertyStr):
-            if prop.value or not ignore_empty:
-                lines.append(f"{prefix}  {prop.name}: {prop.value!r}")
-        elif isinstance(prop, PropertyStrList):
-            if prop.values or not ignore_empty:
-                lines.append(f"{prefix}  {prop.name}: {prop.values}")
-        elif isinstance(prop, PropertyBool):
-            if prop.value or not ignore_empty:
-                lines.append(f"{prefix}  {prop.name}: {prop.value}")
-
-    # NODE PROPS AFTER ────────────────────────
-    for prop in node_props:
-        if isinstance(prop, PropertyNodeList):
-            if prop.nodes or not ignore_empty:
-                lines.append(f"{prefix}  {prop.name}:")
-
-                for child in prop.nodes:
-                    lines.extend(format_node_to_lines(child, ignore_empty, indent + 2))
-        elif isinstance(prop, PropertyDict):
-            if prop.properties or not ignore_empty:
-                lines.append(f"{prefix}  {prop.name}:")
-
-                for key, child in prop.properties.items():
-                    lines.append(f"{prefix}    {key}:")
-                    lines.extend(format_node_to_lines(child, ignore_empty, indent + 3))
-
+    lines = list[str]()
+    properties_to_lines(lines, title, properties, 0, ignore_empty)
     return lines
 
-def format_node_to_json(node: PropertyDict, ignore_empty:bool = True) -> dict:
+def properties_to_json(result: dict, title: str, properties: PropertyDict, ignore_empty:bool = True):
+    leaf_props, node_props = split_props(properties)
+
+    result_value = {}
+    for prop in leaf_props:
+        prop.append_to_json_print(result_value, ignore_empty)
+
+    for prop in node_props:
+            if prop.properties or not ignore_empty:
+                properties_to_json(result_value, prop.name, prop.properties, ignore_empty)
+    result[title] = result_value
+    return result
+
+def format_properties_to_json(title: str, properties: PropertyDict, ignore_empty:bool = True) -> dict:
     """
     Format a Node into a JSON-compatible dictionary.
 
@@ -210,30 +209,7 @@ def format_node_to_json(node: PropertyDict, ignore_empty:bool = True) -> dict:
     This function is intended for machine consumption (serialization,
     tooling, configuration exchange) rather than visual formatting.
     """
-    result = {
-        "name": node.name,
-    }
-
-    for prop_name, prop in node.properties.items():
-        if isinstance(prop, PropertyStr):
-            if prop.value or not ignore_empty:
-                result[prop_name] = prop.value
-        elif isinstance(prop, PropertyStrList):
-            if prop.values or not ignore_empty:
-                result[prop_name] = prop.values
-        elif isinstance(prop, PropertyBool):
-            if prop.value or not ignore_empty:
-                result[prop_name] = prop.value
-        elif isinstance(prop, PropertyNodeList):
-            if prop.nodes or not ignore_empty:
-                result[prop_name] = []
-                for node in prop.nodes:
-                    result[prop_name].append(format_node_to_json(node))
-        elif isinstance(prop, PropertyDict):
-            if prop.properties or not ignore_empty:
-                result[prop_name] = {}
-                for node_name, node in prop.properties.items():
-                    result[prop_name][node_name] = format_node_to_json(node)
-
+    result = {}
+    properties_to_json(result, title , properties, ignore_empty)
     return result
 

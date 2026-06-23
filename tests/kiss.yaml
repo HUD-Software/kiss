@@ -25,6 +25,7 @@ profiles:
       bin:
         compilers:
           enable-features: [OMIT_FRAME_POINTER]
+
 # Binaries
 bin:
   - name: my_bin

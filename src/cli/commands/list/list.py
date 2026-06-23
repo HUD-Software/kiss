@@ -1,7 +1,7 @@
 from collections.abc import Iterable
 import json
 import typer
-from cli.commands.list.formatter import format_node_to_boxed_lines, format_node_to_json, format_node_to_lines
+from cli.commands.list.formatter import format_properties_to_boxed_lines, format_properties_to_json, format_properties_to_lines
 from context import KissContext
 from enum import Enum
 from toolchain.nodes.property import PropertyDict
@@ -17,17 +17,17 @@ class OutputMode(str, Enum):
 # Print all nodes in the correct mode ─────────────────────────────────────────────
 def _print(it :Iterable[PropertyDict], mode: OutputMode = OutputMode.plain):
     if mode == OutputMode.json:
-        data = [format_node_to_json(t) for t in it]
+        data = [format_properties_to_json(t.name, t.properties) for t in it]
         typer.echo(json.dumps(data, indent=2))
     for node in it:
         if mode == OutputMode.plain:
             typer.echo(node.name)
         elif mode == OutputMode.detail:
-            lines = format_node_to_lines(node)
+            lines = format_properties_to_lines(node.name, node.properties)
             for line in lines:
                 typer.echo(line)
         elif mode == OutputMode.boxed:
-            lines = format_node_to_boxed_lines(node.name, node.properties)
+            lines = format_properties_to_boxed_lines(node.name, node.properties)
             for line in lines:
                 typer.echo(line)
             

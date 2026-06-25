@@ -27,7 +27,7 @@ def yaml_parse_linkers_overrides(data: dict) -> LinkersOverrideNode:
                 prop = parse_property(override_key, override_value)
                 if prop:
                     override.add_property(prop)
-            node.add_property(override)
+            node.add_linker(override)
     return node
     
 

@@ -4,7 +4,7 @@ parse_utils.py
 Generic utilities to convert raw YAML dicts into Node/Property objects.
 
 Key detection rules (applied in order):
-  append-foo  → PropertyStrListModifier("foo", ..., StrListModifierOperation.APPEND)
+  add-foo  → PropertyStrListModifier("foo", ..., StrListModifierOperation.ADD)
   remove-foo  → PropertyStrListModifier("foo", ..., StrListModifierOperation.REMOVE)
   foo: str    → PropertyStr
   foo: bool   → PropertyBool
@@ -32,19 +32,30 @@ def parse_property(key: str, value) -> Property | None:
     - unsupported or special cases
     """
 
-    APPEND_PREFIX = "append-"
+    ADD_PREFIX = "add-"
+    ENABLE_PREFIX = "enable-"
     REMOVE_PREFIX = "remove-"
+    DISABLE_PREFIX = "disable-"
 
     # --- Modifiers ---
-    if key.startswith(APPEND_PREFIX) and _is_list_of_str(value):
-        base = key[len(APPEND_PREFIX):]
+    if key.startswith(ADD_PREFIX) and _is_list_of_str(value)  :
+        base = key[len(ADD_PREFIX):]
         return PropertyStrListModifier(
             key,
             base,
             [str(v) for v in value],
-            StrListModifierOperation.APPEND,
+            StrListModifierOperation.ADD,
         )
-
+    
+    if key.startswith(ENABLE_PREFIX) and _is_list_of_str(value)  :
+        base = key[len(ENABLE_PREFIX):]
+        return PropertyStrListModifier(
+            key,
+            base,
+            [str(v) for v in value],
+            StrListModifierOperation.ADD,
+        )
+    
     if key.startswith(REMOVE_PREFIX) and _is_list_of_str(value):
         base = key[len(REMOVE_PREFIX):]
         return PropertyStrListModifier(
@@ -53,7 +64,14 @@ def parse_property(key: str, value) -> Property | None:
             [str(v) for v in value],
             StrListModifierOperation.REMOVE,
         )
-
+    if key.startswith(DISABLE_PREFIX) and _is_list_of_str(value):
+        base = key[len(DISABLE_PREFIX):]
+        return PropertyStrListModifier(
+            key,
+            base,
+            [str(v) for v in value],
+            StrListModifierOperation.REMOVE,
+        )
     # --- Inheritance rules ---
     NON_INHERITABLE_KEYS = {"is_abstract"}
     inheritable = key not in NON_INHERITABLE_KEYS

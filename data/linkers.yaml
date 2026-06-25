@@ -65,6 +65,8 @@ linkers:
       - name: TEST
         description: Test
         flags: [/TesT, /QQQ]
+      - name: REMOVE_DEAD_CODE
+        add-flags: ["YOUPI"]
 
   - name: lld-link
     extends: msvc-linker

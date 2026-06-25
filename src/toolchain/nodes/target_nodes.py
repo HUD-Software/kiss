@@ -59,10 +59,10 @@ class TargetNode(Property):
     def add_property(self, property):
         self.properties.add_property(property)
 
-    def clone(self) -> TargetNode:
-        cloned  = TargetNode(self.name)
-        cloned.properties = self._properties.clone()
-        return cloned
+    # def clone(self) -> TargetNode:
+    #     cloned  = TargetNode(self.name)
+    #     cloned.properties = self._properties.clone()
+    #     return cloned
     
     def merge_with_parent(self, parent):
         assert type(parent) is type(self), "Type mismatch"
@@ -73,6 +73,5 @@ class TargetNode(Property):
     def dispatch_globals(self) -> TargetNode:
         dispatched = TargetNode(self.name)
         for property in self.properties.values():
-            property = property.dispatch_globals()
-            dispatched.add_property(property)
+            dispatched.add_property(property.dispatch_globals())
         return dispatched

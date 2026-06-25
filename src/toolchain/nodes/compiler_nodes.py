@@ -1,6 +1,8 @@
 
 from __future__ import annotations
+import copy
 from toolchain.nodes.feature_node import FeatureNode, FeatureNodeList, FeatureRuleNodeList
+from toolchain.nodes.linker_nodes import LinkersOverrideNode
 from toolchain.nodes.property import Property, PropertyBool, PropertyDict, PropertyStr, PropertyStrList
 from typing import TypeVar, Type
 T = TypeVar("T", bound=Property)
@@ -45,6 +47,16 @@ class CompilerNode(Property):
         prop = self.get_property_as("default-linker", PropertyStr)
         return prop.value if prop else None
     
+    @property
+    def features(self) -> FeatureNodeList:
+        prop = self.get_property_as(FeatureNodeList.NAME, FeatureNodeList)
+        return prop
+     
+    @property
+    def feature_rules(self) -> FeatureRuleNodeList:
+        prop = self.get_property_as(FeatureRuleNodeList.NAME, FeatureRuleNodeList)
+        return prop
+    
     def get_property(self, name: str) -> Property | None:
         return self.properties.get_property(name)
     
@@ -54,12 +66,12 @@ class CompilerNode(Property):
     def get_property_as(self, name: str, prop_type: Type[T]) -> T | None:
         return self.properties.get_property_as(name, prop_type)
 
-    def clone(self) -> CompilerNode:
-        cloned  = CompilerNode(self.name)
-        cloned.properties = self._properties.clone()
-        return cloned
+    # def clone(self) -> CompilerNode:
+    #     cloned  = CompilerNode(self.name)
+    #     cloned.properties = self._properties.clone()
+    #     return cloned
     
-    def merge_with_parent(self, parent):
+    def merge_with_parent(self, parent: CompilerNode):
         assert type(parent) is type(self), "Type mismatch"
         merged = CompilerNode(self.name)
         merged._properties = self.properties.merge_with_parent(parent.properties)
@@ -67,10 +79,8 @@ class CompilerNode(Property):
     
     def dispatch_globals(self) -> CompilerNode:
         dispatched = CompilerNode(self.name)
-        for property_name, property in self.properties.items():
-            if property_name == FeatureNodeList.NAME or property_name == FeatureRuleNodeList.NAME:
-                property = property.dispatch_globals()
-            dispatched.add_property(property)
+        for property in self.properties.values():
+            dispatched.add_property(property.dispatch_globals())
         return dispatched
     
 class CompilerSpecificOverrideNode(Property):
@@ -96,10 +106,10 @@ class CompilerSpecificOverrideNode(Property):
     def add_property(self, property):
         self.properties.add_property(property)
 
-    def clone(self) -> CompilerSpecificOverrideNode:
-        cloned  = CompilerSpecificOverrideNode(self.name)
-        cloned._properties = self._properties.clone()
-        return cloned
+    # def clone(self) -> CompilerSpecificOverrideNode:
+    #     cloned  = CompilerSpecificOverrideNode(self.name)
+    #     cloned._properties = self._properties.clone()
+    #     return cloned
     
     def merge_with_parent(self, parent):
         assert type(parent) is type(self), "Type mismatch"
@@ -107,10 +117,6 @@ class CompilerSpecificOverrideNode(Property):
         merged._properties = self.properties.merge_with_parent(parent.properties)
         return merged
     
-    def dispatch_globals(self) -> CompilerSpecificOverrideNode:
-       return self.clone()
-    
-
 class CompilersOverrideNode(Property):
     """Represents the 'compilers:' block.
     Contains global enable-features + per-compiler overrides 'CompilerSpecificOverrideNode' nodes.
@@ -136,21 +142,40 @@ class CompilersOverrideNode(Property):
     def add_property(self, property):
         self.properties.add_property(property)
 
-    def clone(self) -> CompilersOverrideNode:
-        cloned  = CompilersOverrideNode(self.name)
-        cloned._properties = self._properties.clone()
-        return cloned
+    # def clone(self) -> CompilersOverrideNode:
+    #     cloned  = CompilersOverrideNode(self.name)
+    #     cloned._properties = self._properties.clone()
+    #     return cloned
     
     def merge_with_parent(self, parent):
         assert type(parent) is type(self), "Type mismatch"
         merged = CompilersOverrideNode(self.name)
         merged._properties = self.properties.merge_with_parent(parent.properties)
         return merged
-    
-    def dispatch_globals(self) -> CompilersOverrideNode:
-       return self.clone()
 
 class CompilerFeatureNode(FeatureNode):
-    def dispatch_globals(self) -> FeatureNodeList:
-        dispatched = super().clone()
+
+    def __init__(self, name:str, description: str):
+        super().__init__(name, description)
+        # The 'linkers:'
+        self.linkers : LinkersOverrideNode = None
+
+    def merge_with_parent(self, parent):
+        assert type(parent) is type(self), "Type mismatch"
+        merged = CompilerFeatureNode(self.name)
+        merged._properties = self._properties.merge_with_parent(parent._properties)
+        if parent.linkers:
+            if self.linkers:
+                merged.linkers = self.linkers.merge_with_parent(parent.linkers)
+            elif not self.linkers:
+                merged.linkers = copy.deepcopy(parent.linkers)
+        return merged
+
+    def dispatch_globals(self) -> Property:
+        dispatched = CompilerFeatureNode(self.name,self.description)
+        # Apply modifier to global properties
+        dispatched._properties = self.properties.apply_modifier()
+        # Merge feature globals with 'linkers:'
+        if self.linkers:
+            dispatched.linkers = self.linkers.merge_with_properties(dispatched.properties)
         return dispatched

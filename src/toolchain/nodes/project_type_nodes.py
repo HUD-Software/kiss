@@ -23,8 +23,8 @@ class ProjectTypeNode(Property):
     - linkers: linker-side overrides applied when building this project type,
                including features to enable — can be specified globally or per linker
 
-    Compiler and linker overrides support the standard append/remove operations
-    (e.g. 'append-defines', 'remove-enable-features') for fine-grained inheritance control.
+    Compiler and linker overrides support the standard add/remove-enable/disable operations
+    (e.g. 'add-defines', 'remove-features') for fine-grained inheritance control.
     """
     def __init__(self, name : str):
         super().__init__(name)
@@ -69,10 +69,10 @@ class ProjectTypeNode(Property):
     def get_property_as(self, name: str, prop_type: Type[T]) -> T | None:
         return self.properties.get_property_as(name, prop_type)
     
-    def clone(self) -> ProjectTypeNode:
-        cloned  = ProjectTypeNode(self.name)
-        cloned.properties = self._properties.clone()
-        return cloned
+    # def clone(self) -> ProjectTypeNode:
+    #     cloned  = ProjectTypeNode(self.name)
+    #     cloned.properties = self._properties.clone()
+    #     return cloned
     
     def merge_with_parent(self, parent):
         assert type(parent) is type(self), "Type mismatch"
@@ -82,10 +82,8 @@ class ProjectTypeNode(Property):
     
     def dispatch_globals(self) -> ProjectTypeNode:
         dispatched = ProjectTypeNode(self.name)
-        for property_name, property in self.properties.items():
-            if property_name == CompilersOverrideNode.NAME or property_name == LinkersOverrideNode.NAME:
-                property = property.dispatch_globals()
-            dispatched.add_property(property)
+        for property in self.properties.values():
+            dispatched.add_property(property.dispatch_globals())
         return dispatched
     
 class ProjectSpecificOverrideNode(Property):
@@ -123,10 +121,10 @@ class ProjectSpecificOverrideNode(Property):
     def add_property(self, property):
         self.properties.add_property(property)
 
-    def clone(self) -> ProjectSpecificOverrideNode:
-        cloned  = ProjectSpecificOverrideNode(self.name)
-        cloned._properties = self._properties.clone()
-        return cloned
+    # def clone(self) -> ProjectSpecificOverrideNode:
+    #     cloned  = ProjectSpecificOverrideNode(self.name)
+    #     cloned._properties = self._properties.clone()
+    #     return cloned
     
     def merge_with_parent(self, parent):
         assert type(parent) is type(self), "Type mismatch"
@@ -134,8 +132,6 @@ class ProjectSpecificOverrideNode(Property):
         merged._properties = self.properties.merge_with_parent(parent.properties)
         return merged
 
-    def dispatch_globals(self) -> ProjectSpecificOverrideNode:
-       return self.clone()
 
 class ProjectsOverrideNode(Property):
     """Represents the 'projects:' block.
@@ -174,16 +170,13 @@ class ProjectsOverrideNode(Property):
     def add_property(self, property):
         self.properties.add_property(property)
 
-    def clone(self) -> ProjectsOverrideNode:
-        cloned  = ProjectsOverrideNode(self.name)
-        cloned._properties = self._properties.clone()
-        return cloned
+    # def clone(self) -> ProjectsOverrideNode:
+    #     cloned  = ProjectsOverrideNode(self.name)
+    #     cloned._properties = self._properties.clone()
+    #     return cloned
     
     def merge_with_parent(self, parent):
         assert type(parent) is type(self), "Type mismatch"
         merged = ProjectsOverrideNode(self.name)
         merged._properties = self.properties.merge_with_parent(parent.properties)
         return merged
-    
-    def dispatch_globals(self) -> ProjectsOverrideNode:
-       return self.clone()

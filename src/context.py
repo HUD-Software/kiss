@@ -130,8 +130,8 @@ class KissContext:
     def linker_names(self) -> list[str]:
         return [c.name for c in self.known_compilers()]
     
-    def known_linkers(self) -> list[LinkerNode]:
-        return [l for l in self.linkers.values() if not l.is_abstract]
+    def known_linkers(self, ignore_abstract: bool = False) -> list[LinkerNode]:
+        return [l for l in self.linkers.values() if not (l.is_abstract and ignore_abstract)]
     
     def default_linker(self, target_name: str) -> LinkerNode | None:
        default_compiler = self.default_compiler(target_name)

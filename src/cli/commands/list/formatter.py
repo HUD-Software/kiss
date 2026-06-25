@@ -101,7 +101,7 @@ class Box:
         # NODE PROPERTIES AFTER ─────────────────────────────
         for prop in node_props:
             if prop.properties or not ignore_empty:
-                child_box = Box.properties_to_box(prop.name, prop.properties,  ignore_empty)
+                child_box = Box.properties_to_box(prop.name, prop.properties, ignore_empty)
                 box.inner_boxes.append(child_box)
         return box
 
@@ -157,8 +157,6 @@ def properties_to_lines(lines: list[str], title: str, properties: PropertyDict, 
         for inner_line in inner_lines:
             lines.append(f"{' ' * (indent+1)}{inner_line}")
     
-    
-
     for prop in node_props:
         if prop.properties or not ignore_empty:
             inner_lines = list[str]()

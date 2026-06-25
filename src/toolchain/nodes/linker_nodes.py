@@ -38,7 +38,7 @@ class LinkerNode(Property):
     def features(self) -> FeatureNodeList:
         prop = self.get_property_as(FeatureNodeList.NAME, FeatureNodeList)
         return prop
-    
+     
     @property
     def feature_rules(self) -> FeatureRuleNodeList:
         prop = self.get_property_as(FeatureRuleNodeList.NAME, FeatureRuleNodeList)
@@ -53,10 +53,10 @@ class LinkerNode(Property):
     def get_property_as(self, name: str, prop_type: Type[T]) -> T | None:
         return self.properties.get_property_as(name, prop_type)
         
-    def clone(self) -> LinkerNode:
-        cloned  = LinkerNode(self.name)
-        cloned._properties = self._properties.clone()
-        return cloned
+    # def clone(self) -> LinkerNode:
+    #     cloned  = LinkerNode(self.name)
+    #     cloned._properties = self._properties.clone()
+    #     return cloned
     
     def merge_with_parent(self, parent):
         assert type(parent) is type(self), "Type mismatch"
@@ -64,11 +64,6 @@ class LinkerNode(Property):
         merged._properties = self.properties.merge_with_parent(parent.properties)
         return merged
     
-    def dispatch_globals(self) -> LinkerNode:
-        # The feature linker have no feature or feature-rule globals to dispatch
-        # Linker feature are indepandent of compilers, profiles, targets, etc...
-        return self.clone()
-        
 class LinkerSpecificOverrideNode(Property):
     """Represents a per-linker override inside a 'linkers:' node.
     
@@ -94,19 +89,19 @@ class LinkerSpecificOverrideNode(Property):
     def add_property(self, property):
         self.properties.add_property(property)
 
-    def clone(self) -> LinkerSpecificOverrideNode:
-        cloned  = LinkerSpecificOverrideNode(self.name)
-        cloned._properties = self._properties.clone()
-        return cloned
+    # def clone(self) -> LinkerSpecificOverrideNode:
+    #     cloned  = LinkerSpecificOverrideNode(self.name)
+    #     cloned._properties = self._properties.clone()
+    #     return cloned
+    
+    def merge_with_properties(self, properties):
+        merged = LinkerSpecificOverrideNode(self.name)
+        merged._properties = self.properties.merge_with_properties(properties)
+        return merged
     
     def merge_with_parent(self, parent):
         assert type(parent) is type(self), "Type mismatch"
-        merged = LinkerSpecificOverrideNode(self.name)
-        merged._properties = self.properties.merge_with_parent(parent.properties)
-        return merged
-
-    def dispatch_globals(self) -> LinkerSpecificOverrideNode:
-       return self.clone()
+        return self.merge_with_properties(parent.properties)
 
 class LinkersOverrideNode(Property):
     """Represents the 'linkers:' block.
@@ -120,8 +115,9 @@ class LinkersOverrideNode(Property):
 
     NAME = "linkers"
     def __init__(self, name : str= NAME):
-      super().__init__(name)
-      self._properties = PropertyDict()
+        super().__init__(name)
+        self._properties = PropertyDict()
+        self._linkers = dict[str, LinkerSpecificOverrideNode]()
 
     @property
     def properties(self) -> PropertyDict:
@@ -132,11 +128,23 @@ class LinkersOverrideNode(Property):
     
     def add_property(self, property):
         self.properties.add_property(property)
+    
+    def add_linker(self, linker:LinkerSpecificOverrideNode):
+        self._linkers[linker.name] = linker
 
-    def clone(self) -> LinkersOverrideNode:
-        cloned  = LinkersOverrideNode(self.name)
-        cloned._properties = self._properties.clone()
-        return cloned
+    def append_to_lines_print(self, lines, ignore_empty):
+        for prop in self.properties.values():
+            prop.append_to_lines_print(lines, ignore_empty)
+        lines.append()
+    # def get_linker_specific_overrides(self) -> list[LinkerSpecificOverrideNode]:
+    #     return [l for l in self.properties.values() if isinstance(l,LinkerSpecificOverrideNode)]
+    
+    # def get_global_linkers(self) -> PropertyDict:
+    #     return [l for l in self.properties.values() if not isinstance(l,LinkerSpecificOverrideNode)]
+    # def clone(self) -> LinkersOverrideNode:
+    #     cloned  = LinkersOverrideNode(self.name)
+    #     cloned._properties = self._properties.clone()
+    #     return cloned
     
     def merge_with_parent(self, parent):
         assert type(parent) is type(self), "Type mismatch"
@@ -144,5 +152,11 @@ class LinkersOverrideNode(Property):
         merged._properties = self.properties.merge_with_parent(parent.properties)
         return merged
     
-    def dispatch_globals(self) -> LinkersOverrideNode:
-       return self.clone()
+    def merge_with_properties(self, properties: PropertyDict):
+        merged = LinkersOverrideNode(self.name)
+        # Merge global properties in 'linkers:'
+        merged._properties = self.properties.merge_with_properties(properties)
+        # Merge newly merged glabl properties to each 'linker'
+        for linker in self._linkers.values():
+            merged.add_linker(linker.merge_with_properties(merged._properties))
+        return merged

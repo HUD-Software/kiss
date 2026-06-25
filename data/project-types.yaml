@@ -33,7 +33,7 @@ project-types:
     icon: 🧪
     extends: bin
     compilers:
-      append-defines: [KISS_TEST]
+      add-defines: [KISS_TEST]
       remove-enable-features: [KISS_BIN]
     linkers:
       enable-features: []

@@ -10,7 +10,7 @@ compilers:
         flags: [/Od] # Flags passed to the compiler when the feature is enabled
         enable-features: [DEBUG_INFO] # Enabling OPT_LEVEL_0 also enables DEBUG_INFO
         linkers: # This feature needs to enable some flags (via features) for the linker too
-          enable-features: [] # For all linker
+          enable-features: [Q] # For all linker
           link:
             enable-features: [OPT_LEVEL_0] # Enable OPT_LEVEL_O feature if we use the linker 'link'
           lld-link:

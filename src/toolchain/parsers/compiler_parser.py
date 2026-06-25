@@ -38,7 +38,7 @@ def yaml_parse_compiler_feature(data: dict) -> CompilerFeatureNode:
       description: No optimization
       flags: [/Od]
       enable-features: [DEBUG_INFO]
-      append-flags: [...]         # optional
+      add-flags: [...]         # optional
       remove-flags: [...]         # optional
       linkers:
         enable-features: []
@@ -49,7 +49,7 @@ def yaml_parse_compiler_feature(data: dict) -> CompilerFeatureNode:
 
     linkers_value = data.get(LinkersOverrideNode.NAME)
     if linkers_value:
-        node.add_property(yaml_parse_linkers_overrides(linkers_value))
+        node.linkers = yaml_parse_linkers_overrides(linkers_value)
     return node
 
 

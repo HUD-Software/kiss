@@ -12,12 +12,19 @@ def yaml_parse_feature(data: dict, node_cls: Type[T] = FeatureNode) -> T:
     if not name or not isinstance(name, str):
         raise ValueError("Missing 'name' for feature as string")
 
+    # optional description
+    description = data.get("description", "")
+    if description and not isinstance(description, str):
+        raise ValueError("'description' for feature must be a string")
+    
     # Create the feature and load informations
-    node = node_cls(name)
+    node = node_cls(name, description )
     for key, value in data.items():
         match key:
             case "name":
                 pass
+            # case "description":
+            #     pass
             case FeatureArgsNode.NAME:
                 args = FeatureArgsNode()
                 for args_key, args_value in value.items():

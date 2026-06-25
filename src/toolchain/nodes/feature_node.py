@@ -22,16 +22,18 @@ class FeatureArgsNode(Property):
     def add_property(self, property: Property):
         self._properties.add_property(property)
 
-    def clone(self) -> FeatureArgsNode:
-        cloned  = FeatureArgsNode(self.name)
-        cloned._properties = self._properties.clone()
-        return cloned
+    # def clone(self) -> FeatureArgsNode:
+    #     cloned  = FeatureArgsNode(self.name)
+    #     cloned._properties = self._properties.clone()
+    #     return cloned
     
     def merge_with_parent(self, parent) -> FeatureArgsNode:
         merged = FeatureArgsNode(self.name)
         merged._properties = self._properties.merge_with_parent(parent._properties)
         return merged
 
+from typing import TypeVar, Type
+T = TypeVar("T", bound=Property)
 
 class FeatureNode(Property):
     """Represents a single compiler feature entry.
@@ -40,8 +42,9 @@ class FeatureNode(Property):
            enable-features: [DEBUG_INFO]
            args: ...
     """
-    def __init__(self, name:str):
+    def __init__(self, name:str, description:str):
         super().__init__(name)
+        self.description = description
         self._properties = PropertyDict()
     
     @property
@@ -52,21 +55,21 @@ class FeatureNode(Property):
         self._properties.add_property(property)
 
     def get_property(self, name: str) -> Property | None:
-        return self._properties.get(name)
+        return self._properties.get_property(name)
+    
+    def get_property_as(self, name: str, prop_type: Type[T]) -> T | None:
+        return self._properties.get_property_as(name, prop_type)
+    
+    # def clone(self) -> FeatureNode:
+    #     cloned  = FeatureNode(self.name)
+    #     cloned._properties = self._properties.clone()
+    #     return cloned
 
-    def dispatch_globals(self) -> FeatureNode:
-        return self.clone()
-    
-    def clone(self) -> FeatureNode:
-        cloned  = FeatureNode(self.name)
-        cloned._properties = self._properties.clone()
-        return cloned
-    
     def merge_with_parent(self, parent) -> FeatureNode:
-        merged = FeatureNode(self.name)
+        merged = FeatureNode(self.name, self.description)
         merged._properties = self._properties.merge_with_parent(parent._properties)
         return merged
-
+    
 class FeatureNodeList(Property):
     """Represents the 'features:' block."""
     NAME = "features"
@@ -86,10 +89,10 @@ class FeatureNodeList(Property):
     def add_feature(self, feature : FeatureNode):
         self._features.add_property(feature)
 
-    def clone(self) -> FeatureNodeList:
-        cloned  = FeatureNodeList(self.name)
-        cloned._features = self._features.clone()
-        return cloned
+    # def clone(self) -> FeatureNodeList:
+    #     cloned  = FeatureNodeList(self.name)
+    #     cloned._features = self._features.clone()
+    #     return cloned
     
     def merge_with_parent(self, parent):
         merged = FeatureNodeList(self.name)
@@ -98,7 +101,7 @@ class FeatureNodeList(Property):
     
     def dispatch_globals(self) -> FeatureNodeList:
         dispatched = FeatureNodeList()
-        for feature in self._features.values():
+        for feature in self.features.values():
             dispatched.add_feature(feature.dispatch_globals())
         return dispatched
 
@@ -121,13 +124,10 @@ class FeatureRuleNode(Property):
     def get_property(self, name: str) -> Property | None:
         return self._properties.get(name)
     
-    def dispatch_globals(self) -> FeatureRuleNode:
-        return self.clone()
-    
-    def clone(self) -> FeatureRuleNode:
-        cloned  = FeatureRuleNode(self.name)
-        cloned._properties = self._properties.clone()
-        return cloned
+    # def clone(self) -> FeatureRuleNode:
+    #     cloned  = FeatureRuleNode(self.name)
+    #     cloned._properties = self._properties.clone()
+    #     return cloned
     
     def merge_with_parent(self, parent) -> FeatureRuleNode:
         merged = FeatureRuleNode(self.name)
@@ -154,10 +154,10 @@ class FeatureRuleNodeList(Property):
     def add_feature_rule(self, feature : FeatureRuleNode):
         self._feature_rules.add_property(feature)
 
-    def clone(self) -> FeatureRuleNodeList:
-        cloned  = FeatureRuleNodeList(self.name)
-        cloned._feature_rules = self._feature_rules.clone()
-        return cloned
+    # def clone(self) -> FeatureRuleNodeList:
+    #     cloned  = FeatureRuleNodeList(self.name)
+    #     cloned._feature_rules = self._feature_rules.clone()
+    #     return cloned
     
     def merge_with_parent(self, parent):
         merged = FeatureRuleNodeList(self.name)
@@ -166,6 +166,6 @@ class FeatureRuleNodeList(Property):
     
     def dispatch_globals(self) -> FeatureRuleNodeList:
         dispatched = FeatureRuleNodeList()
-        for feature in self._feature_rules.values():
+        for feature in self.feature_rules.values():
             dispatched.add_feature_rule(feature.dispatch_globals())
         return dispatched

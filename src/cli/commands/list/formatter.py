@@ -1,5 +1,7 @@
 from __future__ import annotations
+import copy
 from wcwidth import wcswidth
+from toolchain.nodes.compiler_nodes import CompilerFeatureNode
 from toolchain.nodes.feature_node import FeatureArgsNode, FeatureNodeList, FeatureRuleNodeList
 from toolchain.nodes.linker_nodes import LinkerSpecificOverrideNode, LinkersOverrideNode
 from toolchain.nodes.property import PropertyDict, PropertyBool,  PropertyNodeList, PropertyStr, PropertyStrList
@@ -101,7 +103,19 @@ class Box:
         # NODE PROPERTIES AFTER ─────────────────────────────
         for prop in node_props:
             if prop.properties or not ignore_empty:
-                child_box = Box.properties_to_box(prop.name, prop.properties, ignore_empty)
+                if isinstance(prop, CompilerFeatureNode):
+                    properties = copy.deepcopy(prop.properties)
+                    if prop.linkers:
+                        properties.add_property(prop.linkers)
+                    child_box = Box.properties_to_box(prop.name, properties, ignore_empty)
+                elif isinstance(prop, LinkersOverrideNode):
+                    properties = copy.deepcopy(prop.properties)
+                    if prop.linkers:
+                        for linker in prop.linkers:
+                            properties.add_property(linker)
+                    child_box = Box.properties_to_box(prop.name, properties, ignore_empty)
+                else:
+                    child_box = Box.properties_to_box(prop.name, prop.properties, ignore_empty)
                 box.inner_boxes.append(child_box)
         return box
 

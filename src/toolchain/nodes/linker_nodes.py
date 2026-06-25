@@ -122,6 +122,10 @@ class LinkersOverrideNode(Property):
     @property
     def properties(self) -> PropertyDict:
         return self._properties
+
+    @property
+    def linkers(self):
+        return self._linkers.values()
     
     def get_property(self, name: str) -> Property | None:
         return self.properties.get_property(name)
@@ -132,10 +136,6 @@ class LinkersOverrideNode(Property):
     def add_linker(self, linker:LinkerSpecificOverrideNode):
         self._linkers[linker.name] = linker
 
-    def append_to_lines_print(self, lines, ignore_empty):
-        for prop in self.properties.values():
-            prop.append_to_lines_print(lines, ignore_empty)
-        lines.append()
     # def get_linker_specific_overrides(self) -> list[LinkerSpecificOverrideNode]:
     #     return [l for l in self.properties.values() if isinstance(l,LinkerSpecificOverrideNode)]
     

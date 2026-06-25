@@ -113,8 +113,8 @@ class KissContext:
     def compiler_names(self) -> list[str]:
         return [c.name for c in self.known_compilers()]
 
-    def known_compilers(self) -> list[CompilerNode]:
-        return [ c for c in self.compilers.values() if not c.is_abstract]
+    def known_compilers(self, ignore_abstract: bool = False) -> list[CompilerNode]:
+        return [ c for c in self.compilers.values() if not (c.is_abstract and ignore_abstract)]
     
     def default_compiler(self, target_name: str) -> CompilerNode | None:
         target = next((t for t in self.targets.values() if t.name == target_name), None)

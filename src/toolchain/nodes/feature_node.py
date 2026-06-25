@@ -42,9 +42,8 @@ class FeatureNode(Property):
            enable-features: [DEBUG_INFO]
            args: ...
     """
-    def __init__(self, name:str, description:str):
+    def __init__(self, name:str):
         super().__init__(name)
-        self.description = description
         self._properties = PropertyDict()
     
     @property
@@ -66,7 +65,7 @@ class FeatureNode(Property):
     #     return cloned
 
     def merge_with_parent(self, parent) -> FeatureNode:
-        merged = FeatureNode(self.name, self.description)
+        merged = FeatureNode(self.name)
         merged._properties = self._properties.merge_with_parent(parent._properties)
         return merged
     

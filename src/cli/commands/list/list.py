@@ -1,5 +1,6 @@
 from collections.abc import Iterable
 import json
+from typing import Optional
 import typer
 from cli.commands.list.formatter import format_properties_to_boxed_lines, format_properties_to_json, format_properties_to_lines
 from context import KissContext
@@ -135,13 +136,17 @@ def targets_cmd(ctx: typer.Context,
         
 @list_app.command("compilers")
 def compilers_cmd(ctx: typer.Context,
-                  mode: OutputMode = typer.Option(OutputMode.plain, "--mode", "-m", help="Select the output mode")):
+                  mode: OutputMode = typer.Option(OutputMode.plain, "--mode", "-m", help="Select the output mode"),
+                  names: Optional[list[str]] = typer.Option(None, "--name", "-n", help="Filter by name (repeatable)")):
     """
     List available compilers.
     """
-
     kiss_ctx: KissContext = ctx.obj["ctx"]
     known_compilers = kiss_ctx.known_compilers()
+
+    if names:
+        known_compilers = [c for c in known_compilers if c.name in names]
+
     if mode == OutputMode.plain:
         for compiler in known_compilers:
             is_default = compiler == kiss_ctx.default_compiler(kiss_ctx.default_target().name)

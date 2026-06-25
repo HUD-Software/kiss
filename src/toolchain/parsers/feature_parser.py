@@ -18,13 +18,11 @@ def yaml_parse_feature(data: dict, node_cls: Type[T] = FeatureNode) -> T:
         raise ValueError("'description' for feature must be a string")
     
     # Create the feature and load informations
-    node = node_cls(name, description )
+    node = node_cls(name)
     for key, value in data.items():
         match key:
             case "name":
                 pass
-            # case "description":
-            #     pass
             case FeatureArgsNode.NAME:
                 args = FeatureArgsNode()
                 for args_key, args_value in value.items():

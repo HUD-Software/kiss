@@ -155,8 +155,8 @@ class CompilersOverrideNode(Property):
 
 class CompilerFeatureNode(FeatureNode):
 
-    def __init__(self, name:str, description: str):
-        super().__init__(name, description)
+    def __init__(self, name:str):
+        super().__init__(name)
         # The 'linkers:'
         self.linkers : LinkersOverrideNode = None
 
@@ -172,7 +172,7 @@ class CompilerFeatureNode(FeatureNode):
         return merged
 
     def dispatch_globals(self) -> Property:
-        dispatched = CompilerFeatureNode(self.name,self.description)
+        dispatched = CompilerFeatureNode(self.name)
         # Apply modifier to global properties
         dispatched._properties = self.properties.apply_modifier()
         # Merge feature globals with 'linkers:'

@@ -1,4 +1,5 @@
 from __future__ import annotations
+import copy
 from toolchain.nodes.feature_node import FeatureNodeList, FeatureRuleNodeList
 from toolchain.nodes.property import PropertyBool, PropertyDict, Property
 from typing import TypeVar, Type
@@ -108,7 +109,10 @@ class LinkersOverrideNode(Property):
     Contains global enable-features + per-linker overrides 'LinkerSpecificOverrideNode' nodes.
 
     linkers: # LinkersOverrideNode
+      enable-features: []
       lld-link : 
+        enable-features: []
+      link:
         enable-features: []
       ...
     """
@@ -123,10 +127,7 @@ class LinkersOverrideNode(Property):
     def properties(self) -> PropertyDict:
         return self._properties
 
-    @property
-    def linkers(self):
-        return self._linkers.values()
-    
+   
     def get_property(self, name: str) -> Property | None:
         return self.properties.get_property(name)
     
@@ -136,20 +137,25 @@ class LinkersOverrideNode(Property):
     def add_linker(self, linker:LinkerSpecificOverrideNode):
         self._linkers[linker.name] = linker
 
-    # def get_linker_specific_overrides(self) -> list[LinkerSpecificOverrideNode]:
-    #     return [l for l in self.properties.values() if isinstance(l,LinkerSpecificOverrideNode)]
-    
-    # def get_global_linkers(self) -> PropertyDict:
-    #     return [l for l in self.properties.values() if not isinstance(l,LinkerSpecificOverrideNode)]
-    # def clone(self) -> LinkersOverrideNode:
-    #     cloned  = LinkersOverrideNode(self.name)
-    #     cloned._properties = self._properties.clone()
-    #     return cloned
-    
     def merge_with_parent(self, parent):
         assert type(parent) is type(self), "Type mismatch"
         merged = LinkersOverrideNode(self.name)
+        # Merge global properties under 'linkers.'
         merged._properties = self.properties.merge_with_parent(parent.properties)
+        # loop through all linkers: 'link', 'lld-link', etc...
+        # Merge if parent is in self, add if not in self
+        for parent_linker_name, parent_linker in parent._linkers.items():
+            self_linker = self._linkers.get(parent_linker_name)
+            if self_linker is not None:
+                merged.add_linker(self_linker.merge_with_parent(parent_linker))
+            else:
+                merged.add_linker(copy.deepcopy(parent_linker))
+   
+        # Add 'linkers' that are not in parent
+        for self_linker in self._linkers:
+            if self_linker not in parent._linkers:
+                merged.add_linker(copy.deepcopy(parent_linker))
+
         return merged
     
     def merge_with_properties(self, properties: PropertyDict):

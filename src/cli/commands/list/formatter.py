@@ -110,9 +110,8 @@ class Box:
                     child_box = Box.properties_to_box(prop.name, properties, ignore_empty)
                 elif isinstance(prop, LinkersOverrideNode):
                     properties = copy.deepcopy(prop.properties)
-                    if prop.linkers:
-                        for linker in prop.linkers:
-                            properties.add_property(linker)
+                    for linker in prop._linkers.values():
+                        properties.add_property(linker)
                     child_box = Box.properties_to_box(prop.name, properties, ignore_empty)
                 else:
                     child_box = Box.properties_to_box(prop.name, prop.properties, ignore_empty)

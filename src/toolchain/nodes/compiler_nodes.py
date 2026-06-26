@@ -71,10 +71,10 @@ class CompilerNode(Property):
     #     cloned.properties = self._properties.clone()
     #     return cloned
     
-    def merge_with_parent(self, parent: CompilerNode):
+    def resolve_extends(self, parent: CompilerNode):
         assert type(parent) is type(self), "Type mismatch"
         merged = CompilerNode(self.name)
-        merged._properties = self.properties.merge_with_parent(parent.properties)
+        merged._properties = self.properties.resolve_extends(parent.properties)
         return merged
     
     def dispatch_globals(self) -> CompilerNode:
@@ -111,10 +111,10 @@ class CompilerSpecificOverrideNode(Property):
     #     cloned._properties = self._properties.clone()
     #     return cloned
     
-    def merge_with_parent(self, parent):
+    def resolve_extends(self, parent):
         assert type(parent) is type(self), "Type mismatch"
         merged = CompilerSpecificOverrideNode(self.name)
-        merged._properties = self.properties.merge_with_parent(parent.properties)
+        merged._properties = self.properties.resolve_extends(parent.properties)
         return merged
     
 class CompilersOverrideNode(Property):
@@ -147,10 +147,10 @@ class CompilersOverrideNode(Property):
     #     cloned._properties = self._properties.clone()
     #     return cloned
     
-    def merge_with_parent(self, parent):
+    def resolve_extends(self, parent):
         assert type(parent) is type(self), "Type mismatch"
         merged = CompilersOverrideNode(self.name)
-        merged._properties = self.properties.merge_with_parent(parent.properties)
+        merged._properties = self.properties.resolve_extends(parent.properties)
         return merged
 
 class CompilerFeatureNode(FeatureNode):
@@ -160,13 +160,13 @@ class CompilerFeatureNode(FeatureNode):
         # The 'linkers:'
         self.linkers : LinkersOverrideNode = None
 
-    def merge_with_parent(self, parent):
+    def resolve_extends(self, parent):
         assert type(parent) is type(self), "Type mismatch"
         merged = CompilerFeatureNode(self.name)
-        merged._properties = self._properties.merge_with_parent(parent._properties)
+        merged._properties = self._properties.resolve_extends(parent._properties)
         if parent.linkers:
             if self.linkers:
-                merged.linkers = self.linkers.merge_with_parent(parent.linkers)
+                merged.linkers = self.linkers.resolve_extends(parent.linkers)
             elif not self.linkers:
                 merged.linkers = copy.deepcopy(parent.linkers)
         return merged

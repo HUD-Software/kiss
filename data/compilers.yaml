@@ -125,6 +125,7 @@ compilers:
         linkers:
           enable-features: [DISABLE_INCREMENTAL_LINK] # ASAN needs incremental link to be disabled
       - name: OPT_LEVEL_0 # Name of the feature
+        enable-features: [OOOOo]
         linkers: # This feature needs to enable some flags (via features) for the linker too
           link:
             enable-features: [JJJJJJ] # Enable OPT_LEVEL_O feature if we use the linker 'link'

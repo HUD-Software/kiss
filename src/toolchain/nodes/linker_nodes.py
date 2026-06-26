@@ -59,10 +59,10 @@ class LinkerNode(Property):
     #     cloned._properties = self._properties.clone()
     #     return cloned
     
-    def merge_with_parent(self, parent):
+    def resolve_extends(self, parent):
         assert type(parent) is type(self), "Type mismatch"
         merged = LinkerNode(self.name)
-        merged._properties = self.properties.merge_with_parent(parent.properties)
+        merged._properties = self.properties.resolve_extends(parent.properties)
         return merged
     
 class LinkerSpecificOverrideNode(Property):
@@ -100,7 +100,7 @@ class LinkerSpecificOverrideNode(Property):
         merged._properties = self.properties.merge_with_properties(properties)
         return merged
     
-    def merge_with_parent(self, parent):
+    def resolve_extends(self, parent):
         assert type(parent) is type(self), "Type mismatch"
         return self.merge_with_properties(parent.properties)
 
@@ -137,17 +137,19 @@ class LinkersOverrideNode(Property):
     def add_linker(self, linker:LinkerSpecificOverrideNode):
         self._linkers[linker.name] = linker
 
-    def merge_with_parent(self, parent):
+    def resolve_extends(self, parent):
         assert type(parent) is type(self), "Type mismatch"
         merged = LinkersOverrideNode(self.name)
+        
         # Merge global properties under 'linkers.'
-        merged._properties = self.properties.merge_with_parent(parent.properties)
+        merged._properties = self.properties.resolve_extends(parent.properties)
+
         # loop through all linkers: 'link', 'lld-link', etc...
         # Merge if parent is in self, add if not in self
         for parent_linker_name, parent_linker in parent._linkers.items():
             self_linker = self._linkers.get(parent_linker_name)
             if self_linker is not None:
-                merged.add_linker(self_linker.merge_with_parent(parent_linker))
+                merged.add_linker(self_linker.resolve_extends(parent_linker))
             else:
                 merged.add_linker(copy.deepcopy(parent_linker))
    

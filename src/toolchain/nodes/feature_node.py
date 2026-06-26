@@ -27,9 +27,9 @@ class FeatureArgsNode(Property):
     #     cloned._properties = self._properties.clone()
     #     return cloned
     
-    def merge_with_parent(self, parent) -> FeatureArgsNode:
+    def resolve_extends(self, parent) -> FeatureArgsNode:
         merged = FeatureArgsNode(self.name)
-        merged._properties = self._properties.merge_with_parent(parent._properties)
+        merged._properties = self._properties.resolve_extends(parent._properties)
         return merged
 
 from typing import TypeVar, Type
@@ -64,9 +64,9 @@ class FeatureNode(Property):
     #     cloned._properties = self._properties.clone()
     #     return cloned
 
-    def merge_with_parent(self, parent) -> FeatureNode:
+    def resolve_extends(self, parent) -> FeatureNode:
         merged = FeatureNode(self.name)
-        merged._properties = self._properties.merge_with_parent(parent._properties)
+        merged._properties = self._properties.resolve_extends(parent._properties)
         return merged
     
 class FeatureNodeList(Property):
@@ -93,9 +93,9 @@ class FeatureNodeList(Property):
     #     cloned._features = self._features.clone()
     #     return cloned
     
-    def merge_with_parent(self, parent):
+    def resolve_extends(self, parent):
         merged = FeatureNodeList(self.name)
-        merged._features = self._features.merge_with_parent(parent._features)
+        merged._features = self._features.resolve_extends(parent._features)
         return merged
     
     def dispatch_globals(self) -> FeatureNodeList:
@@ -128,9 +128,9 @@ class FeatureRuleNode(Property):
     #     cloned._properties = self._properties.clone()
     #     return cloned
     
-    def merge_with_parent(self, parent) -> FeatureRuleNode:
+    def resolve_extends(self, parent) -> FeatureRuleNode:
         merged = FeatureRuleNode(self.name)
-        merged._properties = self._properties.merge_with_parent(parent._properties)
+        merged._properties = self._properties.resolve_extends(parent._properties)
         return merged
     
 
@@ -158,9 +158,9 @@ class FeatureRuleNodeList(Property):
     #     cloned._feature_rules = self._feature_rules.clone()
     #     return cloned
     
-    def merge_with_parent(self, parent):
+    def resolve_extends(self, parent):
         merged = FeatureRuleNodeList(self.name)
-        merged._feature_rules = self._feature_rules.merge_with_parent(parent._feature_rules)
+        merged._feature_rules = self._feature_rules.resolve_extends(parent._feature_rules)
         return merged
     
     def dispatch_globals(self) -> FeatureRuleNodeList:

@@ -64,10 +64,10 @@ class TargetNode(Property):
     #     cloned.properties = self._properties.clone()
     #     return cloned
     
-    def merge_with_parent(self, parent):
+    def resolve_extends(self, parent):
         assert type(parent) is type(self), "Type mismatch"
         merged = TargetNode(self.name)
-        merged._properties = self.properties.merge_with_parent(parent.properties)
+        merged._properties = self.properties.resolve_extends(parent.properties)
         return merged
     
     def dispatch_globals(self) -> TargetNode:

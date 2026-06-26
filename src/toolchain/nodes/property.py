@@ -3,7 +3,7 @@ node.py
 -------
 Base classes for all Kiss nodes and properties.
 
-Property.merge_with_parent(parent)
+Property.resolve_extends(parent)
 ------------------------------------
 Every Property subclass decides how it combines with its parent's value.
 The child (self) drives the merge — it knows what it wants from the parent.
@@ -36,9 +36,8 @@ class Property(ABC):
         self.name = name
         self.inheritable = inheritable
     
-    @abstractmethod
-    def merge_with_parent(self, parent: Property) -> Property:
-        pass
+    def resolve_extends(self, parent: Property) -> Property:
+        return copy.deepcopy(self)
     
     # @abstractmethod
     # def clone(self) -> Property:
@@ -53,7 +52,6 @@ class Property(ABC):
     def __repr__(self):
         return f"{self.__class__.__name__}(name={self.name!r})"
 
-
 # ── Scalars ───────────────────────────────────────────────────────────────────
 
 class PropertyStr(Property):
@@ -64,8 +62,8 @@ class PropertyStr(Property):
     # def clone(self) -> PropertyStr:
     #     return PropertyStr(self.name, self.value, self.inheritable)
     
-    def merge_with_parent(self, parent: PropertyStr) -> PropertyStr:
-        return PropertyStr(self.name, self.value, self.inheritable)
+    # def resolve_extends(self, parent: PropertyStr) -> PropertyStr:
+    #     return PropertyStr(self.name, self.value, self.inheritable)
     
     def __repr__(self):
         return f"PropertyStr(name={self.name!r}, value={self.value!r}, inheritable={self.inheritable!r})"
@@ -89,7 +87,7 @@ class PropertyBool(Property):
     # def clone(self) -> PropertyBool:
     #     return PropertyBool(self.name, self.value, self.inheritable)
     
-    def merge_with_parent(self, parent: PropertyStr) -> PropertyStr:
+    def resolve_extends(self, parent: PropertyStr) -> PropertyStr:
         return PropertyBool(self.name, self.value, self.inheritable)
     
     def __repr__(self):
@@ -118,8 +116,8 @@ class PropertyStrList(Property):
     # def clone(self) -> PropertyStrList:
     #     return PropertyStrList(self.name, self.values.copy(), self.inheritable)
     
-    def merge_with_parent(self, parent: PropertyStrList) -> PropertyStrList:
-        return PropertyStrList(self.name, list(self.values), self.inheritable)
+    # def resolve_extends(self, parent: PropertyStrList) -> PropertyStrList:
+    #     return PropertyStrList(self.name, list(self.values), self.inheritable)
     
     def apply_modifier_prop(self, mod : PropertyStrListModifier):
         if mod.operation == StrListModifierOperation.ADD or mod.operation == StrListModifierOperation.ENABLE:
@@ -182,7 +180,7 @@ class PropertyNodeList(Property):
     def get_node(self, name: str) -> Optional[PropertyDict]:
         return next((n for n in self.nodes if n.name == name), None)
     
-    def merge_with_parent(self, parent: PropertyNodeList) -> PropertyNodeList:
+    def resolve_extends(self, parent: PropertyNodeList) -> PropertyNodeList:
         result = []
         # Check all parents nodes
         # If not in self, add it
@@ -192,7 +190,7 @@ class PropertyNodeList(Property):
             if not self_node:
                 result.append(parent_node.clone())
             else:
-                result.append(self_node.merge_with_parent(parent_node))
+                result.append(self_node.resolve_extends(parent_node))
         # Add all self node that are not in parent
         for self_node in self.nodes: 
             parent_node = parent.get_node(self_node.name)
@@ -348,7 +346,7 @@ class PropertyDict:
 
             self_prop = self.get_property(name)
             if self_prop:
-                result.add_property(self_prop.merge_with_parent(parent_prop))
+                result.add_property(self_prop.resolve_extends(parent_prop))
             else:
                 result.add_property(copy.deepcopy(parent_prop))
 
@@ -391,7 +389,7 @@ class PropertyDict:
 
         return result
 
-    def merge_with_parent(self, parent: PropertyDict) -> PropertyDict:
+    def resolve_extends(self, parent: PropertyDict) -> PropertyDict:
         """
         Merge the current node (child) with a parent node and returns a new resolved node.
 

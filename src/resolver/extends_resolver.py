@@ -3,11 +3,11 @@ extends_resolver.py
 -------------------
 Pass 1 of the resolution pipeline.
 
-Delegates all merge logic to Property.merge_with_parent().
+Delegates all merge logic to Property.resolve_extends().
 The resolver itself is now only responsible for:
   1. Building the inheritance chain (extends)
   2. Detecting circular dependencies
-  3. Calling node.merge_with_parent(parent) in the right order
+  3. Calling node.resolve_extends(parent) in the right order
 
 All merge semantics live in the Property subclasses (node.py).
 """
@@ -32,7 +32,7 @@ def _resolve_chain(name: str, index: dict[str, PropertyDict], visited: set, reso
     if extends_prop:
         parent_name = extends_prop.value
         parent      = _resolve_chain(parent_name, index, visited, resolved)
-        node        = node.merge_with_parent(parent)
+        node        = node.resolve_extends(parent)
         node        = node.dispatch_globals()
     else:
         node = node.dispatch_globals()
@@ -45,7 +45,7 @@ def resolve_extends(nodes: dict[str, PropertyDict]) -> dict[str, PropertyDict]:
     """
     Resolve all 'extends' chains in a list of nodes.
     Returns a new list of fully merged nodes in original order.
-    Each node's properties are merged via Property.merge_with_parent().
+    Each node's properties are merged via Property.resolve_extends().
     """
     resolved: dict[str, PropertyDict] = {}
 

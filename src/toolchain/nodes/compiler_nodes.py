@@ -28,7 +28,7 @@ class CompilerNode(Property):
         super().__init__(name)
         self._properties = PropertyDict()
         self._feature_list = FeatureNodeList()
-    
+        
     @property
     def properties(self) -> PropertyDict:
         return self._properties

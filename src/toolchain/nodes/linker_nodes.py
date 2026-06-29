@@ -54,7 +54,11 @@ class LinkerNode(Property):
     def get_property_as(self, name: str, prop_type: Type[T]) -> T | None:
         return self.properties.get_property_as(name, prop_type)
         
-    
+    def apply_modifiers(self) -> LinkerNode:
+        result  = LinkerNode(self.name)
+        result._properties = self.properties.apply_modifiers()
+        return result
+        
 class LinkerSpecificOverrideNode(Property):
     """Represents a per-linker override inside a 'linkers:' node.
     

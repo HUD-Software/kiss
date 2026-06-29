@@ -165,10 +165,10 @@ def load_context(directory: str) -> KissContext:
     src_dir     = Path(__file__).parent
     data_dir    = src_dir.parent / "data"
 
-    linkers       = resolve_extends(load_linkers(str(data_dir / "linkers.yaml")))
+    #linkers       = resolve_extends(load_linkers(str(data_dir / "linkers.yaml")))
     compilers     = resolve_extends(load_compilers(str(data_dir / "compilers.yaml")))
-    project_types = resolve_extends(load_project_types(str(data_dir / "project-types.yaml")))
-    targets       = load_targets(str(data_dir / "targets.yaml"))
+    # project_types = resolve_extends(load_project_types(str(data_dir / "project-types.yaml")))
+    # targets       = load_targets(str(data_dir / "targets.yaml"))
 
     # Load kiss.yaml if present
     kiss_yaml = project_dir / "kiss.yaml"
@@ -182,33 +182,33 @@ def load_context(directory: str) -> KissContext:
     # resolve_extends — the built-in acts as parent, the user definition as child.
     # Unknown profiles (e.g. 'perf') are added as-is.
     # resolve_extends is called once on the final merged state.
-    profiles = load_profiles(str(data_dir / "profiles.yaml"))
-    if kiss_data.get("profiles"):
-        user_profiles = {p["name"]: yaml_parse_profile(p) for p in kiss_data["profiles"]}
-        for name, user_profile in user_profiles.items():
-            if name in profiles:
-                profiles[name] = user_profile.resolve_extends(profiles[name])
-            else:
-                profiles[name] = user_profile
-    profiles = resolve_extends(profiles)
+    # profiles = load_profiles(str(data_dir / "profiles.yaml"))
+    # if kiss_data.get("profiles"):
+    #     user_profiles = {p["name"]: yaml_parse_profile(p) for p in kiss_data["profiles"]}
+    #     for name, user_profile in user_profiles.items():
+    #         if name in profiles:
+    #             profiles[name] = user_profile.resolve_extends(profiles[name])
+    #         else:
+    #             profiles[name] = user_profile
+    # profiles = resolve_extends(profiles)
 
     # Load project types from built-in project-types.yaml, then merge with user-defined ones.
     # Same semantics as profiles: same name → resolve_extends, unknown name → add as-is.
-    if kiss_data.get("project-types"):
-        user_project_types = {p["name"]: yaml_parse_project_type(p) for p in kiss_data["project-types"]}
-        for name, user_project_type in user_project_types.items():
-            if name in project_types:
-                project_types[name] = user_project_type.resolve_extends(project_types[name])
-            else:
-                project_types[name] = user_project_type
-    project_types = resolve_extends(project_types)
+    # if kiss_data.get("project-types"):
+    #     user_project_types = {p["name"]: yaml_parse_project_type(p) for p in kiss_data["project-types"]}
+    #     for name, user_project_type in user_project_types.items():
+    #         if name in project_types:
+    #             project_types[name] = user_project_type.resolve_extends(project_types[name])
+    #         else:
+    #             project_types[name] = user_project_type
+    # project_types = resolve_extends(project_types)
 
     return KissContext(
         directory     = project_dir,
         kiss_data     = kiss_data,
         compilers     = compilers,
-        linkers       = linkers,
-        profiles      = profiles,
-        project_types = project_types,
-        targets       = targets,
+        # linkers       = linkers,
+        # profiles      = profiles,
+        # project_types = project_types,
+        # targets       = targets,
     )

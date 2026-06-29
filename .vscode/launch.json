@@ -14,7 +14,7 @@
                 "list",
                 "compilers",
                 "--name",
-                "msvc-compiler",
+                "clangcl",
                 "--mode",
                 "boxed"
             ],

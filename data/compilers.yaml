@@ -32,4 +32,4 @@ compilers:
         linkers:
           lld-link:
             enable-features: [D]
-            disable-features: [G]
+            disable-features: [A]

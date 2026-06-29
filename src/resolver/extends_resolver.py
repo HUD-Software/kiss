@@ -34,11 +34,9 @@ def _resolve_chain(name: str, index: dict[str, PropertyDict], visited: set, reso
         parent      = _resolve_chain(parent_name, index, visited, resolved)
         node        = node.merge_with(parent)
         node        = node.dispatch()
-        #node        = node.apply_modifiers()
     else:
         node = node.dispatch()
-        #node = node.apply_modifiers()
-        
+
     visited.discard(name)
     resolved[name] = node
     return node
@@ -54,4 +52,6 @@ def resolve_extends(nodes: dict[str, PropertyDict]) -> dict[str, PropertyDict]:
     for name, node in nodes.items():
         _resolve_chain(name, nodes, set(), resolved)
 
+    for r in resolved.values():
+        resolved[r.name] = r.apply_modifiers()
     return resolved

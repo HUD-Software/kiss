@@ -323,6 +323,12 @@ class PropertyDict:
         # Add properties that are in parent and not in self if inheritable
         for parent_prop in parent.properties.values():
             if parent_prop.name not in self.properties and parent_prop.inheritable:
+                if isinstance(parent_prop, PropertyStrListModifier):
+                    if parent_prop.list_name in parent_list_property_to_ignore:
+                        continue
+                elif isinstance(parent_prop, PropertyStrList):
+                    if parent_prop.name in parent_list_property_to_ignore:
+                        continue
                 result.add_property(copy.deepcopy(parent_prop))
 
         return result

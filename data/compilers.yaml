@@ -8,7 +8,7 @@ compilers:
         flags: [/Od]
         enable-features: [A]
         linkers:
-          enable-features: [B]
+          enable-features: [B] # A B
           link:
             enable-features: [C]
           lld-link:

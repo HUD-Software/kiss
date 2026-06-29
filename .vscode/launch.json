@@ -14,7 +14,7 @@
                 "list",
                 "compilers",
                 "--name",
-                "",
+                "cl",
                 "--mode",
                 "boxed"
             ],

@@ -93,7 +93,7 @@ class CompilerNode(Property):
         dispatched._properties = copy.deepcopy(self.properties)
         dispatched.feature_list = self.feature_list.dispatch()
         return dispatched
-    
+
 class CompilerSpecificOverrideNode(Property):
     """Represents a per-compiler override inside a 'compilers:' node.
 

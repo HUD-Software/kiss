@@ -4,7 +4,7 @@ from wcwidth import wcswidth
 from toolchain.nodes.compiler_nodes import CompilerFeatureNode, CompilerNode
 from toolchain.nodes.feature_node import FeatureArgsNode, FeatureNodeList, FeatureRuleNodeList
 from toolchain.nodes.linker_nodes import LinkerSpecificOverrideNode, LinkersOverrideNode
-from toolchain.nodes.property import PropertyDict, PropertyBool,  PropertyNodeList, PropertyStr, PropertyStrList
+from toolchain.nodes.property import Property, PropertyDict, PropertyBool,  PropertyNodeList, PropertyStr, PropertyStrList
 
 
 # PRIVATE ──────────────────────────────────────────────────────────────────────
@@ -20,6 +20,66 @@ def _vis_len(s: str) -> int:
     """
 
     return wcswidth(s)
+
+_BOX_CONVERTERS: dict[type, callable] = {}
+
+def register_box(cls):
+    def decorator(func):
+        _BOX_CONVERTERS[cls] = func
+        return func
+    return decorator
+
+def to_box(obj, ignore_empty: bool = True):
+    obj_type = type(obj)
+
+    if obj_type in _BOX_CONVERTERS:
+        return _BOX_CONVERTERS[obj_type](obj, ignore_empty)
+
+    raise TypeError(f"No box converter for {obj_type}")
+
+@register_box(LinkerSpecificOverrideNode)
+def _(linker_node: LinkerSpecificOverrideNode, ignore_empty: bool):
+    box = Box(linker_node.name)
+    for properties in linker_node.properties.values():
+        properties.append_to_lines_print(box.lines, ignore_empty)
+    return box
+
+@register_box(LinkersOverrideNode)
+def _(linkers_node: LinkersOverrideNode, ignore_empty: bool):
+    box = Box(LinkersOverrideNode.NAME)
+    for properties in linkers_node.properties.values():
+        properties.append_to_lines_print(box.lines, ignore_empty)
+    for linker in linkers_node._linkers.values():
+        linker_box = to_box(linker, ignore_empty)
+        box.inner_boxes.append(linker_box)
+    return box
+
+@register_box(CompilerFeatureNode)
+def _(feature_node: CompilerFeatureNode, ignore_empty: bool):
+    box = Box(feature_node.name)
+    for properties in feature_node.properties.values():
+        properties.append_to_lines_print(box.lines, ignore_empty)
+    if feature_node.linkers:
+        linkers_box = to_box(feature_node.linkers, ignore_empty)
+        box.inner_boxes.append(linkers_box)
+    return box
+
+@register_box(FeatureNodeList)
+def _(feature_list: FeatureNodeList, ignore_empty: bool):
+    box = Box(FeatureNodeList.NAME)
+    for feature in feature_list.features.values():
+        feature_box = to_box(feature, ignore_empty)
+        box.inner_boxes.append(feature_box)
+    return box
+
+@register_box(CompilerNode)
+def _(node: CompilerNode, ignore_empty: bool):
+    box = Box(node.name)
+    for prop in node.properties.values():
+        prop.append_to_lines_print(box.lines, ignore_empty)
+    feature_list_box = to_box(node.feature_list, ignore_empty)
+    box.inner_boxes.append(feature_list_box)
+    return box
 
 class Box:
     LEFT_BORDER = "│ "
@@ -118,6 +178,7 @@ class Box:
                 box.inner_boxes.append(child_box)
         return box
 
+
 def split_props(properties: PropertyDict):
     """
     Split node properties into two categories:
@@ -140,7 +201,7 @@ def split_props(properties: PropertyDict):
 
     return leaf, nodes
 
-def format_properties_to_boxed_lines(node, ignore_empty:bool = True, is_default: bool = False) -> list[str]:
+def format_properties_to_boxed_lines(node, ignore_empty:bool = True) -> list[str]:
     """
     Format a Node into a hierarchical boxed representation.
 
@@ -153,12 +214,7 @@ def format_properties_to_boxed_lines(node, ignore_empty:bool = True, is_default:
     Node properties are recursively formatted and embedded as boxed blocks,
     ensuring visual hierarchy is preserved in terminal output.
     """
-    if isinstance(node, CompilerNode):
-        title = node.name + (" (default)" if is_default else "")
-        properties = copy.deepcopy(node.properties)
-        properties.add_property(node.feature_list)
-        box = Box.properties_to_box(title, properties, ignore_empty)    
-
+    box = to_box(node, ignore_empty)
     return box.to_boxed_strings()
 
 

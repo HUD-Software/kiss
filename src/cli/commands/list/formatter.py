@@ -1,7 +1,7 @@
 from __future__ import annotations
 import copy
 from wcwidth import wcswidth
-from toolchain.nodes.compiler_nodes import CompilerFeatureNode
+from toolchain.nodes.compiler_nodes import CompilerFeatureNode, CompilerNode
 from toolchain.nodes.feature_node import FeatureArgsNode, FeatureNodeList, FeatureRuleNodeList
 from toolchain.nodes.linker_nodes import LinkerSpecificOverrideNode, LinkersOverrideNode
 from toolchain.nodes.property import PropertyDict, PropertyBool,  PropertyNodeList, PropertyStr, PropertyStrList
@@ -140,7 +140,7 @@ def split_props(properties: PropertyDict):
 
     return leaf, nodes
 
-def format_properties_to_boxed_lines(title: str, properties: PropertyDict, ignore_empty:bool = True, is_default: bool = False) -> list[str]:
+def format_properties_to_boxed_lines(node, ignore_empty:bool = True, is_default: bool = False) -> list[str]:
     """
     Format a Node into a hierarchical boxed representation.
 
@@ -153,9 +153,12 @@ def format_properties_to_boxed_lines(title: str, properties: PropertyDict, ignor
     Node properties are recursively formatted and embedded as boxed blocks,
     ensuring visual hierarchy is preserved in terminal output.
     """
+    if isinstance(node, CompilerNode):
+        title = node.name + (" (default)" if is_default else "")
+        properties = copy.deepcopy(node.properties)
+        properties.add_property(node.feature_list)
+        box = Box.properties_to_box(title, properties, ignore_empty)    
 
-    title = title + (" (default)" if is_default else "")
-    box = Box.properties_to_box(title, properties, ignore_empty)
     return box.to_boxed_strings()
 
 

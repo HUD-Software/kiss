@@ -27,6 +27,7 @@ class CompilerNode(Property):
     def __init__(self, name : str):
         super().__init__(name)
         self._properties = PropertyDict()
+        self._feature_list = FeatureNodeList()
     
     @property
     def properties(self) -> PropertyDict:
@@ -48,10 +49,13 @@ class CompilerNode(Property):
         return prop.value if prop else None
     
     @property
-    def features(self) -> FeatureNodeList:
-        prop = self.get_property_as(FeatureNodeList.NAME, FeatureNodeList)
-        return prop
-     
+    def feature_list(self) -> FeatureNodeList:
+        return self._feature_list
+    
+    @feature_list.setter
+    def feature_list(self, feature_list):
+        self._feature_list = feature_list
+
     @property
     def feature_rules(self) -> FeatureRuleNodeList:
         prop = self.get_property_as(FeatureRuleNodeList.NAME, FeatureRuleNodeList)
@@ -66,21 +70,28 @@ class CompilerNode(Property):
     def get_property_as(self, name: str, prop_type: Type[T]) -> T | None:
         return self.properties.get_property_as(name, prop_type)
 
-    # def clone(self) -> CompilerNode:
-    #     cloned  = CompilerNode(self.name)
-    #     cloned.properties = self._properties.clone()
-    #     return cloned
-    
-    def resolve_extends(self, parent: CompilerNode):
+    def merge_with(self, parent: CompilerNode):
+        """Merge list without applying modifier or dispatching top to bottom hierarchy """
         assert type(parent) is type(self), "Type mismatch"
         merged = CompilerNode(self.name)
-        merged._properties = self.properties.resolve_extends(parent.properties)
+        merged._properties = self.properties.merge_with(parent.properties)
+        merged._feature_list = self._feature_list.merge_with(parent._feature_list)
         return merged
     
-    def dispatch_globals(self) -> CompilerNode:
+    def apply_modifiers(self) -> CompilerNode:
+        """Apply list modifier"""
+        applied  = CompilerNode(self.name)
+        applied._properties = self.properties.apply_modifiers()
+        applied._feature_list = self._feature_list.apply_modifiers()
+        return applied
+        
+    def dispatch(self) -> CompilerNode:
+        """ 
+        Dispatch properties from top to bottom hierarchy
+        """
         dispatched = CompilerNode(self.name)
-        for property in self.properties.values():
-            dispatched.add_property(property.dispatch_globals())
+        dispatched._properties = copy.deepcopy(self.properties)
+        dispatched.feature_list = self.feature_list.dispatch()
         return dispatched
     
 class CompilerSpecificOverrideNode(Property):
@@ -105,11 +116,6 @@ class CompilerSpecificOverrideNode(Property):
     
     def add_property(self, property):
         self.properties.add_property(property)
-
-    # def clone(self) -> CompilerSpecificOverrideNode:
-    #     cloned  = CompilerSpecificOverrideNode(self.name)
-    #     cloned._properties = self._properties.clone()
-    #     return cloned
     
     def resolve_extends(self, parent):
         assert type(parent) is type(self), "Type mismatch"
@@ -142,11 +148,6 @@ class CompilersOverrideNode(Property):
     def add_property(self, property):
         self.properties.add_property(property)
 
-    # def clone(self) -> CompilersOverrideNode:
-    #     cloned  = CompilersOverrideNode(self.name)
-    #     cloned._properties = self._properties.clone()
-    #     return cloned
-    
     def resolve_extends(self, parent):
         assert type(parent) is type(self), "Type mismatch"
         merged = CompilersOverrideNode(self.name)
@@ -157,25 +158,29 @@ class CompilerFeatureNode(FeatureNode):
 
     def __init__(self, name:str):
         super().__init__(name)
-        # The 'linkers:'
+        # The 'linkers:' node
         self.linkers : LinkersOverrideNode = None
 
-    def resolve_extends(self, parent):
-        assert type(parent) is type(self), "Type mismatch"
+    def merge_with(self, other: CompilerFeatureNode):
         merged = CompilerFeatureNode(self.name)
-        merged._properties = self._properties.resolve_extends(parent._properties)
-        if parent.linkers:
+        merged._properties = self.properties.merge_with(other.properties)
+        if other.linkers:
             if self.linkers:
-                merged.linkers = self.linkers.resolve_extends(parent.linkers)
-            elif not self.linkers:
-                merged.linkers = copy.deepcopy(parent.linkers)
+                merged.linkers = self.linkers.merge_with(other.linkers)
+            else:
+                merged.linkers = copy.deepcopy(other.linkers)
         return merged
-
-    def dispatch_globals(self) -> Property:
-        dispatched = CompilerFeatureNode(self.name)
-        # Apply modifier to global properties
-        dispatched._properties = self.properties.apply_modifier()
-        # Merge feature globals with 'linkers:'
+    
+    def apply_modifiers(self) -> FeatureNodeList:
+        result = CompilerFeatureNode(self.name)
+        result._properties = self.properties.apply_modifiers()
         if self.linkers:
-            dispatched.linkers = self.linkers.merge_with_properties(dispatched.properties)
-        return dispatched
+            result.linkers = self.linkers.apply_modifiers()
+        return result
+
+    def dispatch(self) -> CompilerFeatureNode:
+        result = CompilerFeatureNode(self.name)
+        result._properties = copy.deepcopy(self.properties)
+        if self.linkers:
+            result.linkers = self.linkers.dispatch(result.properties)
+        return result

@@ -22,16 +22,6 @@ class FeatureArgsNode(Property):
     def add_property(self, property: Property):
         self._properties.add_property(property)
 
-    # def clone(self) -> FeatureArgsNode:
-    #     cloned  = FeatureArgsNode(self.name)
-    #     cloned._properties = self._properties.clone()
-    #     return cloned
-    
-    def resolve_extends(self, parent) -> FeatureArgsNode:
-        merged = FeatureArgsNode(self.name)
-        merged._properties = self._properties.resolve_extends(parent._properties)
-        return merged
-
 from typing import TypeVar, Type
 T = TypeVar("T", bound=Property)
 
@@ -59,15 +49,15 @@ class FeatureNode(Property):
     def get_property_as(self, name: str, prop_type: Type[T]) -> T | None:
         return self._properties.get_property_as(name, prop_type)
     
-    # def clone(self) -> FeatureNode:
-    #     cloned  = FeatureNode(self.name)
-    #     cloned._properties = self._properties.clone()
-    #     return cloned
-
-    def resolve_extends(self, parent) -> FeatureNode:
+    def merge_with(self, parent: FeatureNode):
         merged = FeatureNode(self.name)
-        merged._properties = self._properties.resolve_extends(parent._properties)
+        merged._properties = self._properties.merge_with(parent._properties)
         return merged
+    
+    def apply_modifiers(self) -> FeatureNode:
+        result = FeatureNode(self.name)
+        result._properties = self._properties.apply_modifiers()
+        return result
     
 class FeatureNodeList(Property):
     """Represents the 'features:' block."""
@@ -87,23 +77,23 @@ class FeatureNodeList(Property):
     
     def add_feature(self, feature : FeatureNode):
         self._features.add_property(feature)
-
-    # def clone(self) -> FeatureNodeList:
-    #     cloned  = FeatureNodeList(self.name)
-    #     cloned._features = self._features.clone()
-    #     return cloned
     
-    def resolve_extends(self, parent):
+    def merge_with(self, parent: FeatureNodeList):
         merged = FeatureNodeList(self.name)
-        merged._features = self._features.resolve_extends(parent._features)
+        merged._features = self._features.merge_with(parent._features)
         return merged
     
-    def dispatch_globals(self) -> FeatureNodeList:
-        dispatched = FeatureNodeList()
+    def apply_modifiers(self) -> FeatureNodeList:
+        result = FeatureNodeList(self.name)
         for feature in self.features.values():
-            dispatched.add_feature(feature.dispatch_globals())
-        return dispatched
+            result.add_feature(feature.apply_modifiers())
+        return result
 
+    def dispatch(self) -> FeatureNodeList:
+        result = FeatureNodeList(self.name)
+        for feature in self.features.values():
+            result.add_feature(feature.dispatch())
+        return result
 
 class FeatureRuleNode(Property):
     """Represents a feature rule (only-one or incompatible)."""
@@ -111,7 +101,6 @@ class FeatureRuleNode(Property):
     def __init__(self, name:str):
         super().__init__(name)
         self._properties = PropertyDict()
-    
     
     @property
     def properties(self) -> PropertyDict:
@@ -122,16 +111,6 @@ class FeatureRuleNode(Property):
 
     def get_property(self, name: str) -> Property | None:
         return self._properties.get(name)
-    
-    # def clone(self) -> FeatureRuleNode:
-    #     cloned  = FeatureRuleNode(self.name)
-    #     cloned._properties = self._properties.clone()
-    #     return cloned
-    
-    def resolve_extends(self, parent) -> FeatureRuleNode:
-        merged = FeatureRuleNode(self.name)
-        merged._properties = self._properties.resolve_extends(parent._properties)
-        return merged
     
 
 class FeatureRuleNodeList(Property):
@@ -152,19 +131,3 @@ class FeatureRuleNodeList(Property):
     
     def add_feature_rule(self, feature : FeatureRuleNode):
         self._feature_rules.add_property(feature)
-
-    # def clone(self) -> FeatureRuleNodeList:
-    #     cloned  = FeatureRuleNodeList(self.name)
-    #     cloned._feature_rules = self._feature_rules.clone()
-    #     return cloned
-    
-    def resolve_extends(self, parent):
-        merged = FeatureRuleNodeList(self.name)
-        merged._feature_rules = self._feature_rules.resolve_extends(parent._feature_rules)
-        return merged
-    
-    def dispatch_globals(self) -> FeatureRuleNodeList:
-        dispatched = FeatureRuleNodeList()
-        for feature in self.feature_rules.values():
-            dispatched.add_feature_rule(feature.dispatch_globals())
-        return dispatched

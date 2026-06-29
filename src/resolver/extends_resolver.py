@@ -32,10 +32,12 @@ def _resolve_chain(name: str, index: dict[str, PropertyDict], visited: set, reso
     if extends_prop:
         parent_name = extends_prop.value
         parent      = _resolve_chain(parent_name, index, visited, resolved)
-        node        = node.resolve_extends(parent)
-        node        = node.dispatch_globals()
+        node        = node.merge_with(parent)
+        node        = node.dispatch()
+        #node        = node.apply_modifiers()
     else:
-        node = node.dispatch_globals()
+        node = node.dispatch()
+        #node = node.apply_modifiers()
         
     visited.discard(name)
     resolved[name] = node

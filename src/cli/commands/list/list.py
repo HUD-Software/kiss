@@ -28,7 +28,7 @@ def _print(it :Iterable[PropertyDict], mode: OutputMode = OutputMode.plain):
             for line in lines:
                 typer.echo(line)
         elif mode == OutputMode.boxed:
-            lines = format_properties_to_boxed_lines(node.name, node.properties)
+            lines = format_properties_to_boxed_lines(node)
             for line in lines:
                 typer.echo(line)
             
@@ -159,13 +159,18 @@ def compilers_cmd(ctx: typer.Context,
 
 @list_app.command("linkers")
 def linkers_cmd(ctx: typer.Context,
-                mode: OutputMode = typer.Option(OutputMode.plain, "--mode", "-m", help="Select the output mode")):
+                mode: OutputMode = typer.Option(OutputMode.plain, "--mode", "-m", help="Select the output mode"),
+                names: Optional[list[str]] = typer.Option(None, "--name", "-n", help="Filter by name (repeatable)")):
     """
     List available linkers.
     """
 
     kiss_ctx: KissContext = ctx.obj["ctx"]
     known_linkers = kiss_ctx.known_linkers()
+
+    if names:
+        known_linkers = [c for c in known_linkers if c.name in names]
+
     if mode == OutputMode.plain:
         for linker in known_linkers:
             is_default = linker == kiss_ctx.default_linker(kiss_ctx.default_target().name)

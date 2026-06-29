@@ -133,9 +133,9 @@ class LinkersOverrideNode(Property):
     def add_linker(self, linker:LinkerSpecificOverrideNode):
         self._linkers[linker.name] = linker
 
-    def merge_with(self, other: LinkersOverrideNode):
+    def merge_with(self, other: LinkersOverrideNode, explicit_list_name: list[str]):
         result = LinkersOverrideNode(self.name)
-        result._properties = self.properties.merge_with(other.properties)
+        result._properties = self.properties.merge_with(other.properties, explicit_list_name)
 
         for linker in self._linkers.values():
             other_linker = other._linkers.get(linker.name)

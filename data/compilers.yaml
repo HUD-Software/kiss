@@ -6,24 +6,27 @@ compilers:
       - name: OPT_LEVEL_0
         description: No optimization
         flags: [/Od]
-        enable-features: [A]
+        enable-features: [A] # A
         linkers:
           enable-features: [B] # A B
           link:
-            enable-features: [C]
+            enable-features: [C] # A B C
           lld-link:
-            enable-features: [D]
+            enable-features: [D] # A B D
 
   # MSVC cl.exe compiler
   - name: cl
     extends: msvc-compiler
     features:
       - name: OPT_LEVEL_0
-        enable-features: [E]
-        features: [O]
+        enable-features: [E] # A
         linkers:
+          # E A B
           link:
-            enable-features: [F]
+            features: [O]
+            enable-features: [F] # O F
+          #lld-link
+          # E A B D
 
   # MSVC clang-cl compiler
   - name: clangcl

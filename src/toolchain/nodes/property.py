@@ -136,9 +136,10 @@ class StrListModifierOperation(Enum):
     ADD = "add"
     REMOVE = "remove"
 
-class PropertyStrListModifier(PropertyStrList):
+class PropertyStrListModifier(Property):
     def __init__(self, name, list_name, values,  operation: StrListModifierOperation):
-        super().__init__(name, values)
+        super().__init__(name)
+        self.values: list[str] = list(values)
         self.list_name = list_name
         self.operation = operation
     
@@ -150,7 +151,7 @@ class PropertyStrListModifier(PropertyStrList):
             f"operation={self.operation.value!r})"
         )
     
-    def merge_with(self, other:StrListModifierOperation) -> MergeResult:
+    def merge_with(self, other:StrListModifierOperation) -> PropertyStrListModifier:
         assert self.operation == other.operation, "Not the same operation"
         assert self.list_name == other.list_name, "Not the same list"
         # Merged list in order, first other, then self
@@ -286,17 +287,20 @@ class PropertyDict:
     def explicit_list_name(self) -> list[str]:
         explicit_list_name = list[str]()
         for self_property in self.properties.values():
-            if isinstance(self_property, PropertyStrListModifier):
-                explicitly_present_list : PropertyStrList = self.properties.get(self_property.list_name)
-                if explicitly_present_list:
-                    explicit_list_name.append(self_property.list_name)
+            if isinstance(self_property, PropertyStrList):
+                explicit_list_name.append(self_property.name)
         return explicit_list_name
 
     def merge_with(self, parent: PropertyDict, parent_list_property_to_ignore : list[str] = None) -> PropertyDict:
         result = PropertyDict()
 
+        # When we are merging we want to exclude modifier if we have explicit list name 
+        # For exemple, if in self we have list 'features' we ignore all modifiers from parent
+        # We also can add other modifiers to ignore with 'parent_list_property_to_ignore'
         if not parent_list_property_to_ignore:
             parent_list_property_to_ignore = self.explicit_list_name()
+        else:
+            parent_list_property_to_ignore = self.explicit_list_name() + parent_list_property_to_ignore
 
         # For all property that are in self
         for self_property in self.properties.values():

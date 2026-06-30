@@ -166,8 +166,7 @@ class CompilerFeatureNode(FeatureNode):
         merged._properties = self.properties.merge_with(other.properties)
         if other.linkers:
             if self.linkers:
-                list_name_to_ignore = merged._properties.explicit_list_name()
-                merged.linkers = self.linkers.merge_with(other.linkers, list_name_to_ignore)
+                merged.linkers = self.linkers.merge_with(other.linkers)
             else:
                 merged.linkers = copy.deepcopy(other.linkers)
         return merged

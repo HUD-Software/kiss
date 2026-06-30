@@ -77,7 +77,7 @@ def yaml_parse_compiler(data: dict) -> CompilerNode:
                 for fr in value:
                     feature_rules.add_feature_rule(yaml_parse_feature_rule(fr))
                 if feature_rules.feature_rules:
-                    node.add_property(feature_rules)
+                    node.feature_rule_list = feature_rules
             case _:
                 prop = parse_property(key, value)
                 if prop:

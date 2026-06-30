@@ -28,6 +28,7 @@ class CompilerNode(Property):
         super().__init__(name)
         self._properties = PropertyDict()
         self._feature_list = FeatureNodeList()
+        self._feature_rule_list = FeatureRuleNodeList()
         
     @property
     def properties(self) -> PropertyDict:
@@ -57,6 +58,14 @@ class CompilerNode(Property):
         self._feature_list = feature_list
 
     @property
+    def feature_rule_list(self) -> FeatureRuleNodeList:
+        return self.feature_rule_list
+    
+    @feature_rule_list.setter
+    def feature_rule_list(self, feature_rule_list):
+        self._feature_rule_list = feature_rule_list
+
+    @property
     def feature_rules(self) -> FeatureRuleNodeList:
         prop = self.get_property_as(FeatureRuleNodeList.NAME, FeatureRuleNodeList)
         return prop
@@ -75,7 +84,7 @@ class CompilerNode(Property):
         assert type(parent) is type(self), "Type mismatch"
         merged = CompilerNode(self.name)
         merged._properties = self.properties.merge_with(parent.properties)
-        merged._feature_list = self._feature_list.merge_with(parent._feature_list)
+        merged._feature_list = self._feature_list.merge_with(parent._feature_list) 
         return merged
     
     def apply_modifiers(self) -> CompilerNode:

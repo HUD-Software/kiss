@@ -73,11 +73,11 @@ def yaml_parse_compiler(data: dict) -> CompilerNode:
                 if feature_list.features:
                     node.feature_list = feature_list    
             case FeatureRuleNodeList.NAME:
-                feature_rules = FeatureRuleNodeList()
+                feature_rule_list = FeatureRuleNodeList()
                 for fr in value:
-                    feature_rules.add_feature_rule(yaml_parse_feature_rule(fr))
-                if feature_rules.feature_rules:
-                    node.feature_rule_list = feature_rules
+                    feature_rule_list.add_feature_rule(yaml_parse_feature_rule(fr))
+                if feature_rule_list.feature_rules:
+                    node.feature_rule_list = feature_rule_list
             case _:
                 prop = parse_property(key, value)
                 if prop:

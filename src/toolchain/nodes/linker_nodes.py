@@ -25,6 +25,8 @@ class LinkerNode(Property):
     def __init__(self, name : str):
         super().__init__(name)
         self._properties = PropertyDict()
+        self._feature_list = FeatureNodeList()
+        self._feature_rule_list = FeatureRuleNodeList()
       
     @property
     def properties(self) -> PropertyDict:
@@ -36,14 +38,20 @@ class LinkerNode(Property):
         return prop.value if prop else False
     
     @property
-    def features(self) -> FeatureNodeList:
-        prop = self.get_property_as(FeatureNodeList.NAME, FeatureNodeList)
-        return prop
-     
+    def feature_list(self) -> FeatureNodeList:
+        return self._feature_list
+    
+    @feature_list.setter
+    def feature_list(self, feature_list):
+        self._feature_list = feature_list
+
     @property
-    def feature_rules(self) -> FeatureRuleNodeList:
-        prop = self.get_property_as(FeatureRuleNodeList.NAME, FeatureRuleNodeList)
-        return prop
+    def feature_rule_list(self) -> FeatureRuleNodeList:
+        return self._feature_rule_list
+    
+    @feature_rule_list.setter
+    def feature_rule_list(self, feature_rule_list):
+        self._feature_rule_list = feature_rule_list
     
     def get_property(self, name: str) -> Property | None:
         return self.properties.get_property(name)
@@ -54,10 +62,32 @@ class LinkerNode(Property):
     def get_property_as(self, name: str, prop_type: Type[T]) -> T | None:
         return self.properties.get_property_as(name, prop_type)
         
+    def merge_with(self, parent: LinkerNode):
+        """Merge list without applying modifier or dispatching top to bottom hierarchy """
+        assert type(parent) is type(self), "Type mismatch"
+        merged = LinkerNode(self.name)
+        merged._properties = self.properties.merge_with(parent.properties)
+        merged._feature_list = self.feature_list.merge_with(parent.feature_list)
+        merged._feature_rule_list = self.feature_rule_list.merge_with(parent.feature_rule_list)
+        return merged
+    
     def apply_modifiers(self) -> LinkerNode:
-        result  = LinkerNode(self.name)
-        result._properties = self.properties.apply_modifiers()
-        return result
+        """Apply list modifier"""
+        applied  = LinkerNode(self.name)
+        applied._properties = self.properties.apply_modifiers()
+        applied._feature_list = self.feature_list.apply_modifiers()
+        applied._feature_rule_list = copy.deepcopy(self.feature_rule_list)
+        return applied
+        
+    def dispatch(self) -> LinkerNode:
+        """ 
+        Dispatch properties from top to bottom hierarchy
+        """
+        dispatched = LinkerNode(self.name)
+        dispatched._properties = copy.deepcopy(self.properties)
+        dispatched.feature_list = self.feature_list.dispatch()
+        dispatched.feature_rule_list = copy.deepcopy(self.feature_rule_list)
+        return dispatched
         
 class LinkerSpecificOverrideNode(Property):
     """Represents a per-linker override inside a 'linkers:' node.

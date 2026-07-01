@@ -46,17 +46,17 @@ def yaml_parse_linker(data: dict) -> LinkerNode:
             case "name":
                 pass
             case FeatureNodeList.NAME:
-                features = FeatureNodeList()
+                feature_list = FeatureNodeList()
                 for f in value:
-                    features.add_feature(yaml_parse_feature(f))
-                if features.features:
-                    node.add_property(features)
+                    feature_list.add_feature(yaml_parse_feature(f))
+                if feature_list.features:
+                    node.feature_list = feature_list
             case FeatureRuleNodeList.NAME:
-                feature_rules = FeatureRuleNodeList()
+                feature_rule_list = FeatureRuleNodeList()
                 for fr in value:
-                    feature_rules.add_feature_rule(yaml_parse_feature_rule(fr))
-                if feature_rules.feature_rules:
-                    node.add_property(feature_rules)
+                    feature_rule_list.add_feature_rule(yaml_parse_feature_rule(fr))
+                if feature_rule_list.feature_rules:
+                    node.feature_rule_list = feature_rule_list
             case _:
                 prop = parse_property(key, value)
                 if prop:

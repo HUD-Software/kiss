@@ -2,7 +2,7 @@ from __future__ import annotations
 import copy
 from wcwidth import wcswidth
 from toolchain.nodes.compiler_nodes import CompilerFeatureNode, CompilerNode
-from toolchain.nodes.feature_node import FeatureArgsNode, FeatureNodeList, FeatureRuleNode, FeatureRuleNodeList
+from toolchain.nodes.feature_node import FeatureArgsNode, FeatureNode, FeatureNodeList, FeatureRuleNode, FeatureRuleNodeList
 from toolchain.nodes.linker_nodes import LinkerNode, LinkerSpecificOverrideNode, LinkersOverrideNode
 from toolchain.nodes.property import Property, PropertyDict, PropertyBool,  PropertyNodeList, PropertyStr, PropertyStrList
 
@@ -54,6 +54,13 @@ def _(linkers_node: LinkersOverrideNode, ignore_empty: bool):
         box.inner_boxes.append(linker_box)
     return box
 
+@register_box(FeatureNode)
+def _(feature_node: FeatureNode, ignore_empty: bool):
+    box = Box(feature_node.name)
+    for properties in feature_node.properties.values():
+        properties.append_to_lines_print(box.lines, ignore_empty)
+    return box
+
 @register_box(CompilerFeatureNode)
 def _(feature_node: CompilerFeatureNode, ignore_empty: bool):
     box = Box(feature_node.name)
@@ -98,14 +105,17 @@ def _(node: CompilerNode, ignore_empty: bool):
     box.inner_boxes.append(feature_rule_list_box)
     return box
 
-# @register_box(LinkerNode)
-# def _(node: CompilerNode, ignore_empty: bool):
-#     box = Box(node.name)
-#     for prop in node.properties.values():
-#         prop.append_to_lines_print(box.lines, ignore_empty)
-#     feature_list_box = to_box(node.feature_list, ignore_empty)
-#     box.inner_boxes.append(feature_list_box)
-#     return box
+
+@register_box(LinkerNode)
+def _(node: LinkerNode, ignore_empty: bool):
+    box = Box(node.name)
+    for prop in node.properties.values():
+        prop.append_to_lines_print(box.lines, ignore_empty)
+    feature_list_box = to_box(node.feature_list, ignore_empty)
+    feature_rule_list_box = to_box(node.feature_rule_list, ignore_empty)
+    box.inner_boxes.append(feature_list_box)
+    box.inner_boxes.append(feature_rule_list_box)
+    return box
 
 class Box:
     LEFT_BORDER = "│ "

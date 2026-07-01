@@ -129,6 +129,8 @@ compilers:
           link:
             enable-features: [JJJJJJ] # Enable OPT_LEVEL_O feature if we use the linker 'link'
     feature-rules:
+      - only-one: optimization
+        features: [OPT_LEVEL_0, OPT_LEVEL_1, OPT_LEVEL_2, OPT_LEVEL_3]
       - incompatible: asan
         feature: ASAN
         with: [OPT_LEVEL_3, LTO, OMIT_FRAME_POINTER]

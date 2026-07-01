@@ -2,7 +2,7 @@ from __future__ import annotations
 import copy
 from wcwidth import wcswidth
 from toolchain.nodes.compiler_nodes import CompilerFeatureNode, CompilerNode
-from toolchain.nodes.feature_node import FeatureArgsNode, FeatureNodeList, FeatureRuleNodeList
+from toolchain.nodes.feature_node import FeatureArgsNode, FeatureNodeList, FeatureRuleNode, FeatureRuleNodeList
 from toolchain.nodes.linker_nodes import LinkerNode, LinkerSpecificOverrideNode, LinkersOverrideNode
 from toolchain.nodes.property import Property, PropertyDict, PropertyBool,  PropertyNodeList, PropertyStr, PropertyStrList
 
@@ -72,13 +72,30 @@ def _(feature_list: FeatureNodeList, ignore_empty: bool):
         box.inner_boxes.append(feature_box)
     return box
 
+@register_box(FeatureRuleNode)
+def _(feature_rule_node: FeatureRuleNode, ignore_empty: bool):
+    box = Box(feature_rule_node.name)
+    for properties in feature_rule_node.properties.values():
+        properties.append_to_lines_print(box.lines, ignore_empty)
+    return box
+
+@register_box(FeatureRuleNodeList)
+def _(feature_rule_list: FeatureRuleNodeList, ignore_empty: bool):
+    box = Box(FeatureRuleNodeList.NAME)
+    for feature_rule in feature_rule_list.feature_rules.values():
+        feature_rule_box = to_box(feature_rule, ignore_empty)
+        box.inner_boxes.append(feature_rule_box)
+    return box
+
 @register_box(CompilerNode)
 def _(node: CompilerNode, ignore_empty: bool):
     box = Box(node.name)
     for prop in node.properties.values():
         prop.append_to_lines_print(box.lines, ignore_empty)
     feature_list_box = to_box(node.feature_list, ignore_empty)
+    feature_rule_list_box = to_box(node.feature_rule_list, ignore_empty)
     box.inner_boxes.append(feature_list_box)
+    box.inner_boxes.append(feature_rule_list_box)
     return box
 
 # @register_box(LinkerNode)

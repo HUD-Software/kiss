@@ -59,16 +59,11 @@ class CompilerNode(Property):
 
     @property
     def feature_rule_list(self) -> FeatureRuleNodeList:
-        return self.feature_rule_list
+        return self._feature_rule_list
     
     @feature_rule_list.setter
     def feature_rule_list(self, feature_rule_list):
         self._feature_rule_list = feature_rule_list
-
-    @property
-    def feature_rules(self) -> FeatureRuleNodeList:
-        prop = self.get_property_as(FeatureRuleNodeList.NAME, FeatureRuleNodeList)
-        return prop
     
     def get_property(self, name: str) -> Property | None:
         return self.properties.get_property(name)
@@ -84,14 +79,16 @@ class CompilerNode(Property):
         assert type(parent) is type(self), "Type mismatch"
         merged = CompilerNode(self.name)
         merged._properties = self.properties.merge_with(parent.properties)
-        merged._feature_list = self._feature_list.merge_with(parent._feature_list) 
+        merged._feature_list = self.feature_list.merge_with(parent.feature_list)
+        merged._feature_rule_list = self.feature_rule_list.merge_with(parent.feature_rule_list)
         return merged
     
     def apply_modifiers(self) -> CompilerNode:
         """Apply list modifier"""
         applied  = CompilerNode(self.name)
         applied._properties = self.properties.apply_modifiers()
-        applied._feature_list = self._feature_list.apply_modifiers()
+        applied._feature_list = self.feature_list.apply_modifiers()
+        applied._feature_rule_list = copy.deepcopy(self.feature_rule_list)
         return applied
         
     def dispatch(self) -> CompilerNode:
@@ -101,6 +98,7 @@ class CompilerNode(Property):
         dispatched = CompilerNode(self.name)
         dispatched._properties = copy.deepcopy(self.properties)
         dispatched.feature_list = self.feature_list.dispatch()
+        dispatched.feature_rule_list = copy.deepcopy(self.feature_rule_list)
         return dispatched
 
 class CompilerSpecificOverrideNode(Property):

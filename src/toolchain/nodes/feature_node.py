@@ -1,4 +1,5 @@
 from __future__ import annotations
+import copy
 from toolchain.nodes.property import Property, PropertyDict
 
 class FeatureArgsNode(Property):
@@ -138,3 +139,17 @@ class FeatureRuleNodeList(Property):
     
     def add_feature_rule(self, feature : FeatureRuleNode):
         self._feature_rules.add_property(feature)
+
+    def merge_with(self, parent: FeatureRuleNodeList):
+        result = FeatureRuleNodeList(self.name)
+        # Keep self features
+        for feature_rule in self.feature_rules.values():
+            result.add_feature_rule(copy.deepcopy(feature_rule))
+
+        # Add parent feature 
+        for feature_rule in parent.feature_rules.values():
+            if feature_rule.name not in result.feature_rules:
+                result.add_feature_rule(copy.deepcopy(feature_rule))
+            else:
+                raise ValueError(f"Feature rule '{feature_rule.name}' already exists")
+        return result

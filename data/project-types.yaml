@@ -2,38 +2,51 @@ project-types:
   - name: bin
     description: Executable binary
     icon: 🚀
+    enable-features: [T]
     compilers:
-      enable-features: [] # Compiler feature to enable when compiling this project
       defines: [KISS_BIN] # Preprocessor definitions to add when compiling with this project
+      features: [X]
       msvc-compiler:
-        enable-features: [T]
         defines: [BBD]
+      cl:
+        enable-features: [U]
     linkers:
       enable-features: [dd] # Linker feature to enable when compiling this project
       lld-link:
         enable-features: [dsssd]
-  - name: lib
-    description: Static library
-    icon: 📦
-    compilers:
-      enable-features: [] # Compiler feature to enable when compiling this project
-      defines: [KISS_LIB] # Preprocessor definitions to add when compiling with this project
-    linkers:
-      enable-features: [] # Linker feature to enable when compiling this project
-  - name: dyn
-    description: Dynamic library
-    icon: 🧩
-    compilers:
-      enable-features: [] # Compiler feature to enable when compiling this project
-      defines: [KISS_DYN_LIB] # Preprocessor definitions to add when compiling with this project
-    linkers:
-      enable-features: [] # Linker feature to enable when compiling this project
+  # - name: lib
+  #   description: Static library
+  #   icon: 📦
+  #   compilers:
+  #     enable-features: [] # Compiler feature to enable when compiling this project
+  #     defines: [KISS_LIB] # Preprocessor definitions to add when compiling with this project
+  #   linkers:
+  #     enable-features: [] # Linker feature to enable when compiling this project
+  # - name: dyn
+  #   description: Dynamic library
+  #   icon: 🧩
+  #   compilers:
+  #     enable-features: [] # Compiler feature to enable when compiling this project
+  #     defines: [KISS_DYN_LIB] # Preprocessor definitions to add when compiling with this project
+  #   linkers:
+  #     enable-features: [] # Linker feature to enable when compiling this project
   - name: test
     description: Test binary
     icon: 🧪
     extends: bin
     compilers:
       add-defines: [KISS_TEST]
-      remove-enable-features: [KISS_BIN]
+      remove-defines: [KISS_BIN]
+      features: [COMP_TEST]
+      cl:
+        add-defines: [KISS_TEST_CL]
+      b:
+        add-defines: [KISS_TEST_CL]
     linkers:
-      enable-features: []
+      add-defines: [KISS_TEST_L]
+      remove-defines: [KISS_BIN_L]
+      features: [COMP_TEST_L]
+      link:
+        add-defines: [KISS_TEST_LINK]
+      bl:
+        add-defines: [KISS_TEST_BL]

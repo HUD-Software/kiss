@@ -12,7 +12,7 @@
                 "-d",
                 "tests",
                 "list",
-                "project-types",
+                "profiles",
                 "--mode",
                 "boxed"
             ],

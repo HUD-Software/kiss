@@ -1,13 +1,13 @@
 import yaml
 from toolchain.nodes.compiler_nodes import CompilersOverrideNode
 from toolchain.nodes.linker_nodes import LinkersOverrideNode
-from toolchain.nodes.project_type_nodes import ProjectTypeNode, ProjectsOverrideNode
+from toolchain.nodes.project_type_nodes import ProjectTypeNode, ProjectTypeSpecificOverrideNode, ProjectTypesOverrideNode
 from toolchain.nodes.property import PropertyDict
 from toolchain.parsers.compiler_parser import yaml_parse_compilers_overrides
 from toolchain.parsers.linker_parser import yaml_parse_linkers_overrides
 from toolchain.parsers.parse_utils import parse_property
 
-def yaml_parse_project_types_overrides(data: dict) -> ProjectsOverrideNode:
+def yaml_parse_project_types_overrides(data: dict) -> ProjectTypesOverrideNode:
     """Parse the 'project-types:' block inside a profile entry.
 
     Handles a dict of project-type-specific overrides, each containing
@@ -26,23 +26,24 @@ def yaml_parse_project_types_overrides(data: dict) -> ProjectsOverrideNode:
           msvc-linker:
             enable-features: []
     """
-    node = ProjectsOverrideNode()
+    node = ProjectTypesOverrideNode()
     for key, value in data.items():
         prop = parse_property(key, value)
         if prop:
             node.add_property(prop)
         elif isinstance(value, dict):
+            override = ProjectTypeSpecificOverrideNode(key)
             for key_p, value_p in value.items():
                 match key_p:
                     case CompilersOverrideNode.NAME:
-                        node.add_property(yaml_parse_compilers_overrides(value_p))
+                        override.compilers = yaml_parse_compilers_overrides(value_p)
                     case LinkersOverrideNode.NAME:
-                        node.add_property(yaml_parse_linkers_overrides(value_p))
+                        override.linkers = yaml_parse_linkers_overrides(value_p)
                     case _:
                         prop = parse_property(key_p, value_p)
                         if prop:
                             node.add_property(prop)
-
+            node.add_project_type(override)
     return node
 
 def yaml_parse_project_type(data: dict) -> ProjectTypeNode:

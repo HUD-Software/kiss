@@ -96,7 +96,7 @@ def _features_from_profile_project(
 ) -> tuple[list, list, list]:
     """
     Extract compiler features, defines and linker features
-    from profile.projects.<project_type> block.
+    from profile.project-types.<project_type> block.
     Returns (compiler_features, defines, linker_features).
     """
     projects_block = profile.get("project-types", {})
@@ -125,7 +125,7 @@ def _features_from_profile_project(
 
 def _features_from_project_type(project_type_def: dict, compiler_name: str, linker_name: str) -> tuple[list, list, list]:
     """
-    Extract compiler features, defines and linker features from projects.yaml definition.
+    Extract compiler features, defines and linker features from project-types.yaml definition.
     Returns (compiler_features, defines, linker_features).
     """
     if not project_type_def:

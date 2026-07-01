@@ -49,7 +49,7 @@ def resolve_extends(nodes: dict[str, PropertyDict]) -> dict[str, PropertyDict]:
     """
     resolved: dict[str, PropertyDict] = {}
 
-    for name, node in nodes.items():
+    for name in nodes.keys():
         _resolve_chain(name, nodes, set(), resolved)
 
     for r in resolved.values():

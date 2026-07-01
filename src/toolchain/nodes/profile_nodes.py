@@ -1,7 +1,8 @@
 from __future__ import annotations
+import copy
 from toolchain.nodes.compiler_nodes import CompilersOverrideNode
 from toolchain.nodes.linker_nodes import LinkersOverrideNode
-from toolchain.nodes.project_type_nodes import ProjectsOverrideNode
+from toolchain.nodes.project_type_nodes import ProjectTypesOverrideNode
 
 from .property import Property, PropertyDict, PropertyBool
 from typing import TypeVar, Type
@@ -15,11 +16,14 @@ class ProfileNode(Property):
       extends: ...
       compilers: ...
       linkers: ...
-      projects: ...
+      project-types: ...
     """
     def __init__(self, name : str):
         super().__init__(name)
         self._properties = PropertyDict()
+        self._compilers : CompilersOverrideNode = None
+        self._linkers : LinkersOverrideNode = None
+        self._project_types : ProjectTypesOverrideNode = None
     
     @property
     def properties(self) -> PropertyDict:
@@ -28,7 +32,31 @@ class ProfileNode(Property):
     def is_abstract(self) -> bool :
         prop = self.get_property_as("is_abstract", PropertyBool)
         return prop.value if prop else False
+
+    @property
+    def linkers(self) -> LinkersOverrideNode:
+        return self._linkers
     
+    @linkers.setter
+    def linkers(self, value):
+        self._linkers = value
+
+    @property
+    def compilers(self) -> CompilersOverrideNode:
+        return self._compilers
+    
+    @compilers.setter
+    def compilers(self, value):
+        self._compilers = value
+
+    @property
+    def project_types(self) -> ProjectTypesOverrideNode:
+        return self._project_types
+    
+    @project_types.setter
+    def project_types(self, value):
+        self._project_types = value
+
     def get_property(self, name: str) -> Property | None:
         return self.properties.get_property(name)
     
@@ -38,23 +66,38 @@ class ProfileNode(Property):
     def get_property_as(self, name: str, prop_type: Type[T]) -> T | None:
         self.properties.get_property_as(name, prop_type)
 
-    # def clone(self) -> ProfileNode:
-    #     cloned  = ProfileNode(self.name)
-    #     cloned.properties = self._properties.clone()
-    #     return cloned
-    
-    def resolve_extends(self, parent):
+    def merge_with(self, parent: ProfileNode):
+        """Merge list without applying modifier or dispatching top to bottom hierarchy """
         assert type(parent) is type(self), "Type mismatch"
-        merged = ProfileNode(self.name)
-        merged._properties = self.properties.resolve_extends(parent.properties)
-        return merged
-    
-    def dispatch_globals(self) -> ProfileNode:
-        dispatched = ProfileNode(self.name)
-        for property in self.properties.values():
-            dispatched.add_property(property.dispatch_globals())
-        return dispatched
+        result = ProfileNode(self.name)
+        result._properties = self.properties.merge_with(parent.properties)
+        list_property_to_ignore = result._properties .explicit_list_name() 
 
+        result.linkers = self.linkers.merge_with(parent.linkers, list_property_to_ignore)
+        result.compilers = self.compilers.merge_with(parent.compilers, list_property_to_ignore)
+        result.project_types = self.project_types.merge_with(parent.project_types, list_property_to_ignore)
+        return result
+    
+    def apply_modifiers(self) -> ProfileNode:
+        """Apply list modifier"""
+        result  = ProfileNode(self.name)
+        result._properties = self.properties.apply_modifiers()
+        result.linkers = self.linkers.apply_modifiers()
+        result.compilers = self.compilers.apply_modifiers()
+        result.project_types = self.project_types.apply_modifiers()
+        return result
+    
+    def dispatch(self) -> ProfileNode:
+        """ 
+        Dispatch properties from top to bottom hierarchy
+        """
+        result = ProfileNode(self.name)
+        result._properties = copy.deepcopy(self.properties)
+        result.linkers = self.linkers.dispatch(result._properties)
+        result.compilers = self.compilers.dispatch(result._properties)
+        result.project_types = self.project_types.dispatch(result._properties)
+        return result
+    
 class ProfileSpecificOverrideNode(Property):
     """Represents a per-profile override inside a 'profiles:' node.
       
@@ -83,17 +126,6 @@ class ProfileSpecificOverrideNode(Property):
     
     def add_property(self, property):
         self.properties.add_property(property)
-
-    # def clone(self) -> ProfileSpecificOverrideNode:
-    #     cloned  = ProfileSpecificOverrideNode(self.name)
-    #     cloned._properties = self._properties.clone()
-    #     return cloned
-    
-    def resolve_extends(self, parent):
-        assert type(parent) is type(self), "Type mismatch"
-        merged = ProfileSpecificOverrideNode(self.name)
-        merged._properties = self.properties.resolve_extends(parent.properties)
-        return merged
 
 class ProfilesOverrideNode(Property):
     """Represents the 'profiles:' block.
@@ -125,14 +157,3 @@ class ProfilesOverrideNode(Property):
     
     def add_property(self, property):
         self.properties.add_property(property)
-
-    # def clone(self) -> ProfilesOverrideNode:
-    #     cloned  = ProfilesOverrideNode(self.name)
-    #     cloned._properties = self._properties.clone()
-    #     return cloned
-    
-    def resolve_extends(self, parent):
-        assert type(parent) is type(self), "Type mismatch"
-        merged = ProfilesOverrideNode(self.name)
-        merged._properties = self.properties.resolve_extends(parent.properties)
-        return merged

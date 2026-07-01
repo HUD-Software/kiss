@@ -21,7 +21,7 @@ profiles:
         enable-features: [WARNING_AS_ERROR]
     linkers:
       enable-features: []
-    projects:
+    project-types:
       bin:
         compilers:
           enable-features: [OMIT_FRAME_POINTER]

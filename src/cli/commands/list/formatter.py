@@ -4,7 +4,8 @@ from wcwidth import wcswidth
 from toolchain.nodes.compiler_nodes import CompilerFeatureNode, CompilerNode, CompilerSpecificOverrideNode, CompilersOverrideNode
 from toolchain.nodes.feature_node import FeatureArgsNode, FeatureNode, FeatureNodeList, FeatureRuleNode, FeatureRuleNodeList
 from toolchain.nodes.linker_nodes import LinkerNode, LinkerSpecificOverrideNode, LinkersOverrideNode
-from toolchain.nodes.project_type_nodes import ProjectTypeNode
+from toolchain.nodes.profile_nodes import ProfileNode
+from toolchain.nodes.project_type_nodes import ProjectTypeNode, ProjectTypeSpecificOverrideNode, ProjectTypesOverrideNode
 from toolchain.nodes.property import Property, PropertyDict, PropertyBool,  PropertyNodeList, PropertyStr, PropertyStrList
 
 
@@ -37,6 +38,7 @@ def to_box(obj, ignore_empty: bool = True):
         return _BOX_CONVERTERS[obj_type](obj, ignore_empty)
 
     raise TypeError(f"No box converter for {obj_type}")
+
 
 @register_box(LinkerSpecificOverrideNode)
 def _(linker_node: LinkerSpecificOverrideNode, ignore_empty: bool):
@@ -73,9 +75,9 @@ def _(feature_node: CompilerFeatureNode, ignore_empty: bool):
     return box
 
 @register_box(FeatureNodeList)
-def _(feature_list: FeatureNodeList, ignore_empty: bool):
+def _(feature_list_node: FeatureNodeList, ignore_empty: bool):
     box = Box(FeatureNodeList.NAME)
-    for feature in feature_list.features.values():
+    for feature in feature_list_node.features.values():
         feature_box = to_box(feature, ignore_empty)
         box.inner_boxes.append(feature_box)
     return box
@@ -88,61 +90,92 @@ def _(feature_rule_node: FeatureRuleNode, ignore_empty: bool):
     return box
 
 @register_box(FeatureRuleNodeList)
-def _(feature_rule_list: FeatureRuleNodeList, ignore_empty: bool):
+def _(feature_rule_list_node: FeatureRuleNodeList, ignore_empty: bool):
     box = Box(FeatureRuleNodeList.NAME)
-    for feature_rule in feature_rule_list.feature_rules.values():
+    for feature_rule in feature_rule_list_node.feature_rules.values():
         feature_rule_box = to_box(feature_rule, ignore_empty)
         box.inner_boxes.append(feature_rule_box)
     return box
 
 @register_box(CompilerSpecificOverrideNode)
-def _(node: CompilerSpecificOverrideNode, ignore_empty: bool):
-    box = Box(node.name)
-    for properties in node.properties.values():
+def _(compiler_specific_node: CompilerSpecificOverrideNode, ignore_empty: bool):
+    box = Box(compiler_specific_node.name)
+    for properties in compiler_specific_node.properties.values():
         properties.append_to_lines_print(box.lines, ignore_empty)
     return box
 
 @register_box(CompilersOverrideNode)
-def _(node: CompilersOverrideNode, ignore_empty: bool):
+def _(compilers_override_node: CompilersOverrideNode, ignore_empty: bool):
     box = Box(CompilersOverrideNode.NAME)
-    for properties in node.properties.values():
+    for properties in compilers_override_node.properties.values():
         properties.append_to_lines_print(box.lines, ignore_empty)
-    for compiler in node._compilers.values():
+    for compiler in compilers_override_node._compilers.values():
         compiler_box = to_box(compiler, ignore_empty)
         box.inner_boxes.append(compiler_box)
     return box
 
-@register_box(ProjectTypeNode)
-def _(node: ProjectTypeNode, ignore_empty: bool):
-    box = Box(node.name)
-    for properties in node.properties.values():
+@register_box(ProjectTypeSpecificOverrideNode)
+def _(project_type_specific_node: ProjectTypeSpecificOverrideNode, ignore_empty: bool):
+    box = Box(project_type_specific_node.name)
+    for properties in project_type_specific_node.properties.values():
         properties.append_to_lines_print(box.lines, ignore_empty)
-    compiler_overrides = to_box(node._compilers)
-    linker_overrides = to_box(node._linkers)
-    box.inner_boxes.append(compiler_overrides)
-    box.inner_boxes.append(linker_overrides)
+    return box
+
+@register_box(ProjectTypesOverrideNode)
+def _(project_types_override_node: ProjectTypesOverrideNode, ignore_empty: bool):
+    box = Box(ProjectTypesOverrideNode.NAME)
+    for properties in project_types_override_node.properties.values():
+        properties.append_to_lines_print(box.lines, ignore_empty)
+    for project_type in project_types_override_node._project_types.values():
+        project_type_box = to_box(project_type, ignore_empty)
+        box.inner_boxes.append(project_type_box)
     return box
 
 @register_box(CompilerNode)
-def _(node: CompilerNode, ignore_empty: bool):
-    box = Box(node.name)
-    for prop in node.properties.values():
+def _(compiler_node: CompilerNode, ignore_empty: bool):
+    box = Box(compiler_node.name)
+    for prop in compiler_node.properties.values():
         prop.append_to_lines_print(box.lines, ignore_empty)
-    feature_list_box = to_box(node.feature_list, ignore_empty)
-    feature_rule_list_box = to_box(node.feature_rule_list, ignore_empty)
+    feature_list_box = to_box(compiler_node.feature_list, ignore_empty)
+    feature_rule_list_box = to_box(compiler_node.feature_rule_list, ignore_empty)
     box.inner_boxes.append(feature_list_box)
     box.inner_boxes.append(feature_rule_list_box)
     return box
 
 @register_box(LinkerNode)
-def _(node: LinkerNode, ignore_empty: bool):
-    box = Box(node.name)
-    for prop in node.properties.values():
+def _(linker_node: LinkerNode, ignore_empty: bool):
+    box = Box(linker_node.name)
+    for prop in linker_node.properties.values():
         prop.append_to_lines_print(box.lines, ignore_empty)
-    feature_list_box = to_box(node.feature_list, ignore_empty)
-    feature_rule_list_box = to_box(node.feature_rule_list, ignore_empty)
+    feature_list_box = to_box(linker_node.feature_list, ignore_empty)
+    feature_rule_list_box = to_box(linker_node.feature_rule_list, ignore_empty)
     box.inner_boxes.append(feature_list_box)
     box.inner_boxes.append(feature_rule_list_box)
+    return box
+
+@register_box(ProfileNode)
+def _(profile_node: ProfileNode, ignore_empty: bool):
+    box = Box(profile_node.name)
+    for properties in profile_node.properties.values():
+        properties.append_to_lines_print(box.lines, ignore_empty)
+    compiler_overrides = to_box(profile_node._compilers)
+    linker_overrides = to_box(profile_node._linkers)
+    project_type_overrides = to_box(profile_node._project_types)
+
+    box.inner_boxes.append(compiler_overrides)
+    box.inner_boxes.append(linker_overrides)
+    box.inner_boxes.append(project_type_overrides)
+    return box
+
+@register_box(ProjectTypeNode)
+def _(project_type_node: ProjectTypeNode, ignore_empty: bool):
+    box = Box(project_type_node.name)
+    for properties in project_type_node.properties.values():
+        properties.append_to_lines_print(box.lines, ignore_empty)
+    compiler_overrides = to_box(project_type_node._compilers)
+    linker_overrides = to_box(project_type_node._linkers)
+    box.inner_boxes.append(compiler_overrides)
+    box.inner_boxes.append(linker_overrides)
     return box
 
 class Box:

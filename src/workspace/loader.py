@@ -41,9 +41,9 @@ def load_workspace(path: str) -> KissWorkspaceNode:
     kiss.yaml structure:
       profiles:        # optional custom profiles
       project-types:   # optional custom project types
-      bin:             # list of binary projects
-      lib:             # list of static library projects
-      dyn:             # list of dynamic library projects
+      bin:             # list of binary project types
+      lib:             # list of static library project types
+      dyn:             # list of dynamic library project types
       <custom-type>:   # list of custom project type entries
     """
     with open(path, encoding="utf-8") as f:

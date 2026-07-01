@@ -129,10 +129,10 @@ class CompilerSpecificOverrideNode(Property):
         result._properties = self.properties.apply_modifiers()
         return result
     
-    def merge_with(self, other: CompilerSpecificOverrideNode, parent_list_property_to_ignore: list[str]) -> CompilerSpecificOverrideNode:
+    def merge_with(self, other: CompilerSpecificOverrideNode, list_property_to_ignore: list[str]) -> CompilerSpecificOverrideNode:
         assert self.name == other.name, "Name mismatch"
         result = CompilerSpecificOverrideNode(self.name)
-        result._properties = self.properties.merge_with(other.properties, parent_list_property_to_ignore)
+        result._properties = self.properties.merge_with(other.properties, list_property_to_ignore)
         return result
     
     def dispatch(self, properties : PropertyDict) -> CompilerSpecificOverrideNode:
@@ -170,23 +170,26 @@ class CompilersOverrideNode(Property):
     def add_compiler(self, compiler:CompilerSpecificOverrideNode):
         self._compilers[compiler.name] = compiler
 
-    def merge_with(self, other: CompilersOverrideNode):
+    def merge_with(self, other: CompilersOverrideNode, list_property_to_ignore: list[str] = None):
         result = CompilersOverrideNode(self.name)
-        result._properties = self.properties.merge_with(other.properties)
+        result._properties = self.properties.merge_with(other.properties, list_property_to_ignore)
 
-        parent_list_property_to_ignore = result._properties .explicit_list_name() 
+        if list_property_to_ignore:
+            list_property_to_ignore = list_property_to_ignore + result._properties .explicit_list_name()
+        else:
+            list_property_to_ignore = result._properties .explicit_list_name()
 
         for compiler in self._compilers.values():
             other_compiler = other._compilers.get(compiler.name)
             if other_compiler: # compiler in both
-                result.add_compiler(compiler.merge_with(other_compiler, parent_list_property_to_ignore))
+                result.add_compiler(compiler.merge_with(other_compiler, list_property_to_ignore))
             else: # compiler only in self
                 result.add_compiler(copy.deepcopy(compiler))
         
         for compiler_name, other_compiler in other._compilers.items():
             if compiler_name not in self._compilers: # Only in parents
                 self_compiler = CompilerSpecificOverrideNode(other_compiler.name)
-                result.add_compiler(self_compiler.merge_with(other_compiler, parent_list_property_to_ignore))
+                result.add_compiler(self_compiler.merge_with(other_compiler, list_property_to_ignore))
 
         return result
     

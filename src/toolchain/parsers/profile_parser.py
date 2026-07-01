@@ -2,7 +2,7 @@ import yaml
 from toolchain.nodes.compiler_nodes import CompilersOverrideNode
 from toolchain.nodes.linker_nodes import LinkersOverrideNode
 from toolchain.nodes.profile_nodes import ProfileNode, ProfileSpecificOverrideNode, ProfilesOverrideNode
-from toolchain.nodes.project_type_nodes import ProjectsOverrideNode
+from toolchain.nodes.project_type_nodes import ProjectTypesOverrideNode
 from toolchain.nodes.property import PropertyDict
 from toolchain.parsers.compiler_parser import yaml_parse_compilers_overrides
 from toolchain.parsers.linker_parser import yaml_parse_linkers_overrides
@@ -97,11 +97,11 @@ def yaml_parse_profile(data: dict) -> ProfileNode:
             case "name":
                 continue
             case CompilersOverrideNode.NAME:
-                node.add_property(yaml_parse_compilers_overrides(value))
+                node.compilers = yaml_parse_compilers_overrides(value)
             case LinkersOverrideNode.NAME:
-                node.add_property(yaml_parse_linkers_overrides(value))
-            case ProjectsOverrideNode.NAME:
-                node.add_property(yaml_parse_project_types_overrides(value))
+                node.linkers = yaml_parse_linkers_overrides(value)
+            case ProjectTypesOverrideNode.NAME:
+                node.project_types = yaml_parse_project_types_overrides(value)
             case _:
                 prop = parse_property(key, value)
                 if prop:

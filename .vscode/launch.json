@@ -12,7 +12,7 @@
                 "-d",
                 "tests",
                 "list",
-                "linkers",
+                "project-types",
                 "--mode",
                 "boxed"
             ],

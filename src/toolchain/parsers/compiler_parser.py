@@ -23,12 +23,12 @@ def yaml_parse_compilers_overrides(data: dict) -> CompilersOverrideNode:
         if prop:
             node.add_property(prop)
         elif isinstance(value, dict):
-            override = CompilerSpecificOverrideNode(key)
+            compiler_specific= CompilerSpecificOverrideNode(key)
             for override_key, override_value in value.items():
                 prop = parse_property(override_key, override_value)
                 if prop:
-                    override.add_property(prop)
-            node.add_property(override)
+                    compiler_specific.add_property(prop)
+            node.add_compiler(compiler_specific)
     return node
 
 def yaml_parse_compiler_feature(data: dict) -> CompilerFeatureNode:

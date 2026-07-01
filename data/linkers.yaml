@@ -63,14 +63,3 @@ linkers:
 
   - name: lld-link
     extends: msvc-linker
-    feature-rules:
-      # OPT_LEVEL_0 is incompatible with LTO
-      - incompatible: no_opt
-        feature: OPT_LEVEL_0
-        with: [LTO]
-      # Only one incremental link mode
-      - only-one: incremental
-        features: [ENABLE_INCREMENTAL_LINK, DISABLE_INCREMENTAL_LINK]
-      # Only one target mode
-      - only-one: target
-        features: [TARGET_X64, TARGET_X86]

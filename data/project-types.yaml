@@ -7,11 +7,11 @@ project-types:
       defines: [KISS_BIN] # Preprocessor definitions to add when compiling with this project
       msvc-compiler:
         enable-features: [T]
-        defines: []
+        defines: [BBD]
     linkers:
-      enable-features: [] # Linker feature to enable when compiling this project
+      enable-features: [dd] # Linker feature to enable when compiling this project
       lld-link:
-        enable-features: []
+        enable-features: [dsssd]
   - name: lib
     description: Static library
     icon: 📦

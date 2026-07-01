@@ -1,9 +1,10 @@
 from __future__ import annotations
 import copy
 from wcwidth import wcswidth
-from toolchain.nodes.compiler_nodes import CompilerFeatureNode, CompilerNode
+from toolchain.nodes.compiler_nodes import CompilerFeatureNode, CompilerNode, CompilerSpecificOverrideNode, CompilersOverrideNode
 from toolchain.nodes.feature_node import FeatureArgsNode, FeatureNode, FeatureNodeList, FeatureRuleNode, FeatureRuleNodeList
 from toolchain.nodes.linker_nodes import LinkerNode, LinkerSpecificOverrideNode, LinkersOverrideNode
+from toolchain.nodes.project_type_nodes import ProjectTypeNode
 from toolchain.nodes.property import Property, PropertyDict, PropertyBool,  PropertyNodeList, PropertyStr, PropertyStrList
 
 
@@ -94,6 +95,34 @@ def _(feature_rule_list: FeatureRuleNodeList, ignore_empty: bool):
         box.inner_boxes.append(feature_rule_box)
     return box
 
+@register_box(CompilerSpecificOverrideNode)
+def _(node: CompilerSpecificOverrideNode, ignore_empty: bool):
+    box = Box(node.name)
+    for properties in node.properties.values():
+        properties.append_to_lines_print(box.lines, ignore_empty)
+    return box
+
+@register_box(CompilersOverrideNode)
+def _(node: CompilersOverrideNode, ignore_empty: bool):
+    box = Box(CompilersOverrideNode.NAME)
+    for properties in node.properties.values():
+        properties.append_to_lines_print(box.lines, ignore_empty)
+    for compiler in node._compilers.values():
+        compiler_box = to_box(compiler, ignore_empty)
+        box.inner_boxes.append(compiler_box)
+    return box
+
+@register_box(ProjectTypeNode)
+def _(node: ProjectTypeNode, ignore_empty: bool):
+    box = Box(node.name)
+    for properties in node.properties.values():
+        properties.append_to_lines_print(box.lines, ignore_empty)
+    compiler_overrides = to_box(node._compilers)
+    linker_overrides = to_box(node._linkers)
+    box.inner_boxes.append(compiler_overrides)
+    box.inner_boxes.append(linker_overrides)
+    return box
+
 @register_box(CompilerNode)
 def _(node: CompilerNode, ignore_empty: bool):
     box = Box(node.name)
@@ -104,7 +133,6 @@ def _(node: CompilerNode, ignore_empty: bool):
     box.inner_boxes.append(feature_list_box)
     box.inner_boxes.append(feature_rule_list_box)
     return box
-
 
 @register_box(LinkerNode)
 def _(node: LinkerNode, ignore_empty: bool):

@@ -29,6 +29,8 @@ class ProjectTypeNode(Property):
     def __init__(self, name : str):
         super().__init__(name)
         self._properties = PropertyDict()
+        self._linkers: LinkersOverrideNode = None
+        self._compilers : CompilersOverrideNode = None
     
     @property
     def properties(self) -> PropertyDict:
@@ -38,13 +40,11 @@ class ProjectTypeNode(Property):
     def is_abstract(self) -> bool :
         prop = self.get_property_as("is_abstract", PropertyBool)
         return prop.value if prop else False
-
-
+    
     @property
     def icon(self) -> str:
         prop = self.get_property_as("icon", PropertyStr)
         return prop.value if prop else ""
-    
 
     @property
     def description(self) -> str:
@@ -52,14 +52,21 @@ class ProjectTypeNode(Property):
         return prop.value if prop else ""
     
     @property
-    def compilers(self) -> CompilersOverrideNode:
-        self.get_property_as("compilers", CompilersOverrideNode)
-    
-    @property
     def linkers(self) -> LinkersOverrideNode:
-        self.get_property_as("linkers", LinkersOverrideNode)
+        return self._linkers
+    
+    @linkers.setter
+    def linkers(self, value):
+        self._linkers = value
 
-
+    @property
+    def compilers(self) -> CompilersOverrideNode:
+        return self._compilers
+    
+    @compilers.setter
+    def compilers(self, value):
+        self._compilers = value
+    
     def get_property(self, name: str) -> Property | None:
         return self.properties.get_property(name)
     
@@ -69,23 +76,14 @@ class ProjectTypeNode(Property):
     def get_property_as(self, name: str, prop_type: Type[T]) -> T | None:
         return self.properties.get_property_as(name, prop_type)
     
-    # def clone(self) -> ProjectTypeNode:
-    #     cloned  = ProjectTypeNode(self.name)
-    #     cloned.properties = self._properties.clone()
-    #     return cloned
+    def apply_modifiers(self) -> ProjectTypeNode:
+        result = ProjectTypeNode(self.name)
+        result._properties = self.properties.apply_modifiers()
+        result._linkers = self.linkers.apply_modifiers() if self.linkers else None
+        result.compilers = self.compilers.apply_modifiers() if self.compilers else None
+        return result
     
-    def resolve_extends(self, parent):
-        assert type(parent) is type(self), "Type mismatch"
-        merged = ProjectTypeNode(self.name)
-        merged._properties = self.properties.resolve_extends(parent.properties)
-        return merged
-    
-    def dispatch_globals(self) -> ProjectTypeNode:
-        dispatched = ProjectTypeNode(self.name)
-        for property in self.properties.values():
-            dispatched.add_property(property.dispatch_globals())
-        return dispatched
-    
+
 class ProjectSpecificOverrideNode(Property):
     """Represents a per-project-type override inside a 'projects:' node.
       
@@ -120,18 +118,6 @@ class ProjectSpecificOverrideNode(Property):
     
     def add_property(self, property):
         self.properties.add_property(property)
-
-    # def clone(self) -> ProjectSpecificOverrideNode:
-    #     cloned  = ProjectSpecificOverrideNode(self.name)
-    #     cloned._properties = self._properties.clone()
-    #     return cloned
-    
-    def resolve_extends(self, parent):
-        assert type(parent) is type(self), "Type mismatch"
-        merged = ProjectSpecificOverrideNode(self.name)
-        merged._properties = self.properties.resolve_extends(parent.properties)
-        return merged
-
 
 class ProjectsOverrideNode(Property):
     """Represents the 'projects:' block.
@@ -169,14 +155,3 @@ class ProjectsOverrideNode(Property):
     
     def add_property(self, property):
         self.properties.add_property(property)
-
-    # def clone(self) -> ProjectsOverrideNode:
-    #     cloned  = ProjectsOverrideNode(self.name)
-    #     cloned._properties = self._properties.clone()
-    #     return cloned
-    
-    def resolve_extends(self, parent):
-        assert type(parent) is type(self), "Type mismatch"
-        merged = ProjectsOverrideNode(self.name)
-        merged._properties = self.properties.resolve_extends(parent.properties)
-        return merged

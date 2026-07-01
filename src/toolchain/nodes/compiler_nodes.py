@@ -123,13 +123,24 @@ class CompilerSpecificOverrideNode(Property):
     
     def add_property(self, property):
         self.properties.add_property(property)
+
+    def apply_modifiers(self) -> CompilerSpecificOverrideNode:
+        result = CompilerSpecificOverrideNode(self.name)
+        result._properties = self.properties.apply_modifiers()
+        return result
     
-    def resolve_extends(self, parent):
-        assert type(parent) is type(self), "Type mismatch"
-        merged = CompilerSpecificOverrideNode(self.name)
-        merged._properties = self.properties.resolve_extends(parent.properties)
-        return merged
+    def merge_with(self, other: CompilerSpecificOverrideNode, parent_list_property_to_ignore: list[str]) -> CompilerSpecificOverrideNode:
+        assert self.name == other.name, "Name mismatch"
+        result = CompilerSpecificOverrideNode(self.name)
+        result._properties = self.properties.merge_with(other.properties, parent_list_property_to_ignore)
+        return result
     
+    def dispatch(self, properties : PropertyDict) -> CompilerSpecificOverrideNode:
+        result = CompilerSpecificOverrideNode(self.name)
+        result._properties = self.properties.merge_with(properties)
+        return result
+    
+   
 class CompilersOverrideNode(Property):
     """Represents the 'compilers:' block.
     Contains global enable-features + per-compiler overrides 'CompilerSpecificOverrideNode' nodes.
@@ -144,22 +155,54 @@ class CompilersOverrideNode(Property):
     def __init__(self, name : str= NAME):
       super().__init__(name)
       self._properties = PropertyDict()
+      self._compilers = dict[str, CompilerSpecificOverrideNode]()
 
     @property
     def properties(self) -> PropertyDict:
         return self._properties
-    
+
     def get_property(self, name: str) -> Property | None:
         return self.properties.get_property(name)
     
     def add_property(self, property):
         self.properties.add_property(property)
+    
+    def add_compiler(self, compiler:CompilerSpecificOverrideNode):
+        self._compilers[compiler.name] = compiler
 
-    def resolve_extends(self, parent):
-        assert type(parent) is type(self), "Type mismatch"
-        merged = CompilersOverrideNode(self.name)
-        merged._properties = self.properties.resolve_extends(parent.properties)
-        return merged
+    def merge_with(self, other: CompilersOverrideNode):
+        result = CompilersOverrideNode(self.name)
+        result._properties = self.properties.merge_with(other.properties)
+
+        parent_list_property_to_ignore = result._properties .explicit_list_name() 
+
+        for compiler in self._compilers.values():
+            other_compiler = other._compilers.get(compiler.name)
+            if other_compiler: # compiler in both
+                result.add_compiler(compiler.merge_with(other_compiler, parent_list_property_to_ignore))
+            else: # compiler only in self
+                result.add_compiler(copy.deepcopy(compiler))
+        
+        for compiler_name, other_compiler in other._compilers.items():
+            if compiler_name not in self._compilers: # Only in parents
+                self_compiler = CompilerSpecificOverrideNode(other_compiler.name)
+                result.add_compiler(self_compiler.merge_with(other_compiler, parent_list_property_to_ignore))
+
+        return result
+    
+    def apply_modifiers(self) -> CompilersOverrideNode:
+        result = CompilersOverrideNode(self.name)
+        result._properties = self.properties.apply_modifiers()
+        for compiler in self._compilers.values():
+            result.add_compiler(compiler.apply_modifiers())
+        return result
+
+    def dispatch(self, properties: PropertyDict) -> CompilersOverrideNode:
+        result = CompilersOverrideNode(self.name)
+        result._properties = self.properties.merge_with(properties)
+        for compiler in self._compilers.values():
+            result.add_compiler(compiler.dispatch(result.properties))
+        return result
 
 class CompilerFeatureNode(FeatureNode):
 

@@ -39,13 +39,6 @@ class Property(ABC):
     def merge_with(self, parent: Property) -> Property:
         return copy.deepcopy(self)
     
-    # @abstractmethod
-    # def clone(self) -> Property:
-    #     pass
-
-    def append_to_lines_print(self, lines, ignore_empty):
-        pass
-
     def dispatch(self) -> Property:
         return copy.deepcopy(self)
     

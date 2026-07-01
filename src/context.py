@@ -167,7 +167,7 @@ def load_context(directory: str) -> KissContext:
 
     linkers       = resolve_extends(load_linkers(str(data_dir / "linkers.yaml")))
     compilers     = resolve_extends(load_compilers(str(data_dir / "compilers.yaml")))
-    # project_types = resolve_extends(load_project_types(str(data_dir / "project-types.yaml")))
+    project_types = resolve_extends(load_project_types(str(data_dir / "project-types.yaml")))
     # targets       = load_targets(str(data_dir / "targets.yaml"))
 
     # Load kiss.yaml if present
@@ -209,6 +209,6 @@ def load_context(directory: str) -> KissContext:
         compilers     = compilers,
         linkers       = linkers,
         # profiles      = profiles,
-        # project_types = project_types,
+        project_types = project_types,
         # targets       = targets,
     )

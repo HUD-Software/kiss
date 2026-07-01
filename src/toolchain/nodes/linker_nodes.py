@@ -153,7 +153,6 @@ class LinkersOverrideNode(Property):
     def properties(self) -> PropertyDict:
         return self._properties
 
-   
     def get_property(self, name: str) -> Property | None:
         return self.properties.get_property(name)
     

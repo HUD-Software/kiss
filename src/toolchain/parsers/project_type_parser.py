@@ -66,9 +66,9 @@ def yaml_parse_project_type(data: dict) -> ProjectTypeNode:
             case "name":
                 continue
             case CompilersOverrideNode.NAME:
-                node.add_property(yaml_parse_compilers_overrides(value))
+                node.compilers = yaml_parse_compilers_overrides(value)
             case LinkersOverrideNode.NAME:
-                node.add_property(yaml_parse_linkers_overrides(value))
+                node.linkers = yaml_parse_linkers_overrides(value)
             case _:
                 prop = parse_property(key, value)
                 if prop:

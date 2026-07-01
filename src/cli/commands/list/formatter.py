@@ -200,47 +200,6 @@ class Box:
             out.append(f"{Box.LEFT_BORDER}{line}{' ' * padding}{Box.RIGHT_BORDER}")
         out.append(bottom)
         return out
-    
-    @staticmethod
-    def properties_to_box(title: str, properties: PropertyDict, ignore_empty: bool = True) -> Box | None:
-        """
-        Recursively format a Node into a nested inner-box structure.
-
-        Properties are split into:
-        - leaf properties: simple scalar values (str, bool, lists)
-        - node properties: hierarchical structures requiring recursion
-
-        Leaf properties are formatted first to improve readability, followed
-        by nested structures.
-
-        Node-based properties are recursively formatted as inner boxes and
-        flattened into the current layout.
-        """
-        box = Box(title)
-
-        leaf_props, node_props = split_props(properties)
-
-        # LEAF PROPERTIES FIRST ─────────────────────────────
-        for prop in leaf_props:
-            prop.append_to_lines_print(box.lines, ignore_empty)
-
-        # NODE PROPERTIES AFTER ─────────────────────────────
-        for prop in node_props:
-            if prop.properties or not ignore_empty:
-                if isinstance(prop, CompilerFeatureNode):
-                    properties = copy.deepcopy(prop.properties)
-                    if prop.linkers:
-                        properties.add_property(prop.linkers)
-                    child_box = Box.properties_to_box(prop.name, properties, ignore_empty)
-                elif isinstance(prop, LinkersOverrideNode):
-                    properties = copy.deepcopy(prop.properties)
-                    for linker in prop._linkers.values():
-                        properties.add_property(linker)
-                    child_box = Box.properties_to_box(prop.name, properties, ignore_empty)
-                else:
-                    child_box = Box.properties_to_box(prop.name, prop.properties, ignore_empty)
-                box.inner_boxes.append(child_box)
-        return box
 
 
 def split_props(properties: PropertyDict):

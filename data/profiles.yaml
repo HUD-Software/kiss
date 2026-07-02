@@ -2,6 +2,7 @@ profiles:
   - name: debug
     description: Debug profile with debug informations and no optimization
     enable-features: [QQ]
+    icon: 🐛
     compilers:
       features: [A] # Compiler feature to enable when compiling with this profiles
       defines: [KISS_DEBUG] # Preprocessor definitions to add when compiling with this profile
@@ -27,25 +28,27 @@ profiles:
           msvc-linker:
             enable-features: [] # MSVC based linker feature to enable when compiling this profile for dyn project
 
-  # - name: release
-  #   description: Release profile with optimizations and no debug informations
-  #   compilers:
-  #     defines: [KISS_RELEASE] # Preprocessor definitions to add when compiling with this profile
-  #     msvc-compiler:
-  #       enable-features: [OPT_LEVEL_3, WINDOWS_DLL_RUNTIME_RELEASE] # MSVC based compiler feature to enable when compiling this profile
-  #   linkers:
-  #     enable-features: [DISABLE_INCREMENTAL_LINK] # Linker feature to enable when compiling this profile
-  #     msvc-linker:
-  #       enable-features: [REMOVE_DEAD_CODE] # MSVC based linker feature to enable when compiling this profile
-  #   project-types:
-  #     dyn:
-  #       compilers:
-  #         enable-features: [DYNAMIC_LIBRARY_RELEASE] # This feature is only enabled for 'dyn' project
+  - name: release
+    description: Release profile with optimizations and no debug informations
+    icon: ⚡
+    compilers:
+      defines: [KISS_RELEASE] # Preprocessor definitions to add when compiling with this profile
+      msvc-compiler:
+        enable-features: [OPT_LEVEL_3, WINDOWS_DLL_RUNTIME_RELEASE] # MSVC based compiler feature to enable when compiling this profile
+    linkers:
+      enable-features: [DISABLE_INCREMENTAL_LINK] # Linker feature to enable when compiling this profile
+      msvc-linker:
+        enable-features: [REMOVE_DEAD_CODE] # MSVC based linker feature to enable when compiling this profile
+    project-types:
+      dyn:
+        compilers:
+          enable-features: [DYNAMIC_LIBRARY_RELEASE] # This feature is only enabled for 'dyn' project
 
   - name: asan
     description: AddressSanitizer profile
+    icon: 🔍
     extends: debug # This profile extends the 'debug' profile, it will inherit all its features and can override them
-    features : [Q]
+    features: [Q]
     compilers:
       defines: [KISS_ASAN] # Preprocessor definitions to add when compiling with this profile
       msvc-compiler:

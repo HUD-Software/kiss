@@ -75,7 +75,7 @@ def parse_property(key: str, value) -> Property | None:
         )
     # --- Merge rules ---
     NON_MERGEABLE_KEYS = {"is_abstract"}
-    NON_DISPATCHABLE_KEYS = {"description"}
+    NON_DISPATCHABLE_KEYS = {"description", "icon", "extends"}
     mergeable = key not in NON_MERGEABLE_KEYS
     dispatchable = key not in NON_DISPATCHABLE_KEYS
 

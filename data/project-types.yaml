@@ -14,22 +14,22 @@ project-types:
       enable-features: [dd] # Linker feature to enable when compiling this project
       lld-link:
         enable-features: [dsssd]
-  # - name: lib
-  #   description: Static library
-  #   icon: 📦
-  #   compilers:
-  #     enable-features: [] # Compiler feature to enable when compiling this project
-  #     defines: [KISS_LIB] # Preprocessor definitions to add when compiling with this project
-  #   linkers:
-  #     enable-features: [] # Linker feature to enable when compiling this project
-  # - name: dyn
-  #   description: Dynamic library
-  #   icon: 🧩
-  #   compilers:
-  #     enable-features: [] # Compiler feature to enable when compiling this project
-  #     defines: [KISS_DYN_LIB] # Preprocessor definitions to add when compiling with this project
-  #   linkers:
-  #     enable-features: [] # Linker feature to enable when compiling this project
+  - name: lib
+    description: Static library
+    icon: 📦
+    compilers:
+      enable-features: [] # Compiler feature to enable when compiling this project
+      defines: [KISS_LIB] # Preprocessor definitions to add when compiling with this project
+    linkers:
+      enable-features: [] # Linker feature to enable when compiling this project
+  - name: dyn
+    description: Dynamic library
+    icon: 🧩
+    compilers:
+      enable-features: [] # Compiler feature to enable when compiling this project
+      defines: [KISS_DYN_LIB] # Preprocessor definitions to add when compiling with this project
+    linkers:
+      enable-features: [] # Linker feature to enable when compiling this project
   - name: test
     description: Test binary
     icon: 🧪

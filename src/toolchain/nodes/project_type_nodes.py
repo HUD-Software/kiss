@@ -30,8 +30,8 @@ class ProjectTypeNode(Property):
     def __init__(self, name : str):
         super().__init__(name)
         self._properties = PropertyDict()
-        self._linkers: LinkersOverrideNode = None
-        self._compilers : CompilersOverrideNode = None
+        self.linkers: LinkersOverrideNode = None
+        self.compilers : CompilersOverrideNode = None
     
     @property
     def properties(self) -> PropertyDict:
@@ -51,22 +51,6 @@ class ProjectTypeNode(Property):
     def description(self) -> str:
         prop = self.get_property_as("description", PropertyStr)
         return prop.value if prop else ""
-    
-    @property
-    def linkers(self) -> LinkersOverrideNode:
-        return self._linkers
-    
-    @linkers.setter
-    def linkers(self, value):
-        self._linkers = value
-
-    @property
-    def compilers(self) -> CompilersOverrideNode:
-        return self._compilers
-    
-    @compilers.setter
-    def compilers(self, value):
-        self._compilers = value
     
     def get_property(self, name: str) -> Property | None:
         return self.properties.get_property(name)
@@ -128,27 +112,12 @@ class ProjectTypeSpecificOverrideNode(Property):
     def __init__(self, name : str):
       super().__init__(name)
       self._properties = PropertyDict()
-      self._compilers : CompilersOverrideNode = None
-      self._linkers : LinkersOverrideNode = None
+      self.compilers : CompilersOverrideNode = None
+      self.linkers : LinkersOverrideNode = None
 
     @property
     def properties(self) -> PropertyDict:
         return self._properties
-    @property
-    def linkers(self) -> LinkersOverrideNode:
-        return self._linkers
-    
-    @linkers.setter
-    def linkers(self, value):
-        self._linkers = value
-
-    @property
-    def compilers(self) -> CompilersOverrideNode:
-        return self._compilers
-    
-    @compilers.setter
-    def compilers(self, value):
-        self._compilers = value
 
     def get_property(self, name: str) -> Property | None:
         return self.properties.get_property(name)

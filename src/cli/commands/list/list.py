@@ -116,13 +116,19 @@ def types_cmd(ctx: typer.Context,
 
 @list_app.command("targets")
 def targets_cmd(ctx: typer.Context,
-                mode: OutputMode = typer.Option(OutputMode.plain, "--mode", "-m", help="Select the output mode")):
+                mode: OutputMode = typer.Option(OutputMode.plain, "--mode", "-m", help="Select the output mode"),
+                names: Optional[list[str]] = typer.Option(None, "--name", "-n", help="Filter by name (repeatable)")):
     """
     List available project targets.
     """
 
     kiss_ctx: KissContext = ctx.obj["ctx"]
+    
     known_targets = kiss_ctx.known_targets()
+
+    if names:
+        known_targets = [t for t in known_targets if t.name in names]
+
     if mode == OutputMode.plain:
         for target in known_targets:
             is_default = target == kiss_ctx.default_target()

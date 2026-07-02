@@ -25,8 +25,8 @@ class LinkerNode(Property):
     def __init__(self, name : str):
         super().__init__(name)
         self._properties = PropertyDict()
-        self._feature_list = FeatureNodeList()
-        self._feature_rule_list = FeatureRuleNodeList()
+        self.feature_list = FeatureNodeList()
+        self.feature_rule_list = FeatureRuleNodeList()
       
     @property
     def properties(self) -> PropertyDict:
@@ -36,22 +36,6 @@ class LinkerNode(Property):
     def is_abstract(self) -> bool :
         prop = self.get_property_as("is_abstract", PropertyBool)
         return prop.value if prop else False
-    
-    @property
-    def feature_list(self) -> FeatureNodeList:
-        return self._feature_list
-    
-    @feature_list.setter
-    def feature_list(self, feature_list):
-        self._feature_list = feature_list
-
-    @property
-    def feature_rule_list(self) -> FeatureRuleNodeList:
-        return self._feature_rule_list
-    
-    @feature_rule_list.setter
-    def feature_rule_list(self, feature_rule_list):
-        self._feature_rule_list = feature_rule_list
     
     def get_property(self, name: str) -> Property | None:
         return self.properties.get_property(name)
@@ -67,16 +51,16 @@ class LinkerNode(Property):
         assert type(parent) is type(self), "Type mismatch"
         merged = LinkerNode(self.name)
         merged._properties = self.properties.merge_with(parent.properties)
-        merged._feature_list = self.feature_list.merge_with(parent.feature_list)
-        merged._feature_rule_list = self.feature_rule_list.merge_with(parent.feature_rule_list)
+        merged.feature_list = self.feature_list.merge_with(parent.feature_list)
+        merged.feature_rule_list = self.feature_rule_list.merge_with(parent.feature_rule_list)
         return merged
     
     def apply_modifiers(self) -> LinkerNode:
         """Apply list modifier"""
         applied  = LinkerNode(self.name)
         applied._properties = self.properties.apply_modifiers()
-        applied._feature_list = self.feature_list.apply_modifiers()
-        applied._feature_rule_list = copy.deepcopy(self.feature_rule_list)
+        applied.feature_list = self.feature_list.apply_modifiers()
+        applied.feature_rule_list = copy.deepcopy(self.feature_rule_list)
         return applied
         
     def dispatch(self) -> LinkerNode:

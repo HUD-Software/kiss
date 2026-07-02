@@ -10,6 +10,12 @@ targets:
     default-compiler: cl # Default compiler to use if multiple supported compilers are available, default-linker is defind in msvc-compiler
     linkers:
       enable-features: [TARGET_X64]
+    compilers:
+      clangcl:
+        features:
+          - name: ASAN
+            linkers:
+              enable-features: [LINK:msvcrt.lib]
 
   - name: i686-pc-windows-msvc
     arch: i686 # x86_64, i686, aarch64, arm

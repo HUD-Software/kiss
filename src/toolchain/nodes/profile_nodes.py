@@ -21,9 +21,9 @@ class ProfileNode(Property):
     def __init__(self, name : str):
         super().__init__(name)
         self._properties = PropertyDict()
-        self._compilers : CompilersOverrideNode = None
-        self._linkers : LinkersOverrideNode = None
-        self._project_types : ProjectTypesOverrideNode = None
+        self.compilers : CompilersOverrideNode = None
+        self.linkers : LinkersOverrideNode = None
+        self.project_types : ProjectTypesOverrideNode = None
     
     @property
     def properties(self) -> PropertyDict:
@@ -32,30 +32,6 @@ class ProfileNode(Property):
     def is_abstract(self) -> bool :
         prop = self.get_property_as("is_abstract", PropertyBool)
         return prop.value if prop else False
-
-    @property
-    def linkers(self) -> LinkersOverrideNode:
-        return self._linkers
-    
-    @linkers.setter
-    def linkers(self, value):
-        self._linkers = value
-
-    @property
-    def compilers(self) -> CompilersOverrideNode:
-        return self._compilers
-    
-    @compilers.setter
-    def compilers(self, value):
-        self._compilers = value
-
-    @property
-    def project_types(self) -> ProjectTypesOverrideNode:
-        return self._project_types
-    
-    @project_types.setter
-    def project_types(self, value):
-        self._project_types = value
 
     def get_property(self, name: str) -> Property | None:
         return self.properties.get_property(name)

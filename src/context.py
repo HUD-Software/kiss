@@ -85,8 +85,8 @@ class KissContext:
     def target_names(self) -> list[str]:
         return [t.name for t in self.targets]
     
-    def known_targets(self) -> list[TargetNode]:
-        return [t for t in self.targets]
+    def known_targets(self, ignore_abstract: bool = False) -> list[TargetNode]:
+        return [t for t in self.targets.values() if not (t.is_abstract and ignore_abstract)]
        
     def default_target(self) -> TargetNode | None:
         return next(iter(self.targets.values()), None)
@@ -99,8 +99,8 @@ class KissContext:
     def profile_names(self) -> list[str]:
         return [p.name for p in self.known_profiles()]
 
-    def known_profiles(self) -> list[ProfileNode]:    
-        return [p for p in self.profiles.values() if not p.is_abstract]
+    def known_profiles(self, ignore_abstract: bool = False) -> list[ProfileNode]:    
+        return [p for p in self.profiles.values() if not (p.is_abstract and ignore_abstract)]
     
     def default_profile(self) -> ProfileNode | None:
         return next((p for p in self.profiles.values() if p.name == "debug"), None)
@@ -128,7 +128,7 @@ class KissContext:
     # ── Linkers ───────────────────────────────────────────────────────
     
     def linker_names(self) -> list[str]:
-        return [c.name for c in self.known_compilers()]
+        return [l.name for l in self.known_linkers()]
     
     def known_linkers(self, ignore_abstract: bool = False) -> list[LinkerNode]:
         return [l for l in self.linkers.values() if not (l.is_abstract and ignore_abstract)]
@@ -169,7 +169,7 @@ def load_context(directory: str) -> KissContext:
     compilers     = load_compilers(str(data_dir / "compilers.yaml"))
     project_types = load_project_types(str(data_dir / "project-types.yaml"))
     profiles      = load_profiles(str(data_dir / "profiles.yaml"))
-    #targets       = load_targets(str(data_dir / "targets.yaml"))
+    targets       = load_targets(str(data_dir / "targets.yaml"))
 
     # Load kiss.yaml if present
     kiss_yaml = project_dir / "kiss.yaml"
@@ -211,5 +211,5 @@ def load_context(directory: str) -> KissContext:
         linkers       = resolve_extends(linkers),
         profiles      = resolve_extends(profiles),
         project_types = resolve_extends(project_types),
-        # targets       = targets,
+        targets       = resolve_extends(targets),
     )

@@ -1,6 +1,13 @@
 from __future__ import annotations
-from .property import Property, PropertyDict, PropertyStr, PropertyStrList
+import copy
 
+from toolchain.nodes.compiler_nodes import CompilerNode, CompilersOverrideNode
+from toolchain.nodes.linker_nodes import LinkersOverrideNode
+from toolchain.nodes.profile_nodes import ProfilesOverrideNode
+from toolchain.nodes.project_type_nodes import ProjectTypesOverrideNode
+from .property import Property, PropertyBool, PropertyDict, PropertyStr, PropertyStrList
+from typing import TypeVar, Type
+T = TypeVar("T", bound=Property)
 
 class TargetNode(Property):
     """Represents a build target definition in targets.yaml.
@@ -38,7 +45,11 @@ class TargetNode(Property):
     def __init__(self, name : str):
         super().__init__(name)
         self._properties = PropertyDict()
-    
+        self.compilers : CompilersOverrideNode = None
+        self.linkers : LinkersOverrideNode = None
+        self.project_types : ProjectTypesOverrideNode = None
+        self.profiles : ProfilesOverrideNode = None
+
     @property
     def properties(self) -> PropertyDict:
         return self._properties
@@ -48,30 +59,53 @@ class TargetNode(Property):
         return self.get_property_as("default-compiler", PropertyStr) or self.supported_compiler_names[0]
 
     @property
+    def is_abstract(self) -> bool :
+        prop = self.get_property_as("is_abstract", PropertyBool)
+        return prop.value if prop else False
+    
+    @property
     def supported_compiler_names(self) -> list[str]:
         prop = self.get_property_as("supported-compilers", PropertyStrList)
         return prop.values if prop else []
     
-
     def get_property(self, name: str) -> Property | None:
         return self.properties.get_property(name)
+    
+    def get_property_as(self, name: str, prop_type: Type[T]) -> T | None:
+        return self.properties.get_property_as(name, prop_type)
     
     def add_property(self, property):
         self.properties.add_property(property)
 
-    # def clone(self) -> TargetNode:
-    #     cloned  = TargetNode(self.name)
-    #     cloned.properties = self._properties.clone()
-    #     return cloned
-    
-    def resolve_extends(self, parent):
+    def merge_with(self, parent: TargetNode):
+        """Merge list without applying modifier or dispatching top to bottom hierarchy """
         assert type(parent) is type(self), "Type mismatch"
         merged = TargetNode(self.name)
-        merged._properties = self.properties.resolve_extends(parent.properties)
+        merged._properties = self.properties.merge_with(parent.properties)
+        merged.compilers = self.compilers.merge_with(parent.compilers) if self.compilers else None
+        merged.linkers = self.linkers.merge_with(parent.linkers) if self.linkers else None
+        merged.project_types = self.project_types.merge_with(parent.project_types) if self.project_types else None
+        merged.profiles = self.profiles.merge_with(parent.profiles) if self.profiles else None
         return merged
     
-    def dispatch_globals(self) -> TargetNode:
+    def apply_modifiers(self) -> TargetNode:
+        """Apply list modifier"""
+        applied  = TargetNode(self.name)
+        applied._properties = self.properties.apply_modifiers()
+        applied.compilers = self.compilers.apply_modifiers() if self.compilers else None
+        applied.linkers = self.linkers.apply_modifiers() if self.linkers else None
+        applied.project_types = self.project_types.apply_modifiers() if self.project_types else None
+        applied.profiles = self.profiles.apply_modifiers() if self.profiles else None
+        return applied
+        
+    def dispatch(self) -> TargetNode:
+        """ 
+        Dispatch properties from top to bottom hierarchy
+        """
         dispatched = TargetNode(self.name)
-        for property in self.properties.values():
-            dispatched.add_property(property.dispatch_globals())
+        dispatched._properties = copy.deepcopy(self.properties)
+        dispatched.compilers = self.compilers.dispatch(dispatched._properties) if self.compilers else None
+        dispatched.linkers = self.linkers.dispatch(dispatched._properties) if self.linkers else None
+        dispatched.project_types = self.project_types.dispatch(dispatched._properties) if self.project_types else None
+        dispatched.profiles = self.profiles.dispatch(dispatched._properties) if self.profiles else None
         return dispatched

@@ -7,6 +7,7 @@ from toolchain.nodes.linker_nodes import LinkerNode, LinkerSpecificOverrideNode,
 from toolchain.nodes.profile_nodes import ProfileNode
 from toolchain.nodes.project_type_nodes import ProjectTypeNode, ProjectTypeSpecificOverrideNode, ProjectTypesOverrideNode
 from toolchain.nodes.property import Property, PropertyDict, PropertyBool,  PropertyNodeList, PropertyStr, PropertyStrList
+from toolchain.nodes.target_nodes import TargetNode
 
 
 # PRIVATE ──────────────────────────────────────────────────────────────────────
@@ -136,10 +137,12 @@ def _(compiler_node: CompilerNode, ignore_empty: bool):
     box = Box(compiler_node.name)
     for prop in compiler_node.properties.values():
         prop.append_to_lines_print(box.lines, ignore_empty)
-    feature_list_box = to_box(compiler_node.feature_list, ignore_empty)
-    feature_rule_list_box = to_box(compiler_node.feature_rule_list, ignore_empty)
-    box.inner_boxes.append(feature_list_box)
-    box.inner_boxes.append(feature_rule_list_box)
+    if compiler_node.feature_list:
+        feature_list_box = to_box(compiler_node.feature_list, ignore_empty)
+        box.inner_boxes.append(feature_list_box)
+    if compiler_node.feature_rule_list:
+        feature_rule_list_box = to_box(compiler_node.feature_rule_list, ignore_empty)
+        box.inner_boxes.append(feature_rule_list_box)
     return box
 
 @register_box(LinkerNode)
@@ -147,10 +150,12 @@ def _(linker_node: LinkerNode, ignore_empty: bool):
     box = Box(linker_node.name)
     for prop in linker_node.properties.values():
         prop.append_to_lines_print(box.lines, ignore_empty)
-    feature_list_box = to_box(linker_node.feature_list, ignore_empty)
-    feature_rule_list_box = to_box(linker_node.feature_rule_list, ignore_empty)
-    box.inner_boxes.append(feature_list_box)
-    box.inner_boxes.append(feature_rule_list_box)
+    if linker_node.feature_list:
+        feature_list_box = to_box(linker_node.feature_list, ignore_empty)
+        box.inner_boxes.append(feature_list_box)
+    if linker_node.feature_rule_list:
+        feature_rule_list_box = to_box(linker_node.feature_rule_list, ignore_empty)
+        box.inner_boxes.append(feature_rule_list_box)
     return box
 
 @register_box(ProfileNode)
@@ -158,13 +163,16 @@ def _(profile_node: ProfileNode, ignore_empty: bool):
     box = Box(profile_node.name)
     for properties in profile_node.properties.values():
         properties.append_to_lines_print(box.lines, ignore_empty)
-    compiler_overrides = to_box(profile_node._compilers)
-    linker_overrides = to_box(profile_node._linkers)
-    project_type_overrides = to_box(profile_node._project_types)
+    if profile_node.compilers:
+        compiler_overrides = to_box(profile_node.compilers, ignore_empty)
+        box.inner_boxes.append(compiler_overrides)
+    if profile_node.linkers:
+        linker_overrides = to_box(profile_node.linkers, ignore_empty)
+        box.inner_boxes.append(linker_overrides)
+    if profile_node.project_types:
+        project_type_overrides = to_box(profile_node.project_types, ignore_empty)
+        box.inner_boxes.append(project_type_overrides)
 
-    box.inner_boxes.append(compiler_overrides)
-    box.inner_boxes.append(linker_overrides)
-    box.inner_boxes.append(project_type_overrides)
     return box
 
 @register_box(ProjectTypeNode)
@@ -172,10 +180,33 @@ def _(project_type_node: ProjectTypeNode, ignore_empty: bool):
     box = Box(project_type_node.name)
     for properties in project_type_node.properties.values():
         properties.append_to_lines_print(box.lines, ignore_empty)
-    compiler_overrides = to_box(project_type_node._compilers)
-    linker_overrides = to_box(project_type_node._linkers)
-    box.inner_boxes.append(compiler_overrides)
-    box.inner_boxes.append(linker_overrides)
+    if project_type_node.compilers:
+        compiler_overrides = to_box(project_type_node.compilers)
+        box.inner_boxes.append(compiler_overrides)
+    if project_type_node.linkers:
+        linker_overrides = to_box(project_type_node.linkers)
+        box.inner_boxes.append(linker_overrides)
+    return box
+
+@register_box(TargetNode)
+def _(target_node: TargetNode, ignore_empty: bool):
+    box = Box(target_node.name)
+    for properties in target_node.properties.values():
+        properties.append_to_lines_print(box.lines, ignore_empty)
+        
+    if target_node.compilers:
+        compiler_overrides = to_box(target_node.compilers)
+        box.inner_boxes.append(compiler_overrides)
+    if target_node.linkers:
+        linker_overrides = to_box(target_node.linkers)
+        box.inner_boxes.append(linker_overrides)
+    if target_node.project_types:
+        project_type_overrides = to_box(target_node.project_types)
+        box.inner_boxes.append(project_type_overrides)
+    if target_node.profiles:
+        profile_overrides = to_box(target_node.profiles)
+        box.inner_boxes.append(profile_overrides)
+
     return box
 
 class Box:

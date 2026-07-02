@@ -85,16 +85,28 @@ class PropertyBool(Property):
     def __repr__(self):
         return f"PropertyBool(name={self.name!r}, value={self.value!r}, inheritable={self.inheritable!r})"
 
-    def is_empty(self) -> bool:
-        return not self.value
-    
     def append_to_lines_print(self, lines, ignore_empty):
-        if not self.is_empty() or not ignore_empty:
-            lines.append(f"{self.name}: {self.value!r}")
+        lines.append(f"{self.name}: {self.value!r}")
 
     def append_to_json_print(self, json, ignore_empty):
-        if not self.is_empty() or not ignore_empty:
-            json[self.name] = self.value
+        json[self.name] = self.value
+
+class PropertyInt(Property):
+    def __init__(self, name: str, value: int, inheritable : bool = True):
+        super().__init__(name, inheritable)
+        self.value = value
+    
+    def resolve_extends(self, parent: PropertyStr) -> PropertyStr:
+        return PropertyBool(self.name, self.value, self.inheritable)
+    
+    def __repr__(self):
+        return f"PropertyBool(name={self.name!r}, value={self.value!r}, inheritable={self.inheritable!r})"
+  
+    def append_to_lines_print(self, lines, ignore_empty):
+        lines.append(f"{self.name}: {self.value!r}")
+
+    def append_to_json_print(self, json, ignore_empty):
+        json[self.name] = self.value
 
 # ── String lists ──────────────────────────────────────────────────────────────
 

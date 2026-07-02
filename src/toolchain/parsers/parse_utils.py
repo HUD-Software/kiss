@@ -14,6 +14,7 @@ Key detection rules (applied in order):
 
 from toolchain.nodes.property import (
     Property,
+    PropertyInt,
     PropertyStr,
     PropertyBool,
     PropertyStrList,
@@ -84,7 +85,7 @@ def parse_property(key: str, value) -> Property | None:
         return PropertyStr(key, value, inheritable)
 
     if isinstance(value, int):
-        return PropertyStr(key, str(value), inheritable)
+        return PropertyInt(key, value, inheritable)
 
     # --- Lists ---
     if _is_list_of_str(value):

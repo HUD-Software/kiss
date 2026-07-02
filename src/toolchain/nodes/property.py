@@ -21,18 +21,9 @@ multiple operations on the same key (e.g. add-flags then remove-flags)
 are applied in declaration order. Node.get_property() returns the last one.
 """
 from __future__ import annotations
-from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
-from typing import Any
+from abc import ABC
 
 # Keys that belong to a node itself and must NOT be inherited by children.
-
-@dataclass(frozen=True)
-class PropertySpec:
-    name: str
-    required: bool = False
-    default: Any = None
-    inheritable: bool = False
 
 
 # ── Base ──────────────────────────────────────────────────────────────────────
@@ -40,14 +31,15 @@ class PropertySpec:
 class Property(ABC):
     """Base class. Default merge: child replaces parent."""
 
-    def __init__(self, name: str, inheritable : bool = True):
+    def __init__(self, name: str, *, mergeable : bool = True, dispatchable : bool = True):
         self.name = name
-        self.inheritable = inheritable
+        self.mergeable = mergeable
+        self.dispatchable = dispatchable
     
-    def merge_with(self, parent: Property) -> Property:
+    def merge_with(self, parent: Property, list_property_to_ignore: list[str] = None) -> Property:
         return copy.deepcopy(self)
     
-    def dispatch(self) -> Property:
+    def dispatch(self, property: Property = None, list_property_to_ignore: list[str] = None) -> Property:
         return copy.deepcopy(self)
     
     def __repr__(self):
@@ -56,12 +48,12 @@ class Property(ABC):
 # ── Scalars ───────────────────────────────────────────────────────────────────
 
 class PropertyStr(Property):
-    def __init__(self, name: str, value: str, inheritable : bool = True):
-        super().__init__(name, inheritable)
+    def __init__(self, name: str, value: str, mergeable : bool = True, dispatchable : bool = True):
+        super().__init__(name, mergeable=mergeable, dispatchable=dispatchable)
         self.value = value
 
     def __repr__(self):
-        return f"PropertyStr(name={self.name!r}, value={self.value!r}, inheritable={self.inheritable!r})"
+        return f"PropertyStr(name={self.name!r}, value={self.value!r}, mergeable={self.mergeable!r}, dispatchable={self.dispatchable!r})"
 
     def is_empty(self) -> bool:
         return not self.value
@@ -75,15 +67,15 @@ class PropertyStr(Property):
             json[self.name] = self.value
 
 class PropertyBool(Property):
-    def __init__(self, name: str, value: bool, inheritable : bool = True):
-        super().__init__(name, inheritable)
+    def __init__(self, name: str, value: bool, mergeable : bool = True, dispatchable : bool = True):
+        super().__init__(name, mergeable=mergeable, dispatchable=dispatchable)
         self.value = value
     
     def resolve_extends(self, parent: PropertyStr) -> PropertyStr:
-        return PropertyBool(self.name, self.value, self.inheritable)
+        return PropertyBool(self.name, self.value, self.mergeable, self.dispatchable)
     
     def __repr__(self):
-        return f"PropertyBool(name={self.name!r}, value={self.value!r}, inheritable={self.inheritable!r})"
+        return f"PropertyBool(name={self.name!r}, value={self.value!r}, mergeable={self.mergeable!r}, dispatchable={self.dispatchable!r})"
 
     def append_to_lines_print(self, lines, ignore_empty):
         lines.append(f"{self.name}: {self.value!r}")
@@ -92,15 +84,15 @@ class PropertyBool(Property):
         json[self.name] = self.value
 
 class PropertyInt(Property):
-    def __init__(self, name: str, value: int, inheritable : bool = True):
-        super().__init__(name, inheritable)
+    def __init__(self, name: str, value: int, mergeable : bool = True, dispatchable : bool = True):
+        super().__init__(name, mergeable=mergeable, dispatchable=dispatchable)
         self.value = value
     
     def resolve_extends(self, parent: PropertyStr) -> PropertyStr:
-        return PropertyBool(self.name, self.value, self.inheritable)
-    
+        return PropertyBool(self.name, self.value, self.mergeable, self.dispatchable)
+
     def __repr__(self):
-        return f"PropertyBool(name={self.name!r}, value={self.value!r}, inheritable={self.inheritable!r})"
+        return f"PropertyBool(name={self.name!r}, value={self.value!r}, mergeable={self.mergeable!r}, dispatchable={self.dispatchable!r})"
   
     def append_to_lines_print(self, lines, ignore_empty):
         lines.append(f"{self.name}: {self.value!r}")
@@ -113,8 +105,8 @@ class PropertyInt(Property):
 class PropertyStrList(Property):
     """List of strings. Default merge: child replaces parent (override)."""
 
-    def __init__(self, name: str, values: list[str], inheritable : bool = True):
-        super().__init__(name, inheritable)
+    def __init__(self, name: str, values: list[str], mergeable : bool = True, dispatchable : bool = True):
+        super().__init__(name, mergeable=mergeable, dispatchable=dispatchable)
         self.values: list[str] = list(values)
 
     def apply_modifier_prop(self, mod : PropertyStrListModifier):
@@ -128,7 +120,7 @@ class PropertyStrList(Property):
                     self.values.remove(value)
 
     def __repr__(self):
-        return f"PropertyStrList(name={self.name!r}, values={self.values}, inheritable={self.inheritable!r})"
+        return f"PropertyStrList(name={self.name!r}, values={self.values}, mergeable={self.mergeable!r}, dispatchable={self.dispatchable!r} )"
 
     def is_empty(self) -> bool:
         return not self.values
@@ -164,7 +156,7 @@ class PropertyStrListModifier(Property):
             f"operation={self.operation.value!r})"
         )
     
-    def merge_with(self, other:StrListModifierOperation) -> PropertyStrListModifier:
+    def merge_with(self, other:StrListModifierOperation, list_property_to_ignore: list[str] = None) -> PropertyStrListModifier:
         assert self.operation == other.operation, "Not the same operation"
         assert self.list_name == other.list_name, "Not the same list"
         # Merged list in order, first other, then self
@@ -205,10 +197,10 @@ class PropertyNodeList(Property):
             if not parent_node:
                 result.append(self_node.clone())
 
-        return PropertyNodeList(self.name, result, self.inheritable)
+        return PropertyNodeList(self.name, result, self.mergeable)
 
     def __repr__(self):
-        return f"PropertyNodeList(name={self.name!r}, nodes={[n.name for n in self.nodes]}, inheritable={self.inheritable!r})"
+        return f"PropertyNodeList(name={self.name!r}, nodes={[n.name for n in self.nodes]}, mergeable={self.mergeable!r})"
 
 
 # ── PropertyDict ──────────────────────────────────────────────────────────────────────
@@ -304,51 +296,92 @@ class PropertyDict:
                 explicit_list_name.append(self_property.name)
         return explicit_list_name
 
-    def merge_with(self, parent: PropertyDict, list_property_to_ignore : list[str] = None) -> PropertyDict:
+    def _should_ignore(prop: Property, ignore_list: list[str]) -> bool:
+        """Determine if a property must be kept as-is (ignored during merge/dispatch)
+        because it belongs to an explicit list name."""
+        if isinstance(prop, PropertyStrListModifier):
+            return prop.list_name in ignore_list
+        if isinstance(prop, PropertyStrList):
+            return prop.name in ignore_list
+        return False
+
+    def _combine(
+        self,
+        other: PropertyDict,
+        ignore_list: list[str],
+        flag_fn,       # Callable[[Property], bool] -> True si combinable
+        combine_fn,    # Callable[[Property, Property], Property]
+    ) -> PropertyDict:
+        """Generic merge/dispatch: combines self's properties with other's,
+        driven by flag_fn (decides if a property from `other` is eligible)
+        and combine_fn(self_property, other_property) -> Property."""
         result = PropertyDict()
 
-        # When we are merging we want to exclude modifier if we have explicit list name 
-        # For exemple, if in self we have list 'features' we ignore all modifiers from parent
-        # We also can add other modifiers to ignore with 'list_property_to_ignore'
-        if not list_property_to_ignore:
-            list_property_to_ignore = self.explicit_list_name()
-        else:
-            list_property_to_ignore = self.explicit_list_name() + list_property_to_ignore
-
-        # For all property that are in self
         for self_property in self.properties.values():
-            parent_prop = parent.get_property(self_property.name)
+            other_prop = other.get_property(self_property.name)
 
-            # if in parent, merge it if inheritable
-            if parent_prop:
-                if parent_prop.inheritable:
-                    # If we have a modifier that must ignore the parent
-                    # Ignore the merge and juste keep it unmodified
-                    if isinstance(self_property, PropertyStrListModifier):
-                        if self_property.list_name in list_property_to_ignore:
-                            result.add_property(copy.deepcopy(self_property))
-                            continue
-                    elif isinstance(self_property, PropertyStrList):
-                        if self_property.name in list_property_to_ignore:
-                            result.add_property(copy.deepcopy(self_property))
-                            continue
-                    result.add_property(self_property.merge_with(parent_prop))
-            # if not in parent, add it
-            else:
+            # If not in parent, add it
+            if other_prop is None:
                 result.add_property(copy.deepcopy(self_property))
+                continue
 
-        # Add properties that are in parent and not in self if inheritable
-        for parent_prop in parent.properties.values():
-            if parent_prop.name not in self.properties and parent_prop.inheritable:
-                if isinstance(parent_prop, PropertyStrListModifier):
-                    if parent_prop.list_name in list_property_to_ignore:
-                        continue
-                elif isinstance(parent_prop, PropertyStrList):
-                    if parent_prop.name in list_property_to_ignore:
-                        continue
-                result.add_property(copy.deepcopy(parent_prop))
+            # If not eligible for combination, skip it
+            if not flag_fn(other_prop):
+                continue
 
+            # If we have a modifier that must ignore the parent
+            # Ignore the merge and juste keep it unmodified
+            if isinstance(self_property, PropertyStrListModifier):
+                if self_property.list_name in ignore_list:
+                    result.add_property(copy.deepcopy(self_property))
+                    continue
+            elif isinstance(self_property, PropertyStrList):
+                if self_property.name in ignore_list:
+                    result.add_property(copy.deepcopy(self_property))
+                    continue
+            result.add_property(combine_fn(self_property, other_prop))
+
+        # Add properties that are in parent and not in self if  eligible for combination
+        for other_prop in other.properties.values():
+            # If already in self, skip it, it was already handled above
+            if other_prop.name in self.properties:
+                continue
+            # If not eligible for combination, skip it
+            if not flag_fn(other_prop):
+                continue
+
+            if isinstance(other_prop, PropertyStrListModifier):
+                if other_prop.list_name in ignore_list:
+                    continue
+            elif isinstance(other_prop, PropertyStrList):
+                if other_prop.name in ignore_list:
+                    continue
+            result.add_property(copy.deepcopy(other_prop))
         return result
+
+
+    def merge_with(self, parent: PropertyDict, list_property_to_ignore: list[str] = None) -> PropertyDict:
+        if list_property_to_ignore:
+            list_property_to_ignore = list_property_to_ignore + self.explicit_list_name()
+        else:
+            list_property_to_ignore = self.explicit_list_name()
+        return self._combine(
+            parent,
+            list_property_to_ignore,
+            flag_fn=lambda prop: prop.mergeable,
+            combine_fn=lambda self_prop, parent_prop: self_prop.merge_with(parent_prop),
+        )
+
+
+    def dispatch(self, properties: PropertyDict) -> PropertyDict:
+        ignore_list = self.explicit_list_name()
+        return self._combine(
+            properties,
+            ignore_list,
+            flag_fn=lambda prop: prop.dispatchable,
+            combine_fn=lambda self_prop, parent_prop: self_prop.dispatch(parent_prop, ignore_list),
+        )
+    
 
     def __repr__(self):
         return f"{self.__class__.__name__}(name={self.name!r}, properties={list(self.properties.keys())})"

@@ -12,9 +12,9 @@
                 "-d",
                 "tests",
                 "list",
-                "linkers",
-                "--name",
-                "link",
+                "compilers",
+                // "--name",
+                // "msvc-compiler",
                 "--mode",
                 "boxed"
             ],

@@ -10,108 +10,111 @@ compilers:
         flags: [/Od] # Flags passed to the compiler when the feature is enabled
         enable-features: [DEBUG_INFO] # Enabling OPT_LEVEL_0 also enables DEBUG_INFO
         linkers: # This feature needs to enable some flags (via features) for the linker too
+          features: [X] # Enable OPT_LEVEL_O feature if we use the linker 'link'
           link:
+            features: [Y]
             enable-features: [OPT_LEVEL_0] # Enable OPT_LEVEL_O feature if we use the linker 'link'
           lld-link:
+            features: [Z]
             enable-features: [OPT_LEVEL_0] # Enable OPT_LEVEL_O feature if we use the linker 'ldd-link'
-      - name: OPT_LEVEL_1
-        description: Minimal optimization
-        flags: [/O1]
-      - name: OPT_LEVEL_2
-        description: Default optimization
-        flags: [/O2]
-      - name: OPT_LEVEL_3
-        description: Max optimization
-        flags: [/O2, /Ob2, /Oi]
-        enable-features: [LTO, OMIT_FRAME_POINTER]
+    #   - name: OPT_LEVEL_1
+    #     description: Minimal optimization
+    #     flags: [/O1]
+    #   - name: OPT_LEVEL_2
+    #     description: Default optimization
+    #     flags: [/O2]
+    #   - name: OPT_LEVEL_3
+    #     description: Max optimization
+    #     flags: [/O2, /Ob2, /Oi]
+    #     enable-features: [LTO, OMIT_FRAME_POINTER]
 
-      # Generate debug informations
-      - name: DEBUG_INFO
-        description: Generate debug informations
-        flags: [/Zi]
+    #   # Generate debug informations
+    #   - name: DEBUG_INFO
+    #     description: Generate debug informations
+    #     flags: [/Zi]
 
-      # Whole program optimization
-      - name: LTO
-        description: Whole program optimization
-        flags: [/GL]
-        linkers:
-          enable-features: [LTO]
+    #   # Whole program optimization
+    #   - name: LTO
+    #     description: Whole program optimization
+    #     flags: [/GL]
+    #     linkers:
+    #       enable-features: [LTO]
 
-      # Omit frame pointer
-      - name: OMIT_FRAME_POINTER
-        description: Omit frame pointer
-        flags: [/Oy]
+    #   # Omit frame pointer
+    #   - name: OMIT_FRAME_POINTER
+    #     description: Omit frame pointer
+    #     flags: [/Oy]
 
-      # Windows Runtime
-      - name: WINDOWS_DLL_RUNTIME_DEBUG
-        description: Windows CRT dynamic runtime in debug (MSVCRTD.lib)
-        flags: [/MDd]
-      - name: WINDOWS_DLL_RUNTIME_RELEASE
-        description: Windows CRT dynamic runtime in release (MSVCRT.lib)
-        flags: [/MD]
-      - name: WINDOWS_STATIC_RUNTIME_DEBUG
-        description: Windows CRT static runtime in debug (LIBCMTD.lib)
-        flags: [/MTd]
-      - name: WINDOWS_STATIC_RUNTIME_RELEASE
-        description: Windows CRT static runtime in release (LIBCMT.lib)
-        flags: [/MT]
+    #   # Windows Runtime
+    #   - name: WINDOWS_DLL_RUNTIME_DEBUG
+    #     description: Windows CRT dynamic runtime in debug (MSVCRTD.lib)
+    #     flags: [/MDd]
+    #   - name: WINDOWS_DLL_RUNTIME_RELEASE
+    #     description: Windows CRT dynamic runtime in release (MSVCRT.lib)
+    #     flags: [/MD]
+    #   - name: WINDOWS_STATIC_RUNTIME_DEBUG
+    #     description: Windows CRT static runtime in debug (LIBCMTD.lib)
+    #     flags: [/MTd]
+    #   - name: WINDOWS_STATIC_RUNTIME_RELEASE
+    #     description: Windows CRT static runtime in release (LIBCMT.lib)
+    #     flags: [/MT]
 
-      # Dynamic library
-      - name: DYNAMIC_LIBRARY_RELEASE
-        description: Generate a dynamic library in release
-        flags: [/LD]
-      - name: DYNAMIC_LIBRARY_DEBUG
-        description: Generate a dynamic library in debug
-        flags: [/LDd]
+    #   # Dynamic library
+    #   - name: DYNAMIC_LIBRARY_RELEASE
+    #     description: Generate a dynamic library in release
+    #     flags: [/LD]
+    #   - name: DYNAMIC_LIBRARY_DEBUG
+    #     description: Generate a dynamic library in debug
+    #     flags: [/LDd]
 
-      # Exception
-      - name: ENABLE_EXCEPTION
-        description: Enable C++ exception
-        flags: [/EHsc]
-      - name: DISABLE_EXCEPTION
-        description: Disable C++ exception
-        flags: [/EH-]
+    #   # Exception
+    #   - name: ENABLE_EXCEPTION
+    #     description: Enable C++ exception
+    #     flags: [/EHsc]
+    #   - name: DISABLE_EXCEPTION
+    #     description: Disable C++ exception
+    #     flags: [/EH-]
 
-      # Warnings
-      - name: WARNING_BASE
-        description: Default warning level
-        flags: [/W3]
-      - name: WARNING_STRICT
-        description: Strict warnings
-        flags: [/W4]
-      - name: WARNING_ALL
-        description: All warnings (very noisy)
-        flags: [/Wall]
-      - name: WARNING_AS_ERROR
-        description: Treat warnings as errors
-        flags: [/WX]
-      - name: NO_WARNING
-        description: Disable all warnings
-        flags: [/W0]
+    #   # Warnings
+    #   - name: WARNING_BASE
+    #     description: Default warning level
+    #     flags: [/W3]
+    #   - name: WARNING_STRICT
+    #     description: Strict warnings
+    #     flags: [/W4]
+    #   - name: WARNING_ALL
+    #     description: All warnings (very noisy)
+    #     flags: [/Wall]
+    #   - name: WARNING_AS_ERROR
+    #     description: Treat warnings as errors
+    #     flags: [/WX]
+    #   - name: NO_WARNING
+    #     description: Disable all warnings
+    #     flags: [/W0]
 
-    # Features rules
-    # only-one rule : Only 1 rules is allowed in 'features'. Multiple in the same target is not allowed.
-    # incompatible : The 'feature' is incompatible with all feature in 'with'
-    feature-rules:
-      # Only one optimization level at a time
-      - only-one: optimization
-        features: [OPT_LEVEL_0, OPT_LEVEL_1, OPT_LEVEL_2, OPT_LEVEL_3]
-      # OPT_LEVEL_0 is incompatible with LTO, OMIT_FRAME_POINTER
-      - incompatible: no_opt
-        feature: OPT_LEVEL_0
-        with: [LTO, OMIT_FRAME_POINTER]
-      # Only one runtime at a time
-      - only-one: runtime
-        features: [WINDOWS_DLL_RUNTIME_DEBUG, WINDOWS_DLL_RUNTIME_RELEASE, WINDOWS_STATIC_RUNTIME_DEBUG, WINDOWS_STATIC_RUNTIME_RELEASE]
-      # Only one exceptions mode
-      - only-one: exceptions
-        features: [ENABLE_EXCEPTION, DISABLE_EXCEPTION]
-      # Only one dynamic library mode
-      - only-one: dll
-        features: [DYNAMIC_LIBRARY_RELEASE, DYNAMIC_LIBRARY_DEBUG]
-      # Only one warning level at a time
-      - only-one: warning
-        features: [WARNING_BASE, WARNING_STRICT, WARNING_ALL, NO_WARNING]
+    # # Features rules
+    # # only-one rule : Only 1 rules is allowed in 'features'. Multiple in the same target is not allowed.
+    # # incompatible : The 'feature' is incompatible with all feature in 'with'
+    # feature-rules:
+    #   # Only one optimization level at a time
+    #   - only-one: optimization
+    #     features: [OPT_LEVEL_0, OPT_LEVEL_1, OPT_LEVEL_2, OPT_LEVEL_3]
+    #   # OPT_LEVEL_0 is incompatible with LTO, OMIT_FRAME_POINTER
+    #   - incompatible: no_opt
+    #     feature: OPT_LEVEL_0
+    #     with: [LTO, OMIT_FRAME_POINTER]
+    #   # Only one runtime at a time
+    #   - only-one: runtime
+    #     features: [WINDOWS_DLL_RUNTIME_DEBUG, WINDOWS_DLL_RUNTIME_RELEASE, WINDOWS_STATIC_RUNTIME_DEBUG, WINDOWS_STATIC_RUNTIME_RELEASE]
+    #   # Only one exceptions mode
+    #   - only-one: exceptions
+    #     features: [ENABLE_EXCEPTION, DISABLE_EXCEPTION]
+    #   # Only one dynamic library mode
+    #   - only-one: dll
+    #     features: [DYNAMIC_LIBRARY_RELEASE, DYNAMIC_LIBRARY_DEBUG]
+    #   # Only one warning level at a time
+    #   - only-one: warning
+    #     features: [WARNING_BASE, WARNING_STRICT, WARNING_ALL, NO_WARNING]
 
   # MSVC cl.exe compiler
   - name: cl
@@ -134,16 +137,16 @@ compilers:
         with: [OPT_LEVEL_3, LTO, OMIT_FRAME_POINTER]
 
   # MSVC clang-cl compiler
-  - name: clangcl
-    extends: msvc-compiler
-    features:
-      - name: ASAN
-        description: Enable ASAN Sanitizer
-        flags: ["-fsanitize=address", "-fsanitize-address-use-after-scope", "-fsanitize-recover=address"]
-        enable-features: [DEBUG_INFO, WINDOWS_DLL_RUNTIME_DEBUG]
-        linkers:
-          enable-features: [DISABLE_INCREMENTAL_LINK] # ASAN needs incremental link to be disabled
-    feature-rules:
-      - incompatible: asan
-        feature: ASAN
-        with: [OPT_LEVEL_3, LTO, OMIT_FRAME_POINTER]
+  # - name: clangcl
+  #   extends: msvc-compiler
+  #   features:
+  #     - name: ASAN
+  #       description: Enable ASAN Sanitizer
+  #       flags: ["-fsanitize=address", "-fsanitize-address-use-after-scope", "-fsanitize-recover=address"]
+  #       enable-features: [DEBUG_INFO, WINDOWS_DLL_RUNTIME_DEBUG]
+  #       linkers:
+  #         enable-features: [DISABLE_INCREMENTAL_LINK] # ASAN needs incremental link to be disabled
+  #   feature-rules:
+  #     - incompatible: asan
+  #       feature: ASAN
+  #       with: [OPT_LEVEL_3, LTO, OMIT_FRAME_POINTER]

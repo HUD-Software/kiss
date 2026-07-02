@@ -103,7 +103,7 @@ class LinkerSpecificOverrideNode(Property):
         result._properties = self.properties.apply_modifiers()
         return result
     
-    def merge_with(self, other: LinkerSpecificOverrideNode, list_property_to_ignore: list[str]) -> LinkerSpecificOverrideNode:
+    def merge_with(self, other: LinkerSpecificOverrideNode, list_property_to_ignore: list[str] = None) -> LinkerSpecificOverrideNode:
         assert self.name == other.name, "Name mismatch"
         result = LinkerSpecificOverrideNode(self.name)
         result._properties = self.properties.merge_with(other.properties, list_property_to_ignore)
@@ -111,7 +111,7 @@ class LinkerSpecificOverrideNode(Property):
     
     def dispatch(self, properties : PropertyDict) -> LinkerSpecificOverrideNode:
         result = LinkerSpecificOverrideNode(self.name)
-        result._properties = self.properties.merge_with(properties)
+        result._properties = self.properties.dispatch(properties)
         return result
     
 class LinkersOverrideNode(Property):
@@ -158,14 +158,14 @@ class LinkersOverrideNode(Property):
         for linker in self._linkers.values():
             other_linker = other._linkers.get(linker.name)
             if other_linker: # linker in both
-                result.add_linker(linker.merge_with(other_linker, list_property_to_ignore))
+                result.add_linker(linker.merge_with(other_linker))
             else: # linker only in self
                 result.add_linker(copy.deepcopy(linker))
         
         for linker_name, other_linker in other._linkers.items():
             if linker_name not in self._linkers: # Only in parents
                 self_linker = LinkerSpecificOverrideNode(other_linker.name)
-                result.add_linker(self_linker.merge_with(other_linker, list_property_to_ignore))
+                result.add_linker(self_linker.merge_with(other_linker))
 
         return result
     
@@ -178,7 +178,7 @@ class LinkersOverrideNode(Property):
 
     def dispatch(self, properties: PropertyDict) -> LinkersOverrideNode:
         result = LinkersOverrideNode(self.name)
-        result._properties = self.properties.merge_with(properties)
+        result._properties = self.properties.dispatch(properties)
         for linker in self._linkers.values():
             result.add_linker(linker.dispatch(result.properties))
         return result

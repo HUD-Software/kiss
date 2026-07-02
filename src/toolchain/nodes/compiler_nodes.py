@@ -121,7 +121,7 @@ class CompilerSpecificOverrideNode(Property):
     
     def dispatch(self, properties : PropertyDict) -> CompilerSpecificOverrideNode:
         result = CompilerSpecificOverrideNode(self.name)
-        result._properties = self.properties.merge_with(properties)
+        result._properties = self.properties.dispatch(properties)
         return result
     
    
@@ -186,7 +186,7 @@ class CompilersOverrideNode(Property):
 
     def dispatch(self, properties: PropertyDict) -> CompilersOverrideNode:
         result = CompilersOverrideNode(self.name)
-        result._properties = self.properties.merge_with(properties)
+        result._properties = self.properties.dispatch(properties)
         for compiler in self._compilers.values():
             result.add_compiler(compiler.dispatch(result.properties))
         return result

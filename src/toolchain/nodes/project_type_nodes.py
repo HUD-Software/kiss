@@ -148,7 +148,7 @@ class ProjectTypeSpecificOverrideNode(Property):
     
     def dispatch(self, properties : PropertyDict) -> ProjectTypeSpecificOverrideNode:
         result = ProjectTypeSpecificOverrideNode(self.name)
-        result._properties = self.properties.merge_with(properties)
+        result._properties = self.properties.dispatch(properties)
         result.linkers = self.linkers.dispatch(result._properties) if self.linkers else None
         result.compilers = self.compilers.dispatch(result._properties) if self.compilers else None
         return result
@@ -228,7 +228,7 @@ class ProjectTypesOverrideNode(Property):
 
     def dispatch(self, properties: PropertyDict) -> ProjectTypesOverrideNode:
         result = ProjectTypesOverrideNode(self.name)
-        result._properties = self.properties.merge_with(properties)
+        result._properties = self.properties.dispatch(properties)
         for project_type in self._project_types.values():
             result.add_project_type(project_type.dispatch(result.properties))
         return result

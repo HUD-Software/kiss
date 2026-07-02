@@ -12,9 +12,9 @@
                 "-d",
                 "tests",
                 "list",
-                "targets",
+                "linkers",
                 "--name",
-                "x86_64-pc-windows-msvc",
+                "link",
                 "--mode",
                 "boxed"
             ],

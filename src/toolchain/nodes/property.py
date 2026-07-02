@@ -22,9 +22,17 @@ are applied in declaration order. Node.get_property() returns the last one.
 """
 from __future__ import annotations
 from abc import ABC, abstractmethod
-
+from dataclasses import dataclass, field
+from typing import Any
 
 # Keys that belong to a node itself and must NOT be inherited by children.
+
+@dataclass(frozen=True)
+class PropertySpec:
+    name: str
+    required: bool = False
+    default: Any = None
+    inheritable: bool = False
 
 
 # ── Base ──────────────────────────────────────────────────────────────────────

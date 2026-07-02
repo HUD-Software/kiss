@@ -58,11 +58,22 @@ def _(linkers_node: LinkersOverrideNode, ignore_empty: bool):
         box.inner_boxes.append(linker_box)
     return box
 
+@register_box(FeatureArgsNode)
+def _(feature_args_node: FeatureArgsNode, ignore_empty: bool):
+    box = Box(feature_args_node.name)
+    for properties in feature_args_node.properties.values():
+        properties.append_to_lines_print(box.lines, ignore_empty)
+    return box
+
 @register_box(FeatureNode)
 def _(feature_node: FeatureNode, ignore_empty: bool):
     box = Box(feature_node.name)
     for properties in feature_node.properties.values():
-        properties.append_to_lines_print(box.lines, ignore_empty)
+        if isinstance(properties, FeatureArgsNode):
+            args_box = to_box(properties, ignore_empty)
+            box.inner_boxes.append(args_box)
+        else:
+            properties.append_to_lines_print(box.lines, ignore_empty)
     return box
 
 @register_box(CompilerFeatureNode)

@@ -87,7 +87,7 @@ Pour chaque 'p' dans 'Parent'
             Sinon
                 Ajout dans 'result' 'p'
 
-Pour chaque 'b' dans 'Bottom'
-    Si 'b' n'est pas dans 'result'
-        Ajout dans 'result' 'b'
+Pour chaque 's' dans 'Self'
+    Si 's' n'est pas dans 'result'
+        Ajout dans 'result' 's'
        

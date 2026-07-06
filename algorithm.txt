@@ -1,0 +1,93 @@
+# Note:
+f:[] = explicit list 'f'
+add-f:[] = mod list de 'f'
+
+
+=======================================================================================
+=======================================================================================
+# Dispatch:
+
+Top         ----->    Bottom     ----->    Result
+
+f:[0]                 f:[10]               f:[10]
+add-f:[1]             add-f:[11]           add-f:[11]
+add-r:[2]             add-r:[12]           add-r:[2, 12]
+----------------------------------------------------
+
+f:[0]                                      f:[0]
+add-f:[1]             add-f:[11]           add-f:[1, 11]
+add-r:[2]             add-r:[12]           add-r:[2, 12]
+----------------------------------------------------
+
+                      f:[10]               f:[10]
+add-f:[1]             add-f:[11]           add-f:[11]
+add-r:[2]             add-r:[12]           add-r:[2, 12]
+----------------------------------------------------
+
+add-f:[1]             add-f:[11]           add-f:[1, 11]
+add-r:[2]             add-r:[12]           add-r:[2, 12]
+
+# Dispatch Algorithm:
+
+Pour chaque 'b' dans 'Bottom'
+    Si 'b' est explicit list
+        Ajout dans 'override list name'
+
+Pour chaque 't' dans 'Top'
+    Si 't' est dispatchable:
+        Si 't' n'est pas dans 'override list' (Si 't' est mod, tester nom de liste associée)
+            Si 't' dans 'Bottom' est 'b'
+                Ajout dans 'result' dispatch('t', 'b')
+            Sinon
+                Ajout dans 'result' 't'
+
+Pour chaque 'b' dans 'Bottom'
+    Si 'b' n'est pas dans 'result'
+        Ajout dans 'result' 'b'
+       
+
+
+
+=======================================================================================
+=======================================================================================
+# Merge
+
+Self        ----->    Parent     ----->    Result
+
+f:[0]                 f:[10]               f:[0]
+add-f:[1]             add-f:[11]           add-f:[1]
+add-r:[2]             add-r:[12]           add-r:[2, 12]
+----------------------------------------------------
+
+f:[0]                                      f:[0]
+add-f:[1]             add-f:[11]           add-f:[1]
+add-r:[2]             add-r:[12]           add-r:[2, 12]
+----------------------------------------------------
+
+                      f:[10]               f:[10]
+add-f:[1]             add-f:[11]           add-f:[11, 1]
+add-r:[2]             add-r:[12]           add-r:[2, 12]
+----------------------------------------------------
+
+add-f:[1]             add-f:[11]           add-f:[1, 11]
+add-r:[2]             add-r:[12]           add-r:[2, 12]
+
+# Merge Algorithm:
+
+
+Pour chaque 's' dans 'Self'   # [f]
+    Si 's' est explicit list
+        Ajout dans 'override list name'
+
+Pour chaque 'p' dans 'Parent'
+    Si 'p' est mergeable
+        Si 'p' n'est pas dans 'override list name' (Si 'p' est mod, tester nom de liste associée)
+            Si 'p' dans 'Self' est 's':
+                Ajout dans 'result' merge(s,p)
+            Sinon
+                Ajout dans 'result' 'p'
+
+Pour chaque 's' dans 'Self'
+    Si 's' n'est pas dans 'result'
+        Ajout dans 'result' 's'
+       

@@ -2,31 +2,21 @@ project-types:
   - name: bin
     description: Executable binary
     icon: 🚀
-    add-features: [B] # B
     compilers:
-      features: [TT] # TT
-      msvc-compiler:
-        features: [MSVC] # MSVC
-      cl:
-        add-features: [CL] # CL TT
+      add-defines: [KISS_BIN] # Preprocessor definitions to add when compiling with this project
+  - name: lib
+    description: Static library
+    icon: 📦
+    compilers:
+      add-defines: [KISS_LIB] # Preprocessor definitions to add when compiling with this project
+  - name: dyn
+    description: Dynamic library
+    icon: 🧩
+    compilers:
+      add-defines: [KISS_DYN_LIB] # Preprocessor definitions to add when compiling with this project
   - name: test
     description: Test binary
     icon: 🧪
     extends: bin
-    # B
     compilers:
-      features: [C]
-      msvc-compiler:
-        add-features: [TEST_MSVC] # C TEST_MSVC
-      cl:
-        add-features: [TEST_CL] # C TEST_CL
-
-
-  # - name: benchmark
-  #   description: Benchmark binary
-  #   extends: test
-  #   compilers:
-  #     cl:
-  #       add-features: [KISS_BENCH_CL, BENCH_CL]
-  #     b:
-  #       add-features: [KISS_BENCH_CL]
+      add-defines: [KISS_TEST]

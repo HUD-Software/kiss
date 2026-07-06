@@ -113,15 +113,15 @@ class CompilerSpecificOverrideNode(Property):
         result._properties = self.properties.apply_modifiers()
         return result
     
-    def merge_with(self, other: CompilerSpecificOverrideNode, list_property_to_ignore: list[str]) -> CompilerSpecificOverrideNode:
+    def merge_with(self, other: CompilerSpecificOverrideNode, parent_list_name_to_ignore: set[str]) -> CompilerSpecificOverrideNode:
         assert self.name == other.name, "Name mismatch"
         result = CompilerSpecificOverrideNode(self.name)
-        result._properties = self.properties.merge_with(other.properties, list_property_to_ignore)
+        result._properties = self.properties.merge_with(other.properties, parent_list_name_to_ignore)
         return result
     
-    def dispatch(self, properties : PropertyDict) -> CompilerSpecificOverrideNode:
+    def dispatch(self, top : PropertyDict) -> CompilerSpecificOverrideNode:
         result = CompilerSpecificOverrideNode(self.name)
-        result._properties = self.properties.dispatch(properties)
+        result._properties = self.properties.dispatch(top)
         return result
     
    
@@ -154,26 +154,26 @@ class CompilersOverrideNode(Property):
     def add_compiler(self, compiler:CompilerSpecificOverrideNode):
         self._compilers[compiler.name] = compiler
 
-    def merge_with(self, other: CompilersOverrideNode, list_property_to_ignore: list[str] = None):
+    def merge_with(self, parent: CompilersOverrideNode, parent_list_name_to_ignore: set[str] = None):
         result = CompilersOverrideNode(self.name)
-        result._properties = self.properties.merge_with(other.properties, list_property_to_ignore)
-
-        if list_property_to_ignore:
-            list_property_to_ignore = list_property_to_ignore + result._properties .explicit_list_name()
-        else:
-            list_property_to_ignore = result._properties .explicit_list_name()
+        result._properties = self.properties.merge_with(parent.properties, parent_list_name_to_ignore)
+        
+        if parent_list_name_to_ignore:
+            parent_list_name_to_ignore.update(self.properties.explicit_list_names())
+        else :
+            parent_list_name_to_ignore = self.properties.explicit_list_names()
 
         for compiler in self._compilers.values():
-            other_compiler = other._compilers.get(compiler.name)
-            if other_compiler: # compiler in both
-                result.add_compiler(compiler.merge_with(other_compiler, list_property_to_ignore))
+            parent_compiler = parent._compilers.get(compiler.name)
+            if parent_compiler: # compiler in both
+                result.add_compiler(compiler.merge_with(parent_compiler, parent_list_name_to_ignore))
             else: # compiler only in self
                 result.add_compiler(copy.deepcopy(compiler))
         
-        for compiler_name, other_compiler in other._compilers.items():
+        for compiler_name, parent_compiler in parent._compilers.items():
             if compiler_name not in self._compilers: # Only in parents
-                self_compiler = CompilerSpecificOverrideNode(other_compiler.name)
-                result.add_compiler(self_compiler.merge_with(other_compiler, list_property_to_ignore))
+                self_compiler = CompilerSpecificOverrideNode(parent_compiler.name)
+                result.add_compiler(self_compiler.merge_with(parent_compiler, parent_list_name_to_ignore))
 
         return result
     
@@ -184,9 +184,9 @@ class CompilersOverrideNode(Property):
             result.add_compiler(compiler.apply_modifiers())
         return result
 
-    def dispatch(self, properties: PropertyDict) -> CompilersOverrideNode:
+    def dispatch(self, top: PropertyDict) -> CompilersOverrideNode:
         result = CompilersOverrideNode(self.name)
-        result._properties = self.properties.dispatch(properties)
+        result._properties = self.properties.dispatch(top)
         for compiler in self._compilers.values():
             result.add_compiler(compiler.dispatch(result.properties))
         return result

@@ -42,7 +42,6 @@ def parse_property(key: str, value) -> Property | None:
     if key.startswith(ADD_PREFIX) and _is_list_of_str(value)  :
         base = key[len(ADD_PREFIX):]
         return PropertyStrListModifier(
-            key,
             base,
             [str(v) for v in value],
             StrListModifierOperation.ADD,
@@ -51,7 +50,6 @@ def parse_property(key: str, value) -> Property | None:
     if key.startswith(ENABLE_PREFIX) and _is_list_of_str(value)  :
         base = key[len(ENABLE_PREFIX):]
         return PropertyStrListModifier(
-            key,
             base,
             [str(v) for v in value],
             StrListModifierOperation.ADD,
@@ -60,7 +58,6 @@ def parse_property(key: str, value) -> Property | None:
     if key.startswith(REMOVE_PREFIX) and _is_list_of_str(value):
         base = key[len(REMOVE_PREFIX):]
         return PropertyStrListModifier(
-            key,
             base,
             [str(v) for v in value],
             StrListModifierOperation.REMOVE,
@@ -68,7 +65,6 @@ def parse_property(key: str, value) -> Property | None:
     if key.startswith(DISABLE_PREFIX) and _is_list_of_str(value):
         base = key[len(DISABLE_PREFIX):]
         return PropertyStrListModifier(
-            key,
             base,
             [str(v) for v in value],
             StrListModifierOperation.REMOVE,
@@ -76,22 +72,22 @@ def parse_property(key: str, value) -> Property | None:
     # --- Merge rules ---
     NON_MERGEABLE_KEYS = {"is_abstract"}
     NON_DISPATCHABLE_KEYS = {"description", "icon", "extends"}
-    mergeable = key not in NON_MERGEABLE_KEYS
-    dispatchable = key not in NON_DISPATCHABLE_KEYS
+    is_mergeable = key not in NON_MERGEABLE_KEYS
+    is_dispatchable = key not in NON_DISPATCHABLE_KEYS
 
     # --- Scalars ---
     if isinstance(value, bool):
-        return PropertyBool(key, value, mergeable, dispatchable)
+        return PropertyBool(key, value, is_mergeable, is_dispatchable)
 
     if isinstance(value, str):
-        return PropertyStr(key, value, mergeable, dispatchable)
+        return PropertyStr(key, value, is_mergeable, is_dispatchable)
 
     if isinstance(value, int):
-        return PropertyInt(key, value, mergeable, dispatchable)
+        return PropertyInt(key, value, is_mergeable, is_dispatchable)
 
     # --- Lists ---
     if _is_list_of_str(value):
-        return PropertyStrList(key, [str(v) for v in value], mergeable, dispatchable)
+        return PropertyStrList(key, [str(v) for v in value], is_mergeable, is_dispatchable)
 
     # --- Complex structures handled elsewhere ---
     return None

@@ -12,7 +12,7 @@
                 "-d",
                 "tests",
                 "list",
-                "profiles",
+                "project-types",
                 // "--name",
                 // "msvc-compiler",
                 "--mode",

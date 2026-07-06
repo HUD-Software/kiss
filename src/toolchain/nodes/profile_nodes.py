@@ -47,11 +47,10 @@ class ProfileNode(Property):
         assert type(parent) is type(self), "Type mismatch"
         result = ProfileNode(self.name)
         result._properties = self.properties.merge_with(parent.properties)
-        list_property_to_ignore = result._properties .explicit_list_name() 
-
-        result.linkers = self.linkers.merge_with(parent.linkers, list_property_to_ignore)
-        result.compilers = self.compilers.merge_with(parent.compilers, list_property_to_ignore)
-        result.project_types = self.project_types.merge_with(parent.project_types, list_property_to_ignore)
+        explicit_list_names = self.properties.explicit_list_names()
+        result.linkers = self.linkers.merge_with(parent.linkers, explicit_list_names)
+        result.compilers = self.compilers.merge_with(parent.compilers, explicit_list_names)
+        result.project_types = self.project_types.merge_with(parent.project_types, explicit_list_names)
         return result
     
     def apply_modifiers(self) -> ProfileNode:

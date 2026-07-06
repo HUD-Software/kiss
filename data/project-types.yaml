@@ -2,51 +2,31 @@ project-types:
   - name: bin
     description: Executable binary
     icon: 🚀
-    enable-features: [T]
+    add-features: [B] # B
     compilers:
-      defines: [KISS_BIN] # Preprocessor definitions to add when compiling with this project
-      features: [X]
+      features: [TT] # TT
       msvc-compiler:
-        defines: [BBD]
+        features: [MSVC] # MSVC
       cl:
-        enable-features: [U]
-    linkers:
-      enable-features: [dd] # Linker feature to enable when compiling this project
-      lld-link:
-        enable-features: [dsssd]
-  - name: lib
-    description: Static library
-    icon: 📦
-    compilers:
-      enable-features: [] # Compiler feature to enable when compiling this project
-      defines: [KISS_LIB] # Preprocessor definitions to add when compiling with this project
-    linkers:
-      enable-features: [] # Linker feature to enable when compiling this project
-  - name: dyn
-    description: Dynamic library
-    icon: 🧩
-    compilers:
-      enable-features: [] # Compiler feature to enable when compiling this project
-      defines: [KISS_DYN_LIB] # Preprocessor definitions to add when compiling with this project
-    linkers:
-      enable-features: [] # Linker feature to enable when compiling this project
+        add-features: [CL] # CL TT
   - name: test
     description: Test binary
     icon: 🧪
     extends: bin
+    # B
     compilers:
-      add-defines: [KISS_TEST]
-      remove-defines: [KISS_BIN]
-      features: [COMP_TEST]
+      features: [C]
+      msvc-compiler:
+        add-features: [TEST_MSVC] # C TEST_MSVC
       cl:
-        add-defines: [KISS_TEST_CL]
-      b:
-        add-defines: [KISS_TEST_CL]
-    linkers:
-      add-defines: [KISS_TEST_L]
-      remove-defines: [KISS_BIN_L]
-      features: [COMP_TEST_L]
-      link:
-        add-defines: [KISS_TEST_LINK]
-      bl:
-        add-defines: [KISS_TEST_BL]
+        add-features: [TEST_CL] # C TEST_CL
+
+
+  # - name: benchmark
+  #   description: Benchmark binary
+  #   extends: test
+  #   compilers:
+  #     cl:
+  #       add-features: [KISS_BENCH_CL, BENCH_CL]
+  #     b:
+  #       add-features: [KISS_BENCH_CL]

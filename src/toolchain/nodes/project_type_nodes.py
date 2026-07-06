@@ -61,21 +61,22 @@ class ProjectTypeNode(Property):
     def get_property_as(self, name: str, prop_type: Type[T]) -> T | None:
         return self.properties.get_property_as(name, prop_type)
     
-    def merge_with(self, other: ProjectTypeNode):
+    def merge_with(self, parent: ProjectTypeNode):
         """Merge list without applying modifier or dispatching top to bottom hierarchy """
-        assert type(other) is type(self), "Type mismatch"
+        assert type(parent) is type(self), "Type mismatch"
         result = ProjectTypeNode(self.name)
-        result._properties = self.properties.merge_with(other.properties)
-        result.linkers = self.linkers.merge_with(other.linkers)
-        result.compilers = self.compilers.merge_with(other.compilers)
+        result._properties = self.properties.merge_with(parent.properties)
+        explicit_list_names = self.properties.explicit_list_names()
+        result.linkers = self.linkers.merge_with(parent.linkers, explicit_list_names) if self.linkers else None
+        result.compilers = self.compilers.merge_with(parent.compilers, explicit_list_names) if self.compilers else None
         return result
     
     def apply_modifiers(self) -> ProjectTypeNode:
         """Apply list modifier"""
         result  = ProjectTypeNode(self.name)
         result._properties = self.properties.apply_modifiers()
-        result.linkers = self.linkers.apply_modifiers()
-        result.compilers = self.compilers.apply_modifiers()
+        result.linkers = self.linkers.apply_modifiers() if self.linkers else None
+        result.compilers = self.compilers.apply_modifiers() if self.compilers else None
         return result
     
     def dispatch(self) -> ProjectTypeNode:
@@ -84,8 +85,8 @@ class ProjectTypeNode(Property):
         """
         result = ProjectTypeNode(self.name)
         result._properties = copy.deepcopy(self.properties)
-        result.linkers = self.linkers.dispatch(result._properties)
-        result.compilers = self.compilers.dispatch(result._properties)
+        result.linkers = self.linkers.dispatch(result._properties) if self.linkers else None
+        result.compilers = self.compilers.dispatch(result._properties) if self.compilers else None
         return result
 
 class ProjectTypeSpecificOverrideNode(Property):
@@ -132,18 +133,12 @@ class ProjectTypeSpecificOverrideNode(Property):
         result.compilers = self.compilers.apply_modifiers() if self.compilers else None
         return result
     
-    def merge_with(self, other: ProjectTypeSpecificOverrideNode, list_property_to_ignore: list[str] = None) -> ProjectTypeSpecificOverrideNode:
+    def merge_with(self, other: ProjectTypeSpecificOverrideNode, parent_list_name_to_ignore: set[str] = None) -> ProjectTypeSpecificOverrideNode:
         assert self.name == other.name, "Name mismatch"
         result = ProjectTypeSpecificOverrideNode(self.name)
-        result._properties = self.properties.merge_with(other.properties, list_property_to_ignore)
-
-        if list_property_to_ignore:
-            list_property_to_ignore = list_property_to_ignore + result._properties .explicit_list_name()
-        else:
-            list_property_to_ignore = result._properties .explicit_list_name()
-
-        result.compilers = self.compilers.merge_with(other.compilers, list_property_to_ignore) if self.compilers else None
-        result.linkers = self.linkers.merge_with(other.linkers, list_property_to_ignore) if self.linkers else None
+        result._properties = self.properties.merge_with(other.properties, parent_list_name_to_ignore)
+        result.compilers = self.compilers.merge_with(other.compilers, parent_list_name_to_ignore) if self.compilers else None
+        result.linkers = self.linkers.merge_with(other.linkers, parent_list_name_to_ignore) if self.linkers else None
         return result
     
     def dispatch(self, properties : PropertyDict) -> ProjectTypeSpecificOverrideNode:
@@ -194,28 +189,27 @@ class ProjectTypesOverrideNode(Property):
     def add_project_type(self, project_type:ProjectTypeSpecificOverrideNode):
         self._project_types[project_type.name] = project_type
 
-    def merge_with(self, other: ProjectTypesOverrideNode, list_property_to_ignore: list[str] = None) -> ProjectTypesOverrideNode:
-        """Merge list without applying modifier or dispatching top to bottom hierarchy """
+    def merge_with(self, other: ProjectTypesOverrideNode, parent_list_name_to_ignore: set[str] = None) -> ProjectTypesOverrideNode:
         assert type(other) is type(self), "Type mismatch"
         result = ProjectTypesOverrideNode(self.name)
-        result._properties = self.properties.merge_with(other.properties, list_property_to_ignore)
-
-        if list_property_to_ignore:
-            list_property_to_ignore = list_property_to_ignore + result._properties .explicit_list_name()
-        else:
-            list_property_to_ignore = result._properties .explicit_list_name()
+        result._properties = self.properties.merge_with(other.properties, parent_list_name_to_ignore)
+        
+        if parent_list_name_to_ignore:
+            parent_list_name_to_ignore.update(self.properties.explicit_list_names())
+        else :
+            parent_list_name_to_ignore = self.properties.explicit_list_names()
 
         for project_type in self._project_types.values():
             other_project_type = other._project_types.get(project_type.name)
             if other_project_type: # project type in both
-                result.add_project_type(project_type.merge_with(other_project_type, list_property_to_ignore))
+                result.add_project_type(project_type.merge_with(other_project_type, parent_list_name_to_ignore))
             else: # project type only in self
                 result.add_project_type(copy.deepcopy(project_type))
         
         for project_type_name, other_project_type in other._project_types.items():
             if project_type_name not in self._project_types: # Only in parents
                 self_linker = ProjectTypeSpecificOverrideNode(other_project_type.name)
-                result.add_project_type(self_linker.merge_with(other_project_type, list_property_to_ignore))
+                result.add_project_type(self_linker.merge_with(other_project_type, parent_list_name_to_ignore))
 
         return result
     

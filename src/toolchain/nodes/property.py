@@ -22,6 +22,7 @@ are applied in declaration order. Node.get_property() returns the last one.
 """
 from __future__ import annotations
 from abc import ABC
+from unittest import result
 
 # Keys that belong to a node itself and must NOT be inherited by children.
 
@@ -31,15 +32,15 @@ from abc import ABC
 class Property(ABC):
     """Base class. Default merge: child replaces parent."""
 
-    def __init__(self, name: str, *, mergeable : bool = True, dispatchable : bool = True):
+    def __init__(self, name: str, *, is_mergeable : bool = True, is_dispatchable : bool = True):
         self.name = name
-        self.mergeable = mergeable
-        self.dispatchable = dispatchable
+        self.is_mergeable = is_mergeable
+        self.is_dispatchable = is_dispatchable
     
-    def merge_with(self, parent: Property, list_property_to_ignore: list[str] = None) -> Property:
+    def merge_with(self, parent: Property, parent_list_name_to_ignore: set[str] = None) -> Property:
         return copy.deepcopy(self)
     
-    def dispatch(self, property: Property = None, list_property_to_ignore: list[str] = None) -> Property:
+    def dispatch(self, top: Property = None) -> Property:
         return copy.deepcopy(self)
     
     def __repr__(self):
@@ -48,12 +49,12 @@ class Property(ABC):
 # ── Scalars ───────────────────────────────────────────────────────────────────
 
 class PropertyStr(Property):
-    def __init__(self, name: str, value: str, mergeable : bool = True, dispatchable : bool = True):
-        super().__init__(name, mergeable=mergeable, dispatchable=dispatchable)
+    def __init__(self, name: str, value: str, is_mergeable : bool = True, is_dispatchable : bool = True):
+        super().__init__(name, is_mergeable=is_mergeable, is_dispatchable=is_dispatchable)
         self.value = value
 
     def __repr__(self):
-        return f"PropertyStr(name={self.name!r}, value={self.value!r}, mergeable={self.mergeable!r}, dispatchable={self.dispatchable!r})"
+        return f"PropertyStr(name={self.name!r}, value={self.value!r}, is_mergeable={self.is_mergeable!r}, is_dispatchable={self.is_dispatchable!r})"
 
     def is_empty(self) -> bool:
         return not self.value
@@ -67,15 +68,15 @@ class PropertyStr(Property):
             json[self.name] = self.value
 
 class PropertyBool(Property):
-    def __init__(self, name: str, value: bool, mergeable : bool = True, dispatchable : bool = True):
-        super().__init__(name, mergeable=mergeable, dispatchable=dispatchable)
+    def __init__(self, name: str, value: bool, is_mergeable : bool = True, is_dispatchable : bool = True):
+        super().__init__(name, is_mergeable=is_mergeable, is_dispatchable=is_dispatchable)
         self.value = value
     
     def resolve_extends(self, parent: PropertyStr) -> PropertyStr:
-        return PropertyBool(self.name, self.value, self.mergeable, self.dispatchable)
+        return PropertyBool(self.name, self.value, self.is_mergeable, self.is_dispatchable)
     
     def __repr__(self):
-        return f"PropertyBool(name={self.name!r}, value={self.value!r}, mergeable={self.mergeable!r}, dispatchable={self.dispatchable!r})"
+        return f"PropertyBool(name={self.name!r}, value={self.value!r}, is_mergeable={self.is_mergeable!r}, is_dispatchable={self.is_dispatchable!r})"
 
     def append_to_lines_print(self, lines, ignore_empty):
         lines.append(f"{self.name}: {self.value!r}")
@@ -84,15 +85,15 @@ class PropertyBool(Property):
         json[self.name] = self.value
 
 class PropertyInt(Property):
-    def __init__(self, name: str, value: int, mergeable : bool = True, dispatchable : bool = True):
-        super().__init__(name, mergeable=mergeable, dispatchable=dispatchable)
+    def __init__(self, name: str, value: int, is_mergeable : bool = True, is_dispatchable : bool = True):
+        super().__init__(name, is_mergeable=is_mergeable, is_dispatchable=is_dispatchable)
         self.value = value
     
     def resolve_extends(self, parent: PropertyStr) -> PropertyStr:
-        return PropertyBool(self.name, self.value, self.mergeable, self.dispatchable)
+        return PropertyBool(self.name, self.value, self.is_mergeable, self.is_dispatchable)
 
     def __repr__(self):
-        return f"PropertyBool(name={self.name!r}, value={self.value!r}, mergeable={self.mergeable!r}, dispatchable={self.dispatchable!r})"
+        return f"PropertyBool(name={self.name!r}, value={self.value!r}, is_mergeable={self.is_mergeable!r}, is_dispatchable={self.is_dispatchable!r})"
   
     def append_to_lines_print(self, lines, ignore_empty):
         lines.append(f"{self.name}: {self.value!r}")
@@ -105,8 +106,8 @@ class PropertyInt(Property):
 class PropertyStrList(Property):
     """List of strings. Default merge: child replaces parent (override)."""
 
-    def __init__(self, name: str, values: list[str], mergeable : bool = True, dispatchable : bool = True):
-        super().__init__(name, mergeable=mergeable, dispatchable=dispatchable)
+    def __init__(self, name: str, values: list[str], is_mergeable : bool = True, is_dispatchable : bool = True):
+        super().__init__(name, is_mergeable=is_mergeable, is_dispatchable=is_dispatchable)
         self.values: list[str] = list(values)
 
     def apply_modifier_prop(self, mod : PropertyStrListModifier):
@@ -120,7 +121,7 @@ class PropertyStrList(Property):
                     self.values.remove(value)
 
     def __repr__(self):
-        return f"PropertyStrList(name={self.name!r}, values={self.values}, mergeable={self.mergeable!r}, dispatchable={self.dispatchable!r} )"
+        return f"PropertyStrList(name={self.name!r}, values={self.values}, is_mergeable={self.is_mergeable!r}, is_dispatchable={self.is_dispatchable!r} )"
 
     def is_empty(self) -> bool:
         return not self.values
@@ -142,8 +143,8 @@ class StrListModifierOperation(Enum):
     REMOVE = "remove"
 
 class PropertyStrListModifier(Property):
-    def __init__(self, name, list_name, values,  operation: StrListModifierOperation):
-        super().__init__(name)
+    def __init__(self, list_name, values,  operation: StrListModifierOperation):
+        super().__init__(f"{operation.value}-{list_name}")
         self.values: list[str] = list(values)
         self.list_name = list_name
         self.operation = operation
@@ -156,6 +157,17 @@ class PropertyStrListModifier(Property):
             f"operation={self.operation.value!r})"
         )
     
+    def is_empty(self) -> bool:
+        return not self.values
+    
+    def append_to_lines_print(self, lines, ignore_empty):
+        if not self.is_empty() or not ignore_empty:
+            lines.append(f"{self.name}: {self.values!r}")
+
+    def append_to_json_print(self, json, ignore_empty):
+        if not self.is_empty() or not ignore_empty:
+            json[self.name] = self.values
+
     def merge_with(self, other:StrListModifierOperation, list_property_to_ignore: list[str] = None) -> PropertyStrListModifier:
         assert self.operation == other.operation, "Not the same operation"
         assert self.list_name == other.list_name, "Not the same list"
@@ -166,7 +178,19 @@ class PropertyStrListModifier(Property):
             if value not in self.values and value not in prefix:
                 prefix.append(value)
         values = prefix + self.values
-        return PropertyStrListModifier(self.name, self.list_name, values ,self.operation)
+        return PropertyStrListModifier(self.list_name, values ,self.operation)
+    
+    def dispatch(self, other: StrListModifierOperation, list_property_to_ignore: list[str] = None) -> Property:
+        assert self.operation == other.operation, "Not the same operation"
+        assert self.list_name == other.list_name, "Not the same list"
+        # Merged list in order, first other, then self
+        # We want to keep read order the same as in the file from top to bottom
+        prefix = []
+        for value in other.values:
+            if value not in self.values and value not in prefix:
+                prefix.append(value)
+        values = prefix + self.values
+        return PropertyStrListModifier(self.list_name, values ,self.operation)
     
 # ── Node lists ────────────────────────────────────────────────────────────────
 
@@ -197,10 +221,10 @@ class PropertyNodeList(Property):
             if not parent_node:
                 result.append(self_node.clone())
 
-        return PropertyNodeList(self.name, result, self.mergeable)
+        return PropertyNodeList(self.name, result, self.is_mergeable)
 
     def __repr__(self):
-        return f"PropertyNodeList(name={self.name!r}, nodes={[n.name for n in self.nodes]}, mergeable={self.mergeable!r})"
+        return f"PropertyNodeList(name={self.name!r}, nodes={[n.name for n in self.nodes]}, is_mergeable={self.is_mergeable!r})"
 
 
 # ── PropertyDict ──────────────────────────────────────────────────────────────────────
@@ -215,7 +239,7 @@ class PropertyDict:
 
     def __init__(self):
         self.properties: dict[str, Property] = {}
-
+    
     def items(self):
         return self.properties.items()
     
@@ -229,6 +253,14 @@ class PropertyDict:
         if prop.name in self.properties:
             raise ValueError(f"Duplicate property '{prop.name}'")
         self.properties[prop.name] = prop
+
+    def add_or_merge_property(self, prop: Property, list_property_to_ignore: list[str] = None):
+        if prop.name in self.properties:
+            existing_prop = self.properties[prop.name]
+            merged_prop = existing_prop.merge_with(prop, list_property_to_ignore)
+            self.properties[prop.name] = merged_prop
+        else:
+            self.properties[prop.name] = prop
 
     def remove_property(self, name: Property):
         self.properties.pop(name)
@@ -245,8 +277,12 @@ class PropertyDict:
 
     def apply_modifiers(self) -> PropertyDict:
         """
-        Apply modifier add/remove-enable/disable
-        Remove then from properties
+        Resolve modifier properties (add-f:[...] / remove-f:[...]) against their
+        target list, then drop the modifiers from the result.
+
+        Modifiers are applied in two phases, ADD before REMOVE, so that an
+        element added and removed in the same node consistently ends up removed
+        regardless of declaration order.
         """
         result = PropertyDict()
         
@@ -289,99 +325,98 @@ class PropertyDict:
 
         return result
     
-    def explicit_list_name(self) -> list[str]:
-        explicit_list_name = list[str]()
+    def explicit_list_names(self) -> set[str]:
+        explicit_list_names = set[str]()
         for self_property in self.properties.values():
             if isinstance(self_property, PropertyStrList):
-                explicit_list_name.append(self_property.name)
-        return explicit_list_name
+                explicit_list_names.add(self_property.name)
+        return explicit_list_names
 
-    def _should_ignore(prop: Property, ignore_list: list[str]) -> bool:
-        """Determine if a property must be kept as-is (ignored during merge/dispatch)
-        because it belongs to an explicit list name."""
-        if isinstance(prop, PropertyStrListModifier):
-            return prop.list_name in ignore_list
-        if isinstance(prop, PropertyStrList):
-            return prop.name in ignore_list
-        return False
+    def merge_with(self, parent: PropertyDict, parent_list_name_to_ignore: set[str] = None) -> PropertyDict:
+        """
+        Merge this PropertyDict with a parent one, extending the parent with self (child).
 
-    def _combine(
-        self,
-        other: PropertyDict,
-        ignore_list: list[str],
-        flag_fn,       # Callable[[Property], bool] -> True si combinable
-        combine_fn,    # Callable[[Property, Property], Property]
-    ) -> PropertyDict:
-        """Generic merge/dispatch: combines self's properties with other's,
-        driven by flag_fn (decides if a property from `other` is eligible)
-        and combine_fn(self_property, other_property) -> Property."""
+        Rules:
+        - If self (child) has an explicit list (e.g. `features:[...]`), any parent list
+        or modifier related to that same list is ignored entirely.
+        - Additional list names to ignore can optionally be passed via
+        `parent_list_name_to_ignore`. This is mainly used when self (child) has a
+        "global" explicit list that must override everything below it, including
+        lists nested deeper in the hierarchy.
+
+        Example:
+            parent:
+                compilers:
+                features: [F_P]
+            child:
+                extends: parent
+                features: [F_C]
+                compilers:
+                ...
+
+        Here, child's `compilers:` should end up with [F_C], not [F_P], even though
+        the explicit list isn't declared directly under `compilers:`. To achieve this,
+        we pass [F_C] (child's own explicit list name) as `parent_list_name_to_ignore`,
+        so that F_P is discarded when merging compilers.
+
+        :param parent: the parent PropertyDict to merge into self
+        :param parent_list_name_to_ignore: extra list names whose parent values must be
+            discarded, even if not explicitly overridden at this level
+        :return: a new PropertyDict resulting from the merge (parent + self, self wins)
+        """
         result = PropertyDict()
 
-        for self_property in self.properties.values():
-            other_prop = other.get_property(self_property.name)
+        override_list_names = self.explicit_list_names()
 
-            # If not in parent, add it
-            if other_prop is None:
-                result.add_property(copy.deepcopy(self_property))
-                continue
-
-            # If not eligible for combination, skip it
-            if not flag_fn(other_prop):
-                continue
-
-            # If we have a modifier that must ignore the parent
-            # Ignore the merge and juste keep it unmodified
-            if isinstance(self_property, PropertyStrListModifier):
-                if self_property.list_name in ignore_list:
-                    result.add_property(copy.deepcopy(self_property))
+        for p in parent.properties.values():
+            if p.is_mergeable:
+                overrided_name = p.list_name if isinstance(p, PropertyStrListModifier) else p.name
+                if parent_list_name_to_ignore and overrided_name in parent_list_name_to_ignore:
                     continue
-            elif isinstance(self_property, PropertyStrList):
-                if self_property.name in ignore_list:
-                    result.add_property(copy.deepcopy(self_property))
-                    continue
-            result.add_property(combine_fn(self_property, other_prop))
+                if overrided_name not in override_list_names:
+                    s = self.get_property(p.name)
+                    if s:
+                        result.add_property(s.merge_with(p))
+                    else:
+                        result.add_property(copy.deepcopy(p))
 
-        # Add properties that are in parent and not in self if  eligible for combination
-        for other_prop in other.properties.values():
-            # If already in self, skip it, it was already handled above
-            if other_prop.name in self.properties:
-                continue
-            # If not eligible for combination, skip it
-            if not flag_fn(other_prop):
-                continue
+        for b in self.properties.values():
+            if b.name not in result.properties:
+                result.add_property(copy.deepcopy(b))
 
-            if isinstance(other_prop, PropertyStrListModifier):
-                if other_prop.list_name in ignore_list:
-                    continue
-            elif isinstance(other_prop, PropertyStrList):
-                if other_prop.name in ignore_list:
-                    continue
-            result.add_property(copy.deepcopy(other_prop))
         return result
-
-
-    def merge_with(self, parent: PropertyDict, list_property_to_ignore: list[str] = None) -> PropertyDict:
-        if list_property_to_ignore:
-            list_property_to_ignore = list_property_to_ignore + self.explicit_list_name()
-        else:
-            list_property_to_ignore = self.explicit_list_name()
-        return self._combine(
-            parent,
-            list_property_to_ignore,
-            flag_fn=lambda prop: prop.mergeable,
-            combine_fn=lambda self_prop, parent_prop: self_prop.merge_with(parent_prop),
-        )
-
-
-    def dispatch(self, properties: PropertyDict) -> PropertyDict:
-        ignore_list = self.explicit_list_name()
-        return self._combine(
-            properties,
-            ignore_list,
-            flag_fn=lambda prop: prop.dispatchable,
-            combine_fn=lambda self_prop, parent_prop: self_prop.dispatch(parent_prop, ignore_list),
-        )
     
+    def dispatch(self, top: PropertyDict) -> PropertyDict:
+        """
+        Dispatch (propagate) top-level properties down into self.
+
+        This is the structural mirror of `merge_with`: instead of the child
+        extending the parent, here the top-level properties are pushed down
+        into self, unless self already declares an explicit list for that name
+        (self wins, same rule as `merge_with`'s `override_list_names`).
+
+        :param top: the top-level PropertyDict whose properties are propagated down
+        :return: a new PropertyDict resulting from the dispatch (top + self, self wins)
+        """
+        result = PropertyDict()
+
+        override_list_names = self.explicit_list_names()
+
+        for t in top.properties.values():
+            if t.is_dispatchable:
+                overrided_name = t.list_name if isinstance(t, PropertyStrListModifier) else t.name
+                if overrided_name not in override_list_names:
+                    s = self.get_property(t.name)
+                    if s:
+                        result.add_property(s.dispatch(t))
+                    else:
+                        result.add_property(copy.deepcopy(t))
+
+        for s in self.properties.values():
+            if s.name not in result.properties:
+                result.add_property(copy.deepcopy(s))
+
+        return result
 
     def __repr__(self):
         return f"{self.__class__.__name__}(name={self.name!r}, properties={list(self.properties.keys())})"

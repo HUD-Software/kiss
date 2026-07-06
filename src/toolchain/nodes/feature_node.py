@@ -115,11 +115,11 @@ class FeatureRuleNode(Property):
     
     def merge_with(self, parent: FeatureNodeList):
         assert False, """
-        Feature rules are not mergeable.
+        Feature rules are not is_mergeable.
         We don't allow modification of existing feature-rules"""
 
     def dispatch(self) -> FeatureNodeList:
-        assert False, """Feature rules are not dispatchable."""
+        assert False, """Feature rules are not is_dispatchable."""
 
 class FeatureRuleNodeList(Property):
     """Represents the 'feature-rules:' block."""

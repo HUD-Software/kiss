@@ -103,10 +103,10 @@ class LinkerSpecificOverrideNode(Property):
         result._properties = self.properties.apply_modifiers()
         return result
     
-    def merge_with(self, other: LinkerSpecificOverrideNode, list_property_to_ignore: list[str] = None) -> LinkerSpecificOverrideNode:
+    def merge_with(self, other: LinkerSpecificOverrideNode, parent_list_name_to_ignore: set[str] = None) -> LinkerSpecificOverrideNode:
         assert self.name == other.name, "Name mismatch"
         result = LinkerSpecificOverrideNode(self.name)
-        result._properties = self.properties.merge_with(other.properties, list_property_to_ignore)
+        result._properties = self.properties.merge_with(other.properties, parent_list_name_to_ignore)
         return result
     
     def dispatch(self, properties : PropertyDict) -> LinkerSpecificOverrideNode:
@@ -146,26 +146,26 @@ class LinkersOverrideNode(Property):
     def add_linker(self, linker:LinkerSpecificOverrideNode):
         self._linkers[linker.name] = linker
 
-    def merge_with(self, other: LinkersOverrideNode, list_property_to_ignore: list[str] = None):
+    def merge_with(self, other: LinkersOverrideNode, parent_list_name_to_ignore: set[str] = None):
         result = LinkersOverrideNode(self.name)
-        result._properties = self.properties.merge_with(other.properties, list_property_to_ignore)
-
-        if list_property_to_ignore:
-            list_property_to_ignore = list_property_to_ignore + result._properties .explicit_list_name()
-        else:
-            list_property_to_ignore = result._properties .explicit_list_name()
+        result._properties = self.properties.merge_with(other.properties, parent_list_name_to_ignore)
+        
+        if parent_list_name_to_ignore:
+            parent_list_name_to_ignore.update(self.properties.explicit_list_names())
+        else :
+            parent_list_name_to_ignore = self.properties.explicit_list_names()
 
         for linker in self._linkers.values():
             other_linker = other._linkers.get(linker.name)
             if other_linker: # linker in both
-                result.add_linker(linker.merge_with(other_linker))
+                result.add_linker(linker.merge_with(other_linker, parent_list_name_to_ignore))
             else: # linker only in self
                 result.add_linker(copy.deepcopy(linker))
         
         for linker_name, other_linker in other._linkers.items():
             if linker_name not in self._linkers: # Only in parents
                 self_linker = LinkerSpecificOverrideNode(other_linker.name)
-                result.add_linker(self_linker.merge_with(other_linker))
+                result.add_linker(self_linker.merge_with(other_linker, parent_list_name_to_ignore))
 
         return result
     

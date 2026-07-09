@@ -11,6 +11,9 @@ from toolchain.nodes.target_nodes import TargetNode
 
 
 # PRIVATE ──────────────────────────────────────────────────────────────────────
+def _clean_emoji(s: str) -> str:
+    return s.replace("\ufe0f", "")
+
 def _vis_len(s: str) -> int:
     """
     Return the display width of a string as formatted in a terminal.
@@ -22,7 +25,7 @@ def _vis_len(s: str) -> int:
     Uses wcwidth/wcswidth rules for monospace terminal formatting.
     """
 
-    return wcswidth(s)
+    return wcswidth(_clean_emoji(s))
 
 _BOX_CONVERTERS: dict[type, callable] = {}
 
@@ -252,10 +255,10 @@ class Box:
         # 1. Render all content lines (inner boxes are fully rendered first)
         content_lines: list[str] = []
         for line in self.lines:
-            content_lines.append(line)
+            content_lines.append(_clean_emoji(line))
         for inner_boxes in self.inner_boxes:
             for line in inner_boxes.to_boxed_strings():
-                content_lines.append(line)
+                content_lines.append(_clean_emoji(line))
 
         # 2. Compute widths
         title = f"{self.title} "

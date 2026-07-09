@@ -1,7 +1,7 @@
 project-types:
   - name: bin
     description: Executable binary
-    icon: 🚀
+    icon: 💾
     compilers:
       add-defines: [KISS_BIN] # Preprocessor definitions to add when compiling with this project
   - name: lib

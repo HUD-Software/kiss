@@ -48,18 +48,18 @@ class ProfileNode(Property):
         result = ProfileNode(self.name)
         result._properties = self.properties.merge_with(parent.properties)
         explicit_list_names = self.properties.explicit_list_names()
-        result.linkers = self.linkers.merge_with(parent.linkers, explicit_list_names)
-        result.compilers = self.compilers.merge_with(parent.compilers, explicit_list_names)
-        result.project_types = self.project_types.merge_with(parent.project_types, explicit_list_names)
+        result.linkers = self.linkers.merge_with(parent.linkers, explicit_list_names) if self.linkers else None
+        result.compilers = self.compilers.merge_with(parent.compilers, explicit_list_names) if self.compilers else None
+        result.project_types = self.project_types.merge_with(parent.project_types, explicit_list_names) if self.project_types else None
         return result
     
     def apply_modifiers(self) -> ProfileNode:
         """Apply list modifier"""
         result  = ProfileNode(self.name)
         result._properties = self.properties.apply_modifiers()
-        result.linkers = self.linkers.apply_modifiers()
-        result.compilers = self.compilers.apply_modifiers()
-        result.project_types = self.project_types.apply_modifiers()
+        result.linkers = self.linkers.apply_modifiers() if self.linkers else None
+        result.compilers = self.compilers.apply_modifiers() if self.compilers else None
+        result.project_types = self.project_types.apply_modifiers() if self.project_types else None
         return result
     
     def dispatch(self) -> ProfileNode:
@@ -68,9 +68,9 @@ class ProfileNode(Property):
         """
         result = ProfileNode(self.name)
         result._properties = copy.deepcopy(self.properties)
-        result.linkers = self.linkers.dispatch(result._properties)
-        result.compilers = self.compilers.dispatch(result._properties)
-        result.project_types = self.project_types.dispatch(result._properties)
+        result.linkers = self.linkers.dispatch(result._properties) if self.linkers else None
+        result.compilers = self.compilers.dispatch(result._properties) if self.compilers else None
+        result.project_types = self.project_types.dispatch(result._properties) if self.project_types else None
         return result
     
 class ProfileSpecificOverrideNode(Property):

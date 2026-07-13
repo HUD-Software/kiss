@@ -1,3 +1,16 @@
+# linkers:
+# - name:
+#   features:
+#     - name:
+#       description:
+#       flags: []
+#   featyre-rules:
+#      - incompatible:
+#        feature:
+#        with: []
+#      - only-one:
+#        features: []
+
 linkers:
   - name: msvc-linker
     is_abstract: true

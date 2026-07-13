@@ -7,6 +7,47 @@ from toolchain.parsers.compiler_parser import yaml_parse_compilers_overrides
 from toolchain.parsers.linker_parser import yaml_parse_linkers_overrides
 from toolchain.parsers.parse_utils import parse_property
 
+
+def _check_project_types_overrides_key(key): 
+    if key == LinkersOverrideNode.NAME:
+        raise ValueError(f"""'{LinkersOverrideNode.NAME}' found under '{ProjectTypesOverrideNode.NAME}' but must be under specific project type name like 'bin' or 'lib'
+                             
+-> If you want to modify the linker for all '{ProjectTypesOverrideNode.NAME}', add '{LinkersOverrideNode.NAME}' next to '{ProjectTypesOverrideNode.NAME}': 
+     example:
+       {ProjectTypesOverrideNode.NAME}:
+         dyn:
+           ...
+       {LinkersOverrideNode.NAME}:
+         # Here you modify the linker for all '{ProjectTypesOverrideNode.NAME}'
+
+-> If you want to modify the linker for a specific '{ProjectTypesOverrideNode.NAME}', add '{LinkersOverrideNode.NAME}' under the specific project type name:
+     example:
+       {ProjectTypesOverrideNode.NAME}:
+         dyn:
+           {LinkersOverrideNode.NAME}:
+             # Here you modify the linker for 'dyn' project type
+""")
+        
+    if key == CompilersOverrideNode.NAME:
+        raise ValueError(f"""'{CompilersOverrideNode.NAME}' found under '{ProjectTypesOverrideNode.NAME}' but must be under specific project type name like 'bin' or 'lib'
+                             
+-> If you want to modify the compiler for all '{ProjectTypesOverrideNode.NAME}', add '{CompilersOverrideNode.NAME}' next to '{ProjectTypesOverrideNode.NAME}': 
+     example:
+       {ProjectTypesOverrideNode.NAME}:
+         dyn:
+           ...
+       {CompilersOverrideNode.NAME}:
+         # Here you modify the compiler for all '{ProjectTypesOverrideNode.NAME}'
+
+-> If you want to modify the compiler for a specific '{ProjectTypesOverrideNode.NAME}', add '{CompilersOverrideNode.NAME}' under the specific project type name:
+     example:
+       {ProjectTypesOverrideNode.NAME}:
+         dyn:
+           {CompilersOverrideNode.NAME}:
+             # Here you modify the compiler for 'dyn' project type
+""")
+    
+
 def yaml_parse_project_types_overrides(data: dict) -> ProjectTypesOverrideNode:
     """Parse the 'project-types:' block inside a profile entry.
 
@@ -28,6 +69,7 @@ def yaml_parse_project_types_overrides(data: dict) -> ProjectTypesOverrideNode:
     """
     node = ProjectTypesOverrideNode()
     for key, value in data.items():
+        _check_project_types_overrides_key(key)
         prop = parse_property(key, value)
         if prop:
             node.add_property(prop)

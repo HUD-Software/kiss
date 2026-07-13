@@ -9,6 +9,64 @@ from toolchain.parsers.linker_parser import yaml_parse_linkers_overrides
 from toolchain.parsers.parse_utils import parse_property
 from toolchain.parsers.project_type_parser import yaml_parse_project_types_overrides
 
+def _check_profiles_overrides_key(key): 
+    if key == LinkersOverrideNode.NAME:
+        raise ValueError(f"""'{LinkersOverrideNode.NAME}' found under '{ProfilesOverrideNode.NAME}' but must be under specific profile name like 'debug' or 'release'
+                             
+-> If you want to modify the linker for all '{ProfilesOverrideNode.NAME}', add '{LinkersOverrideNode.NAME}' next to '{ProfilesOverrideNode.NAME}': 
+     example:
+       {ProfilesOverrideNode.NAME}:
+         dyn:
+           ...
+       {LinkersOverrideNode.NAME}:
+         # Here you modify the linker for all '{ProfilesOverrideNode.NAME}'
+
+-> If you want to modify the linker for a specific '{ProfilesOverrideNode.NAME}', add '{LinkersOverrideNode.NAME}' under the specific profile name:
+     example:
+       {ProfilesOverrideNode.NAME}:
+         dyn:
+           {LinkersOverrideNode.NAME}:
+             # Here you modify the linker for 'debug' profile
+""")
+
+    if key == CompilersOverrideNode.NAME:
+        raise ValueError(f"""'{CompilersOverrideNode.NAME}' found under '{ProfilesOverrideNode.NAME}' but must be under specific profile name like 'debug' or 'release'
+                             
+-> If you want to modify the compiler for all '{ProfilesOverrideNode.NAME}', add '{CompilersOverrideNode.NAME}' next to '{ProfilesOverrideNode.NAME}': 
+     example:
+       {ProfilesOverrideNode.NAME}:
+         dyn:
+           ...
+       {CompilersOverrideNode.NAME}:
+         # Here you modify the compiler for all '{ProfilesOverrideNode.NAME}'
+
+-> If you want to modify the compiler for a specific '{ProfilesOverrideNode.NAME}', add '{CompilersOverrideNode.NAME}' under the specific profile name:
+     example:
+       {ProfilesOverrideNode.NAME}:
+         dyn:
+           {CompilersOverrideNode.NAME}:
+             # Here you modify the compiler for 'debug' debug
+""")
+
+    if key == ProjectTypesOverrideNode.NAME:
+        raise ValueError(f"""'{ProjectTypesOverrideNode.NAME}' found under '{ProfilesOverrideNode.NAME}' but must be under specific profile name like 'debug' or 'release'
+                             
+-> If you want to modify the project type for all '{ProfilesOverrideNode.NAME}', add '{ProjectTypesOverrideNode.NAME}' next to '{ProfilesOverrideNode.NAME}': 
+     example:
+       {ProfilesOverrideNode.NAME}:
+         dyn:
+           ...
+       {ProjectTypesOverrideNode.NAME}:
+         # Here you modify the project type for all '{ProfilesOverrideNode.NAME}'
+
+-> If you want to modify the project type for a specific '{ProfilesOverrideNode.NAME}', add '{ProjectTypesOverrideNode.NAME}' under the specific profile name:
+     example:
+       {ProfilesOverrideNode.NAME}:
+         dyn:
+           {ProjectTypesOverrideNode.NAME}:
+             # Here you modify the project type for 'debug' debug
+""")
+
 def yaml_parse_profiles_overrides(data: dict) -> ProfilesOverrideNode:
     """Parse a 'profiles:' block inside a target entry.
 
@@ -19,23 +77,24 @@ def yaml_parse_profiles_overrides(data: dict) -> ProfilesOverrideNode:
     with the project-type overrides nested inside each profile.
 
     profiles:
-        release:                      # → ProfileSpecificOverrideNode
+      release:                      # → ProfileSpecificOverrideNode
+        compilers:
+          enable-features: [...]
+          clangcl:
+            enable-features: [...]
+        linkers:
+          enable-features: [...]
+        project-types:
+          dyn:
             compilers:
             enable-features: [...]
-            clangcl:
-                enable-features: [...]
-            linkers:
-            enable-features: [...]
-            project-types:
-            dyn:
-                compilers:
-                enable-features: [...]
-        debug:                        # → ProfileSpecificOverrideNode
-            compilers:
-            enable-features: [...]
+      debug:                        # → ProfileSpecificOverrideNode
+        compilers:
+        enable-features: [...]
     """
     node = ProfilesOverrideNode()
     for key, value in data.items():
+        _check_profiles_overrides_key(key)
         prop = parse_property(key, value)
         if prop:
             node.add_property(prop)

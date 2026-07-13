@@ -1,3 +1,38 @@
+# profiles:
+# - name:
+#   description:
+#   icon:
+#   linkers:
+#     enable-features: []
+#     linker-name:
+#       enable-features: []
+#   compilers:
+#     add-defines: []
+#     enable-features: []
+#     compiler-name:
+#       add-defines: []
+#       enable-features: []
+#       linkers:
+#         enable-features: []
+#         linker-name:
+#           enable-features: []
+#   project-types:
+#     project-type-name:
+#       linkers:
+#         enable-features: []
+#         linker-name:
+#           enable-features: []
+#       compilers:
+#         add-defines: []
+#         enable-features: []
+#         compiler-name:
+#           add-defines: []
+#           enable-features: []
+#           linkers:
+#             enable-features: []
+#             linker-name:
+#               enable-features: []
+
 profiles:
   - name: debug
     description: Debug profile with debug informations and no optimization
@@ -41,4 +76,4 @@ profiles:
       dyn:
         compilers:
           # AddressSanitizer doesn't support linking with debug runtime libraries yet
-          enable-features: [DYNAMIC_LIBRARY_RELEASE] 
+          enable-features: [DYNAMIC_LIBRARY_RELEASE]

@@ -2,32 +2,62 @@ import yaml
 from toolchain.nodes.compiler_nodes import CompilerFeatureNode, CompilerNode, CompilersOverrideNode, CompilerSpecificOverrideNode
 from toolchain.nodes.feature_node import FeatureNodeList, FeatureRuleNodeList
 from toolchain.nodes.linker_nodes import LinkersOverrideNode
-from toolchain.nodes.property import PropertyDict
 from toolchain.parsers.feature_parser import yaml_parse_feature, yaml_parse_feature_rule
 from toolchain.parsers.linker_parser import yaml_parse_linkers_overrides
 from toolchain.parsers.parse_utils import parse_property
 
+def _check_compilers_overrides_key(key): 
+    if key == LinkersOverrideNode.NAME:
+            raise ValueError(f"""'{LinkersOverrideNode.NAME}' found under '{CompilersOverrideNode.NAME}' but must be under specific compiler name like 'clang', 'cl' or 'gcc'
+                             
+-> If you want to modify the linker for all compilers, add '{LinkersOverrideNode.NAME}' next to '{CompilersOverrideNode.NAME}':
+     example:
+       {CompilersOverrideNode.NAME}:
+         gcc:
+           ...
+       {LinkersOverrideNode.NAME}:
+         # Here you modify the linker for all compilers
+
+-> If you want to modify the linker for a specific compiler, add '{LinkersOverrideNode.NAME}' under the specific compiler name:
+     example:
+       {CompilersOverrideNode.NAME}:
+         gcc:
+           {LinkersOverrideNode.NAME}:
+           # Here you modify the linker for 'gcc' compiler
+""")
+    
 def yaml_parse_compilers_overrides(data: dict) -> CompilersOverrideNode:
     """Parse the 'compilers:' block inside a compiler feature.
 
-    compilers:
+    compilers: # CompilersOverrideNode
       enable-features: []
-      gcc:
+      gcc: # CompilerSpecificOverrideNode
         enable-features: [OPT_LEVEL_0]
       clang:
         enable-features: [OPT_LEVEL_0]
+      cl:
+        linkers: # LinkersOverrideNode
+          lld-link:
+            enable-features: []
+          link :
+            enable-features: []
+        
     """
     node = CompilersOverrideNode()
     for key, value in data.items():
+        _check_compilers_overrides_key(key)
         prop = parse_property(key, value)
         if prop:
             node.add_property(prop)
         elif isinstance(value, dict):
             compiler_specific= CompilerSpecificOverrideNode(key)
             for override_key, override_value in value.items():
-                prop = parse_property(override_key, override_value)
-                if prop:
-                    compiler_specific.add_property(prop)
+                if override_key == LinkersOverrideNode.NAME:
+                    compiler_specific.linkers = yaml_parse_linkers_overrides(override_value)
+                else:
+                    prop = parse_property(override_key, override_value)
+                    if prop:
+                        compiler_specific.add_property(prop)
             node.add_compiler(compiler_specific)
     return node
 

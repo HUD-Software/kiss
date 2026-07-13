@@ -1,3 +1,21 @@
+# compilers:
+# - name:
+#   supported-linkers:
+#   default-linker:
+#   features:
+#     - name:
+#       description:
+#       flags: []
+#       linkers:
+#         linker-name:
+#         enable-features: []
+#   featyre-rules:
+#      - incompatible:
+#        feature:
+#        with: []
+#      - only-one:
+#        features: []
+
 compilers:
   - name: msvc-compiler
     supported-linkers: [link, lld-link] # List of supported linkers, also support linker that extends supported linkers

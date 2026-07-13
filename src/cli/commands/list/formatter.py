@@ -117,6 +117,9 @@ def _(compiler_specific_node: CompilerSpecificOverrideNode, ignore_empty: bool):
     box = Box(compiler_specific_node.name)
     for properties in compiler_specific_node.properties.values():
         properties.append_to_lines_print(box.lines, ignore_empty)
+    if compiler_specific_node.linkers:
+        linker_overrides = to_box(compiler_specific_node.linkers, ignore_empty)
+        box.inner_boxes.append(linker_overrides)
     return box
 
 @register_box(CompilersOverrideNode)
@@ -134,6 +137,12 @@ def _(project_type_specific_node: ProjectTypeSpecificOverrideNode, ignore_empty:
     box = Box(project_type_specific_node.name)
     for properties in project_type_specific_node.properties.values():
         properties.append_to_lines_print(box.lines, ignore_empty)
+    if project_type_specific_node.linkers:
+        linker_overrides = to_box(project_type_specific_node.linkers, ignore_empty)
+        box.inner_boxes.append(linker_overrides)
+    if project_type_specific_node.compilers:
+        compiler_overrides = to_box(project_type_specific_node.compilers, ignore_empty)
+        box.inner_boxes.append(compiler_overrides)
     return box
 
 @register_box(ProjectTypesOverrideNode)

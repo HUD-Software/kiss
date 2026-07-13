@@ -1,3 +1,22 @@
+# project-types:
+# - name:
+#   description:
+#   icon:
+#   linkers:
+#     enable-features: []
+#     linker-name:
+#       enable-features: []
+#   compilers:
+#     add-defines: []
+#     enable-features: []
+#     compiler-name:
+#       add-defines: []
+#       enable-features: []
+#       linkers:
+#         enable-features: []
+#         linker-name:
+#           enable-features: []
+
 project-types:
   - name: bin
     description: Executable binary

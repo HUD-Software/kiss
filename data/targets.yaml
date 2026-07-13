@@ -40,7 +40,41 @@
 #             linker-name:
 #               enable-features: []
 #   profiles:
-#
+#     profile-name:
+#       name:
+#       description:
+#       icon:
+#       linkers:
+#         enable-features: []
+#         linker-name:
+#           enable-features: []
+#       compilers:
+#         add-defines: []
+#         enable-features: []
+#         compiler-name:
+#           add-defines: []
+#           enable-features: []
+#           linkers:
+#             enable-features: []
+#             linker-name:
+#               enable-features: []
+#       project-types:
+#         project-type-name:
+#           linkers:
+#             enable-features: []
+#             linker-name:
+#               enable-features: []
+#           compilers:
+#             add-defines: []
+#             enable-features: []
+#             compiler-name:
+#               add-defines: []
+#               enable-features: []
+#               linkers:
+#                 enable-features: []
+#                 linker-name:
+#                   enable-features: []
+
 targets:
   #🐧 🍎 🟪 🧩 💻
   # - name: x86_64-pc-windows-msvc
@@ -82,3 +116,4 @@ targets:
               enable-features: [LINK:msvcrt.lib]
     project-types:
       bin:
+        enable-features: [PPP]

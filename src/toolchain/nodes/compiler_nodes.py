@@ -92,6 +92,9 @@ class CompilerSpecificOverrideNode(Property):
       gcc : # CompilerSpecificOverrideNode
         enable-features: []
         defines: []
+        features:
+          - name: ASAN
+            linkers:
       ...
     """
     def __init__(self, name : str):
@@ -125,7 +128,7 @@ class CompilerSpecificOverrideNode(Property):
     def dispatch(self, top : PropertyDict) -> CompilerSpecificOverrideNode:
         result = CompilerSpecificOverrideNode(self.name)
         result._properties = self.properties.dispatch(top)
-        result.linkers = self.linkers.dispatch(PropertyDict()) if self.linkers else None
+        result.linkers = self.linkers.dispatch(top) if self.linkers else None
         return result
     
    

@@ -105,16 +105,16 @@ def yaml_parse_profiles_overrides(data: dict) -> ProfilesOverrideNode:
                     case "name":
                         continue
                     case CompilersOverrideNode.NAME:
-                        node.compilers = yaml_parse_compilers_overrides(value)
+                        override.compilers = yaml_parse_compilers_overrides(value)
                     case LinkersOverrideNode.NAME:
-                        node.linkers = yaml_parse_linkers_overrides(value)
+                        override.linkers = yaml_parse_linkers_overrides(value)
                     case ProjectTypesOverrideNode.NAME:
-                        node.project_types = yaml_parse_project_types_overrides(value)
+                        override.project_types = yaml_parse_project_types_overrides(value)
                     case _:
                         prop = parse_property(key, value)
                         if prop:
                             override.add_property(prop)
-            node.add_project_type(override)
+            node.add_profile(override)
     return node
 
 

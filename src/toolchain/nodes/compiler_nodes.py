@@ -98,9 +98,11 @@ class CompilerSpecificOverrideNode(Property):
       ...
     """
     def __init__(self, name : str):
-      super().__init__(name)
-      self._properties = PropertyDict()
-      self.linkers : LinkersOverrideNode = None
+        super().__init__(name)
+        self._properties = PropertyDict()
+        self.linkers : LinkersOverrideNode = None
+        self.feature_list = FeatureNodeList()
+        self.feature_rule_list = FeatureRuleNodeList()
 
     @property
     def properties(self) -> PropertyDict:
@@ -116,6 +118,8 @@ class CompilerSpecificOverrideNode(Property):
         result = CompilerSpecificOverrideNode(self.name)
         result._properties = self.properties.apply_modifiers()
         result.linkers = self.linkers.apply_modifiers() if self.linkers else None
+        result.feature_list = self.feature_list.apply_modifiers()
+        result.feature_rule_list = self.feature_rule_list.apply_modifiers()
         return result
     
     def merge_with(self, other: CompilerSpecificOverrideNode, parent_list_name_to_ignore: set[str]) -> CompilerSpecificOverrideNode:
@@ -123,12 +127,16 @@ class CompilerSpecificOverrideNode(Property):
         result = CompilerSpecificOverrideNode(self.name)
         result._properties = self.properties.merge_with(other.properties, parent_list_name_to_ignore)
         result.linkers = self.linkers.merge_with(other.linkers) if self.linkers else None
+        result.feature_list = self.feature_list.merge_with(other.feature_list)
+        result.feature_rule_list = self.feature_rule_list.merge_with(other.feature_rule_list)
         return result
     
     def dispatch(self, top : PropertyDict) -> CompilerSpecificOverrideNode:
         result = CompilerSpecificOverrideNode(self.name)
         result._properties = self.properties.dispatch(top)
         result.linkers = self.linkers.dispatch(top) if self.linkers else None
+        result.feature_list = self.feature_list.dispatch()
+        result.feature_rule_list = self.feature_rule_list.dispatch()
         return result
     
    

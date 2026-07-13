@@ -153,3 +153,15 @@ class FeatureRuleNodeList(Property):
             else:
                 raise ValueError(f"Feature rule '{feature_rule.name}' already exists")
         return result
+
+    def apply_modifiers(self) -> FeatureRuleNodeList:
+        result = FeatureRuleNodeList(self.name)
+        for feature in self.feature_rules.values():
+            result.add_feature_rule(copy.deepcopy(feature))
+        return result
+
+    def dispatch(self) -> FeatureRuleNodeList:
+        result = FeatureRuleNodeList(self.name)
+        for feature in self.feature_rules.values():
+            result.add_feature_rule(copy.deepcopy(feature))
+        return result

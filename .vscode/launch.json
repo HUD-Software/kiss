@@ -12,7 +12,7 @@
                 "-d",
                 "tests",
                 "list",
-                "targets",
+                "linkers",
                 // "--name",
                 // "msvc-compiler",
                 "--mode",

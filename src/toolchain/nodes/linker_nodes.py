@@ -87,6 +87,8 @@ class LinkerSpecificOverrideNode(Property):
     def __init__(self, name : str):
       super().__init__(name)
       self._properties = PropertyDict()
+      self.feature_list = FeatureNodeList()
+      self.feature_rule_list = FeatureRuleNodeList()
 
     @property
     def properties(self) -> PropertyDict:
@@ -101,17 +103,23 @@ class LinkerSpecificOverrideNode(Property):
     def apply_modifiers(self) -> LinkerSpecificOverrideNode:
         result = LinkerSpecificOverrideNode(self.name)
         result._properties = self.properties.apply_modifiers()
+        result.feature_list = self.feature_list.apply_modifiers()
+        result.feature_rule_list = self.feature_rule_list.apply_modifiers()
         return result
     
     def merge_with(self, other: LinkerSpecificOverrideNode, parent_list_name_to_ignore: set[str] = None) -> LinkerSpecificOverrideNode:
         assert self.name == other.name, "Name mismatch"
         result = LinkerSpecificOverrideNode(self.name)
         result._properties = self.properties.merge_with(other.properties, parent_list_name_to_ignore)
+        result.feature_list = self.feature_list.merge_with(other.feature_list)
+        result.feature_rule_list = self.feature_rule_list.merge_with(other.feature_rule_list)
         return result
     
     def dispatch(self, properties : PropertyDict) -> LinkerSpecificOverrideNode:
         result = LinkerSpecificOverrideNode(self.name)
         result._properties = self.properties.dispatch(properties)
+        result.feature_list = self.feature_list.dispatch()
+        result.feature_rule_list = self.feature_rule_list.dispatch()
         return result
     
 class LinkersOverrideNode(Property):

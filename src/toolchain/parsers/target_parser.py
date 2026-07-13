@@ -37,28 +37,6 @@ def yaml_parse_target(data: dict) -> TargetNode:
                 if prop:
                     node.add_property(prop)
     return node
-    # node = TargetNode(name=data["name"])
-    # for key, value in data.items():
-    #     if key == "name":
-    #         continue
-    #     if isinstance(value, dict):
-    #         if key == LinkersOverrideNode.NAME:
-    #             node.linkers = yaml_parse_linkers_overrides(value)
-    #             continue
-    #         if key == CompilersOverrideNode.NAME:
-    #             node.compilers = yaml_parse_compilers_overrides(value)
-    #             continue
-    #         if key == ProjectTypesOverrideNode.NAME:
-    #             node.project_types = yaml_parse_project_types_overrides(value)
-    #             continue
-    #         if key == ProfilesOverrideNode.NAME:
-    #             node.profiles = yaml_parse_profiles_overrides(value)
-    #             continue
-    #     prop = parse_property(key, value)
-    #     if prop:
-    #         node.add_property(prop)
-    # return node
-
 
 def load_targets(path: str) ->  dict[str, TargetNode]:
     with open(path, encoding="utf-8") as f:

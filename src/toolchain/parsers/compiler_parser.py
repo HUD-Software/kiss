@@ -2,7 +2,7 @@ import yaml
 from toolchain.nodes.compiler_nodes import CompilerFeatureNode, CompilerNode, CompilersOverrideNode, CompilerSpecificOverrideNode
 from toolchain.nodes.feature_node import FeatureNodeList, FeatureRuleNodeList
 from toolchain.nodes.linker_nodes import LinkersOverrideNode
-from toolchain.parsers.feature_parser import yaml_parse_feature, yaml_parse_feature_rule
+from toolchain.parsers.feature_parser import yaml_parse_feature, yaml_parse_feature_rule_list
 from toolchain.parsers.linker_parser import yaml_parse_linkers_overrides
 from toolchain.parsers.parse_utils import parse_property
 
@@ -52,12 +52,17 @@ def yaml_parse_compilers_overrides(data: dict) -> CompilersOverrideNode:
         elif isinstance(value, dict):
             compiler_specific= CompilerSpecificOverrideNode(key)
             for override_key, override_value in value.items():
-                if override_key == LinkersOverrideNode.NAME:
-                    compiler_specific.linkers = yaml_parse_linkers_overrides(override_value)
-                else:
-                    prop = parse_property(override_key, override_value)
-                    if prop:
-                        compiler_specific.add_property(prop)
+                match override_key:
+                    case LinkersOverrideNode.NAME:
+                        compiler_specific.linkers = yaml_parse_linkers_overrides(override_value)
+                    case FeatureNodeList.NAME:
+                        compiler_specific.feature_list = yaml_parse_compiler_feature_list(override_value)
+                    case FeatureRuleNodeList.NAME:
+                        compiler_specific.feature_rule_list = yaml_parse_feature_rule_list(override_value)
+                    case _:
+                        prop = parse_property(override_key, override_value)
+                        if prop:
+                            compiler_specific.add_property(prop)
             node.add_compiler(compiler_specific)
     return node
 
@@ -76,11 +81,16 @@ def yaml_parse_compiler_feature(data: dict) -> CompilerFeatureNode:
           enable-features: [OPT_LEVEL_0]
     """
     node = yaml_parse_feature(data, CompilerFeatureNode)
-
     linkers_value = data.get(LinkersOverrideNode.NAME)
     if linkers_value:
         node.linkers = yaml_parse_linkers_overrides(linkers_value)
     return node
+
+def yaml_parse_compiler_feature_list(data: dict) -> FeatureNodeList:
+    feature_list = FeatureNodeList()
+    for f in data:
+        feature_list.add_feature(yaml_parse_compiler_feature(f))
+    return feature_list
 
 
 def yaml_parse_compiler(data: dict) -> CompilerNode:
@@ -97,15 +107,11 @@ def yaml_parse_compiler(data: dict) -> CompilerNode:
             case "name":
                 pass
             case FeatureNodeList.NAME:
-                feature_list = FeatureNodeList()
-                for f in value:
-                    feature_list.add_feature(yaml_parse_compiler_feature(f))
+                feature_list = yaml_parse_compiler_feature_list(value)
                 if feature_list.features:
                     node.feature_list = feature_list    
             case FeatureRuleNodeList.NAME:
-                feature_rule_list = FeatureRuleNodeList()
-                for fr in value:
-                    feature_rule_list.add_feature_rule(yaml_parse_feature_rule(fr))
+                feature_rule_list = yaml_parse_feature_rule_list(value)
                 if feature_rule_list.feature_rules:
                     node.feature_rule_list = feature_rule_list
             case _:

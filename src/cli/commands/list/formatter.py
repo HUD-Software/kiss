@@ -120,6 +120,12 @@ def _(compiler_specific_node: CompilerSpecificOverrideNode, ignore_empty: bool):
     if compiler_specific_node.linkers:
         linker_overrides = to_box(compiler_specific_node.linkers, ignore_empty)
         box.inner_boxes.append(linker_overrides)
+    if compiler_specific_node.feature_list.features:
+        feature_list_overrides = to_box(compiler_specific_node.feature_list, ignore_empty)
+        box.inner_boxes.append(feature_list_overrides)
+    if compiler_specific_node.feature_rule_list.feature_rules:
+        feature_rule_list_overrides = to_box(compiler_specific_node.feature_rule_list, ignore_empty)
+        box.inner_boxes.append(feature_rule_list_overrides)
     return box
 
 @register_box(CompilersOverrideNode)

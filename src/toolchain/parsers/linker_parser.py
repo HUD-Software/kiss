@@ -2,7 +2,7 @@ import yaml
 from toolchain.nodes.feature_node import FeatureNodeList, FeatureRuleNodeList
 from toolchain.nodes.property import PropertyDict
 from toolchain.nodes.linker_nodes import LinkerNode, LinkerSpecificOverrideNode, LinkersOverrideNode
-from toolchain.parsers.feature_parser import yaml_parse_feature, yaml_parse_feature_rule
+from toolchain.parsers.feature_parser import  yaml_parse_feature_list, yaml_parse_feature_rule_list
 from toolchain.parsers.parse_utils import parse_property
 
 
@@ -22,16 +22,20 @@ def yaml_parse_linkers_overrides(data: dict) -> LinkersOverrideNode:
         if prop:
             node.add_property(prop)
         elif isinstance(value, dict):
-            override = LinkerSpecificOverrideNode(key)
+            linker_specific = LinkerSpecificOverrideNode(key)
             for override_key, override_value in value.items():
-                prop = parse_property(override_key, override_value)
-                if prop:
-                    override.add_property(prop)
-            node.add_linker(override)
+                match override_key:
+                    case FeatureNodeList.NAME:
+                        linker_specific.feature_list = yaml_parse_feature_list(override_value)
+                    case FeatureRuleNodeList.NAME:
+                        linker_specific.feature_rule_list = yaml_parse_feature_rule_list(override_value)
+                    case _:
+                        prop = parse_property(override_key, override_value)
+                        if prop:
+                            linker_specific.add_property(prop)
+            node.add_linker(linker_specific)
     return node
     
-
-
 def yaml_parse_linker(data: dict) -> LinkerNode:
     # Linker need 'name'
     name = data.get("name")
@@ -46,15 +50,11 @@ def yaml_parse_linker(data: dict) -> LinkerNode:
             case "name":
                 pass
             case FeatureNodeList.NAME:
-                feature_list = FeatureNodeList()
-                for f in value:
-                    feature_list.add_feature(yaml_parse_feature(f))
+                feature_list = yaml_parse_feature_list(value)
                 if feature_list.features:
                     node.feature_list = feature_list
             case FeatureRuleNodeList.NAME:
-                feature_rule_list = FeatureRuleNodeList()
-                for fr in value:
-                    feature_rule_list.add_feature_rule(yaml_parse_feature_rule(fr))
+                feature_rule_list = yaml_parse_feature_rule_list(value)
                 if feature_rule_list.feature_rules:
                     node.feature_rule_list = feature_rule_list
             case _:

@@ -1,10 +1,25 @@
-from toolchain.nodes.feature_node import FeatureArgsNode, FeatureNode, FeatureNodeList, FeatureRuleNode
+from toolchain.nodes.feature_node import FeatureArgsNode, FeatureNode, FeatureNodeList, FeatureRuleNode, FeatureRuleNodeList
 from toolchain.nodes.property import PropertyStr, PropertyStrList
 from toolchain.parsers.parse_utils import parse_property
 
 
 from typing import Type, TypeVar
 T = TypeVar("T", bound="FeatureNode")
+
+
+def yaml_parse_feature_list(data: dict) -> FeatureNodeList:
+    feature_list = FeatureNodeList()
+    for f in data:
+        feature_list.add_feature(yaml_parse_feature(f))
+    return feature_list
+
+
+def yaml_parse_feature_rule_list(data:dict) -> FeatureRuleNodeList:
+    feature_rule_list = FeatureRuleNodeList()
+    for fr in data:
+        feature_rule_list.add_feature_rule(yaml_parse_feature_rule(fr))
+    return feature_rule_list
+
 
 def yaml_parse_feature(data: dict, node_cls: Type[T] = FeatureNode) -> T:
     # Feature need 'name'

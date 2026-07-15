@@ -168,6 +168,10 @@ class PropertyStrListModifier(Property):
         values = prefix + self.values
         return PropertyStrListModifier(self.list_name, values ,self.operation)
 
+
+class PropertyFeatureNameListModifier(PropertyStrListModifier):
+    pass
+
 # ── PropertyDict ──────────────────────────────────────────────────────────────────────
 from typing import TypeVar, Type
 T = TypeVar("T", bound=Property)

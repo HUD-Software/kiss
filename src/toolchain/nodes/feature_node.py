@@ -81,7 +81,7 @@ class FeatureNodeList(Property):
     def add_feature(self, feature : FeatureNode):
         self._features.add_property(feature)
     
-    def merge_with(self, parent: FeatureNodeList, feature_rules : FeatureRuleNodeList):
+    def merge_with(self, parent: FeatureNodeList):
         if not parent:
             return copy.deepcopy(self)
         merged = FeatureNodeList(self.name)

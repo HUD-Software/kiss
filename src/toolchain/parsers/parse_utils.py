@@ -14,6 +14,7 @@ Key detection rules (applied in order):
 
 from toolchain.nodes.property import (
     Property,
+    PropertyFeatureNameListModifier,
     PropertyInt,
     PropertyStr,
     PropertyBool,
@@ -24,6 +25,37 @@ from toolchain.nodes.property import (
 def _is_list_of_str(value) -> bool:
     return isinstance(value, list) and all(isinstance(v, str) for v in value)
 
+def try_parse_list_modifier(key: str, value) -> PropertyStrListModifier | None:
+    if not _is_list_of_str(value):
+        return None
+
+    values = [str(v) for v in value]
+
+    prefix_mapping = {
+        "add-": StrListModifierOperation.ADD,
+        "enable-": StrListModifierOperation.ADD,
+        "remove-": StrListModifierOperation.REMOVE,
+        "disable-": StrListModifierOperation.REMOVE,
+    }
+    
+    for prefix, operation in prefix_mapping.items():
+        if key.startswith(prefix):
+            base = key[len(prefix):]
+
+            modifier_cls = (
+                PropertyFeatureNameListModifier
+                if base == "features"
+                else PropertyStrListModifier
+            )
+
+            return modifier_cls(
+                base,
+                values,
+                operation,
+            )
+
+    return None
+    
 def parse_property(key: str, value) -> Property | None:
     """
     Convert a single YAML key/value pair into a Property.
@@ -33,42 +65,11 @@ def parse_property(key: str, value) -> Property | None:
     - unsupported or special cases
     """
 
-    ADD_PREFIX = "add-"
-    ENABLE_PREFIX = "enable-"
-    REMOVE_PREFIX = "remove-"
-    DISABLE_PREFIX = "disable-"
-
-    # --- Modifiers ---
-    if key.startswith(ADD_PREFIX) and _is_list_of_str(value)  :
-        base = key[len(ADD_PREFIX):]
-        return PropertyStrListModifier(
-            base,
-            [str(v) for v in value],
-            StrListModifierOperation.ADD,
-        )
+    # --- Try to parse list modifier that start with "add", "remove", etc...
+    result = try_parse_list_modifier(key, value)
+    if result:
+        return result
     
-    if key.startswith(ENABLE_PREFIX) and _is_list_of_str(value)  :
-        base = key[len(ENABLE_PREFIX):]
-        return PropertyStrListModifier(
-            base,
-            [str(v) for v in value],
-            StrListModifierOperation.ADD,
-        )
-    
-    if key.startswith(REMOVE_PREFIX) and _is_list_of_str(value):
-        base = key[len(REMOVE_PREFIX):]
-        return PropertyStrListModifier(
-            base,
-            [str(v) for v in value],
-            StrListModifierOperation.REMOVE,
-        )
-    if key.startswith(DISABLE_PREFIX) and _is_list_of_str(value):
-        base = key[len(DISABLE_PREFIX):]
-        return PropertyStrListModifier(
-            base,
-            [str(v) for v in value],
-            StrListModifierOperation.REMOVE,
-        )
     # --- Merge rules ---
     NON_MERGEABLE_KEYS = {"is_abstract"}
     NON_DISPATCHABLE_KEYS = {"description", "icon", "extends", "arch", "vendor", "os", "abi", "pointer-width", "endianness", "supported-compilers", "default-compiler"}

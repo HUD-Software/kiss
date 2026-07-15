@@ -54,7 +54,7 @@ class LinkerNode(Property):
         merged = LinkerNode(self.name)
         merged._properties = self.properties.merge_with(parent.properties)
         merged.feature_rule_list = self.feature_rule_list.merge_with(parent.feature_rule_list)
-        merged.feature_list = self.feature_list.merge_with(parent.feature_list, merged.feature_rule_list)
+        merged.feature_list = self.feature_list.merge_with(parent.feature_list)
         return merged
     
     def apply_modifiers(self) -> LinkerNode:

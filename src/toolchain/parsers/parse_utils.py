@@ -55,7 +55,7 @@ def try_parse_list_modifier(key: str, value) -> PropertyStrListModifier | None:
             )
 
     return None
-    
+
 def parse_property(key: str, value) -> Property | None:
     """
     Convert a single YAML key/value pair into a Property.

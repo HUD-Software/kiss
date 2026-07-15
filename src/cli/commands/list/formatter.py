@@ -38,6 +38,8 @@ def to_box(obj, ignore_empty: bool = True):
 
     raise TypeError(f"No box converter for {obj_type}")
 
+def append_bool_to_lines_print(name:str, value:bool, lines):
+        lines.append(f"{name}: {value}")
 
 @register_box(LinkerSpecificOverrideNode)
 def _(linker_node: LinkerSpecificOverrideNode, ignore_empty: bool):
@@ -186,8 +188,12 @@ def _(compiler_node: CompilerNode, ignore_empty: bool):
 @register_box(LinkerNode)
 def _(linker_node: LinkerNode, ignore_empty: bool):
     box = Box(linker_node.name)
-    for prop in linker_node.properties.values():
-        prop.append_to_lines_print(box.lines, ignore_empty)
+    append_bool_to_lines_print("is_abstract", linker_node.is_abstract, box.lines)
+    if linker_node.extends:
+        append_bool_to_lines_print("extends", linker_node.extends, box.lines) 
+
+    # for prop in linker_node.properties.values():
+    #     prop.append_to_lines_print(box.lines, ignore_empty)
     if linker_node.feature_list:
         feature_list_box = to_box(linker_node.feature_list, ignore_empty)
         box.inner_boxes.append(feature_list_box)

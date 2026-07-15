@@ -14,7 +14,6 @@ All merge semantics live in the Property subclasses (node.py).
 
 from toolchain.nodes.property import PropertyDict
 
-
 def _resolve_chain(name: str, index: dict[str, PropertyDict], visited: set, resolved: dict[str, PropertyDict]) -> PropertyDict:
     if name in resolved:
         return resolved[name]
@@ -28,9 +27,8 @@ def _resolve_chain(name: str, index: dict[str, PropertyDict], visited: set, reso
     node = index[name]
     visited.add(name)
 
-    extends_prop = node.get_property("extends")
-    if extends_prop:
-        parent_name = extends_prop.value
+    parent_name = node.extends
+    if parent_name:
         parent      = _resolve_chain(parent_name, index, visited, resolved)
         node        = node.merge_with(parent)
         node        = node.dispatch()

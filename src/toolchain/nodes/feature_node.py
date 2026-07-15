@@ -172,6 +172,11 @@ class FeatureRuleNodeList(Property):
     def add_feature_rule(self, feature : FeatureRuleNode):
         self._feature_rules.add_property(feature)
 
+    def get_all_rules_of_type(self, rule_type: Type[T]) -> list[T]:
+        """Return all rules matching the given FeatureRuleNode subclass,
+        preserving declaration order."""
+        return [r for r in self._feature_rules.values() if isinstance(r, rule_type)]
+    
     def merge_with(self, parent: FeatureRuleNodeList):
         if not parent:
             return copy.deepcopy(self)

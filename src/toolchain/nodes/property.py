@@ -79,7 +79,6 @@ class PropertyInt(Property):
         json[self.name] = self.value
 
 # ── String lists ──────────────────────────────────────────────────────────────
-
 class PropertyStrList(Property):
     """List of strings. Default merge: child replaces parent (override)."""
 

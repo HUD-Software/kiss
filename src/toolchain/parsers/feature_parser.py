@@ -89,7 +89,7 @@ def yaml_parse_feature_rule(data: dict) -> FeatureRuleNode:
         if not incompatible_with or not isinstance(incompatible_with, list) or not all(isinstance(f, str) for f in incompatible_with):
             raise ValueError(f"Missing 'incompatible_with' as list of string for feature rule {FeatureRuleNodeIncompatible.NAME!r}")
         
-        return FeatureRuleNodeIncompatible(name, 
+        return FeatureRuleNodeIncompatible(name,
                                            PropertyStr("feature", feature),
                                            PropertyStrList("with", incompatible_with))
     

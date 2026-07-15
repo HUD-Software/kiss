@@ -162,9 +162,12 @@ class KissContext:
 from typing import Callable, TypeVar
 T = TypeVar("T")
 def load_dir(directory: Path, loader: Callable[[str], dict[str, T]]) -> dict[str, T]:
-    """Load and merge all *.yaml/*.yml files found in directory using the given loader."""
+    """Load and merge all *.yaml/*.yml files found in directory, recursively."""
     items: dict[str, T] = {}
-    yaml_files = sorted(directory.glob("*.yaml")) + sorted(directory.glob("*.yml"))
+    yaml_files = sorted(
+        [*directory.rglob("*.yaml"), *directory.rglob("*.yml")],
+        key=lambda p: p.as_posix(),
+    )
     for yaml_file in yaml_files:
         for name, item in loader(str(yaml_file)).items():
             items[name] = item

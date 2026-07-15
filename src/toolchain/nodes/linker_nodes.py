@@ -155,6 +155,9 @@ class LinkersOverrideNode(Property):
         self._linkers[linker.name] = linker
 
     def merge_with(self, other: LinkersOverrideNode, parent_list_name_to_ignore: set[str] = None):
+        if not other:
+            return copy.deepcopy(self)
+        
         result = LinkersOverrideNode(self.name)
         result._properties = self.properties.merge_with(other.properties, parent_list_name_to_ignore)
         

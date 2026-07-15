@@ -11,9 +11,6 @@ from toolchain.nodes.target_nodes import TargetNode
 
 
 # PRIVATE ──────────────────────────────────────────────────────────────────────
-def _clean_emoji(s: str) -> str:
-    return s.replace("\ufe0f", "")
-
 def _vis_len(s: str) -> int:
     """
     Return the display width of a string as formatted in a terminal.
@@ -25,7 +22,7 @@ def _vis_len(s: str) -> int:
     Uses wcwidth/wcswidth rules for monospace terminal formatting.
     """
 
-    return wcswidth(_clean_emoji(s))
+    return wcswidth(s)
 
 _BOX_CONVERTERS: dict[type, callable] = {}
 
@@ -251,7 +248,51 @@ class Box:
         self.title = title
         self.lines = list[str]()
         self.inner_boxes = list[Box]()
-        
+
+
+    @staticmethod
+    def _simplify_list(boxes: list[Box]) -> list[Box]:
+        result: list[Box] = []
+        for box in boxes:
+            result.extend(box._collapse())
+        return result
+
+    def _collapse(self) -> list[Box]:
+        """Simplify self bottom-up, returning the box(es) to place in the parent."""
+        children = Box._simplify_list(self.inner_boxes)
+
+        if self.lines:
+            # Own content: can't dissolve into anything, keep as-is
+            merged = Box(self.title)
+            merged.lines = self.lines
+            merged.inner_boxes = children
+            return [merged]
+
+        if not children:
+            # No lines, no children: nothing left
+            return []
+
+        if len(children) == 1:
+            # Single child: collapse into a dotted chain
+            child = children[0]
+            merged = Box(f"{self.title}.{child.title}")
+            merged.lines = child.lines
+            merged.inner_boxes = child.inner_boxes
+            return [merged]
+
+        # No lines but several children: keep this level as a container,
+        # its title may still get merged upward by *its* parent if that
+        # parent also only has this single child.
+        container = Box(self.title)
+        container.lines = []
+        container.inner_boxes = children
+        return [container]
+
+    def simplify(self) -> Box:
+        # The root box itself is never dissolved/merged, only its descendants.
+        self.inner_boxes = Box._simplify_list(self.inner_boxes)
+        return self
+
     @staticmethod
     def _title_str(box: Box) -> str:
         return f"{box.title} "
@@ -270,10 +311,10 @@ class Box:
         # 1. Render all content lines (inner boxes are fully rendered first)
         content_lines: list[str] = []
         for line in self.lines:
-            content_lines.append(_clean_emoji(line))
+            content_lines.append(line)
         for inner_boxes in self.inner_boxes:
             for line in inner_boxes.to_boxed_strings():
-                content_lines.append(_clean_emoji(line))
+                content_lines.append(line)
 
         # 2. Compute widths
         title = f"{self.title} "
@@ -330,8 +371,8 @@ def format_properties_to_boxed_lines(node, ignore_empty:bool = True) -> list[str
     Node properties are recursively formatted and embedded as boxed blocks,
     ensuring visual hierarchy is preserved in terminal output.
     """
-    box = to_box(node, ignore_empty)
-    return box.to_boxed_strings()
+    box :Box = to_box(node, ignore_empty)
+    return box.simplify().to_boxed_strings()
 
 
 def properties_to_lines(lines: list[str], title: str, properties: PropertyDict, indent: int, ignore_empty:bool = True):

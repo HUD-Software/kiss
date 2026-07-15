@@ -3,6 +3,35 @@ from abc import ABC
 
 # Keys that belong to a node itself and must NOT be inherited by children.
 
+import copy
+from enum import Enum
+class StrListModifierOperation(Enum):
+    ENABLE = "enable"
+    DISABLE = "disable"
+    ADD = "add"
+    REMOVE = "remove"
+
+class StrListModifier:
+    def __init__(self, list_name, values,  operation: StrListModifierOperation):
+        self.name = f"{operation.value}-{list_name}"
+        self.values: list[str] = list(values)
+        self.list_name = list_name
+        self.operation = operation
+    
+    def is_empty(self) -> bool:
+        return not self.values
+    
+    def append_to_lines_print(self, lines, ignore_empty):
+        if not self.is_empty() or not ignore_empty:
+            lines.append(f"{self.name}: {self.values}")
+
+    def append_to_json_print(self, json, ignore_empty):
+        if not self.is_empty() or not ignore_empty:
+            json[self.name] = self.values
+
+class StrListModifier:
+    def __init__(self):
+        self.values: list[StrListModifier] = list()
 
 # ── Base ──────────────────────────────────────────────────────────────────────
 
@@ -110,13 +139,7 @@ class PropertyStrList(Property):
         if not self.is_empty() or not ignore_empty:
             json[self.name] = self.values
 
-import copy
-from enum import Enum
-class StrListModifierOperation(Enum):
-    ENABLE = "enable"
-    DISABLE = "disable"
-    ADD = "add"
-    REMOVE = "remove"
+
 
 class PropertyStrListModifier(Property):
     def __init__(self, list_name, values,  operation: StrListModifierOperation):

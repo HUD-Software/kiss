@@ -1,6 +1,6 @@
 from __future__ import annotations
 import copy
-from toolchain.nodes.property import Property, PropertyDict, PropertyStr, PropertyStrList
+from toolchain.nodes.property import Property, PropertyDict, PropertyStr, PropertyStrList, StrListModifier
 
 class FeatureArgsNode(Property):
     """Represents the 'args' block inside a feature with arguments.
@@ -12,43 +12,48 @@ class FeatureArgsNode(Property):
     """
     NAME = "args"
 
-    def __init__(self, name:str =NAME):
-        super().__init__(name)
-        self._properties = PropertyDict()
+    def __init__(self):
+        self.min : int = 1
+        self.max : int = 512
+        self.separator = ","
     
-    @property
-    def properties(self) -> PropertyDict:
-        return self._properties
+    # @property
+    # def properties(self) -> PropertyDict:
+    #     return self._properties
 
-    def add_property(self, property: Property):
-        self._properties.add_property(property)
+    # def add_property(self, property: Property):
+    #     self._properties.add_property(property)
 
 from typing import TypeVar, Type
 T = TypeVar("T", bound=Property)
 
-class FeatureNode(Property):
+class FeatureNode:
     """Represents a single compiler feature entry.
     e.g. - name: OPT_LEVEL_0
            flags: [/Od]
            enable-features: [DEBUG_INFO]
            args: ...
     """
-    def __init__(self, name:str):
-        super().__init__(name)
-        self._properties = PropertyDict()
+    def __init__(self, name: str):
+        self.name = name
+        self.description = ""
+        self.flags = list[str]()
+        self.features = list[str]()
+        self.feature_modifiers = StrListModifier()
+        self.args = None
     
-    @property
-    def properties(self) -> PropertyDict:
-        return self._properties
+    # @property
+    # def properties(self) -> PropertyDict:
+    #     return self._properties
     
-    def add_property(self, property: Property):
-        self._properties.add_property(property)
+    # def add_property(self, property: Property):
+    #     self._properties.add_property(property)
 
-    def get_property(self, name: str) -> Property | None:
-        return self._properties.get_property(name)
+    # def get_property(self, name: str) -> Property | None:
+    #     return self._properties.get_property(name)
     
-    def get_property_as(self, name: str, prop_type: Type[T]) -> T | None:
-        return self._properties.get_property_as(name, prop_type)
+    # def get_property_as(self, name: str, prop_type: Type[T]) -> T | None:
+    #     return self._properties.get_property_as(name, prop_type)
     
     def merge_with(self, parent: FeatureNode):
         if not parent:
@@ -62,12 +67,9 @@ class FeatureNode(Property):
         result._properties = self._properties.apply_modifiers()
         return result
     
-class FeatureNodeList(Property):
+class FeatureNodeList:
     """Represents the 'features:' block."""
-    NAME = "features"
-
-    def __init__(self, name:str=NAME):
-        super().__init__(name)
+    def __init__(self):
         self._features = PropertyDict()
     
     @property

@@ -53,7 +53,6 @@ linkers:
           min: 1 # At least one argument is required
           max: ~ # No limit to the amount of arguments
           separator: "," # Arguments are separated by a comma
-          pattern: "*.lib" # Each argument must match this pattern
         flags: [/link <args>]
 
     # Features rules

@@ -179,7 +179,7 @@ def load_context(directory: str) -> KissContext:
     data_dir    = src_dir.parent / "data"
 
     linkers       = load_dir(data_dir / "linkers", load_linkers)
-    # compilers     = load_dir(data_dir / "compilers", load_compilers)
+    #compilers     = load_dir(data_dir / "compilers", load_compilers)
     # project_types = load_dir(data_dir / "project-types", load_project_types)
     # profiles      = load_dir(data_dir / "profiles", load_profiles)
     # targets       = load_dir(data_dir / "targets", load_targets)

@@ -1,7 +1,7 @@
 
 from __future__ import annotations
 import copy
-from toolchain.nodes.feature_node import FeatureNode, FeatureNodeList, FeatureRuleNodeList
+from toolchain.nodes.feature_node import FeatureNode, FeatureRuleNodeList
 from toolchain.nodes.linker_nodes import LinkersOverrideNode
 from toolchain.nodes.property import Property, PropertyBool, PropertyDict, PropertyStr, PropertyStrList
 from typing import TypeVar, Type
@@ -29,66 +29,47 @@ class CompilerNode(Property):
         self.is_abstract = False
         self.extends = None
         self.supported_linkers = list[str]()
-        self.default_linker = str
+        self.default_linker = None
         self.feature_list = FeatureNodeList()
         self.feature_rule_list = FeatureRuleNodeList()
         
-    # @property
-    # def properties(self) -> PropertyDict:
-    #     return self._properties
-    
-    # @property
-    # def supported_linkers(self) -> list[str]:
-    #     prop = self.get_property_as("supported_linkers", PropertyStrList)
-    #     return prop.values if prop else None
-    
-    # @property
-    # def is_abstract(self) -> bool :
-    #     prop = self.get_property_as("is_abstract", PropertyBool)
-    #     return prop.value if prop else False
-    
-    # @property
-    # def default_linker_name(self) -> str | None:
-    #     prop = self.get_property_as("default-linker", PropertyStr)
-    #     return prop.value if prop else None
-    
-    # def get_property(self, name: str) -> Property | None:
-    #     return self.properties.get_property(name)
-    
-    # def add_property(self, property):
-    #     self.properties.add_property(property)
-    
-    # def get_property_as(self, name: str, prop_type: Type[T]) -> T | None:
-    #     return self.properties.get_property_as(name, prop_type)
-
     def merge_with(self, parent: CompilerNode):
         if not parent:
             return copy.deepcopy(self)
         """Merge list without applying modifier or dispatching top to bottom hierarchy """
         assert type(parent) is type(self), "Type mismatch"
-        merged = CompilerNode(self.name)
-        merged._properties = self.properties.merge_with(parent.properties)
-        merged.feature_list = self.feature_list.merge_with(parent.feature_list)
-        merged.feature_rule_list = self.feature_rule_list.merge_with(parent.feature_rule_list)
-        return merged
+        result = CompilerNode(self.name)
+        result.is_abstract = self.is_abstract
+        result.extends = self.extends
+        result.supported_linkers = self.supported_linkers
+        result.default_linker = self.default_linker
+        result.feature_list = self.feature_list.merge_with(parent.feature_list)
+        result.feature_rule_list = self.feature_rule_list.merge_with(parent.feature_rule_list)
+        return result
     
     def apply_modifiers(self) -> CompilerNode:
         """Apply list modifier"""
-        applied  = CompilerNode(self.name)
-        applied._properties = self.properties.apply_modifiers()
-        applied.feature_list = self.feature_list.apply_modifiers()
-        applied.feature_rule_list = copy.deepcopy(self.feature_rule_list)
-        return applied
+        result  = CompilerNode(self.name)
+        result.is_abstract = self.is_abstract
+        result.extends = self.extends
+        result.supported_linkers = self.supported_linkers
+        result.default_linker = self.default_linker
+        result.feature_list = self.feature_list.apply_modifiers()
+        result.feature_rule_list = copy.deepcopy(self.feature_rule_list)
+        return result
         
     def dispatch(self) -> CompilerNode:
         """ 
         Dispatch properties from top to bottom hierarchy
         """
-        dispatched = CompilerNode(self.name)
-        dispatched._properties = copy.deepcopy(self.properties)
-        dispatched.feature_list = self.feature_list.dispatch()
-        dispatched.feature_rule_list = copy.deepcopy(self.feature_rule_list)
-        return dispatched
+        result = CompilerNode(self.name)
+        result.is_abstract = self.is_abstract
+        result.extends = self.extends
+        result.supported_linkers = self.supported_linkers
+        result.default_linker = self.default_linker
+        result.feature_list = self.feature_list.dispatch()
+        result.feature_rule_list = copy.deepcopy(self.feature_rule_list)
+        return result
 
 class CompilerSpecificOverrideNode(Property):
     """Represents a per-compiler override inside a 'compilers:' node.
@@ -215,6 +196,9 @@ class CompilersOverrideNode(Property):
             result.add_compiler(compiler.dispatch(result.properties))
         return result
 
+class CompilerFeatureNodeList:
+    def __init___(self):
+        pass
 class CompilerFeatureNode(FeatureNode):
 
     def __init__(self, name:str):

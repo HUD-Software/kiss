@@ -41,6 +41,9 @@ def to_box(obj, ignore_empty: bool = True):
 def append_bool_to_lines_print(name:str, value:bool, lines):
         lines.append(f"{name}: {value}")
 
+def append_list_str_to_lines_print(name:str, value:list[str], lines):
+        lines.append(f"{name}: {value}")
+
 @register_box(LinkerSpecificOverrideNode)
 def _(linker_node: LinkerSpecificOverrideNode, ignore_empty: bool):
     box = Box(linker_node.name)
@@ -175,8 +178,13 @@ def _(project_types_override_node: ProjectTypesOverrideNode, ignore_empty: bool)
 @register_box(CompilerNode)
 def _(compiler_node: CompilerNode, ignore_empty: bool):
     box = Box(compiler_node.name)
-    for prop in compiler_node.properties.values():
-        prop.append_to_lines_print(box.lines, ignore_empty)
+    append_bool_to_lines_print("is_abstract", compiler_node.is_abstract, box.lines)
+    if compiler_node.extends:
+        append_bool_to_lines_print("extends", compiler_node.extends, box.lines)
+    if compiler_node.supported_linkers:
+        append_list_str_to_lines_print("supported-linkers", compiler_node.supported_linkers, box.lines)
+    if compiler_node.default_linker:
+        append_list_str_to_lines_print("default-linker", compiler_node.default_linker, box.lines)
     if compiler_node.feature_list:
         feature_list_box = to_box(compiler_node.feature_list, ignore_empty)
         box.inner_boxes.append(feature_list_box)
@@ -191,9 +199,6 @@ def _(linker_node: LinkerNode, ignore_empty: bool):
     append_bool_to_lines_print("is_abstract", linker_node.is_abstract, box.lines)
     if linker_node.extends:
         append_bool_to_lines_print("extends", linker_node.extends, box.lines) 
-
-    # for prop in linker_node.properties.values():
-    #     prop.append_to_lines_print(box.lines, ignore_empty)
     if linker_node.feature_list:
         feature_list_box = to_box(linker_node.feature_list, ignore_empty)
         box.inner_boxes.append(feature_list_box)

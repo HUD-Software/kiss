@@ -49,7 +49,7 @@ def yaml_parse_linker(data: dict) -> LinkerNode:
         match key:
             case "name":
                 pass
-            case FeatureNodeList.NAME:
+            case "features":
                 feature_list = yaml_parse_feature_list(value)
                 if feature_list.features:
                     node.feature_list = feature_list

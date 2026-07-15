@@ -114,10 +114,25 @@ def yaml_parse_compiler(data: dict) -> CompilerNode:
                 feature_rule_list = yaml_parse_feature_rule_list(value)
                 if feature_rule_list.feature_rules:
                     node.feature_rule_list = feature_rule_list
+            case "is_abstract":
+                if not isinstance(value, bool):
+                    raise ValueError(f"'is_abstract' must be a boolean value ({name})")
+                node.is_abstract = value
+            case "extends":
+                if not isinstance(value, str):
+                    raise ValueError(f"'extends' must be a string value ({name})")
+                node.extends = value
+            case "supported-linkers":
+                if not isinstance(value, list) or all(isinstance(sl, str) for sl in value):
+                    raise ValueError(f"'supported-linkers' must be a list of string ({name})")
+                node.supported_linkers = value
+            case "default-linker":
+                if not isinstance(value, str):
+                    raise ValueError(f"'default-linker' must be a string value ({name})")
+                node.supported_linkers = value
+                
             case _:
-                prop = parse_property(key, value)
-                if prop:
-                    node.add_property(prop)
+                raise ValueError(f"'{key}:{value}' is not a valid key ({name})")
     return node
 
 

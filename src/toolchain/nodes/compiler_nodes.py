@@ -26,37 +26,40 @@ class CompilerNode(Property):
     """
     def __init__(self, name : str):
         super().__init__(name)
-        self._properties = PropertyDict()
+        self.is_abstract = False
+        self.extends = None
+        self.supported_linkers = list[str]()
+        self.default_linker = str
         self.feature_list = FeatureNodeList()
         self.feature_rule_list = FeatureRuleNodeList()
         
-    @property
-    def properties(self) -> PropertyDict:
-        return self._properties
+    # @property
+    # def properties(self) -> PropertyDict:
+    #     return self._properties
     
-    @property
-    def supported_linkers(self) -> list[str]:
-        prop = self.get_property_as("supported_linkers", PropertyStrList)
-        return prop.values if prop else None
+    # @property
+    # def supported_linkers(self) -> list[str]:
+    #     prop = self.get_property_as("supported_linkers", PropertyStrList)
+    #     return prop.values if prop else None
     
-    @property
-    def is_abstract(self) -> bool :
-        prop = self.get_property_as("is_abstract", PropertyBool)
-        return prop.value if prop else False
+    # @property
+    # def is_abstract(self) -> bool :
+    #     prop = self.get_property_as("is_abstract", PropertyBool)
+    #     return prop.value if prop else False
     
-    @property
-    def default_linker_name(self) -> str | None:
-        prop = self.get_property_as("default-linker", PropertyStr)
-        return prop.value if prop else None
+    # @property
+    # def default_linker_name(self) -> str | None:
+    #     prop = self.get_property_as("default-linker", PropertyStr)
+    #     return prop.value if prop else None
     
-    def get_property(self, name: str) -> Property | None:
-        return self.properties.get_property(name)
+    # def get_property(self, name: str) -> Property | None:
+    #     return self.properties.get_property(name)
     
-    def add_property(self, property):
-        self.properties.add_property(property)
+    # def add_property(self, property):
+    #     self.properties.add_property(property)
     
-    def get_property_as(self, name: str, prop_type: Type[T]) -> T | None:
-        return self.properties.get_property_as(name, prop_type)
+    # def get_property_as(self, name: str, prop_type: Type[T]) -> T | None:
+    #     return self.properties.get_property_as(name, prop_type)
 
     def merge_with(self, parent: CompilerNode):
         if not parent:

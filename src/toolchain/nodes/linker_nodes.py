@@ -24,25 +24,11 @@ class LinkerNode(Property):
     """
     def __init__(self, name : str):
         super().__init__(name)
-        #self._properties = PropertyDict()
         self.is_abstract = False
         self.extends = None
         self.feature_list = FeatureNodeList()
         self.feature_rule_list = FeatureRuleNodeList()
     
-    # @property
-    # def properties(self) -> PropertyDict:
-    #     return self._properties
-     
-    # def get_property(self, name: str) -> Property | None:
-    #     return self.properties.get_property(name)
-    
-    # def add_property(self, property):
-    #     self.properties.add_property(property)
-
-    # def get_property_as(self, name: str, prop_type: Type[T]) -> T | None:
-    #     return self.properties.get_property_as(name, prop_type)
-        
     def merge_with(self, parent: LinkerNode):
         if not parent:
             return copy.deepcopy(self)
@@ -51,7 +37,6 @@ class LinkerNode(Property):
         result = LinkerNode(self.name)
         result.is_abstract = self.is_abstract
         result.extends = self.extends
-        #result._properties = self.properties.merge_with(parent.properties)
         result.feature_rule_list = self.feature_rule_list.merge_with(parent.feature_rule_list)
         result.feature_list = self.feature_list.merge_with(parent.feature_list)
         return result
@@ -61,7 +46,6 @@ class LinkerNode(Property):
         result  = LinkerNode(self.name)
         result.is_abstract = self.is_abstract
         result.extends = self.extends
-        #result._properties = self.properties.apply_modifiers()
         result.feature_list = self.feature_list.apply_modifiers()
         result.feature_rule_list = copy.deepcopy(self.feature_rule_list)
         return result
@@ -73,7 +57,6 @@ class LinkerNode(Property):
         result = LinkerNode(self.name)
         result.is_abstract = self.is_abstract
         result.extends = self.extends
-        #result._properties = copy.deepcopy(self.properties)
         result.feature_list = self.feature_list.dispatch()
         result.feature_rule_list = copy.deepcopy(self.feature_rule_list)
         return result

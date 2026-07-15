@@ -1,5 +1,4 @@
 from __future__ import annotations
-import copy
 from wcwidth import wcswidth
 from toolchain.nodes.compiler_nodes import CompilerFeatureNode, CompilerNode, CompilerSpecificOverrideNode, CompilersOverrideNode
 from toolchain.nodes.feature_node import FeatureArgsNode, FeatureNode, FeatureNodeList, FeatureRuleNode, FeatureRuleNodeList
@@ -21,7 +20,6 @@ def _vis_len(s: str) -> int:
 
     Uses wcwidth/wcswidth rules for monospace terminal formatting.
     """
-
     return wcswidth(s)
 
 _BOX_CONVERTERS: dict[type, callable] = {}
@@ -198,7 +196,6 @@ def _(profile_node: ProfileNode, ignore_empty: bool):
     if profile_node.project_types:
         project_type_overrides = to_box(profile_node.project_types, ignore_empty)
         box.inner_boxes.append(project_type_overrides)
-
     return box
 
 @register_box(ProjectTypeNode)
@@ -219,7 +216,6 @@ def _(target_node: TargetNode, ignore_empty: bool):
     box = Box(target_node.name)
     for properties in target_node.properties.values():
         properties.append_to_lines_print(box.lines, ignore_empty)
-        
     if target_node.compilers:
         compiler_overrides = to_box(target_node.compilers)
         box.inner_boxes.append(compiler_overrides)
@@ -232,7 +228,6 @@ def _(target_node: TargetNode, ignore_empty: bool):
     if target_node.profiles:
         profile_overrides = to_box(target_node.profiles)
         box.inner_boxes.append(profile_overrides)
-
     return box
 
 class Box:

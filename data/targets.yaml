@@ -1,14 +1,14 @@
 # targets:
 # - name:
 #   icon : 🐧 🍎 🟪 🧩 💻
-#   arch:
-#   vendor:
-#   os:
-#   abi:
-#   pointer-width:
-#   endianness:
-#   supported-compilers:[]
-#   default-compiler:
+#   arch:  x86_64, i686, aarch64, arm
+#   vendor: pc, unknown
+#   os: windows, linux, macos, none
+#   abi: msvc, gnu, musl, none
+#   pointer-width: 32, 64
+#   endianness: little, big
+#   supported-compilers:[] List of supported compilers, also support compiler that extends supported compilers
+#   default-compiler: Default compiler to use if multiple supported compilers are available, default-linker is defind in msvc-compiler
 #   linkers:
 #     enable-features: []
 #     linker-name:
@@ -76,36 +76,35 @@
 #                   enable-features: []
 
 targets:
-  #🐧 🍎 🟪 🧩 💻
-  # - name: x86_64-pc-windows-msvc
-  #   icon: 💻
-  #   arch: x86_64 # x86_64, i686, aarch64, arm
-  #   vendor: pc # pc, unknown
-  #   os: windows # windows, linux, macos, none
-  #   abi: msvc # msvc, gnu, musl, none
-  #   pointer-width: 64 # 32 or 64 bits
-  #   endianness: little # or big endianness
-  #   supported-compilers: [clangcl, cl] # List of supported compilers, also support compiler that extends supported compilers
-  #   default-compiler: cl # Default compiler to use if multiple supported compilers are available, default-linker is defind in msvc-compiler
-  #   linkers:
-  #     enable-features: [TARGET_X64]
-  #   compilers:
-  #     clangcl:
-  #       features:
-  #         - name: ASAN
-  #           linkers:
-  #             enable-features: [LINK:msvcrt.lib]
+  - name: x86_64-pc-windows-msvc
+    icon: 💻
+    arch: x86_64
+    vendor: pc
+    os: windows
+    abi: msvc
+    pointer-width: 64
+    endianness: little
+    supported-compilers: [clangcl, cl]
+    default-compiler: cl
+    linkers:
+      enable-features: [TARGET_X64]
+    compilers:
+      clangcl:
+        features:
+          - name: ASAN
+            linkers:
+              enable-features: [LINK:msvcrt.lib]
 
   - name: i686-pc-windows-msvc
     icon: 💻
-    arch: i686 # x86_64, i686, aarch64, arm
-    vendor: pc # pc, unknown
-    os: windows # windows, linux, macos, none
-    abi: msvc # msvc, gnu, musl, none
-    pointer-width: 32 # 32 or 64 bits
-    endianness: little # or big endianness
-    supported-compilers: [clangcl, cl] # List of supported compilers, also support compiler that extends supported compilers
-    default-compiler: cl # Default compiler to use if multiple supported compilers are available, default-linker is defind in msvc-compiler
+    arch: i686
+    vendor: pc
+    os: windows
+    abi: msvc
+    pointer-width: 32
+    endianness: little
+    supported-compilers: [clangcl, cl]
+    default-compiler: cl
     linkers:
       enable-features: [TARGET_X86]
     compilers:
@@ -114,6 +113,29 @@ targets:
           - name: ASAN
             linkers:
               enable-features: [LINK:msvcrt.lib]
-    project-types:
-      bin:
-        enable-features: [PPP]
+
+  - name: x86_64-unknown-linux-gnu
+    icon: 🐧
+    arch: x86_64
+    vendor: unknown
+    os: linux
+    abi: gnu
+    pointer-width: 64
+    endianness: little
+    supported-compilers: [clang, gcc]
+    default-compiler: clang
+    linkers:
+      enable-features: [TARGET_X64]
+
+  - name: i686-unknown-linux-gnu
+    icon: 🐧
+    arch: i686
+    vendor: unknown
+    os: linux
+    abi: gnu
+    pointer-width: 32
+    endianness: little
+    supported-compilers: [clang, gcc]
+    default-compiler: clang
+    linkers:
+      enable-features: [TARGET_X32]

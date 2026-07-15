@@ -44,7 +44,7 @@ class Property(ABC):
         return copy.deepcopy(self)
     
     def __repr__(self):
-        return f"{self.__class__.__name__}(name={self.name!r})"
+        return f"{self.__class__.__name__}(name={self.name})"
 
 # ── Scalars ───────────────────────────────────────────────────────────────────
 
@@ -54,14 +54,14 @@ class PropertyStr(Property):
         self.value = value
 
     def __repr__(self):
-        return f"PropertyStr(name={self.name!r}, value={self.value!r}, is_mergeable={self.is_mergeable!r}, is_dispatchable={self.is_dispatchable!r})"
+        return f"PropertyStr(name={self.name}, value={self.value}, is_mergeable={self.is_mergeable}, is_dispatchable={self.is_dispatchable})"
 
     def is_empty(self) -> bool:
         return not self.value
     
     def append_to_lines_print(self, lines, ignore_empty):
         if not self.is_empty() or not ignore_empty:
-            lines.append(f"{self.name}: {self.value!r}")
+            lines.append(f"{self.name}: {self.value}")
 
     def append_to_json_print(self, json, ignore_empty):
         if not self.is_empty() or not ignore_empty:
@@ -76,10 +76,10 @@ class PropertyBool(Property):
         return PropertyBool(self.name, self.value, self.is_mergeable, self.is_dispatchable)
     
     def __repr__(self):
-        return f"PropertyBool(name={self.name!r}, value={self.value!r}, is_mergeable={self.is_mergeable!r}, is_dispatchable={self.is_dispatchable!r})"
+        return f"PropertyBool(name={self.name}, value={self.value}, is_mergeable={self.is_mergeable}, is_dispatchable={self.is_dispatchable})"
 
     def append_to_lines_print(self, lines, ignore_empty):
-        lines.append(f"{self.name}: {self.value!r}")
+        lines.append(f"{self.name}: {self.value}")
 
     def append_to_json_print(self, json, ignore_empty):
         json[self.name] = self.value
@@ -93,10 +93,10 @@ class PropertyInt(Property):
         return PropertyBool(self.name, self.value, self.is_mergeable, self.is_dispatchable)
 
     def __repr__(self):
-        return f"PropertyBool(name={self.name!r}, value={self.value!r}, is_mergeable={self.is_mergeable!r}, is_dispatchable={self.is_dispatchable!r})"
+        return f"PropertyBool(name={self.name}, value={self.value}, is_mergeable={self.is_mergeable}, is_dispatchable={self.is_dispatchable})"
   
     def append_to_lines_print(self, lines, ignore_empty):
-        lines.append(f"{self.name}: {self.value!r}")
+        lines.append(f"{self.name}: {self.value}")
 
     def append_to_json_print(self, json, ignore_empty):
         json[self.name] = self.value
@@ -121,14 +121,14 @@ class PropertyStrList(Property):
                     self.values.remove(value)
 
     def __repr__(self):
-        return f"PropertyStrList(name={self.name!r}, values={self.values}, is_mergeable={self.is_mergeable!r}, is_dispatchable={self.is_dispatchable!r} )"
+        return f"PropertyStrList(name={self.name}, values={self.values}, is_mergeable={self.is_mergeable}, is_dispatchable={self.is_dispatchable} )"
 
     def is_empty(self) -> bool:
         return not self.values
     
     def append_to_lines_print(self, lines, ignore_empty):
         if not self.is_empty() or not ignore_empty:
-            lines.append(f"{self.name}: {self.values!r}")
+            lines.append(f"{self.name}: [{', '.join(str(v) for v in self.values)}]")
 
     def append_to_json_print(self, json, ignore_empty):
         if not self.is_empty() or not ignore_empty:
@@ -152,9 +152,9 @@ class PropertyStrListModifier(Property):
     def __repr__(self):
         return (
             f"PropertyStrListModifier("
-            f"name={self.name!r}, "
+            f"name={self.name}, "
             f"values={self.values}, "
-            f"operation={self.operation.value!r})"
+            f"operation={self.operation.value})"
         )
     
     def is_empty(self) -> bool:
@@ -162,7 +162,7 @@ class PropertyStrListModifier(Property):
     
     def append_to_lines_print(self, lines, ignore_empty):
         if not self.is_empty() or not ignore_empty:
-            lines.append(f"{self.name}: {self.values!r}")
+            lines.append(f"{self.name}: {self.values}")
 
     def append_to_json_print(self, json, ignore_empty):
         if not self.is_empty() or not ignore_empty:
@@ -224,7 +224,7 @@ class PropertyNodeList(Property):
         return PropertyNodeList(self.name, result, self.is_mergeable)
 
     def __repr__(self):
-        return f"PropertyNodeList(name={self.name!r}, nodes={[n.name for n in self.nodes]}, is_mergeable={self.is_mergeable!r})"
+        return f"PropertyNodeList(name={self.name}, nodes={[n.name for n in self.nodes]}, is_mergeable={self.is_mergeable})"
 
 
 # ── PropertyDict ──────────────────────────────────────────────────────────────────────
@@ -423,6 +423,6 @@ class PropertyDict:
         return result
 
     def __repr__(self):
-        return f"{self.__class__.__name__}(name={self.name!r}, properties={list(self.properties.keys())})"
+        return f"{self.__class__.__name__}(name={self.name}, properties={list(self.properties.keys())})"
 
 

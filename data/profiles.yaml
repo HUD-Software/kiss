@@ -77,10 +77,3 @@ profiles:
         compilers:
           # AddressSanitizer doesn't support linking with debug runtime libraries yet
           enable-features: [DYNAMIC_LIBRARY_RELEASE]
-        linkers:
-          enable-features: [XXX]
-
-      lib:
-        compilers:
-          # AddressSanitizer doesn't support linking with debug runtime libraries yet
-          enable-features: [DYNAMIC_LIBRARY_RELEASE]

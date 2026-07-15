@@ -1,6 +1,6 @@
 from __future__ import annotations
 import copy
-from toolchain.nodes.property import Property, PropertyDict
+from toolchain.nodes.property import Property, PropertyDict, PropertyStr, PropertyStrList
 
 class FeatureArgsNode(Property):
     """Represents the 'args' block inside a feature with arguments.
@@ -118,6 +118,9 @@ class FeatureRuleNode(Property):
     def get_property(self, name: str) -> Property | None:
         return self._properties.get(name)
     
+    def get_property_as(self, name: str, prop_type: Type[T]) -> T | None:
+        return self._properties.get_property_as(name, prop_type)
+    
     def merge_with(self, parent: FeatureNodeList):
         assert False, """
         Feature rules are not is_mergeable.
@@ -127,11 +130,29 @@ class FeatureRuleNode(Property):
         assert False, """Feature rules are not is_dispatchable."""
 
 class FeatureRuleNodeOnlyOne(FeatureRuleNode):
-    pass
+    NAME = "only-one"
+    def __init__(self, name: str, features: PropertyStrList):
+        super().__init__(name)
+        self.add_property(features)
+
+    def features(self) -> list[str]:
+        return self.get_property_as("features", PropertyStrList).values
+
 
 class FeatureRuleNodeIncompatible(FeatureRuleNode):
-    pass
+    NAME = "incompatible"
+    
+    def __init__(self, name: str, feature: PropertyStr, incompatible_with: PropertyStrList):
+        super().__init__(name)
+        self.add_property(feature)
+        self.add_property(incompatible_with)
 
+    def feature(self) -> str:
+        return self.get_property_as("feature", PropertyStr).value
+
+    def incompatible_features(self) -> list[str]:
+        return self.get_property_as("with", PropertyStrList).values
+    
 class FeatureRuleNodeList(Property):
     """Represents the 'feature-rules:' block."""
     NAME = "feature-rules"

@@ -1,4 +1,4 @@
-from toolchain.nodes.feature_node import FeatureArgsNode, FeatureNode, FeatureNodeList, FeatureRuleNode, FeatureRuleNodeList
+from toolchain.nodes.feature_node import FeatureArgsNode, FeatureNode, FeatureNodeList, FeatureRuleNode, FeatureRuleNodeIncompatible, FeatureRuleNodeList, FeatureRuleNodeOnlyOne
 from toolchain.nodes.property import PropertyStr, PropertyStrList
 from toolchain.parsers.parse_utils import parse_property
 
@@ -50,20 +50,50 @@ def yaml_parse_feature(data: dict, node_cls: Type[T] = FeatureNode) -> T:
                     node.add_property(prop)
     return node
 
+ALLOWED_RULE_KINDS = {FeatureRuleNodeOnlyOne.NAME, FeatureRuleNodeIncompatible.NAME}
 def yaml_parse_feature_rule(data: dict) -> FeatureRuleNode:
     """Parse a single feature rule (only-one or incompatible)."""
+    kind = next(iter(data))
+    if kind not in ALLOWED_RULE_KINDS:
+        raise ValueError(
+            f"Unknown feature rule '{kind}', expected one of {sorted(ALLOWED_RULE_KINDS)}"
+        )
+    
+    # Is it 'only-one' rule?
+    if FeatureRuleNodeOnlyOne.NAME in data:
+        # Read 'only-one' name
+        name = data.get(FeatureRuleNodeOnlyOne.NAME)
+        if not name or not isinstance(name, str):
+            raise ValueError(f"Missing {FeatureRuleNodeOnlyOne.NAME!r} as string for feature rule")
+        
+        # Read 'features'
+        features = data.get("features")
+        if not features or not isinstance(features, list) or not all(isinstance(f, str) for f in features):
+            raise ValueError(f"Missing 'features' as list of string for feature rule {FeatureRuleNodeOnlyOne.NAME!r}")
+        return FeatureRuleNodeOnlyOne(name, PropertyStrList("features", features))
 
-    if "only-one" in data:
-        node = FeatureRuleNode(data["only-one"])
-        node.add_property(PropertyStr("type", "only-one"))
-        node.add_property(PropertyStrList("features", data.get("features", [])))
-    elif "incompatible" in data:
-        node = FeatureRuleNode(data["incompatible"])
-        node.add_property(PropertyStr("type", "incompatible"))
-        node.add_property(PropertyStr("feature", data["feature"]))
-        node.add_property(PropertyStrList("with", data.get("with", [])))
+    # Is it 'incompatible' rule?
+    elif FeatureRuleNodeIncompatible.NAME in data:
+        # Read 'incompatible' name
+        name = data.get(FeatureRuleNodeIncompatible.NAME)
+        if not name or not isinstance(name, str):
+            raise ValueError(f"Missing {FeatureRuleNodeIncompatible.NAME!r} as string for feature rule")
+        
+        # Read 'feature'
+        feature = data.get("feature")
+        if not feature or not isinstance(feature, str):
+            raise ValueError(f"Missing 'feature' as string for feature rule {FeatureRuleNodeIncompatible.NAME!r}")
+        
+         # Read 'with'
+        incompatible_with = data.get("with")
+        if not incompatible_with or not isinstance(incompatible_with, list) or not all(isinstance(f, str) for f in incompatible_with):
+            raise ValueError(f"Missing 'incompatible_with' as list of string for feature rule {FeatureRuleNodeIncompatible.NAME!r}")
+        
+        return FeatureRuleNodeIncompatible(name, 
+                                           PropertyStr("feature", feature),
+                                           PropertyStrList("with", incompatible_with))
+    
     else:
         raise ValueError(f"Unknown feature rule: {data}")
-    return node
 
 

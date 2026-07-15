@@ -1,7 +1,7 @@
 from __future__ import annotations
 from wcwidth import wcswidth
 from toolchain.nodes.compiler_nodes import CompilerFeatureNode, CompilerNode, CompilerSpecificOverrideNode, CompilersOverrideNode
-from toolchain.nodes.feature_node import FeatureArgsNode, FeatureNode, FeatureNodeList, FeatureRuleNode, FeatureRuleNodeList
+from toolchain.nodes.feature_node import FeatureArgsNode, FeatureNode, FeatureNodeList, FeatureRuleNode, FeatureRuleNodeIncompatible, FeatureRuleNodeList, FeatureRuleNodeOnlyOne
 from toolchain.nodes.linker_nodes import LinkerNode, LinkerSpecificOverrideNode, LinkersOverrideNode
 from toolchain.nodes.profile_nodes import ProfileNode
 from toolchain.nodes.project_type_nodes import ProjectTypeNode, ProjectTypeSpecificOverrideNode, ProjectTypesOverrideNode
@@ -94,6 +94,20 @@ def _(feature_list_node: FeatureNodeList, ignore_empty: bool):
 
 @register_box(FeatureRuleNode)
 def _(feature_rule_node: FeatureRuleNode, ignore_empty: bool):
+    box = Box(feature_rule_node.name)
+    for properties in feature_rule_node.properties.values():
+        properties.append_to_lines_print(box.lines, ignore_empty)
+    return box
+
+@register_box(FeatureRuleNodeOnlyOne)
+def _(feature_rule_node: FeatureRuleNodeOnlyOne, ignore_empty: bool):
+    box = Box(feature_rule_node.name)
+    for properties in feature_rule_node.properties.values():
+        properties.append_to_lines_print(box.lines, ignore_empty)
+    return box
+
+@register_box(FeatureRuleNodeIncompatible)
+def _(feature_rule_node: FeatureRuleNodeIncompatible, ignore_empty: bool):
     box = Box(feature_rule_node.name)
     for properties in feature_rule_node.properties.values():
         properties.append_to_lines_print(box.lines, ignore_empty)

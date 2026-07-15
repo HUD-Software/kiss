@@ -364,6 +364,8 @@ class PropertyDict:
             discarded, even if not explicitly overridden at this level
         :return: a new PropertyDict resulting from the merge (parent + self, self wins)
         """
+        if not parent:
+            return copy.deepcopy(self)
         result = PropertyDict()
 
         override_list_names = self.explicit_list_names()
@@ -398,6 +400,8 @@ class PropertyDict:
         :param top: the top-level PropertyDict whose properties are propagated down
         :return: a new PropertyDict resulting from the dispatch (top + self, self wins)
         """
+        if not top:
+            return copy.deepcopy(self)
         result = PropertyDict()
 
         override_list_names = self.explicit_list_names()

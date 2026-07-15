@@ -47,6 +47,8 @@ class LinkerNode(Property):
         return self.properties.get_property_as(name, prop_type)
         
     def merge_with(self, parent: LinkerNode):
+        if not parent:
+            return copy.deepcopy(self)
         """Merge list without applying modifier or dispatching top to bottom hierarchy """
         assert type(parent) is type(self), "Type mismatch"
         merged = LinkerNode(self.name)
@@ -108,6 +110,8 @@ class LinkerSpecificOverrideNode(Property):
         return result
     
     def merge_with(self, other: LinkerSpecificOverrideNode, parent_list_name_to_ignore: set[str] = None) -> LinkerSpecificOverrideNode:
+        if not other:
+            return copy.deepcopy(self)
         assert self.name == other.name, "Name mismatch"
         result = LinkerSpecificOverrideNode(self.name)
         result._properties = self.properties.merge_with(other.properties, parent_list_name_to_ignore)
@@ -157,7 +161,6 @@ class LinkersOverrideNode(Property):
     def merge_with(self, other: LinkersOverrideNode, parent_list_name_to_ignore: set[str] = None):
         if not other:
             return copy.deepcopy(self)
-        
         result = LinkersOverrideNode(self.name)
         result._properties = self.properties.merge_with(other.properties, parent_list_name_to_ignore)
         

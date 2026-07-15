@@ -78,6 +78,8 @@ class TargetNode(Property):
         self.properties.add_property(property)
 
     def merge_with(self, parent: TargetNode):
+        if not parent:
+            return copy.deepcopy(self)
         """Merge list without applying modifier or dispatching top to bottom hierarchy """
         assert type(parent) is type(self), "Type mismatch"
         merged = TargetNode(self.name)

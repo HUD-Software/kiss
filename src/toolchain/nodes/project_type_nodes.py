@@ -62,6 +62,8 @@ class ProjectTypeNode(Property):
         return self.properties.get_property_as(name, prop_type)
     
     def merge_with(self, parent: ProjectTypeNode):
+        if not parent:
+            return copy.deepcopy(self)
         """Merge list without applying modifier or dispatching top to bottom hierarchy """
         assert type(parent) is type(self), "Type mismatch"
         result = ProjectTypeNode(self.name)
@@ -134,6 +136,8 @@ class ProjectTypeSpecificOverrideNode(Property):
         return result
     
     def merge_with(self, other: ProjectTypeSpecificOverrideNode, parent_list_name_to_ignore: set[str] = None) -> ProjectTypeSpecificOverrideNode:
+        if not other:
+            return copy.deepcopy(self)
         assert self.name == other.name, "Name mismatch"
         result = ProjectTypeSpecificOverrideNode(self.name)
         result._properties = self.properties.merge_with(other.properties, parent_list_name_to_ignore)
@@ -190,6 +194,8 @@ class ProjectTypesOverrideNode(Property):
         self._project_types[project_type.name] = project_type
 
     def merge_with(self, other: ProjectTypesOverrideNode, parent_list_name_to_ignore: set[str] = None) -> ProjectTypesOverrideNode:
+        if not other:
+            return copy.deepcopy(self)
         assert type(other) is type(self), "Type mismatch"
         result = ProjectTypesOverrideNode(self.name)
         result._properties = self.properties.merge_with(other.properties, parent_list_name_to_ignore)

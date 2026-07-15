@@ -43,6 +43,8 @@ class ProfileNode(Property):
         self.properties.get_property_as(name, prop_type)
 
     def merge_with(self, parent: ProfileNode):
+        if not parent:
+            return copy.deepcopy(self)
         """Merge list without applying modifier or dispatching top to bottom hierarchy """
         assert type(parent) is type(self), "Type mismatch"
         result = ProfileNode(self.name)
@@ -114,6 +116,8 @@ class ProfileSpecificOverrideNode(Property):
         return result
     
     def merge_with(self, other: ProfileSpecificOverrideNode, parent_list_name_to_ignore: set[str] = None) -> ProfileSpecificOverrideNode:
+        if not other:
+            return copy.deepcopy(self)
         assert self.name == other.name, "Name mismatch"
         result = ProfileSpecificOverrideNode(self.name)
         result._properties = self.properties.merge_with(other.properties, parent_list_name_to_ignore)
@@ -166,6 +170,8 @@ class ProfilesOverrideNode(Property):
         self._profiles[profile.name] = profile
 
     def merge_with(self, other: ProfilesOverrideNode, parent_list_name_to_ignore: set[str] = None) -> ProfilesOverrideNode:
+        if not other:
+            return copy.deepcopy(self)
         assert type(other) is type(self), "Type mismatch"
         result = ProfilesOverrideNode(self.name)
         result._properties = self.properties.merge_with(other.properties, parent_list_name_to_ignore)

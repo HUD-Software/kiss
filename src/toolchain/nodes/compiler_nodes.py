@@ -59,6 +59,8 @@ class CompilerNode(Property):
         return self.properties.get_property_as(name, prop_type)
 
     def merge_with(self, parent: CompilerNode):
+        if not parent:
+            return copy.deepcopy(self)
         """Merge list without applying modifier or dispatching top to bottom hierarchy """
         assert type(parent) is type(self), "Type mismatch"
         merged = CompilerNode(self.name)
@@ -123,6 +125,8 @@ class CompilerSpecificOverrideNode(Property):
         return result
     
     def merge_with(self, other: CompilerSpecificOverrideNode, parent_list_name_to_ignore: set[str]) -> CompilerSpecificOverrideNode:
+        if not other:
+            return copy.deepcopy(self)
         assert self.name == other.name, "Name mismatch"
         result = CompilerSpecificOverrideNode(self.name)
         result._properties = self.properties.merge_with(other.properties, parent_list_name_to_ignore)
@@ -170,6 +174,8 @@ class CompilersOverrideNode(Property):
         self._compilers[compiler.name] = compiler
 
     def merge_with(self, parent: CompilersOverrideNode, parent_list_name_to_ignore: set[str] = None):
+        if not parent:
+            return copy.deepcopy(self)
         result = CompilersOverrideNode(self.name)
         result._properties = self.properties.merge_with(parent.properties, parent_list_name_to_ignore)
         
@@ -213,6 +219,8 @@ class CompilerFeatureNode(FeatureNode):
         self.linkers : LinkersOverrideNode = None
 
     def merge_with(self, other: CompilerFeatureNode):
+        if not other:
+            return copy.deepcopy(self)
         merged = CompilerFeatureNode(self.name)
         merged._properties = self.properties.merge_with(other.properties)
         if other.linkers:

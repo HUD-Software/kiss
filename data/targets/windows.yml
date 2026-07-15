@@ -113,29 +113,3 @@ targets:
           - name: ASAN
             linkers:
               enable-features: [LINK:msvcrt.lib]
-
-  - name: x86_64-unknown-linux-gnu
-    icon: 🐧
-    arch: x86_64
-    vendor: unknown
-    os: linux
-    abi: gnu
-    pointer-width: 64
-    endianness: little
-    supported-compilers: [clang, gcc]
-    default-compiler: clang
-    linkers:
-      enable-features: [TARGET_X64]
-
-  - name: i686-unknown-linux-gnu
-    icon: 🐧
-    arch: i686
-    vendor: unknown
-    os: linux
-    abi: gnu
-    pointer-width: 32
-    endianness: little
-    supported-compilers: [clang, gcc]
-    default-compiler: clang
-    linkers:
-      enable-features: [TARGET_X32]

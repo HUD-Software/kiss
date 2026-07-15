@@ -1,0 +1,129 @@
+# compilers:
+# - name:
+#   supported-linkers:
+#   default-linker:
+#   features:
+#     - name:
+#       description:
+#       flags: []
+#       linkers:
+#         linker-name:
+#         enable-features: []
+#   featyre-rules:
+#      - incompatible:
+#        feature:
+#        with: []
+#      - only-one:
+#        features: []
+
+compilers:
+  - name: gnu-generic-compiler
+    supported-linkers: [ld, gold, lld, mold] # List of supported linkers, also support linker that extends supported linkers
+    default-linker: ld # Default linker to use if multiple supported linkers are available
+    is_abstract: true
+    features:
+
+      # Remove dead code
+      - name: REMOVE_DEAD_CODE
+        description: Remove dead code
+        flags: [-ffunction-sections, -fdata-sections]
+        linkers:
+          enable-features: [REMOVE_DEAD_CODE]
+
+      # Warnings
+      - name: WARNING_BASE
+        description: Default warning level
+        flags: [-Wall]
+      - name: WARNING_STRICT
+        description: Strict warnings
+        flags: [-Wextra, -Wall]
+      - name: WARNING_ALL
+        description: All warnings (very noisy)
+        flags: [-Weverything]
+      - name: WARNING_AS_ERROR
+        description: Treat warnings as errors
+        flags: [-Werror]
+      - name: NO_WARNING
+        description: Disable all warnings
+        flags: [-w]
+
+      # Optimisations
+      - name: OPT_LEVEL_0
+        description: No optimization (debug-like)
+        flags: [-O0]
+        enable-features: [DEBUG_INFO]
+      - name: OPT_LEVEL_1
+        description: Minimal optimization (-O1)
+        flags: [-O1]
+      - name: OPT_LEVEL_2
+        description: Default optimization (-O2)
+        flags: [-O2]
+      - name: OPT_LEVEL_3
+        description: Max optimization (-O2 + aggressive inline)
+        flags: [-O3, -finline-functions, -funroll-loops]
+        enable-features: [LTO, OMIT_FRAME_POINTER]
+      - name: LTO
+        description: Whole program optimization
+        flags: [-flto]
+        linkers:
+          enable-features: [LTO]
+      - name: OMIT_FRAME_POINTER
+        description: Omit frame pointer
+        flags: [-fomit-frame-pointer]
+
+      # Debug informations
+      - name: DEBUG_INFO
+        description: Generate debug informations
+        flags: [-g]
+
+      # Exception
+      - name: ENABLE_EXCEPTION
+        description: Enable C++ exception
+        flags: [-fexceptions]
+      - name: DISABLE_EXCEPTION
+        description: Disable C++ exception
+        flags: [-fno-exceptions]
+        
+      # ASAN
+      - name: ASAN
+        description: Enable ASAN Sanitizer
+        flags: [-fsanitize=address, -fsanitize-address-use-after-scope]
+        enable-features: [DEBUG_INFO]
+        linkers:
+          enable-features: [ASAN]
+
+    # Features rules
+    # only-one rule : Only 1 rules is allowed in 'features'. Multiple in the same target is not allowed.
+    # incompatible : The 'feature' is incompatible with all feature in 'with'
+    feature-rules:
+      # Only one warning level at a time
+      - only-one: warning
+        features: [WARNING_BASE, WARNING_STRICT, WARNING_ALL, NO_WARNING]
+      # Only one optimization level at a time
+      - only-one: optimization
+        features: [OPT_LEVEL_0, OPT_LEVEL_1, OPT_LEVEL_2, OPT_LEVEL_3]
+      # OPT_LEVEL_0 is incompatible with LTO, OMIT_FRAME_POINTER
+      - incompatible: no_opt
+        feature: OPT_LEVEL_0
+        with: [LTO, OMIT_FRAME_POINTER]
+      # Only one exceptions mode
+      - only-one: exceptions
+        features: [ENABLE_EXCEPTION, DISABLE_EXCEPTION]
+      # Only one target mode
+      - only-one: target
+        features: [TARGET_X64, TARGET_X86]
+      # ASAN is incompatible with OPT_LEVEL_3, LTO et OMIT_FRAME_POINTER
+      - incompatible: asan
+        feature: ASAN
+        with: [OPT_LEVEL_3, LTO, OMIT_FRAME_POINTER]
+
+  # GCC compiler
+  - name: gcc
+    extends: gnu-generic-compiler
+
+  # clang compiler
+  - name: clang
+    extends: gnu-generic-compiler
+
+
+  

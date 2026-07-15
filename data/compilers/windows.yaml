@@ -23,10 +23,10 @@ compilers:
     is_abstract: true
     features:
       # Optimizations
-      - name: OPT_LEVEL_0 # Name of the feature
-        description: No optimization # Description of the feature
-        flags: [/Od] # Flags passed to the compiler when the feature is enabled
-        enable-features: [DEBUG_INFO] # Enabling OPT_LEVEL_0 also enables DEBUG_INFO
+      - name: OPT_LEVEL_0
+        description: No optimization
+        flags: [/Od]
+        enable-features: [DEBUG_INFO]
       - name: OPT_LEVEL_1
         description: Minimal optimization
         flags: [/O1]
@@ -155,3 +155,6 @@ compilers:
       - incompatible: asan
         feature: ASAN
         with: [OPT_LEVEL_3, LTO, OMIT_FRAME_POINTER]
+
+
+  

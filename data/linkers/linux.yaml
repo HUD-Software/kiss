@@ -1,0 +1,60 @@
+# linkers:
+# - name:
+#   features:
+#     - name:
+#       description:
+#       flags: []
+#   featyre-rules:
+#      - incompatible:
+#        feature:
+#        with: []
+#      - only-one:
+#        features: []
+
+linkers:
+  - name: gnu-linker
+    is_abstract: true
+    features:
+      # Remove dead code
+      - name: REMOVE_DEAD_CODE
+        description: Remove dead code
+        flags: ["-Wl,--gc-sections"]
+
+      # Optimisations
+      - name: LTO
+        description: Whole program optimization
+        flags: [-flto]
+
+      # Target Architecture
+      - name: TARGET_X64
+        description: Enable 64 bits (AMD64 / Intel64) link
+        flags: [-m64]
+      - name: TARGET_X86
+        description: Enable 32 bits (x86) link
+        flags: [-m32]
+
+      # ASAN
+      - name: ASAN
+        description: Enable ASAN Sanitizer
+        flags: [-fsanitize=address]
+
+    feature-rules:
+      # Only one target mode
+      - only-one: target
+        features: [TARGET_X64, TARGET_X86]
+      # ASAN is incompatible with LTO
+      - incompatible: asan
+        feature: ASAN
+        with: [LTO]
+
+  - name: ld
+    extends: gnu-linker
+  
+  - name: gold
+    extends: gnu-linker
+
+  - name: lld
+    extends: gnu-linker
+  
+  - name: mold
+    extends: gnu-linker

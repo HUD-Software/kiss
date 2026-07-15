@@ -159,17 +159,27 @@ class KissContext:
 
 
 # ── Loader ────────────────────────────────────────────────────────────────────
+from typing import Callable, TypeVar
+T = TypeVar("T")
+def load_dir(directory: Path, loader: Callable[[str], dict[str, T]]) -> dict[str, T]:
+    """Load and merge all *.yaml/*.yml files found in directory using the given loader."""
+    items: dict[str, T] = {}
+    yaml_files = sorted(directory.glob("*.yaml")) + sorted(directory.glob("*.yml"))
+    for yaml_file in yaml_files:
+        for name, item in loader(str(yaml_file)).items():
+            items[name] = item
+    return items
 
 def load_context(directory: str) -> KissContext:
     project_dir = Path(directory).resolve()
     src_dir     = Path(__file__).parent
     data_dir    = src_dir.parent / "data"
 
-    linkers       = load_linkers(str(data_dir / "linkers.yaml"))
-    compilers     = load_compilers(str(data_dir / "compilers.yaml"))
-    project_types = load_project_types(str(data_dir / "project-types.yaml"))
-    profiles      = load_profiles(str(data_dir / "profiles.yaml"))
-    targets       = load_targets(str(data_dir / "targets.yaml"))
+    linkers       = load_dir(data_dir / "linkers", load_linkers)
+    compilers     = load_dir(data_dir / "compilers", load_compilers)
+    project_types = load_dir(data_dir / "project-types", load_project_types)
+    profiles      = load_dir(data_dir / "profiles", load_profiles)
+    targets       = load_dir(data_dir / "targets", load_targets)
 
     # Load kiss.yaml if present
     kiss_yaml = project_dir / "kiss.yaml"

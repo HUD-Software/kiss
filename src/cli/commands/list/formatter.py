@@ -5,7 +5,7 @@ from toolchain.nodes.feature_node import FeatureArgsNode, FeatureNode, FeatureNo
 from toolchain.nodes.linker_nodes import LinkerNode, LinkerSpecificOverrideNode, LinkersOverrideNode
 from toolchain.nodes.profile_nodes import ProfileNode
 from toolchain.nodes.project_type_nodes import ProjectTypeNode, ProjectTypeSpecificOverrideNode, ProjectTypesOverrideNode
-from toolchain.nodes.property import Property, PropertyDict, PropertyBool,  PropertyNodeList, PropertyStr, PropertyStrList
+from toolchain.nodes.property import Property, PropertyDict, PropertyBool,  PropertyStr, PropertyStrList
 from toolchain.nodes.target_nodes import TargetNode
 
 

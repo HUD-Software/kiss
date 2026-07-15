@@ -1,25 +1,3 @@
-"""
-node.py
--------
-Base classes for all Kiss nodes and properties.
-
-Property.resolve_extends(parent)
-------------------------------------
-Every Property subclass decides how it combines with its parent's value.
-The child (self) drives the merge — it knows what it wants from the parent.
-
-Default behaviors:
-  Property / PropertyStr / PropertyBool  → child replaces parent
-  PropertyStrList                        → child replaces parent (override)
-  PropertyNodeList                       → merged by 'name' key
-  PropertyNodeDict                       → merged by dict key
-
-Multiple ops on the same property key
----------------------------------------
-A Node stores properties as an ordered list (not a dict) so that
-multiple operations on the same key (e.g. add-flags then remove-flags)
-are applied in declaration order. Node.get_property() returns the last one.
-"""
 from __future__ import annotations
 from abc import ABC
 from unittest import result
@@ -191,44 +169,9 @@ class PropertyStrListModifier(Property):
                 prefix.append(value)
         values = prefix + self.values
         return PropertyStrListModifier(self.list_name, values ,self.operation)
-    
-# ── Node lists ────────────────────────────────────────────────────────────────
-
-class PropertyNodeList(Property):
-    """List of Nodes merged by 'name' key (features, feature-rules)."""
-
-    def __init__(self, name: str, nodes: list):
-        super().__init__(name)
-        self.nodes: list[PropertyDict] = list(nodes)
-
-    def get_node(self, name: str) -> Optional[PropertyDict]:
-        return next((n for n in self.nodes if n.name == name), None)
-    
-    def resolve_extends(self, parent: PropertyNodeList) -> PropertyNodeList:
-        result = []
-        # Check all parents nodes
-        # If not in self, add it
-        # if in self, merge it
-        for parent_node in parent.nodes:
-            self_node = self.get_node(parent_node.name)
-            if not self_node:
-                result.append(parent_node.clone())
-            else:
-                result.append(self_node.resolve_extends(parent_node))
-        # Add all self node that are not in parent
-        for self_node in self.nodes: 
-            parent_node = parent.get_node(self_node.name)
-            if not parent_node:
-                result.append(self_node.clone())
-
-        return PropertyNodeList(self.name, result, self.is_mergeable)
-
-    def __repr__(self):
-        return f"PropertyNodeList(name={self.name}, nodes={[n.name for n in self.nodes]}, is_mergeable={self.is_mergeable})"
-
 
 # ── PropertyDict ──────────────────────────────────────────────────────────────────────
-from typing import Optional, TypeVar, Type
+from typing import TypeVar, Type
 T = TypeVar("T", bound=Property)
 
 class PropertyDict:

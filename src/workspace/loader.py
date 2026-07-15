@@ -1,5 +1,5 @@
 import yaml
-from toolchain.nodes.property import PropertyStr, PropertyStrList, PropertyNodeList, PropertyNodeDict
+from toolchain.nodes.property import PropertyStr
 from toolchain.parsers.profile_parser import parse_profile
 from toolchain.parsers.project_type_parser import parse_project
 from .nodes.workspace_nodes import KissWorkspaceNode, KissProjectTypeNode, SourceNode, DependencyNode

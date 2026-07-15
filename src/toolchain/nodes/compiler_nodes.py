@@ -65,8 +65,9 @@ class CompilerNode(Property):
         assert type(parent) is type(self), "Type mismatch"
         merged = CompilerNode(self.name)
         merged._properties = self.properties.merge_with(parent.properties)
-        merged.feature_list = self.feature_list.merge_with(parent.feature_list)
         merged.feature_rule_list = self.feature_rule_list.merge_with(parent.feature_rule_list)
+        merged.feature_list = self.feature_list.merge_with(parent.feature_list, merged.feature_rule_list)
+
         return merged
     
     def apply_modifiers(self) -> CompilerNode:
@@ -131,8 +132,8 @@ class CompilerSpecificOverrideNode(Property):
         result = CompilerSpecificOverrideNode(self.name)
         result._properties = self.properties.merge_with(other.properties, parent_list_name_to_ignore)
         result.linkers = self.linkers.merge_with(other.linkers) if self.linkers else None
-        result.feature_list = self.feature_list.merge_with(other.feature_list)
         result.feature_rule_list = self.feature_rule_list.merge_with(other.feature_rule_list)
+        result.feature_list = self.feature_list.merge_with(other.feature_list, result.feature_rule_list)
         return result
     
     def dispatch(self, top : PropertyDict) -> CompilerSpecificOverrideNode:

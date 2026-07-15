@@ -81,7 +81,7 @@ class FeatureNodeList(Property):
     def add_feature(self, feature : FeatureNode):
         self._features.add_property(feature)
     
-    def merge_with(self, parent: FeatureNodeList):
+    def merge_with(self, parent: FeatureNodeList, feature_rules : FeatureRuleNodeList):
         if not parent:
             return copy.deepcopy(self)
         merged = FeatureNodeList(self.name)
@@ -99,6 +99,7 @@ class FeatureNodeList(Property):
         for feature in self.features.values():
             result.add_feature(feature.dispatch())
         return result
+    
 
 class FeatureRuleNode(Property):
     """Represents a feature rule (only-one or incompatible)."""
@@ -124,6 +125,12 @@ class FeatureRuleNode(Property):
 
     def dispatch(self) -> FeatureNodeList:
         assert False, """Feature rules are not is_dispatchable."""
+
+class FeatureRuleNodeOnlyOne(FeatureRuleNode):
+    pass
+
+class FeatureRuleNodeIncompatible(FeatureRuleNode):
+    pass
 
 class FeatureRuleNodeList(Property):
     """Represents the 'feature-rules:' block."""

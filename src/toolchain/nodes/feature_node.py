@@ -11,10 +11,12 @@ class FeatureArgsNode(Property):
       pattern: "*.lib"
     """
     NAME = "args"
+    DEFAULT_MAX_ARGS = 512
+    DEFAULT_MIN_ARGS = 1
 
     def __init__(self):
-        self.min : int = 1
-        self.max : int = 512
+        self.min : int = FeatureArgsNode.DEFAULT_MIN_ARGS
+        self.max : int = FeatureArgsNode.DEFAULT_MAX_ARGS
         self.separator = ","
     
     # @property
@@ -55,16 +57,18 @@ class FeatureNode:
     # def get_property_as(self, name: str, prop_type: Type[T]) -> T | None:
     #     return self._properties.get_property_as(name, prop_type)
     
-    def merge_with(self, parent: FeatureNode):
+    def merge_with(self, parent: FeatureNode, feature_rule: FeatureRuleNodeList):
         if not parent:
             return copy.deepcopy(self)
         merged = FeatureNode(self.name)
-        merged._properties = self._properties.merge_with(parent._properties)
+        merged.description = self.description
+        #merged.flags = self.flags
+        #merged._properties = self._properties.merge_with(parent._properties)
         return merged
     
     def apply_modifiers(self) -> FeatureNode:
         result = FeatureNode(self.name)
-        result._properties = self._properties.apply_modifiers()
+        #result._properties = self._properties.apply_modifiers()
         return result
     
 class FeatureNodeList:
@@ -97,7 +101,8 @@ class FeatureNodeList:
         return result
 
     def dispatch(self) -> FeatureNodeList:
-        result = FeatureNodeList(self.name)
+        return copy.deepcopy(self)
+        result = FeatureNodeList()
         for feature in self.features.values():
             result.add_feature(feature.dispatch())
         return result

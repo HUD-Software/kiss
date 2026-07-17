@@ -3,7 +3,7 @@ from toolchain.nodes.property import PropertyStr, PropertyStrList
 from toolchain.parsers.parse_utils import parse_property
 
 
-from typing import Type, TypeVar
+from typing import TypeVar
 T = TypeVar("T", bound="FeatureNode")
 
 
@@ -29,7 +29,7 @@ def yaml_parse_feature_args(data:dict, feature_name:str) -> FeatureArgsNode:
                     raise ValueError(f"'min' must be a integer value ({feature_name})")
                 args.min = value
             case "max":
-                if not isinstance(value, int):
+                if value is not None and not isinstance(value, int):
                     raise ValueError(f"'max' must be a integer value ({feature_name})")
                 args.max = value
             case "separator":
@@ -37,10 +37,10 @@ def yaml_parse_feature_args(data:dict, feature_name:str) -> FeatureArgsNode:
                     raise ValueError(f"'separator' must be a string value ({feature_name})")
                 args.separator = value
             case _:
-                raise ValueError(f"'{key}:{value}' is not a valid key ({feature_name})")
+                raise ValueError(f"'{key}: {value}' is not a valid key ({feature_name})")
     return args
 
-def yaml_parse_feature(data: dict) -> T:
+def yaml_parse_feature(data: dict) -> FeatureNode:
     # Feature need 'name'
     name = data.get("name")
     if not name or not isinstance(name, str):
@@ -68,7 +68,7 @@ def yaml_parse_feature(data: dict) -> T:
             case "args":
                 if not isinstance(value, dict):
                     raise ValueError(f"'args' must be a composed values -> {value} in ({name})")
-                node.args = yaml_parse_feature_args(data, name)
+                node.args = yaml_parse_feature_args(value, name)
             case _:
                 raise ValueError(f"'{key}:{value}' is not a valid key ({name})")
             # case FeatureArgsNode.NAME:

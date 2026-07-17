@@ -29,6 +29,14 @@ class LinkerNode(Property):
         self.feature_list = FeatureNodeList()
         self.feature_rule_list = FeatureRuleNodeList()
     
+    def __eq__(self, other):
+        if not isinstance(other, FeatureNode):
+            return NotImplemented
+        return self.name == other.name
+
+    def __hash__(self):
+        return hash(self.name)
+    
     def merge_with(self, parent: LinkerNode):
         if not parent:
             return copy.deepcopy(self)
@@ -38,7 +46,7 @@ class LinkerNode(Property):
         result.is_abstract = self.is_abstract
         result.extends = self.extends
         result.feature_rule_list = self.feature_rule_list.merge_with(parent.feature_rule_list)
-        result.feature_list = self.feature_list.merge_with(parent.feature_list)
+        result.feature_list = self.feature_list.merge_with(parent.feature_list, result.feature_rule_list)
         return result
     
     def apply_modifiers(self) -> LinkerNode:
@@ -58,7 +66,7 @@ class LinkerNode(Property):
         result.is_abstract = self.is_abstract
         result.extends = self.extends
         result.feature_list = self.feature_list.dispatch()
-        result.feature_rule_list = copy.deepcopy(self.feature_rule_list)
+        result.feature_rule_list = self.feature_rule_list.dispatch()
         return result
         
 class LinkerSpecificOverrideNode(Property):

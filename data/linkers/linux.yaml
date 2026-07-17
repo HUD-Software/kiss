@@ -49,12 +49,17 @@ linkers:
 
   - name: ld
     extends: gnu-linker
-  
+    features:
+      # Remove dead code
+      - name: REMOVE_DEAD_CODE
+        description: Remove dead code
+        add-flags: [A]
+
   - name: gold
     extends: gnu-linker
 
   - name: lld
     extends: gnu-linker
-  
+
   - name: mold
     extends: gnu-linker

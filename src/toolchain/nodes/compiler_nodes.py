@@ -1,7 +1,7 @@
 
 from __future__ import annotations
 import copy
-from toolchain.nodes.feature_node import FeatureNode, FeatureRuleNodeList
+from toolchain.nodes.feature_node import FeatureNode, FeatureNodeList, FeatureRuleNodeList
 from toolchain.nodes.linker_nodes import LinkersOverrideNode
 from toolchain.nodes.property import Property, PropertyBool, PropertyDict, PropertyStr, PropertyStrList
 from typing import TypeVar, Type
@@ -32,7 +32,15 @@ class CompilerNode(Property):
         self.default_linker = None
         self.feature_list = FeatureNodeList()
         self.feature_rule_list = FeatureRuleNodeList()
-        
+    
+    def __eq__(self, other):
+        if not isinstance(other, FeatureNode):
+            return NotImplemented
+        return self.name == other.name
+
+    def __hash__(self):
+        return hash(self.name)
+    
     def merge_with(self, parent: CompilerNode):
         if not parent:
             return copy.deepcopy(self)

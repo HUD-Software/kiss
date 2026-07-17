@@ -5,33 +5,88 @@ from abc import ABC
 
 import copy
 from enum import Enum
+
 class StrListModifierOperation(Enum):
     ENABLE = "enable"
     DISABLE = "disable"
     ADD = "add"
     REMOVE = "remove"
 
+    @classmethod
+    def is_modifier(cls, value: str) -> bool:
+        return any(value.startswith(op.value + "-") for op in cls)
+
+    @classmethod
+    def split_modifier(cls, value: str) -> tuple[StrListModifierOperation, str] | None:
+        if not cls.is_modifier(value):
+            return None
+        modifier, list_name = value.split("-", 1)
+        return cls(modifier), list_name
+
+
 class StrListModifier:
-    def __init__(self, list_name, values,  operation: StrListModifierOperation):
-        self.name = f"{operation.value}-{list_name}"
-        self.values: list[str] = list(values)
-        self.list_name = list_name
+    def __init__(self, operation: StrListModifierOperation, values: list[str]):
+        self.values = values
         self.operation = operation
     
     def is_empty(self) -> bool:
         return not self.values
-    
-    def append_to_lines_print(self, lines, ignore_empty):
-        if not self.is_empty() or not ignore_empty:
-            lines.append(f"{self.name}: {self.values}")
 
-    def append_to_json_print(self, json, ignore_empty):
-        if not self.is_empty() or not ignore_empty:
-            json[self.name] = self.values
 
-class StrListModifier:
+class StrList:
     def __init__(self):
-        self.values: list[StrListModifier] = list()
+        self.values : list[str] = list()
+        self.modifiers: list[StrListModifier] = list()
+
+    def add_modifier(self, modifier :StrListModifier) : 
+        self.modifiers.append(modifier)
+
+    def has_values(self) -> bool:
+        return len(self.values) > 0
+    
+    def has_modifiers(self) -> bool:
+        return len(self.modifiers) > 0
+    
+    def is_empty(self):
+        return not self.has_values() and not self.has_modifiers()
+
+    def apply_modifiers(self) -> StrList:
+        result = StrList()
+        result.values = copy.deepcopy(self.values)
+
+        for mod in self.modifiers:
+            if mod.operation == StrListModifierOperation.ADD or mod.operation == StrListModifierOperation.ENABLE:
+                for value in mod.values:
+                    if value not in result.values:
+                        result.values.append(value)
+            elif mod.operation == StrListModifierOperation.REMOVE or mod.operation == StrListModifierOperation.DISABLE:
+                for value in mod.values:
+                    if value in result.values:
+                        result.values.remove(value)
+        return result
+                
+
+def merge_str_list(child: StrList, parent: StrList) -> StrList :
+    assert isinstance(child, StrList)
+    assert isinstance(parent, StrList)
+    # If child has explicit values, ignore parents
+    if child.has_values():
+        return copy.deepcopy(child)
+    # Else merge StrList
+    result = StrList()
+    result.values = copy.deepcopy(parent.values)
+    result.modifiers = child.modifiers + parent.modifiers
+    return result
+
+
+    # # If child has explicit values, ignore parents
+    # if child.has_values():
+    #     return copy.deepcopy(child)
+    # # Else merge StrList
+    # result = StrList()
+    # result.values = copy.deepcopy(parent.values)
+    # result.modifiers = child.modifiers + parent.modifiers
+    #return result
 
 # ── Base ──────────────────────────────────────────────────────────────────────
 

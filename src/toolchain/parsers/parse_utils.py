@@ -20,41 +20,68 @@ from toolchain.nodes.property import (
     PropertyBool,
     PropertyStrList,
     PropertyStrListModifier,
+    StrList,
+    StrListModifier,
     StrListModifierOperation,
 )
-def _is_list_of_str(value) -> bool:
-    return isinstance(value, list) and all(isinstance(v, str) for v in value)
+# def _is_list_of_str(value) -> bool:
+#     return isinstance(value, list) and all(isinstance(v, str) for v in value)
 
-def try_parse_list_modifier(key: str, value) -> PropertyStrListModifier | None:
-    if not _is_list_of_str(value):
-        return None
+# def try_parse_list_modifier(key: str, value) -> PropertyStrListModifier | None:
+#     if not _is_list_of_str(value):
+#         return None
 
-    values = [str(v) for v in value]
+#     values = [str(v) for v in value]
 
-    prefix_mapping = {
-        "add-": StrListModifierOperation.ADD,
-        "enable-": StrListModifierOperation.ADD,
-        "remove-": StrListModifierOperation.REMOVE,
-        "disable-": StrListModifierOperation.REMOVE,
-    }
+#     prefix_mapping = {
+#         "add-": StrListModifierOperation.ADD,
+#         "enable-": StrListModifierOperation.ADD,
+#         "remove-": StrListModifierOperation.REMOVE,
+#         "disable-": StrListModifierOperation.REMOVE,
+#     }
     
-    for prefix, operation in prefix_mapping.items():
-        if key.startswith(prefix):
-            base = key[len(prefix):]
+#     for prefix, operation in prefix_mapping.items():
+#         if key.startswith(prefix):
+#             base = key[len(prefix):]
 
-            modifier_cls = (
-                PropertyFeatureNameListModifier
-                if base == "features"
-                else PropertyStrListModifier
-            )
+#             modifier_cls = (
+#                 PropertyFeatureNameListModifier
+#                 if base == "features"
+#                 else PropertyStrListModifier
+#             )
 
-            return modifier_cls(
-                base,
-                values,
-                operation,
-            )
+#             return modifier_cls(
+#                 base,
+#                 values,
+#                 operation,
+#             )
 
-    return None
+#     return None
+
+def try_parse_list_modifier(list_name:str, existing: StrList, key: str, value: list[str]) -> bool:
+
+    # Is it a list name?
+    if key == list_name:
+        if not isinstance(value, list) or any(not isinstance(sl, str) for sl in value):
+            raise ValueError(f"{list_name!r} must be a list of string -> {value}")
+        if existing.values:
+            raise ValueError(f"{list_name!r} must appear only once. To add or remove use modifier by using 'add-{list_name}' or 'remove-{list_name}' -> {value}")
+        else:
+            existing.values = value
+        return True
+    
+    # Is it a modifier?
+    str_list = StrListModifierOperation.split_modifier(key)
+    if str_list:
+        # Ignore modifier with empty list
+        if not value:
+            return True
+        str_op, list_name = str_list
+        existing.add_modifier(StrListModifier(str_op, value))
+        return True
+
+    # Not a list name or modifier
+    return False
 
 def parse_property(key: str, value) -> Property | None:
     """

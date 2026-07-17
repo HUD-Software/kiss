@@ -1,8 +1,8 @@
 from __future__ import annotations
 import copy
-from toolchain.nodes.property import Property, PropertyDict, PropertyStr, PropertyStrList, StrListModifier
+from toolchain.nodes.property import Property, StrList, StrListModifier, merge_str_list
 
-class FeatureArgsNode(Property):
+class FeatureArgsNode:
     """Represents the 'args' block inside a feature with arguments.
     args:
       min: 1
@@ -18,16 +18,31 @@ class FeatureArgsNode(Property):
         self.min : int = FeatureArgsNode.DEFAULT_MIN_ARGS
         self.max : int = FeatureArgsNode.DEFAULT_MAX_ARGS
         self.separator = ","
-    
-    # @property
-    # def properties(self) -> PropertyDict:
-    #     return self._properties
-
-    # def add_property(self, property: Property):
-    #     self._properties.add_property(property)
 
 from typing import TypeVar, Type
 T = TypeVar("T", bound=Property)
+
+class FeatureStrList:
+    def __init__(self):
+        self.str_list = StrList()
+
+    def add_modifier(self, modifier :StrListModifier) : 
+        self.str_list.add_modifier(modifier)
+
+    def has_values(self) -> bool:
+        return self.str_list.has_values()
+    
+    def has_modifiers(self) -> bool:
+        return self.str_list.has_modifiers()
+    
+    def is_empty(self):
+        return not self.has_values() and not self.has_modifiers()
+
+def merge_feature_list(child: FeatureStrList, parent: FeatureStrList, feature_rules: FeatureRuleNodeList) -> StrList :
+    assert isinstance(child, FeatureStrList)
+    assert isinstance(parent, FeatureStrList)
+
+    raise NotImplementedError
 
 class FeatureNode:
     """Represents a single compiler feature entry.
@@ -39,175 +54,171 @@ class FeatureNode:
     def __init__(self, name: str):
         self.name = name
         self.description = ""
-        self.flags = list[str]()
-        self.features = list[str]()
-        self.feature_modifiers = StrListModifier()
-        self.args = None
+        self.flags = StrList()
+        self.features = FeatureStrList ()
+        self.args : FeatureArgsNode = None
     
-    # @property
-    # def properties(self) -> PropertyDict:
-    #     return self._properties
-    
-    # def add_property(self, property: Property):
-    #     self._properties.add_property(property)
+    def __eq__(self, other):
+        if not isinstance(other, FeatureNode):
+            return NotImplemented
+        return self.name == other.name
 
-    # def get_property(self, name: str) -> Property | None:
-    #     return self._properties.get_property(name)
+    def __hash__(self):
+        return hash(self.name)
     
-    # def get_property_as(self, name: str, prop_type: Type[T]) -> T | None:
-    #     return self._properties.get_property_as(name, prop_type)
-    
-    def merge_with(self, parent: FeatureNode, feature_rule: FeatureRuleNodeList):
-        if not parent:
-            return copy.deepcopy(self)
-        merged = FeatureNode(self.name)
-        merged.description = self.description
-        #merged.flags = self.flags
-        #merged._properties = self._properties.merge_with(parent._properties)
-        return merged
+    def merge_with(self, parent: FeatureNode, feature_rules: FeatureRuleNodeList):
+        flags = merge_str_list(self.flags, parent.flags)
+        features = merge_feature_list(self.features, self.features, feature_rules)
+        arg = copy.deepcopy(self.args if self.args else parent.args) 
+        description = copy.deepcopy(self.description if self.description else parent.description)
+        raise FeatureNode()
     
     def apply_modifiers(self) -> FeatureNode:
-        result = FeatureNode(self.name)
-        #result._properties = self._properties.apply_modifiers()
-        return result
+        raise NotImplemented
+        # result = FeatureNode(self.name)
+        # #result._properties = self._properties.apply_modifiers()
+        # return result
     
 class FeatureNodeList:
     """Represents the 'features:' block."""
     def __init__(self):
-        self._features = PropertyDict()
+        self._features : set[FeatureNode] = set()
+    
+    def is_empty(self) -> bool:
+        return not self._features
     
     @property
-    def properties(self) -> PropertyDict:
+    def features(self) -> set[FeatureNode]:
         return self._features
     
-    @property
-    def features(self) -> PropertyDict:
-        return self.properties
-    
     def add_feature(self, feature : FeatureNode):
-        self._features.add_property(feature)
+        self._features.add(feature)
     
-    def merge_with(self, parent: FeatureNodeList):
-        if not parent:
-            return copy.deepcopy(self)
-        merged = FeatureNodeList(self.name)
-        merged._features = self._features.merge_with(parent._features)
-        return merged
+    def get_by_name(self, name: str) -> FeatureNode | None:
+        for rule in self._features:
+            if rule.name == name:
+                return rule
+        return None
+
+    def merge_with(self, parent: FeatureNodeList, feature_rules: FeatureRuleNodeList):
+        result = copy.deepcopy(self)
+        if parent:
+            for parent_feature in parent.features:
+                self_feature = self.get_by_name(parent_feature.name)
+                if self_feature:
+                    result.add_feature(self_feature.merge_with(parent_feature, feature_rules))
+                else:
+                    result.add_feature(copy.deepcopy(parent_feature))
+        return result
     
     def apply_modifiers(self) -> FeatureNodeList:
-        result = FeatureNodeList(self.name)
-        for feature in self.features.values():
-            result.add_feature(feature.apply_modifiers())
-        return result
+        raise NotImplemented
+        # result = FeatureNodeList(self.name)
+        # for feature in self.features.values():
+        #     result.add_feature(feature.apply_modifiers())
+        # return result
 
     def dispatch(self) -> FeatureNodeList:
         return copy.deepcopy(self)
-        result = FeatureNodeList()
-        for feature in self.features.values():
-            result.add_feature(feature.dispatch())
-        return result
     
 
-class FeatureRuleNode(Property):
+class FeatureRuleNode:
     """Represents a feature rule (only-one or incompatible)."""
     
-    def __init__(self, name:str):
-        super().__init__(name)
-        self._properties = PropertyDict()
+    def __init__(self, name: str):
+        self.name = name
     
+    def __eq__(self, other):
+        if not isinstance(other, FeatureRuleNode):
+            return NotImplemented
+        return self.name == other.name
+
+    def __hash__(self):
+        return hash(self.name)
+    
+    def merge_with(self, parent: FeatureRuleNode):
+        raise NotImplemented(f"Feature rule {self.name!r} is not mergeable with{parent.name}.")
+
+    def dispatch(self) -> FeatureRuleNode:
+        raise NotImplemented(f"Feature rule {self.name!r} are not is_dispatchable.")
+
+class FeatureRuleNodeOnlyOne(FeatureRuleNode):  
+    RULE_NAME = "only-one"
+    def __init__(self, name: str, feature_names : StrList):
+        super().__init__(name)
+        self._feature_names = feature_names
+
     @property
-    def properties(self) -> PropertyDict:
-        return self._properties
-    
-    def add_property(self, property: Property):
-        self._properties.add_property(property)
+    def feature_names(self) -> StrList:
+        return self._feature_names
 
-    def get_property(self, name: str) -> Property | None:
-        return self._properties.get(name)
-    
-    def get_property_as(self, name: str, prop_type: Type[T]) -> T | None:
-        return self._properties.get_property_as(name, prop_type)
-    
-    def merge_with(self, parent: FeatureNodeList):
-        assert False, """
-        Feature rules are not is_mergeable.
-        We don't allow modification of existing feature-rules"""
-
-    def dispatch(self) -> FeatureNodeList:
-        assert False, """Feature rules are not is_dispatchable."""
-
-class FeatureRuleNodeOnlyOne(FeatureRuleNode):
-    NAME = "only-one"
-    def __init__(self, name: str, features: PropertyStrList):
-        super().__init__(name)
-        self.add_property(features)
-
-    def features(self) -> list[str]:
-        return self.get_property_as("features", PropertyStrList).values
+    def merge_with(self, parent: FeatureRuleNodeOnlyOne) -> FeatureRuleNodeOnlyOne:
+        return FeatureRuleNodeOnlyOne(self.name, 
+                                      merge_str_list(self.feature_names, parent.feature_names))
 
 
 class FeatureRuleNodeIncompatible(FeatureRuleNode):
-    NAME = "incompatible"
+    RULE_NAME = "incompatible"
     
-    def __init__(self, name: str, feature: PropertyStr, incompatible_with: PropertyStrList):
+    def __init__(self, name: str, feature: str, incompatible_with: StrList):
         super().__init__(name)
-        self.add_property(feature)
-        self.add_property(incompatible_with)
-
-    def feature(self) -> str:
-        return self.get_property_as("feature", PropertyStr).value
-
-    def incompatible_features(self) -> list[str]:
-        return self.get_property_as("with", PropertyStrList).values
+        self._feature = feature
+        self._with = incompatible_with
     
-class FeatureRuleNodeList(Property):
+    @property
+    def feature(self) -> str:
+        return self._feature
+    
+    @property
+    def incompatible_with(self) -> StrList:
+        return self._with
+    
+    def merge_with(self, parent: FeatureRuleNodeIncompatible) -> FeatureRuleNodeIncompatible:
+        return FeatureRuleNodeIncompatible(self.name,
+                                           self.feature,
+                                           merge_str_list(self.incompatible_with, parent.incompatible_with))
+    
+class FeatureRuleNodeList:
     """Represents the 'feature-rules:' block."""
     NAME = "feature-rules"
-
-    def __init__(self, name:str=NAME):
-        super().__init__(name)
-        self._feature_rules = PropertyDict()
-
-    @property
-    def properties(self) -> PropertyDict:
-        return self._feature_rules
-
-    @property
-    def feature_rules(self) -> PropertyDict:
-        return self.properties
+ 
+    def __init__(self):
+        self._feature_rules : set[FeatureRuleNode] = set()
     
-    def add_feature_rule(self, feature : FeatureRuleNode):
-        self._feature_rules.add_property(feature)
-
+    def is_empty(self) -> bool:
+        return not self._feature_rules
+    
+    @property
+    def feature_rules(self) -> set[FeatureRuleNode]:
+        return self._feature_rules
+    
+    def add_feature_rule(self, feature_rule : FeatureRuleNode):
+        self._feature_rules.add(feature_rule)
+    
+    def get_by_name(self, name: str) -> FeatureRuleNode | None:
+        for rule in self._feature_rules:
+            if rule.name == name:
+                return rule
+        return None
+    
     def get_all_rules_of_type(self, rule_type: Type[T]) -> list[T]:
         """Return all rules matching the given FeatureRuleNode subclass,
         preserving declaration order."""
-        return [r for r in self._feature_rules.values() if isinstance(r, rule_type)]
+        return [r for r in self._feature_rules if isinstance(r, rule_type)]
     
     def merge_with(self, parent: FeatureRuleNodeList):
-        if not parent:
-            return copy.deepcopy(self)
-        result = FeatureRuleNodeList(self.name)
-        # Keep self features
-        for feature_rule in self.feature_rules.values():
-            result.add_feature_rule(copy.deepcopy(feature_rule))
-
-        # Add parent feature 
-        for feature_rule in parent.feature_rules.values():
-            if feature_rule.name not in result.feature_rules:
-                result.add_feature_rule(copy.deepcopy(feature_rule))
-            else:
-                raise ValueError(f"Feature rule '{feature_rule.name}' already exists")
+        result = copy.deepcopy(self)
+        if parent:
+            for parent_feature_rule in parent.feature_rules:
+                self_feature_rule = self.get_by_name(parent_feature_rule.name)
+                if self_feature_rule:
+                    result.add_feature_rule(self_feature_rule.merge_with(parent_feature_rule))
+                else:
+                    result.add_feature_rule(copy.deepcopy(parent_feature_rule))
         return result
-
+    
     def apply_modifiers(self) -> FeatureRuleNodeList:
-        result = FeatureRuleNodeList(self.name)
-        for feature in self.feature_rules.values():
-            result.add_feature_rule(copy.deepcopy(feature))
-        return result
+        return copy.deepcopy(self)
 
     def dispatch(self) -> FeatureRuleNodeList:
-        result = FeatureRuleNodeList(self.name)
-        for feature in self.feature_rules.values():
-            result.add_feature_rule(copy.deepcopy(feature))
-        return result
+        return copy.deepcopy(self)

@@ -1,10 +1,6 @@
-from toolchain.nodes.feature_node import FeatureArgsNode, FeatureNode, FeatureNodeList, FeatureRuleNode, FeatureRuleNodeIncompatible, FeatureRuleNodeList, FeatureRuleNodeOnlyOne
+from toolchain.nodes.feature_node import FeatureArgsNode, FeatureNode, FeatureNodeList, FeatureRuleNodeIncompatible, FeatureRuleNodeList, FeatureRuleNodeOnlyOne
 from toolchain.nodes.property import StrList
-from typing import TypeVar
-
 from toolchain.parsers.parse_utils import try_parse_list_modifier
-T = TypeVar("T", bound="FeatureNode")
-
 
 def yaml_parse_feature_list(data: dict) -> FeatureNodeList:
     feature_list = FeatureNodeList()
@@ -14,9 +10,26 @@ def yaml_parse_feature_list(data: dict) -> FeatureNodeList:
 
 
 def yaml_parse_feature_rule_list(data:dict) -> FeatureRuleNodeList:
+    ALLOWED_RULE_KINDS = {FeatureRuleNodeOnlyOne.RULE_NAME, 
+                          FeatureRuleNodeIncompatible.RULE_NAME}
+    
     feature_rule_list = FeatureRuleNodeList()
-    for fr in data:
-        feature_rule_list.add_feature_rule(yaml_parse_feature_rule(fr))
+    if data:
+        for fr in data:    
+            kind = next(iter(fr))
+            if kind not in ALLOWED_RULE_KINDS:
+                raise ValueError(
+                    f"Unknown feature rule '{kind}', expected one of {sorted(ALLOWED_RULE_KINDS)}"
+                )
+            
+            # Is it 'only-one' rule?
+            match kind:
+                case FeatureRuleNodeOnlyOne.RULE_NAME:
+                    feature_rule_list.add_feature_rule(yaml_parse_feature_rule_only_one(fr))
+                case FeatureRuleNodeIncompatible.RULE_NAME:
+                    feature_rule_list.add_feature_rule(yaml_parse_feature_rule_incompatible(fr))
+                case _:
+                    raise ValueError(f"Unknown feature rule: {data}")
     return feature_rule_list
 
 def yaml_parse_feature_args(data:dict, feature_name:str) -> FeatureArgsNode:
@@ -67,75 +80,71 @@ def yaml_parse_feature(data: dict) -> FeatureNode:
             case _:
                 if try_parse_list_modifier("flags", node.flags, key, value):
                     continue
+                elif try_parse_list_modifier("features", node.features.str_list, key, value):
+                    continue
                 else:    
                     raise ValueError(f"'{key}:{value}' is not a valid key ({name})")
     return node
 
-ALLOWED_RULE_KINDS = {FeatureRuleNodeOnlyOne.RULE_NAME, FeatureRuleNodeIncompatible.RULE_NAME}
-def yaml_parse_feature_rule(data: dict) -> FeatureRuleNode:
-    """Parse a single feature rule (only-one or incompatible)."""
-    kind = next(iter(data))
-    if kind not in ALLOWED_RULE_KINDS:
-        raise ValueError(
-            f"Unknown feature rule '{kind}', expected one of {sorted(ALLOWED_RULE_KINDS)}"
-        )
+
+
+def yaml_parse_feature_rule_only_one(data: dict) -> FeatureRuleNodeOnlyOne:
+    name = None
+    description = ""
+    feature_names = StrList()
+    for key, value in data.items():
+        match key:
+            case FeatureRuleNodeOnlyOne.RULE_NAME:
+                if not value or not isinstance(value, str):
+                    raise ValueError(f"{FeatureRuleNodeOnlyOne.RULE_NAME!r} of feature rule must be a string")
+                name = value
+            case "description":
+                if not value or not isinstance(value, str):
+                    raise ValueError(f"'description' of feature rule must be a string")
+                description = value
+            case _:
+                if try_parse_list_modifier("features", feature_names, key, value):
+                    continue
+                else:    
+                    raise ValueError(f"'{key}:{value}' is not a valid key ({name})")
+                
+    if not name:
+        raise ValueError(f"Missing {FeatureRuleNodeOnlyOne.RULE_NAME!r} as string for feature rule")
+    if not feature_names.is_user_defined_values() and not feature_names.is_user_defined_modifiers():
+        raise ValueError(f"Missing 'features' or 'add/enable' modifier as list of string for feature rule {FeatureRuleNodeOnlyOne.RULE_NAME!r}")
+
+    return FeatureRuleNodeOnlyOne(name, description, feature_names)
+
+def yaml_parse_feature_rule_incompatible(data: dict) -> FeatureRuleNodeIncompatible:
+    name = None
+    feature = None
+    description = ""
+    incompatible_with = StrList()
+    for key, value in data.items():
+        match key:
+            case FeatureRuleNodeIncompatible.RULE_NAME:
+                if not value or not isinstance(value, str):
+                    raise ValueError(f"{FeatureRuleNodeIncompatible.RULE_NAME!r} of feature rule must be a string")
+                name = value
+            case "description":
+                if not value or not isinstance(value, str):
+                    raise ValueError(f"'description' of feature rule must be a string")
+                description = value
+            case "feature":
+                if not value or not isinstance(value, str):
+                    raise ValueError(f"'feature' of feature rule must be a string")
+                feature = value
+            case _:
+                if try_parse_list_modifier("with", incompatible_with, key, value):
+                    continue
+                else:    
+                    raise ValueError(f"'{key}:{value}' is not a valid key ({name})")
+                
+    if not name:
+        raise ValueError(f"Missing {FeatureRuleNodeIncompatible.RULE_NAME!r} as string for feature rule")
+    if not feature:
+        raise ValueError(f"Missing 'feature' as string for feature rule {FeatureRuleNodeIncompatible.RULE_NAME!r}")
+    if not incompatible_with.is_user_defined_values() and not incompatible_with.is_user_defined_modifiers():
+        raise ValueError(f"Missing 'incompatible_with' as list of string for feature rule {FeatureRuleNodeIncompatible.RULE_NAME!r}")
     
-    # Is it 'only-one' rule?
-    if FeatureRuleNodeOnlyOne.RULE_NAME in data:
-        name = None
-        feature_names = StrList()
-        for key, value in data.items():
-            match key:
-                case FeatureRuleNodeOnlyOne.RULE_NAME:
-                    if not value or not isinstance(value, str):
-                        raise ValueError(f"{FeatureRuleNodeOnlyOne.RULE_NAME!r} of feature rule must be a string")
-                    name = value
-                case _:
-                    if try_parse_list_modifier("features", feature_names, key, value):
-                        continue
-                    else:    
-                        raise ValueError(f"'{key}:{value}' is not a valid key ({name})")
-                    
-        if not name:
-            raise ValueError(f"Missing {FeatureRuleNodeIncompatible.RULE_NAME!r} as string for feature rule")
-        if feature_names.is_empty():
-            raise ValueError(f"Missing 'incompatible_with' as list of string for feature rule {FeatureRuleNodeIncompatible.RULE_NAME!r}")
-  
-        return FeatureRuleNodeOnlyOne(name, feature_names)
-
-    # Is it 'incompatible' rule?
-    elif FeatureRuleNodeIncompatible.RULE_NAME in data:
-        name = None
-        feature = None
-        incompatible_with = StrList()
-        for key, value in data.items():
-            match key:
-                case FeatureRuleNodeIncompatible.RULE_NAME:
-                    if not value or not isinstance(value, str):
-                        raise ValueError(f"{FeatureRuleNodeIncompatible.RULE_NAME!r} of feature rule must be a string")
-                    name = value
-                case "feature":
-                    if not value or not isinstance(value, str):
-                        raise ValueError(f"'feature' of feature rule must be a string")
-                    feature = value
-                case _:
-                    if try_parse_list_modifier("with", incompatible_with, key, value):
-                        continue
-                    else:    
-                        raise ValueError(f"'{key}:{value}' is not a valid key ({name})")
-                    
-        if not name:
-            raise ValueError(f"Missing {FeatureRuleNodeIncompatible.RULE_NAME!r} as string for feature rule")
-        if not feature:
-            raise ValueError(f"Missing 'feature' as string for feature rule {FeatureRuleNodeIncompatible.RULE_NAME!r}")
-        if incompatible_with.is_empty():
-            raise ValueError(f"Missing 'incompatible_with' as list of string for feature rule {FeatureRuleNodeIncompatible.RULE_NAME!r}")
-        
-        return FeatureRuleNodeIncompatible(name,
-                                           feature,
-                                           incompatible_with)
-    
-    else:
-        raise ValueError(f"Unknown feature rule: {data}")
-
-
+    return FeatureRuleNodeIncompatible(name, description, feature, incompatible_with)

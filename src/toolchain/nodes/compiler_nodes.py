@@ -7,7 +7,7 @@ from toolchain.nodes.property import Property, PropertyBool, PropertyDict, Prope
 from typing import TypeVar, Type
 T = TypeVar("T", bound=Property)
 
-class CompilerNode(Property):
+class CompilerNode:
     """Represents a compiler definition in compilers.yaml.
 
     A compiler node can be abstract (base template, e.g. 'msvc-compiler') or concrete
@@ -25,7 +25,7 @@ class CompilerNode(Property):
     enabling linker-specific features when a given compiler feature is activated.
     """
     def __init__(self, name : str):
-        super().__init__(name)
+        self.name = name
         self.is_abstract = False
         self.extends = None
         self.supported_linkers = list[str]()
@@ -49,10 +49,13 @@ class CompilerNode(Property):
         result = CompilerNode(self.name)
         result.is_abstract = self.is_abstract
         result.extends = self.extends
-        result.supported_linkers = self.supported_linkers
+        result.supported_linkers = self.supported_linkers + parent.supported_linkers
         result.default_linker = self.default_linker
-        result.feature_list = self.feature_list.merge_with(parent.feature_list)
-        result.feature_rule_list = self.feature_rule_list.merge_with(parent.feature_rule_list)
+        # Apply modifier during merge before merging the feature list
+        # We want to merge feature list according the rules, we must merge feature rule with parent 
+        # but also resolve modifier to validate
+        result.feature_rule_list = self.feature_rule_list.merge_with(parent.feature_rule_list).apply_modifiers()
+        result.feature_list = self.feature_list.merge_with(parent.feature_list, result.feature_rule_list)
         return result
     
     def apply_modifiers(self) -> CompilerNode:
@@ -60,10 +63,10 @@ class CompilerNode(Property):
         result  = CompilerNode(self.name)
         result.is_abstract = self.is_abstract
         result.extends = self.extends
-        result.supported_linkers = self.supported_linkers
+        result.supported_linkers = self.supported_linkers.copy()
         result.default_linker = self.default_linker
-        result.feature_list = self.feature_list.apply_modifiers()
-        result.feature_rule_list = copy.deepcopy(self.feature_rule_list)
+        result.feature_rule_list = self.feature_rule_list.apply_modifiers()
+        result.feature_list = self.feature_list.apply_modifiers(result.feature_rule_list)
         return result
         
     def dispatch(self) -> CompilerNode:
@@ -73,11 +76,21 @@ class CompilerNode(Property):
         result = CompilerNode(self.name)
         result.is_abstract = self.is_abstract
         result.extends = self.extends
-        result.supported_linkers = self.supported_linkers
+        result.supported_linkers = self.supported_linkers.copy()
         result.default_linker = self.default_linker
-        result.feature_list = self.feature_list.dispatch()
         result.feature_rule_list = copy.deepcopy(self.feature_rule_list)
+        result.feature_list = copy.deepcopy(self.feature_list)
         return result
+
+    def resolve_extends(self, parent: CompilerNode) -> CompilerNode:
+        if parent:
+            assert parent.name == self.extends
+            node = self.merge_with(parent)
+        else:
+            node = self
+        node = node.dispatch()
+        node = node.apply_modifiers()
+        return node
 
 class CompilerSpecificOverrideNode(Property):
     """Represents a per-compiler override inside a 'compilers:' node.
@@ -205,36 +218,77 @@ class CompilersOverrideNode(Property):
         return result
 
 class CompilerFeatureNodeList:
-    def __init___(self):
-        pass
-class CompilerFeatureNode(FeatureNode):
+    """Represents the 'features:' block."""
+    def __init__(self):
+        self._features : set[CompilerFeatureNode] = set()
+    
+    def is_empty(self) -> bool:
+        return not self._features
+    
+    @property
+    def features(self) -> set[CompilerFeatureNode]:
+        return self._features
+    
+    def add_feature(self, feature : CompilerFeatureNode):
+        self._features.add(feature)
+    
+    def get_by_name(self, name: str) -> CompilerFeatureNode | None:
+        for rule in self._features:
+            if rule.name == name:
+                return rule
+        return None
 
+    def merge_with(self, parent: CompilerFeatureNodeList, feature_rules: FeatureRuleNodeList):
+        result = CompilerFeatureNodeList()
+        if parent:
+            for parent_feature in parent.features:
+                self_feature = self.get_by_name(parent_feature.name)
+                if self_feature:
+                    result.add_feature(self_feature.merge_with(parent_feature, feature_rules))
+                else:
+                    result.add_feature(copy.deepcopy(parent_feature))
+        return result
+    
+    def apply_modifiers(self, feature_rules: FeatureRuleNodeList) -> CompilerFeatureNodeList:
+        result = CompilerFeatureNodeList()
+        for feature in self.features:
+            result.add_feature(feature.apply_modifiers(feature_rules))
+        return result
+
+    # def dispatch(self, feature_rules: FeatureRuleNodeList) -> CompilerFeatureNodeList:
+    #     result = CompilerFeatureNodeList()
+    #     for feature in self.features:
+    #         result.add_feature(feature.dispatch(feature_rules))
+    #     return result
+
+class CompilerFeatureNode(FeatureNode):
     def __init__(self, name:str):
         super().__init__(name)
-        self.linkers : LinkersOverrideNode = None
+        self.linkers = LinkersOverrideNode()
 
-    def merge_with(self, other: CompilerFeatureNode):
-        if not other:
-            return copy.deepcopy(self)
-        merged = CompilerFeatureNode(self.name)
-        merged._properties = self.properties.merge_with(other.properties)
-        if other.linkers:
-            if self.linkers:
-                merged.linkers = self.linkers.merge_with(other.linkers)
-            else:
-                merged.linkers = copy.deepcopy(other.linkers)
-        return merged
+    @classmethod
+    def from_feature_node(cls, feature: FeatureNode) -> CompilerFeatureNode:
+        obj = cls(feature.name)
+        obj.flags = copy.deepcopy(feature.flags)
+        obj.features = copy.deepcopy(feature.features)
+        obj.args = copy.deepcopy(feature.args)
+        obj.description = copy.deepcopy(feature.description)
+        return obj
     
-    def apply_modifiers(self) -> FeatureNodeList:
-        result = CompilerFeatureNode(self.name)
-        result._properties = self.properties.apply_modifiers()
-        if self.linkers:
-            result.linkers = self.linkers.apply_modifiers()
+    def merge_with(self, other: CompilerFeatureNode, feature_rules: FeatureRuleNodeList):
+        s : FeatureNode = super().apply_modifiers(feature_rules)
+        result = CompilerFeatureNode.from_feature_node(s)
+        result.linkers = self.linkers.merge_with(other.linkers)
+        return result
+    
+    def apply_modifiers(self, feature_rules: FeatureRuleNodeList) -> CompilerFeatureNode:
+        s : FeatureNode = super().apply_modifiers(feature_rules)
+        result = CompilerFeatureNode.from_feature_node(s)
+        result.linkers = copy.deepcopy(self.linkers)
         return result
 
-    def dispatch(self) -> CompilerFeatureNode:
-        result = CompilerFeatureNode(self.name)
-        result._properties = copy.deepcopy(self.properties)
-        if self.linkers:
-            result.linkers = self.linkers.dispatch(result.properties)
-        return result
+    # def dispatch(self, feature_rules: FeatureRuleNodeList) -> CompilerFeatureNode:
+    #     result = CompilerFeatureNode.from_feature_node(self)
+    #     result.linkers = self.linkers.dispatch(feature_rules)
+    #     return result
+      

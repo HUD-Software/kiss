@@ -1,11 +1,11 @@
 from __future__ import annotations
 from wcwidth import wcswidth
-from toolchain.nodes.compiler_nodes import CompilerFeatureNode, CompilerNode, CompilerSpecificOverrideNode, CompilersOverrideNode
-from toolchain.nodes.feature_node import FeatureArgsNode, FeatureNode, FeatureNodeList, FeatureRuleNode, FeatureRuleNodeIncompatible, FeatureRuleNodeList, FeatureRuleNodeOnlyOne
+from toolchain.nodes.compiler_nodes import CompilerFeatureNode, CompilerFeatureNodeList, CompilerNode, CompilerSpecificOverrideNode, CompilersOverrideNode
+from toolchain.nodes.feature_node import FeatureStrList, FeatureArgsNode, FeatureNode, FeatureNodeList, FeatureRuleNode, FeatureRuleNodeIncompatible, FeatureRuleNodeList, FeatureRuleNodeOnlyOne
 from toolchain.nodes.linker_nodes import LinkerNode, LinkerSpecificOverrideNode, LinkersOverrideNode
 from toolchain.nodes.profile_nodes import ProfileNode
 from toolchain.nodes.project_type_nodes import ProjectTypeNode, ProjectTypeSpecificOverrideNode, ProjectTypesOverrideNode
-from toolchain.nodes.property import Property, PropertyDict, PropertyBool,  PropertyStr, PropertyStrList
+from toolchain.nodes.property import  PropertyDict, PropertyBool,  PropertyStr, PropertyStrList, StrList
 from toolchain.nodes.target_nodes import TargetNode
 
 
@@ -30,11 +30,11 @@ def register_box(cls):
         return func
     return decorator
 
-def to_box(obj, ignore_empty: bool = True):
+def to_box(box_name: str, obj, ignore_empty: bool = True, parent_box: Box = None):
     obj_type = type(obj)
 
     if obj_type in _BOX_CONVERTERS:
-        return _BOX_CONVERTERS[obj_type](obj, ignore_empty)
+        return _BOX_CONVERTERS[obj_type](box_name, obj, ignore_empty, parent_box)
 
     raise TypeError(f"No box converter for {obj_type}")
 
@@ -44,140 +44,206 @@ def append_bool_to_lines_print(name:str, value:bool, lines):
 def append_list_str_to_lines_print(name:str, value:list[str], lines):
         lines.append(f"{name}: {value}")
 
+def box_str_list(name: str, str_list: StrList, ignore_empty: bool, parent_box: Box, max_line_length: int = 80):
+    if str_list.has_values() or str_list.has_modifiers() or not ignore_empty:
+        if str_list.has_modifiers():
+            flags_box = to_box(name, str_list, ignore_empty, parent_box)
+            parent_box.inner_boxes.append(flags_box)
+        else:
+            values = list(str_list.values)
+            prefix = f"{name}: ["
+            
+            if not values:
+                parent_box.lines.append(f"{name}: []")
+                return
+
+            lines = []
+            current_line = prefix
+            current_is_first = True
+            indent = " " * len(prefix)
+            for i, item in enumerate(values):
+                is_last_item = (i == len(values) - 1)
+                piece = item + ("]" if is_last_item else ", ")
+
+                if current_line != (prefix if current_is_first else indent) and \
+                   len(current_line) + len(piece) > max_line_length:
+                    lines.append(current_line)
+                    current_line = indent
+                    current_is_first = False
+
+                current_line += piece
+            lines.append(current_line)
+            parent_box.lines.extend(lines)
+
 @register_box(LinkerSpecificOverrideNode)
-def _(linker_node: LinkerSpecificOverrideNode, ignore_empty: bool):
-    box = Box(linker_node.name)
-    for properties in linker_node.properties.values():
-        properties.append_to_lines_print(box.lines, ignore_empty)
+def _(box_name: str, linker_node: LinkerSpecificOverrideNode, ignore_empty: bool, parent_box: Box):
+    box = Box(box_name)
+    box_str_list("flags",linker_node.flags, ignore_empty, box)
+    box_str_list("features", linker_node.features, ignore_empty, box)
     return box
 
 @register_box(LinkersOverrideNode)
-def _(linkers_node: LinkersOverrideNode, ignore_empty: bool):
-    box = Box(LinkersOverrideNode.NAME)
-    for properties in linkers_node.properties.values():
-        properties.append_to_lines_print(box.lines, ignore_empty)
-    for linker in linkers_node._linkers.values():
-        linker_box = to_box(linker, ignore_empty)
-        box.inner_boxes.append(linker_box)
+def _(box_name: str, linkers_node: LinkersOverrideNode, ignore_empty: bool, parent_box: Box):
+    box = Box(box_name)
+    box_str_list("flags",linkers_node.common_linker.flags, ignore_empty, box)
+    box_str_list("features",linkers_node.common_linker.features, ignore_empty, box)
+    for linker in linkers_node.linkers:
+       box.inner_boxes.append(to_box(linker.name, linker, ignore_empty, box))
     return box
 
 @register_box(FeatureArgsNode)
-def _(feature_args_node: FeatureArgsNode, ignore_empty: bool):
-    box = Box(feature_args_node.name)
-    for properties in feature_args_node.properties.values():
-        properties.append_to_lines_print(box.lines, ignore_empty)
+def _(box_name: str, feature_args_node: FeatureArgsNode, ignore_empty: bool, parent_box: Box):
+    box = Box(box_name)
+    if feature_args_node.min or not ignore_empty:
+        box.lines.append(f"min: {feature_args_node.min}")
+    if feature_args_node.max or not ignore_empty:
+        box.lines.append(f"max: {feature_args_node.max}")
+    if feature_args_node.separator or not ignore_empty:
+        box.lines.append(f"separator: {feature_args_node.separator}")
+  
     return box
 
+@register_box(StrList)
+def _(box_name: str, str_list: StrList, ignore_empty: bool, parent_box: Box):
+    box = Box(box_name)
+    if str_list.values or not ignore_empty:
+        box.lines.append(f"values: {list(str_list.values)}")
+    if not str_list.add_modifiers.is_empty() or not ignore_empty:
+        box.lines.append(f"add: {list(str_list.add_modifiers.values)}")
+    if not str_list.remove_modifiers.is_empty() or not ignore_empty:
+        box.lines.append(f"remove: {list(str_list.remove_modifiers.values)}")
+    return box
+
+@register_box(FeatureStrList)
+def _(box_name: str, feature_str_list: FeatureStrList, ignore_empty: bool, parent_box: Box):
+    return to_box(box_name, feature_str_list.str_list, ignore_empty, parent_box)
+
 @register_box(FeatureNode)
-def _(feature_node: FeatureNode, ignore_empty: bool):
-    box = Box(feature_node.name)
-    for properties in feature_node.properties.values():
-        if isinstance(properties, FeatureArgsNode):
-            args_box = to_box(properties, ignore_empty)
-            box.inner_boxes.append(args_box)
-        else:
-            properties.append_to_lines_print(box.lines, ignore_empty)
+def _(box_name: str, feature_node: FeatureNode, ignore_empty: bool, parent_box: Box):
+    box = Box(box_name)
+    if feature_node.description or not ignore_empty:
+        box.lines.append(f"description: {feature_node.description}")
+    if feature_node.args or not ignore_empty:
+        args_box = to_box("args", feature_node.args, ignore_empty, box)
+        box.inner_boxes.append(args_box)
+    box_str_list("flags", feature_node.flags, ignore_empty, box)
+    box_str_list("features", feature_node.features, ignore_empty, box)
     return box
 
 @register_box(CompilerFeatureNode)
-def _(feature_node: CompilerFeatureNode, ignore_empty: bool):
-    box = Box(feature_node.name)
-    for properties in feature_node.properties.values():
-        properties.append_to_lines_print(box.lines, ignore_empty)
-    if feature_node.linkers:
-        linkers_box = to_box(feature_node.linkers, ignore_empty)
-        box.inner_boxes.append(linkers_box)
+def _(box_name: str, feature_node: CompilerFeatureNode, ignore_empty: bool, parent_box: Box):
+    box = Box(box_name)
+    if feature_node.description or not ignore_empty:
+        box.lines.append(f"description: {feature_node.description}")
+    if feature_node.args or not ignore_empty:
+        args_box = to_box("args", feature_node.args, ignore_empty, box)
+        box.inner_boxes.append(args_box)
+    box_str_list("flags", feature_node.flags, ignore_empty, box)
+    box_str_list("features", feature_node.features, ignore_empty, box)
+    linker_box = to_box("linkers", feature_node.linkers, ignore_empty, parent_box)
+    box.inner_boxes.append(linker_box)
     return box
 
 @register_box(FeatureNodeList)
-def _(feature_list_node: FeatureNodeList, ignore_empty: bool):
-    box = Box(FeatureNodeList.NAME)
-    for feature in feature_list_node.features.values():
-        feature_box = to_box(feature, ignore_empty)
+def _(box_name: str, feature_list_node: FeatureNodeList, ignore_empty: bool, parent_box: Box):
+    box = Box(box_name)
+    for feature in feature_list_node.features:
+        feature_box = to_box(feature.name, feature, ignore_empty, box)
         box.inner_boxes.append(feature_box)
     return box
 
-@register_box(FeatureRuleNode)
-def _(feature_rule_node: FeatureRuleNode, ignore_empty: bool):
-    box = Box(feature_rule_node.name)
-    for properties in feature_rule_node.properties.values():
-        properties.append_to_lines_print(box.lines, ignore_empty)
+@register_box(CompilerFeatureNodeList)
+def _(box_name: str, feature_list_node: CompilerFeatureNodeList, ignore_empty: bool, parent_box: Box):
+    box = Box(box_name)
+    for feature in feature_list_node.features:
+        feature_box = to_box(feature.name, feature, ignore_empty, box)
+        box.inner_boxes.append(feature_box)
     return box
 
 @register_box(FeatureRuleNodeOnlyOne)
-def _(feature_rule_node: FeatureRuleNodeOnlyOne, ignore_empty: bool):
-    box = Box(feature_rule_node.name)
-    for properties in feature_rule_node.properties.values():
-        properties.append_to_lines_print(box.lines, ignore_empty)
+def _(box_name: str, feature_rule_node: FeatureRuleNodeOnlyOne, ignore_empty: bool, parent_box: Box):
+    box = Box("only one")
+    box.lines.append(f"name: {feature_rule_node.name}")
+    if feature_rule_node.description or not ignore_empty:
+        box.lines.append(f"description: {feature_rule_node.description}")
+    box_str_list("features", feature_rule_node.feature_names, ignore_empty, box)
     return box
+
 
 @register_box(FeatureRuleNodeIncompatible)
-def _(feature_rule_node: FeatureRuleNodeIncompatible, ignore_empty: bool):
-    box = Box(feature_rule_node.name)
-    for properties in feature_rule_node.properties.values():
-        properties.append_to_lines_print(box.lines, ignore_empty)
-    return box
+def _(box_name: str, feature_rule_node: FeatureRuleNodeIncompatible, ignore_empty: bool, parent_box: Box):
+    box = Box("incompatible")
+    box.lines.append(f"name: {feature_rule_node.name}")
+    if feature_rule_node.description or not ignore_empty:
+        box.lines.append(f"description: {feature_rule_node.description}")
+    box.lines.append(f"feature: {feature_rule_node.feature}")
+    box_str_list("incompatible with", feature_rule_node.incompatible_with, ignore_empty, box)
+    return box 
 
 @register_box(FeatureRuleNodeList)
-def _(feature_rule_list_node: FeatureRuleNodeList, ignore_empty: bool):
-    box = Box(FeatureRuleNodeList.NAME)
-    for feature_rule in feature_rule_list_node.feature_rules.values():
-        feature_rule_box = to_box(feature_rule, ignore_empty)
+def _(box_name: str, feature_rule_list_node: FeatureRuleNodeList, ignore_empty: bool, parent_box: Box):
+    box = Box(box_name)
+    for feature_rule in feature_rule_list_node.feature_rules_only_one:
+        feature_rule_box = to_box("only one", feature_rule, ignore_empty, box)
+        box.inner_boxes.append(feature_rule_box)
+    for feature_rule in feature_rule_list_node.feature_rules_incompatible:
+        feature_rule_box = to_box("incompatible", feature_rule, ignore_empty, box)
         box.inner_boxes.append(feature_rule_box)
     return box
 
+
 @register_box(CompilerSpecificOverrideNode)
-def _(compiler_specific_node: CompilerSpecificOverrideNode, ignore_empty: bool):
-    box = Box(compiler_specific_node.name)
+def _(box_name: str, compiler_specific_node: CompilerSpecificOverrideNode, ignore_empty: bool, parent_box: Box):
+    box = Box(box_name)
     for properties in compiler_specific_node.properties.values():
         properties.append_to_lines_print(box.lines, ignore_empty)
     if compiler_specific_node.linkers:
-        linker_overrides = to_box(compiler_specific_node.linkers, ignore_empty)
+        linker_overrides = to_box("linkers", compiler_specific_node.linkers, ignore_empty, box)
         box.inner_boxes.append(linker_overrides)
     if compiler_specific_node.feature_list.features:
-        feature_list_overrides = to_box(compiler_specific_node.feature_list, ignore_empty)
+        feature_list_overrides = to_box("features", compiler_specific_node.feature_list, ignore_empty, box)
         box.inner_boxes.append(feature_list_overrides)
     if compiler_specific_node.feature_rule_list.feature_rules:
-        feature_rule_list_overrides = to_box(compiler_specific_node.feature_rule_list, ignore_empty)
+        feature_rule_list_overrides = to_box("feature rules", compiler_specific_node.feature_rule_list, ignore_empty, box)
         box.inner_boxes.append(feature_rule_list_overrides)
     return box
 
 @register_box(CompilersOverrideNode)
-def _(compilers_override_node: CompilersOverrideNode, ignore_empty: bool):
-    box = Box(CompilersOverrideNode.NAME)
+def _(box_name: str, compilers_override_node: CompilersOverrideNode, ignore_empty: bool, parent_box: Box):
+    box = Box(box_name)
     for properties in compilers_override_node.properties.values():
         properties.append_to_lines_print(box.lines, ignore_empty)
     for compiler in compilers_override_node._compilers.values():
-        compiler_box = to_box(compiler, ignore_empty)
+        compiler_box = to_box("compilers", compiler.name, compiler, ignore_empty, box)
         box.inner_boxes.append(compiler_box)
     return box
 
 @register_box(ProjectTypeSpecificOverrideNode)
-def _(project_type_specific_node: ProjectTypeSpecificOverrideNode, ignore_empty: bool):
-    box = Box(project_type_specific_node.name)
+def _(box_name: str, project_type_specific_node: ProjectTypeSpecificOverrideNode, ignore_empty: bool, parent_box: Box):
+    box = Box(box_name)
     for properties in project_type_specific_node.properties.values():
         properties.append_to_lines_print(box.lines, ignore_empty)
     if project_type_specific_node.linkers:
-        linker_overrides = to_box(project_type_specific_node.linkers, ignore_empty)
+        linker_overrides = to_box("linkers", project_type_specific_node.linkers, ignore_empty, box)
         box.inner_boxes.append(linker_overrides)
     if project_type_specific_node.compilers:
-        compiler_overrides = to_box(project_type_specific_node.compilers, ignore_empty)
+        compiler_overrides = to_box("compilers", project_type_specific_node.compilers, ignore_empty, box)
         box.inner_boxes.append(compiler_overrides)
     return box
 
 @register_box(ProjectTypesOverrideNode)
-def _(project_types_override_node: ProjectTypesOverrideNode, ignore_empty: bool):
-    box = Box(ProjectTypesOverrideNode.NAME)
+def _(box_name: str, project_types_override_node: ProjectTypesOverrideNode, ignore_empty: bool, parent_box: Box):
+    box = Box(box_name)
     for properties in project_types_override_node.properties.values():
         properties.append_to_lines_print(box.lines, ignore_empty)
     for project_type in project_types_override_node._project_types.values():
-        project_type_box = to_box(project_type, ignore_empty)
+        project_type_box = to_box("project types", project_type.name, project_type, ignore_empty, box)
         box.inner_boxes.append(project_type_box)
     return box
 
 @register_box(CompilerNode)
-def _(compiler_node: CompilerNode, ignore_empty: bool):
-    box = Box(compiler_node.name)
+def _(box_name: str, compiler_node: CompilerNode, ignore_empty: bool, parent_box: Box):
+    box = Box(box_name)
     append_bool_to_lines_print("is_abstract", compiler_node.is_abstract, box.lines)
     if compiler_node.extends:
         append_bool_to_lines_print("extends", compiler_node.extends, box.lines)
@@ -186,72 +252,72 @@ def _(compiler_node: CompilerNode, ignore_empty: bool):
     if compiler_node.default_linker:
         append_list_str_to_lines_print("default-linker", compiler_node.default_linker, box.lines)
     if compiler_node.feature_list:
-        feature_list_box = to_box(compiler_node.feature_list, ignore_empty)
+        feature_list_box = to_box("features", compiler_node.feature_list, ignore_empty, box)
         box.inner_boxes.append(feature_list_box)
     if compiler_node.feature_rule_list:
-        feature_rule_list_box = to_box(compiler_node.feature_rule_list, ignore_empty)
+        feature_rule_list_box = to_box("feature rules", compiler_node.feature_rule_list, ignore_empty, box)
         box.inner_boxes.append(feature_rule_list_box)
     return box
 
 @register_box(LinkerNode)
-def _(linker_node: LinkerNode, ignore_empty: bool):
-    box = Box(linker_node.name)
+def _(box_name: str, linker_node: LinkerNode, ignore_empty: bool, parent_box: Box):
+    box = Box(box_name)
     append_bool_to_lines_print("is_abstract", linker_node.is_abstract, box.lines)
     if linker_node.extends:
         append_bool_to_lines_print("extends", linker_node.extends, box.lines) 
     if linker_node.feature_list:
-        feature_list_box = to_box(linker_node.feature_list, ignore_empty)
+        feature_list_box = to_box("features", linker_node.feature_list, ignore_empty, box)
         box.inner_boxes.append(feature_list_box)
     if linker_node.feature_rule_list:
-        feature_rule_list_box = to_box(linker_node.feature_rule_list, ignore_empty)
+        feature_rule_list_box = to_box("feature rules", linker_node.feature_rule_list, ignore_empty, box)
         box.inner_boxes.append(feature_rule_list_box)
     return box
 
 @register_box(ProfileNode)
-def _(profile_node: ProfileNode, ignore_empty: bool):
-    box = Box(profile_node.name)
+def _(box_name: str, profile_node: ProfileNode, ignore_empty: bool, parent_box: Box):
+    box = Box(box_name)
     for properties in profile_node.properties.values():
         properties.append_to_lines_print(box.lines, ignore_empty)
     if profile_node.compilers:
-        compiler_overrides = to_box(profile_node.compilers, ignore_empty)
+        compiler_overrides = to_box("compilers", profile_node.compilers, ignore_empty, box)
         box.inner_boxes.append(compiler_overrides)
     if profile_node.linkers:
-        linker_overrides = to_box(profile_node.linkers, ignore_empty)
+        linker_overrides = to_box("linkers", profile_node.linkers, ignore_empty, box)
         box.inner_boxes.append(linker_overrides)
     if profile_node.project_types:
-        project_type_overrides = to_box(profile_node.project_types, ignore_empty)
+        project_type_overrides = to_box("project types", profile_node.project_types, ignore_empty, box)
         box.inner_boxes.append(project_type_overrides)
     return box
 
 @register_box(ProjectTypeNode)
-def _(project_type_node: ProjectTypeNode, ignore_empty: bool):
-    box = Box(project_type_node.name)
+def _(box_name: str, project_type_node: ProjectTypeNode, ignore_empty: bool, parent_box: Box):
+    box = Box(box_name)
     for properties in project_type_node.properties.values():
         properties.append_to_lines_print(box.lines, ignore_empty)
     if project_type_node.compilers:
-        compiler_overrides = to_box(project_type_node.compilers)
+        compiler_overrides = to_box("compilers", project_type_node.compilers, ignore_empty, box)
         box.inner_boxes.append(compiler_overrides)
     if project_type_node.linkers:
-        linker_overrides = to_box(project_type_node.linkers)
+        linker_overrides = to_box("linkers", project_type_node.linkers, ignore_empty, box)
         box.inner_boxes.append(linker_overrides)
     return box
 
 @register_box(TargetNode)
-def _(target_node: TargetNode, ignore_empty: bool):
-    box = Box(target_node.name)
+def _(box_name: str, target_node: TargetNode, ignore_empty: bool, parent_box: Box):
+    box = Box(box_name)
     for properties in target_node.properties.values():
         properties.append_to_lines_print(box.lines, ignore_empty)
     if target_node.compilers:
-        compiler_overrides = to_box(target_node.compilers)
+        compiler_overrides = to_box("compilers", target_node.compilers, ignore_empty, box)
         box.inner_boxes.append(compiler_overrides)
     if target_node.linkers:
-        linker_overrides = to_box(target_node.linkers)
+        linker_overrides = to_box("linkers", target_node.linkers, ignore_empty, box)
         box.inner_boxes.append(linker_overrides)
     if target_node.project_types:
-        project_type_overrides = to_box(target_node.project_types)
+        project_type_overrides = to_box("project types", target_node.project_types, ignore_empty, box)
         box.inner_boxes.append(project_type_overrides)
     if target_node.profiles:
-        profile_overrides = to_box(target_node.profiles)
+        profile_overrides = to_box("profiles", target_node.profiles, ignore_empty, box)
         box.inner_boxes.append(profile_overrides)
     return box
 
@@ -378,7 +444,7 @@ def split_props(properties: PropertyDict):
 
     return leaf, nodes
 
-def format_properties_to_boxed_lines(node, ignore_empty:bool = True) -> list[str]:
+def format_properties_to_boxed_lines(name: str, node, ignore_empty: bool = True) -> list[str]:
     """
     Format a Node into a hierarchical boxed representation.
 
@@ -391,7 +457,7 @@ def format_properties_to_boxed_lines(node, ignore_empty:bool = True) -> list[str
     Node properties are recursively formatted and embedded as boxed blocks,
     ensuring visual hierarchy is preserved in terminal output.
     """
-    box :Box = to_box(node, ignore_empty)
+    box :Box = to_box(name, node, ignore_empty)
     return box.simplify().to_boxed_strings()
 
 

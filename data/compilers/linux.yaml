@@ -7,9 +7,10 @@
 #       description:
 #       flags: []
 #       linkers:
+#         features: []
 #         linker-name:
-#         enable-features: []
-#   featyre-rules:
+#           features: []
+#   feature-rules:
 #      - incompatible:
 #        feature:
 #        with: []
@@ -91,6 +92,8 @@ compilers:
         enable-features: [DEBUG_INFO]
         linkers:
           enable-features: [ASAN]
+          ld:
+            enable-features: [TEST]
 
     # Features rules
     # only-one rule : Only 1 rules is allowed in 'features'. Multiple in the same target is not allowed.

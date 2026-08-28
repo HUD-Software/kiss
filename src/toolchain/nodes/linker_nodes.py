@@ -1,11 +1,11 @@
 from __future__ import annotations
 import copy
-from toolchain.nodes.feature_node import FeatureNode, FeatureNodeList, FeatureRuleNodeList
-from toolchain.nodes.property import PropertyBool, PropertyDict, Property
+from toolchain.nodes.feature_node import FeatureNode, FeatureNodeList, FeatureRuleNodeList, FeatureStrList
+from toolchain.nodes.property import PropertyBool, PropertyDict, Property, StrList, dispatch_str_list
 from typing import TypeVar, Type
 T = TypeVar("T", bound=Property)
 
-class LinkerNode(Property):
+class LinkerNode:
     """Represents a linker definition in linkers.yaml.
 
     A linker node can be abstract (base template, e.g. 'msvc-linker') or concrete
@@ -23,7 +23,7 @@ class LinkerNode(Property):
     'linkers' sub-key in compilers.yaml.
     """
     def __init__(self, name : str):
-        super().__init__(name)
+        self.name = name
         self.is_abstract = False
         self.extends = None
         self.feature_list = FeatureNodeList()
@@ -45,7 +45,10 @@ class LinkerNode(Property):
         result = LinkerNode(self.name)
         result.is_abstract = self.is_abstract
         result.extends = self.extends
-        result.feature_rule_list = self.feature_rule_list.merge_with(parent.feature_rule_list)
+        # Apply modifier during merge before merging the feature list
+        # We want to merge feature list according the rules, we must merge feature rule with parent 
+        # but also resolve modifier to validate
+        result.feature_rule_list = self.feature_rule_list.merge_with(parent.feature_rule_list).apply_modifiers()
         result.feature_list = self.feature_list.merge_with(parent.feature_list, result.feature_rule_list)
         return result
     
@@ -54,8 +57,8 @@ class LinkerNode(Property):
         result  = LinkerNode(self.name)
         result.is_abstract = self.is_abstract
         result.extends = self.extends
-        result.feature_list = self.feature_list.apply_modifiers()
         result.feature_rule_list = copy.deepcopy(self.feature_rule_list)
+        result.feature_list = self.feature_list.apply_modifiers(result.feature_rule_list)
         return result
         
     def dispatch(self) -> LinkerNode:
@@ -65,128 +68,109 @@ class LinkerNode(Property):
         result = LinkerNode(self.name)
         result.is_abstract = self.is_abstract
         result.extends = self.extends
-        result.feature_list = self.feature_list.dispatch()
-        result.feature_rule_list = self.feature_rule_list.dispatch()
+        result.feature_list = copy.deepcopy(self.feature_list)
+        result.feature_rule_list = copy.deepcopy(self.feature_rule_list)
         return result
+
+    def resolve_extends(self, parent: LinkerNode) -> LinkerNode:
+        if parent:
+            assert parent.name == self.extends
+            node = self.merge_with(parent)
+        else:
+            node = self
+        node = node.dispatch()
+        node = node.apply_modifiers()
+        return node
         
-class LinkerSpecificOverrideNode(Property):
+class LinkerSpecificOverrideNode:
     """Represents a per-linker override inside a 'linkers:' node.
     
     linkers:
       lld-link : # LinkerSpecificOverrideNode
         enable-features: []
+        add-flags: []
       link : # LinkerSpecificOverrideNode
         enable-features: []
+        add-flags: []
       ...
 
     """
     def __init__(self, name : str):
-      super().__init__(name)
-      self._properties = PropertyDict()
-      self.feature_list = FeatureNodeList()
-      self.feature_rule_list = FeatureRuleNodeList()
+        self.name = name
+        self.flags = StrList()
+        self.features = FeatureStrList ()
 
-    @property
-    def properties(self) -> PropertyDict:
-        return self._properties
-    
-    def get_property(self, name: str) -> Property | None:
-        return self.properties.get_property(name)
-    
-    def add_property(self, property):
-        self.properties.add_property(property)
+    def __eq__(self, other):
+        if not isinstance(other, LinkerSpecificOverrideNode):
+            return NotImplemented
+        return self.name == other.name
 
+    def __hash__(self):
+        return hash(self.name)
+   
     def apply_modifiers(self) -> LinkerSpecificOverrideNode:
-        result = LinkerSpecificOverrideNode(self.name)
-        result._properties = self.properties.apply_modifiers()
-        result.feature_list = self.feature_list.apply_modifiers()
-        result.feature_rule_list = self.feature_rule_list.apply_modifiers()
-        return result
+        raise NotImplemented
     
     def merge_with(self, other: LinkerSpecificOverrideNode, parent_list_name_to_ignore: set[str] = None) -> LinkerSpecificOverrideNode:
-        if not other:
-            return copy.deepcopy(self)
-        assert self.name == other.name, "Name mismatch"
-        result = LinkerSpecificOverrideNode(self.name)
-        result._properties = self.properties.merge_with(other.properties, parent_list_name_to_ignore)
-        result.feature_list = self.feature_list.merge_with(other.feature_list)
-        result.feature_rule_list = self.feature_rule_list.merge_with(other.feature_rule_list)
-        return result
+        raise NotImplemented
     
-    def dispatch(self, properties : PropertyDict) -> LinkerSpecificOverrideNode:
-        result = LinkerSpecificOverrideNode(self.name)
-        result._properties = self.properties.dispatch(properties)
-        result.feature_list = self.feature_list.dispatch()
-        result.feature_rule_list = self.feature_rule_list.dispatch()
-        return result
+    # def dispatch(self, top: LinkerSpecificOverrideNode, feature_rules: FeatureRuleNodeList) -> LinkerSpecificOverrideNode:
+    #     result = LinkerSpecificOverrideNode(self.name)
+    #     result.flags = dispatch_str_list(top.flags, self.flags)
+    #     result.features = dispatch_feature_list(top.features, self.features, feature_rules)
+    #     return result
     
-class LinkersOverrideNode(Property):
+class LinkersOverrideNode:
     """Represents the 'linkers:' block.
     Contains global enable-features + per-linker overrides 'LinkerSpecificOverrideNode' nodes.
 
     linkers: # LinkersOverrideNode
       enable-features: []
+      add-flags: []
       lld-link : 
         enable-features: []
+        add-flags: []
       link:
         enable-features: []
+        add-flags: []
       ...
     """
-
-    NAME = "linkers"
-    def __init__(self, name : str= NAME):
-        super().__init__(name)
-        self._properties = PropertyDict()
-        self._linkers = dict[str, LinkerSpecificOverrideNode]()
-
-    @property
-    def properties(self) -> PropertyDict:
-        return self._properties
-
-    def get_property(self, name: str) -> Property | None:
-        return self.properties.get_property(name)
-    
-    def add_property(self, property):
-        self.properties.add_property(property)
-    
-    def add_linker(self, linker:LinkerSpecificOverrideNode):
-        self._linkers[linker.name] = linker
+    def __init__(self):
+        self.common_linker = LinkerSpecificOverrideNode("")
+        self.linkers = set[LinkerSpecificOverrideNode]()
 
     def merge_with(self, other: LinkersOverrideNode, parent_list_name_to_ignore: set[str] = None):
-        if not other:
-            return copy.deepcopy(self)
-        result = LinkersOverrideNode(self.name)
-        result._properties = self.properties.merge_with(other.properties, parent_list_name_to_ignore)
+        raise NotImplemented
+        # if not other:
+        #     return copy.deepcopy(self)
+        # result = LinkersOverrideNode(self.name)
+        # result._properties = self.properties.merge_with(other.properties, parent_list_name_to_ignore)
         
-        if parent_list_name_to_ignore:
-            parent_list_name_to_ignore.update(self.properties.explicit_list_names())
-        else :
-            parent_list_name_to_ignore = self.properties.explicit_list_names()
+        # if parent_list_name_to_ignore:
+        #     parent_list_name_to_ignore.update(self.properties.explicit_list_names())
+        # else :
+        #     parent_list_name_to_ignore = self.properties.explicit_list_names()
 
-        for linker in self._linkers.values():
-            other_linker = other._linkers.get(linker.name)
-            if other_linker: # linker in both
-                result.add_linker(linker.merge_with(other_linker, parent_list_name_to_ignore))
-            else: # linker only in self
-                result.add_linker(copy.deepcopy(linker))
+        # for linker in self._linkers.values():
+        #     other_linker = other._linkers.get(linker.name)
+        #     if other_linker: # linker in both
+        #         result.add_linker(linker.merge_with(other_linker, parent_list_name_to_ignore))
+        #     else: # linker only in self
+        #         result.add_linker(copy.deepcopy(linker))
         
-        for linker_name, other_linker in other._linkers.items():
-            if linker_name not in self._linkers: # Only in parents
-                self_linker = LinkerSpecificOverrideNode(other_linker.name)
-                result.add_linker(self_linker.merge_with(other_linker, parent_list_name_to_ignore))
+        # for linker_name, other_linker in other._linkers.items():
+        #     if linker_name not in self._linkers: # Only in parents
+        #         self_linker = LinkerSpecificOverrideNode(other_linker.name)
+        #         result.add_linker(self_linker.merge_with(other_linker, parent_list_name_to_ignore))
 
-        return result
+        # return result
     
     def apply_modifiers(self) -> LinkersOverrideNode:
-        result = LinkersOverrideNode(self.name)
-        result._properties = self.properties.apply_modifiers()
-        for linker in self._linkers.values():
-            result.add_linker(linker.apply_modifiers())
-        return result
+        raise NotImplemented
 
-    def dispatch(self, properties: PropertyDict) -> LinkersOverrideNode:
-        result = LinkersOverrideNode(self.name)
-        result._properties = self.properties.dispatch(properties)
-        for linker in self._linkers.values():
-            result.add_linker(linker.dispatch(result.properties))
-        return result
+    # def dispatch(self, feature_rules: FeatureRuleNodeList) -> LinkersOverrideNode:
+    #     result = LinkersOverrideNode()
+    #     result.common_linker = copy.deepcopy(self.common_linker)
+    #     for linker in result.linkers:
+    #         result.linkers.add(linker.dispatch(result.common_linker, feature_rules))
+    #     return result

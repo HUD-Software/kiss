@@ -43,7 +43,8 @@ def load_targets(path: str) ->  dict[str, TargetNode]:
         data = yaml.safe_load(f)
     
     targets = {}
-    for t in data.get("targets", []):
-        target = yaml_parse_target(t)
-        targets[target.name] = target
+    if data:
+        for t in data.get("targets", []):
+            target = yaml_parse_target(t)
+            targets[target.name] = target
     return targets

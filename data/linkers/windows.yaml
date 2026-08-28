@@ -61,13 +61,16 @@ linkers:
     feature-rules:
       # OPT_LEVEL_0 is incompatible with LTO
       - incompatible: no_opt
+        description: OPT_LEVEL_0 is incompatible with LTO
         feature: OPT_LEVEL_0
         with: [LTO]
       # Only one incremental link mode
       - only-one: incremental
+        description: Only one incremental link mode is applicable
         features: [ENABLE_INCREMENTAL_LINK, DISABLE_INCREMENTAL_LINK]
       # Only one target mode
       - only-one: target
+        description: Only one target mode is applicable
         features: [TARGET_X64, TARGET_X86]
 
   - name: link

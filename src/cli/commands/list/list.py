@@ -28,7 +28,7 @@ def _print(it :Iterable[PropertyDict], mode: OutputMode = OutputMode.plain):
             for line in lines:
                 typer.echo(line)
         elif mode == OutputMode.boxed:
-            lines = format_properties_to_boxed_lines(node)
+            lines = format_properties_to_boxed_lines(node.name, node)
             for line in lines:
                 typer.echo(line)
             

@@ -19,6 +19,8 @@ linkers:
       - name: REMOVE_DEAD_CODE
         description: Remove dead code
         flags: ["-Wl,--gc-sections"]
+        features : [A, B]
+        add-features : [Add]
 
       # Optimisations
       - name: LTO
@@ -41,19 +43,17 @@ linkers:
     feature-rules:
       # Only one target mode
       - only-one: target
+        description: Only one target mode is applicable
         features: [TARGET_X64, TARGET_X86]
+
       # ASAN is incompatible with LTO
       - incompatible: asan
+        description: ASAN is incompatible with LTO
         feature: ASAN
         with: [LTO]
 
   - name: ld
     extends: gnu-linker
-    features:
-      # Remove dead code
-      - name: REMOVE_DEAD_CODE
-        description: Remove dead code
-        add-flags: [A]
 
   - name: gold
     extends: gnu-linker

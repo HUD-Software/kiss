@@ -173,7 +173,8 @@ def load_profiles(path: str) -> list[ProfileNode]:
         data = yaml.safe_load(f)
 
     profiles = {}
-    for p in data.get("profiles", []):
-        profile = yaml_parse_profile(p)
-        profiles[profile.name] = profile
+    if data:
+      for p in data.get("profiles", []):
+          profile = yaml_parse_profile(p)
+          profiles[profile.name] = profile
     return profiles

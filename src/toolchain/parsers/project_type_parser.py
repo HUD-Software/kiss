@@ -124,8 +124,9 @@ def load_project_types(path: str) -> dict[str, ProjectTypeNode]:
         data = yaml.safe_load(f)
 
     project_types = {}
-    for p in data.get("project-types", []):
-        project_type = yaml_parse_project_type(p)
-        project_types[project_type.name] = project_type
+    if data:
+        for p in data.get("project-types", []):
+            project_type = yaml_parse_project_type(p)
+            project_types[project_type.name] = project_type
     return project_types
 

@@ -130,14 +130,20 @@ compilers:
   - name: cl
     extends: msvc-compiler
     features:
+      # Address sanitizer
       - name: ASAN
         description: Enable ASAN Sanitizer
         flags: ["/fsanitize=address"]
         enable-features: [DEBUG_INFO, WINDOWS_DLL_RUNTIME_DEBUG]
         linkers:
           enable-features: [DISABLE_INCREMENTAL_LINK] # ASAN needs incremental link to be disabled
+    # Features rules
+    # only-one rule : Only 1 rules is allowed in 'features'. Multiple in the same target is not allowed.
+    # incompatible : The 'feature' is incompatible with all feature in 'with'
     feature-rules:
+      # ASAN is incompatible with OPT_LEVEL_3, LTO et OMIT_FRAME_POINTER
       - incompatible: asan
+        description: ASAN is incompatible with OPT_LEVEL_3, LTO et OMIT_FRAME_POINTER features
         feature: ASAN
         with: [OPT_LEVEL_3, LTO, OMIT_FRAME_POINTER]
 
@@ -145,16 +151,19 @@ compilers:
   - name: clangcl
     extends: msvc-compiler
     features:
+      # Address sanitizer
       - name: ASAN
         description: Enable ASAN Sanitizer
         flags: ["-fsanitize=address", "-fsanitize-address-use-after-scope", "-fsanitize-recover=address"]
         enable-features: [DEBUG_INFO, WINDOWS_DLL_RUNTIME_DEBUG]
         linkers:
           enable-features: [DISABLE_INCREMENTAL_LINK] # ASAN needs incremental link to be disabled
+    # Features rules
+    # only-one rule : Only 1 rules is allowed in 'features'. Multiple in the same target is not allowed.
+    # incompatible : The 'feature' is incompatible with all feature in 'with'
     feature-rules:
+      # ASAN is incompatible with OPT_LEVEL_3, LTO et OMIT_FRAME_POINTER
       - incompatible: asan
+        description: ASAN is incompatible with OPT_LEVEL_3, LTO et OMIT_FRAME_POINTER features
         feature: ASAN
-        with: [OPT_LEVEL_3, LTO, OMIT_FRAME_POINTER]
-
-
-  
+        with: [OPT_LEVEL_3, LTO, OMIT_FRAME_POINTER]  

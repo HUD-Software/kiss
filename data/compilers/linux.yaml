@@ -23,7 +23,6 @@ compilers:
     default-linker: ld # Default linker to use if multiple supported linkers are available
     is_abstract: true
     features:
-
       # Remove dead code
       - name: REMOVE_DEAD_CODE
         description: Remove dead code

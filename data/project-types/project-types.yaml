@@ -2,6 +2,7 @@
 # - name:
 #   description:
 #   icon:
+#   extends:
 #   linkers:
 #     enable-features: []
 #     linker-name:
@@ -21,21 +22,31 @@ project-types:
   - name: bin
     description: Executable binary
     icon: 💾
+    linkers:
+      add-features: [TEST_2]
+      gold:
+        add-features: [TEST_3]
     compilers:
       add-defines: [KISS_BIN] # Preprocessor definitions to add when compiling with this project
-  - name: lib
-    description: Static library
-    icon: 📦
-    compilers:
-      add-defines: [KISS_LIB] # Preprocessor definitions to add when compiling with this project
-  - name: dyn
-    description: Dynamic library
-    icon: 🧩
-    compilers:
-      add-defines: [KISS_DYN_LIB] # Preprocessor definitions to add when compiling with this project
-  - name: test
-    description: Test binary
-    icon: 🧪
-    extends: bin
-    compilers:
-      add-defines: [KISS_TEST]
+      clangcl:
+        add-defines: [TEST]
+        linkers:
+          add-features: [TEST_2]
+          ld:
+            add-features: [TEST_3]
+  # - name: lib
+  #   description: Static library
+  #   icon: 📦
+  #   compilers:
+  #     add-defines: [KISS_LIB] # Preprocessor definitions to add when compiling with this project
+  # - name: dyn
+  #   description: Dynamic library
+  #   icon: 🧩
+  #   compilers:
+  #     add-defines: [KISS_DYN_LIB] # Preprocessor definitions to add when compiling with this project
+  # - name: test
+  #   description: Test binary
+  #   icon: 🧪
+  #   extends: bin
+  #   compilers:
+  #     add-defines: [KISS_TEST]

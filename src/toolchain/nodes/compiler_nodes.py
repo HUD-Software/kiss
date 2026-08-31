@@ -1,11 +1,9 @@
 
 from __future__ import annotations
 import copy
-from toolchain.nodes.feature_node import FeatureNode, FeatureNodeList, FeatureRuleNodeList
+from toolchain.nodes.feature_node import FeatureNode, FeatureNodeList, FeatureRuleNodeList, FeatureStrList
 from toolchain.nodes.linker_nodes import LinkersOverrideNode
-from toolchain.nodes.property import Property, PropertyBool, PropertyDict, PropertyStr, PropertyStrList
-from typing import TypeVar, Type
-T = TypeVar("T", bound=Property)
+from toolchain.nodes.property import Property,  PropertyDict, StrList
 
 class CompilerNode:
     """Represents a compiler definition in compilers.yaml.
@@ -92,7 +90,7 @@ class CompilerNode:
         node = node.apply_modifiers()
         return node
 
-class CompilerSpecificOverrideNode(Property):
+class CompilerSpecificOverrideNode:
     """Represents a per-compiler override inside a 'compilers:' node.
 
     compilers:
@@ -105,25 +103,22 @@ class CompilerSpecificOverrideNode(Property):
       ...
     """
     def __init__(self, name : str):
-        super().__init__(name)
-        self._properties = PropertyDict()
+        self.name = name
         self.linkers : LinkersOverrideNode = None
-        self.feature_list = FeatureNodeList()
-        self.feature_rule_list = FeatureRuleNodeList()
+        self.flags = StrList()
+        self.features = FeatureStrList ()
+        self.defines = StrList()
 
-    @property
-    def properties(self) -> PropertyDict:
-        return self._properties
-    
-    def get_property(self, name: str) -> Property | None:
-        return self.properties.get_property(name)
-    
-    def add_property(self, property):
-        self.properties.add_property(property)
+    def __eq__(self, other):
+        if not isinstance(other, CompilerSpecificOverrideNode):
+            return NotImplemented
+        return self.name == other.name
 
+    def __hash__(self):
+        return hash(self.name)
+       
     def apply_modifiers(self) -> CompilerSpecificOverrideNode:
         result = CompilerSpecificOverrideNode(self.name)
-        result._properties = self.properties.apply_modifiers()
         result.linkers = self.linkers.apply_modifiers() if self.linkers else None
         result.feature_list = self.feature_list.apply_modifiers()
         result.feature_rule_list = self.feature_rule_list.apply_modifiers()
@@ -134,7 +129,6 @@ class CompilerSpecificOverrideNode(Property):
             return copy.deepcopy(self)
         assert self.name == other.name, "Name mismatch"
         result = CompilerSpecificOverrideNode(self.name)
-        result._properties = self.properties.merge_with(other.properties, parent_list_name_to_ignore)
         result.linkers = self.linkers.merge_with(other.linkers) if self.linkers else None
         result.feature_list = self.feature_list.merge_with(other.feature_list)
         result.feature_rule_list = self.feature_rule_list.merge_with(other.feature_rule_list)
@@ -147,9 +141,8 @@ class CompilerSpecificOverrideNode(Property):
         result.feature_list = self.feature_list.dispatch()
         result.feature_rule_list = self.feature_rule_list.dispatch()
         return result
-    
    
-class CompilersOverrideNode(Property):
+class CompilersOverrideNode:
     """Represents the 'compilers:' block.
     Contains global enable-features + per-compiler overrides 'CompilerSpecificOverrideNode' nodes.
 
@@ -159,24 +152,9 @@ class CompilersOverrideNode(Property):
         defines: []
       ...
     """
-    NAME = "compilers"
-    def __init__(self, name : str= NAME):
-      super().__init__(name)
-      self._properties = PropertyDict()
-      self._compilers = dict[str, CompilerSpecificOverrideNode]()
-
-    @property
-    def properties(self) -> PropertyDict:
-        return self._properties
-
-    def get_property(self, name: str) -> Property | None:
-        return self.properties.get_property(name)
-    
-    def add_property(self, property):
-        self.properties.add_property(property)
-    
-    def add_compiler(self, compiler:CompilerSpecificOverrideNode):
-        self._compilers[compiler.name] = compiler
+    def __init__(self):
+      self.common_compiler = CompilerSpecificOverrideNode("")
+      self.compilers = set[CompilerSpecificOverrideNode]()
 
     def merge_with(self, parent: CompilersOverrideNode, parent_list_name_to_ignore: set[str] = None):
         if not parent:

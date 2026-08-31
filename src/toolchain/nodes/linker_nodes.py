@@ -1,9 +1,7 @@
 from __future__ import annotations
 import copy
 from toolchain.nodes.feature_node import FeatureNode, FeatureNodeList, FeatureRuleNodeList, FeatureStrList
-from toolchain.nodes.property import PropertyBool, PropertyDict, Property, StrList, dispatch_str_list
-from typing import TypeVar, Type
-T = TypeVar("T", bound=Property)
+from toolchain.nodes.property import  StrList
 
 class LinkerNode:
     """Represents a linker definition in linkers.yaml.
@@ -139,7 +137,7 @@ class LinkersOverrideNode:
         self.common_linker = LinkerSpecificOverrideNode("")
         self.linkers = set[LinkerSpecificOverrideNode]()
 
-    def merge_with(self, other: LinkersOverrideNode, parent_list_name_to_ignore: set[str] = None):
+    def merge_with(self, other: LinkersOverrideNode):
         raise NotImplemented
         # if not other:
         #     return copy.deepcopy(self)

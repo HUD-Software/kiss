@@ -8,46 +8,6 @@ from toolchain.parsers.linker_parser import yaml_parse_linkers_overrides
 from toolchain.parsers.parse_utils import parse_property
 
 
-def _check_project_types_overrides_key(key): 
-    if key == LinkersOverrideNode.NAME:
-        raise ValueError(f"""'{LinkersOverrideNode.NAME}' found under '{ProjectTypesOverrideNode.NAME}' but must be under specific project type name like 'bin' or 'lib'
-                             
--> If you want to modify the linker for all '{ProjectTypesOverrideNode.NAME}', add '{LinkersOverrideNode.NAME}' next to '{ProjectTypesOverrideNode.NAME}': 
-     example:
-       {ProjectTypesOverrideNode.NAME}:
-         dyn:
-           ...
-       {LinkersOverrideNode.NAME}:
-         # Here you modify the linker for all '{ProjectTypesOverrideNode.NAME}'
-
--> If you want to modify the linker for a specific '{ProjectTypesOverrideNode.NAME}', add '{LinkersOverrideNode.NAME}' under the specific project type name:
-     example:
-       {ProjectTypesOverrideNode.NAME}:
-         dyn:
-           {LinkersOverrideNode.NAME}:
-             # Here you modify the linker for 'dyn' project type
-""")
-        
-    if key == CompilersOverrideNode.NAME:
-        raise ValueError(f"""'{CompilersOverrideNode.NAME}' found under '{ProjectTypesOverrideNode.NAME}' but must be under specific project type name like 'bin' or 'lib'
-                             
--> If you want to modify the compiler for all '{ProjectTypesOverrideNode.NAME}', add '{CompilersOverrideNode.NAME}' next to '{ProjectTypesOverrideNode.NAME}': 
-     example:
-       {ProjectTypesOverrideNode.NAME}:
-         dyn:
-           ...
-       {CompilersOverrideNode.NAME}:
-         # Here you modify the compiler for all '{ProjectTypesOverrideNode.NAME}'
-
--> If you want to modify the compiler for a specific '{ProjectTypesOverrideNode.NAME}', add '{CompilersOverrideNode.NAME}' under the specific project type name:
-     example:
-       {ProjectTypesOverrideNode.NAME}:
-         dyn:
-           {CompilersOverrideNode.NAME}:
-             # Here you modify the compiler for 'dyn' project type
-""")
-    
-
 def yaml_parse_project_types_overrides(data: dict) -> ProjectTypesOverrideNode:
     """Parse the 'project-types:' block inside a profile entry.
 
@@ -69,7 +29,6 @@ def yaml_parse_project_types_overrides(data: dict) -> ProjectTypesOverrideNode:
     """
     node = ProjectTypesOverrideNode()
     for key, value in data.items():
-        _check_project_types_overrides_key(key)
         prop = parse_property(key, value)
         if prop:
             node.add_property(prop)
@@ -107,15 +66,29 @@ def yaml_parse_project_type(data: dict) -> ProjectTypeNode:
     for key, value in data.items():
         match key:
             case "name":
-                continue
-            case CompilersOverrideNode.NAME:
+                pass
+            case "is_abstract":
+                if not isinstance(value, bool):
+                    raise ValueError(f"'is_abstract' must be a boolean value ({name})")
+                node.is_abstract = value
+            case "description":
+                if not isinstance(value, str):
+                    raise ValueError(f"'description' must be a string value ({name})")
+                node.description = value
+            case "icon":
+                if not isinstance(value, str):
+                    raise ValueError(f"'icon' must be a string value ({name})")
+                node.icon = value
+            case "extends":
+                if not isinstance(value, str):
+                    raise ValueError(f"'extends' must be a string value ({name})")
+                node.extends = value
+            case "compilers":
                 node.compilers = yaml_parse_compilers_overrides(value)
-            case LinkersOverrideNode.NAME:
+            case "linkers":
                 node.linkers = yaml_parse_linkers_overrides(value)
             case _:
-                prop = parse_property(key, value)
-                if prop:
-                    node.add_property(prop)
+                raise ValueError(f"'{key}: {value}' is not a valid key ({name})")
     return node
 
 

@@ -6,26 +6,24 @@ from toolchain.parsers.feature_parser import yaml_parse_feature, yaml_parse_feat
 from toolchain.parsers.linker_parser import yaml_parse_linkers_overrides
 from toolchain.parsers.parse_utils import parse_property, try_parse_list_modifier
 
-def _check_compilers_overrides_key(key): 
-    if key == LinkersOverrideNode.NAME:
-            raise ValueError(f"""'{LinkersOverrideNode.NAME}' found under '{CompilersOverrideNode.NAME}' but must be under specific compiler name like 'clang', 'cl' or 'gcc'
-                             
--> If you want to modify the linker for all compilers, add '{LinkersOverrideNode.NAME}' next to '{CompilersOverrideNode.NAME}':
-     example:
-       {CompilersOverrideNode.NAME}:
-         gcc:
-           ...
-       {LinkersOverrideNode.NAME}:
-         # Here you modify the linker for all compilers
+def yaml_parse_compiler_specific_overrides(name: str, data: dict) -> CompilerSpecificOverrideNode:
+    compiler = CompilerSpecificOverrideNode(name)
+    for key, value in data.items():
+        if isinstance(value, dict):
+            assert not compiler.linkers
+            compiler.linkers = yaml_parse_linkers_overrides(value)
+        else:
+            if try_parse_list_modifier("flags", compiler.flags, key, value):
+                continue
+            elif try_parse_list_modifier("defines", compiler.defines, key, value):
+                continue
+            elif try_parse_list_modifier("features", compiler.features.str_list, key, value):
+                continue
+            else:    
+                raise ValueError(f"'{key}:{value}' is not a valid key ({name})")
+    return compiler
 
--> If you want to modify the linker for a specific compiler, add '{LinkersOverrideNode.NAME}' under the specific compiler name:
-     example:
-       {CompilersOverrideNode.NAME}:
-         gcc:
-           {LinkersOverrideNode.NAME}:
-           # Here you modify the linker for 'gcc' compiler
-""")
-    
+
 def yaml_parse_compilers_overrides(data: dict) -> CompilersOverrideNode:
     """Parse the 'compilers:' block inside a compiler feature.
 
@@ -45,25 +43,18 @@ def yaml_parse_compilers_overrides(data: dict) -> CompilersOverrideNode:
     """
     node = CompilersOverrideNode()
     for key, value in data.items():
-        _check_compilers_overrides_key(key)
-        prop = parse_property(key, value)
-        if prop:
-            node.add_property(prop)
-        elif isinstance(value, dict):
-            compiler_specific= CompilerSpecificOverrideNode(key)
-            for override_key, override_value in value.items():
-                match override_key:
-                    case LinkersOverrideNode.NAME:
-                        compiler_specific.linkers = yaml_parse_linkers_overrides(override_value)
-                    case FeatureNodeList.NAME:
-                        compiler_specific.feature_list = yaml_parse_compiler_feature_list(override_value)
-                    case FeatureRuleNodeList.NAME:
-                        compiler_specific.feature_rule_list = yaml_parse_feature_rule_list(override_value)
-                    case _:
-                        prop = parse_property(override_key, override_value)
-                        if prop:
-                            compiler_specific.add_property(prop)
-            node.add_compiler(compiler_specific)
+        if isinstance(value, dict):
+            compiler = yaml_parse_compiler_specific_overrides(key, value)
+            node.compilers.add(compiler)
+        else:
+            if try_parse_list_modifier("flags", node.common_compiler.flags, key, value):
+                continue
+            elif try_parse_list_modifier("defines", node.common_compiler.defines, key, value):
+                continue
+            elif try_parse_list_modifier("features", node.common_compiler.features.str_list, key, value):
+                continue
+            else:    
+                raise ValueError(f"'{key}:{value}' is not a valid key")
     return node
 
 def yaml_parse_compiler_feature(data: dict) -> CompilerFeatureNode:

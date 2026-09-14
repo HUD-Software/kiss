@@ -10,8 +10,8 @@ def yaml_parse_compiler_specific_overrides(name: str, data: dict) -> CompilerSpe
     compiler = CompilerSpecificOverrideNode(name)
     for key, value in data.items():
         if isinstance(value, dict):
-            assert not compiler.linkers
-            compiler.linkers = yaml_parse_linkers_overrides(value)
+            assert not compiler.linker_overrides
+            compiler.linker_overrides = yaml_parse_linkers_overrides(value)
         else:
             if try_parse_list_modifier("flags", compiler.flags, key, value):
                 continue
@@ -45,9 +45,9 @@ def yaml_parse_compilers_overrides(data: dict) -> CompilersOverrideNode:
     for key, value in data.items():
         if isinstance(value, dict):
             compiler = yaml_parse_compiler_specific_overrides(key, value)
-            if compiler in node.compilers:
+            if compiler in node.compilers_overrides:
                 raise ValueError(f"'{key} compiler node already exists'");
-            node.compilers[compiler.name] = compiler
+            node.compilers_overrides[compiler.name] = compiler
         else:
             if try_parse_list_modifier("flags", node.common_compiler.flags, key, value):
                 continue

@@ -79,6 +79,10 @@ class FeatureStrList:
                         if(onlyone_rule.contains(value)):
                             values.discard(value)
             values.add(value_to_add)
+
+        # Validate that adding don't break incompatible rules
+        feature_rules.validate_incompatible(values)
+
         # Return the modified feature list
         result = FeatureStrList()
         result.str_list.values = values
@@ -113,6 +117,10 @@ def merge_feature_list(child: FeatureStrList, parent: FeatureStrList, feature_ru
         result.str_list.values = copy.deepcopy(parent.values)
         result.str_list.add_modifiers = merged_add_modifiers_list
         result.str_list.remove_modifiers.values.update(child.remove_modifiers.values)
+
+        # Validate that the result respect feature rules
+        feature_rules.validate(result.apply_modifiers(feature_rules).values)
+        
         return result
 
 # def dispatch_feature_list(top: FeatureStrList, bottom: FeatureStrList, feature_rules: FeatureRuleNodeList):

@@ -135,34 +135,36 @@ class LinkersOverrideNode:
         self.linkers_overrides = dict[str, LinkerSpecificOverrideNode]()
 
     def merge_with(self, parent: LinkersOverrideNode, linkers : dict[str, LinkerNode]):
-
         result = LinkersOverrideNode()
-        raise NotImplemented
+
+        # Merge common linker with the parent common linker without feature rule list
+        # We can't use feature rule list because it is bound too the linker itself.
+        # We just merge with all know linker after and validate the merge here
+        # We could wait for the dispatch step, but if we do it now, we can have better understanding of where the bad merge appears
+        result.common_linker = self.common_linker.merge_with(parent.common_linker, FeatureRuleNodeList())
+        for linker in linkers.values():
+            features = merge_feature_list(
+                self.common_linker.features,
+                parent.common_linker.features,
+                linker.feature_rule_list
+            )
+            linker.feature_rule_list.validate(features.apply_modifiers(linker.feature_rule_list).values)
+
+        # Merge linker overrides
+        # - Merge if present in parent and self
+        # - If not present in parent, keep it
+        # - Add parent that are not in self
+        for linker_override_name, linker_override in self.linkers_overrides.items():
+            if linker_override_name in parent.linkers_overrides:
+                result.linkers_overrides[linker_override_name] = linker_override.merge_with(parent.linkers_overrides[linker_override_name], linkers[linker_override_name].feature_rule_list)
+            else:
+                result.linkers_overrides[linker_override_name] = copy.deepcopy(linker_override)
+
+        for parent_linker_override_name, parent_linker_override in parent.linkers_overrides.items():
+            if not parent_linker_override_name in self.linkers_overrides:
+                result.linkers_overrides[parent_linker_override_name] = copy.deepcopy(parent_linker_override)
+                
         return result
-
-        # if not other:
-        #     return copy.deepcopy(self)
-        # result = LinkersOverrideNode(self.name)
-        # result._properties = self.properties.merge_with(other.properties, parent_list_name_to_ignore)
-        
-        # if parent_list_name_to_ignore:
-        #     parent_list_name_to_ignore.update(self.properties.explicit_list_names())
-        # else :
-        #     parent_list_name_to_ignore = self.properties.explicit_list_names()
-
-        # for linker in self._linkers.values():
-        #     other_linker = other._linkers.get(linker.name)
-        #     if other_linker: # linker in both
-        #         result.add_linker(linker.merge_with(other_linker, parent_list_name_to_ignore))
-        #     else: # linker only in self
-        #         result.add_linker(copy.deepcopy(linker))
-        
-        # for linker_name, other_linker in other._linkers.items():
-        #     if linker_name not in self._linkers: # Only in parents
-        #         self_linker = LinkerSpecificOverrideNode(other_linker.name)
-        #         result.add_linker(self_linker.merge_with(other_linker, parent_list_name_to_ignore))
-
-        # return result
     
     def apply_modifiers(self) -> LinkersOverrideNode:
         raise NotImplemented

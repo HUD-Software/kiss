@@ -28,7 +28,7 @@ class LinkerNode:
         self.feature_rule_list = FeatureRuleNodeList()
     
     def __eq__(self, other):
-        if not isinstance(other, FeatureNode):
+        if not isinstance(other, LinkerNode):
             return NotImplemented
         return self.name == other.name
 
@@ -77,7 +77,7 @@ class LinkerNode:
         else:
             node = self
         node = node.dispatch()
-        node = node.apply_modifiers()
+        #node = node.apply_modifiers()
         return node
         
 class LinkerSpecificOverrideNode:
@@ -112,11 +112,11 @@ class LinkerSpecificOverrideNode:
     def merge_with(self, other: LinkerSpecificOverrideNode, parent_list_name_to_ignore: set[str] = None) -> LinkerSpecificOverrideNode:
         raise NotImplemented
     
-    # def dispatch(self, top: LinkerSpecificOverrideNode, feature_rules: FeatureRuleNodeList) -> LinkerSpecificOverrideNode:
-    #     result = LinkerSpecificOverrideNode(self.name)
-    #     result.flags = dispatch_str_list(top.flags, self.flags)
-    #     result.features = dispatch_feature_list(top.features, self.features, feature_rules)
-    #     return result
+    def dispatch(self, top: LinkerSpecificOverrideNode, feature_rules: FeatureRuleNodeList) -> LinkerSpecificOverrideNode:
+        result = LinkerSpecificOverrideNode(self.name)
+        result.flags = dispatch_str_list(top.flags, self.flags)
+        result.features = dispatch_feature_list(top.features, self.features, feature_rules)
+        return result
     
 class LinkersOverrideNode:
     """Represents the 'linkers:' block.
@@ -135,7 +135,7 @@ class LinkersOverrideNode:
     """
     def __init__(self):
         self.common_linker = LinkerSpecificOverrideNode("")
-        self.linkers = set[LinkerSpecificOverrideNode]()
+        self.linkers = dict[str, LinkerSpecificOverrideNode]()
 
     def merge_with(self, other: LinkersOverrideNode):
         raise NotImplemented
@@ -166,9 +166,10 @@ class LinkersOverrideNode:
     def apply_modifiers(self) -> LinkersOverrideNode:
         raise NotImplemented
 
-    # def dispatch(self, feature_rules: FeatureRuleNodeList) -> LinkersOverrideNode:
-    #     result = LinkersOverrideNode()
-    #     result.common_linker = copy.deepcopy(self.common_linker)
-    #     for linker in result.linkers:
-    #         result.linkers.add(linker.dispatch(result.common_linker, feature_rules))
-    #     return result
+    def dispatch(self, linkers : dict[str, LinkerNode]) -> LinkersOverrideNode:
+        result = LinkersOverrideNode()
+        result.common_linker = copy.deepcopy(self.common_linker)
+        for linker in self.linkers:
+            if linker in linkers:
+                result.linkers[linker.name] = linker.dispatch(linkers[linker.name], result.common_linker)
+        return result

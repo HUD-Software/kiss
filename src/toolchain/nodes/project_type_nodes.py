@@ -1,7 +1,7 @@
 from __future__ import annotations
 import copy
-from toolchain.nodes.compiler_nodes import CompilersOverrideNode
-from toolchain.nodes.linker_nodes import LinkersOverrideNode
+from toolchain.nodes.compiler_nodes import CompilerNode, CompilersOverrideNode
+from toolchain.nodes.linker_nodes import LinkerNode, LinkersOverrideNode
 from .property import Property, PropertyDict, PropertyBool, PropertyStr
 
 class ProjectTypeNode:
@@ -32,6 +32,14 @@ class ProjectTypeNode:
         self.extends = None
         self.linkers: LinkersOverrideNode = None
         self.compilers : CompilersOverrideNode = None
+
+    def __eq__(self, other):
+        if not isinstance(other, ProjectTypeNode):
+            return NotImplemented
+        return self.name == other.name
+
+    def __hash__(self):
+        return hash(self.name)
     
     def merge_with(self, parent: ProjectTypeNode):
         if not parent:
@@ -50,23 +58,23 @@ class ProjectTypeNode:
         result.compilers = self.compilers.apply_modifiers() if self.compilers else None
         return result
     
-    def dispatch(self) -> ProjectTypeNode:
+    def dispatch(self, linkers: dict[str, LinkerNode], compilers: dict[str, CompilerNode]) -> ProjectTypeNode:
         """ 
         Dispatch properties from top to bottom hierarchy
         """
         result = ProjectTypeNode(self.name)
-        result.linkers = self.linkers.dispatch(result._properties) if self.linkers else None
-        result.compilers = self.compilers.dispatch(result._properties) if self.compilers else None
+        result.linkers = self.linkers.dispatch(linkers) if self.linkers else None
+        result.compilers = self.compilers.dispatch(compilers) if self.compilers else None
         return result
 
-    def resolve_extends(self, parent: ProjectTypeNode) -> ProjectTypeNode:
+    def resolve_extends(self, parent: ProjectTypeNode, linkers: dict[str, LinkerNode], compilers: dict[str, CompilerNode]) -> ProjectTypeNode:
         if parent:
             assert parent.name == self.extends
             node = self.merge_with(parent)
         else:
             node = self
-        node = node.dispatch()
-        node = node.apply_modifiers()
+        node = node.dispatch(linkers, compilers)
+        #node = node.apply_modifiers()
         return node
 
 class ProjectTypeSpecificOverrideNode(Property):

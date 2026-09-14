@@ -12,43 +12,46 @@ The resolver itself is now only responsible for:
 All merge semantics live in the Property subclasses (node.py).
 """
 
+from operator import index
+from os import name
+from typing import Callable
+
 from toolchain.nodes.property import PropertyDict
 
-def _resolve_chain(name: str, index: dict[str, PropertyDict], visited: set, resolved: dict[str, PropertyDict]) -> PropertyDict:
-    if name in resolved:
-        return resolved[name]
 
-    if name in visited:
-        raise ValueError(f"extends_resolver: circular dependency detected for '{name}'")
+class ExtendResolver:
+    def __init__(self, nodes):
+        self.resolved = {}
+        self.nodes = nodes
 
-    if name not in index:
-        raise ValueError(f"extends_resolver: '{name}' not found (referenced in extends)")
+    def resolve_extends(self, resolve_fn: Callable[[object, object | None], object]):
+        for node in self.nodes:
+            self._resolve_chain(node, set(), resolve_fn)
 
-    node = index[name]
-    visited.add(name)
+        for name, node in self.resolved.items():
+            self.resolved[name] = node.apply_modifiers()
+        return self.resolved
 
-    parent_name = node.extends
-    if parent_name:
-        parent      = _resolve_chain(parent_name, index, visited, resolved)
-        node        = node.resolve_extends(parent)
-    else:
-        node = node.resolve_extends(None)
+    def _resolve_chain(self, node_name, visited, resolve_fn) -> PropertyDict:
+        if node_name in self.resolved:
+            return self.resolved[node_name]
 
-    visited.discard(name)
-    resolved[name] = node
-    return node
+        if node_name in visited:
+            raise ValueError(f"extends_resolver: circular dependency detected for '{node_name}'")
 
-def resolve_extends(nodes: dict[str, PropertyDict]) -> dict[str, PropertyDict]:
-    """
-    Resolve all 'extends' chains in a list of nodes.
-    Returns a new list of fully merged nodes in original order.
-    Each node's properties are merged via Property.resolve_extends().
-    """
-    resolved: dict[str, PropertyDict] = {}
+        if node_name not in self.nodes:
+            raise ValueError(f"extends_resolver: '{node_name}' not found (referenced in extends)")
 
-    for name in nodes.keys():
-        _resolve_chain(name, nodes, set(), resolved)
+        node = self.nodes[node_name]
+        visited.add(node_name)
 
-    # for r in resolved.values():
-    #     resolved[r.name] = r.apply_modifiers()
-    return resolved
+        parent_name = node.extends
+        if parent_name:
+            parent      = self._resolve_chain(parent_name, visited, resolve_fn)
+            node        = resolve_fn(node, parent)
+        else:
+            node = resolve_fn(node, None)
+
+        visited.discard(node_name)
+        self.resolved[node.name] = node
+        return node

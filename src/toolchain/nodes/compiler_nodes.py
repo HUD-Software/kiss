@@ -32,7 +32,7 @@ class CompilerNode:
         self.feature_rule_list = FeatureRuleNodeList()
     
     def __eq__(self, other):
-        if not isinstance(other, FeatureNode):
+        if not isinstance(other, CompilerNode):
             return NotImplemented
         return self.name == other.name
 
@@ -87,7 +87,7 @@ class CompilerNode:
         else:
             node = self
         node = node.dispatch()
-        node = node.apply_modifiers()
+        #snode = node.apply_modifiers()
         return node
 
 class CompilerSpecificOverrideNode:

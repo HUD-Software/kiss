@@ -32,7 +32,9 @@ def yaml_parse_linkers_overrides(data: dict) -> LinkersOverrideNode:
     for key, value in data.items():
         if isinstance(value, dict):
             linker = yaml_parse_linker_specific_overrides(key, value)
-            node.linkers.add(linker)
+            if linker in node.linkers:
+                raise ValueError(f"'{key} linker node alreayd exists'");
+            node.linkers[linker.name] = linker
         else:
             if try_parse_list_modifier("flags", node.common_linker.flags, key, value):
                 continue

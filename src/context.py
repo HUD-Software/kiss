@@ -16,10 +16,8 @@ from toolchain.nodes.project_type_nodes import ProjectTypeNode
 from toolchain.nodes.target_nodes import TargetNode
 from toolchain.parsers.compiler_parser import load_compilers
 from toolchain.parsers.linker_parser   import load_linkers
-from toolchain.parsers.profile_parser  import load_profiles, yaml_parse_profile
-from toolchain.parsers.project_type_parser  import load_project_types, yaml_parse_project_type
-from toolchain.parsers.target_parser   import load_targets
-from resolver.extends_resolver         import resolve_extends
+from toolchain.parsers.project_type_parser  import load_project_types
+from resolver.extends_resolver         import ExtendResolver
 
 @dataclass
 class KissContext:
@@ -169,8 +167,8 @@ def load_dir(directory: Path, loader: Callable[[str], dict[str, T]]) -> dict[str
         key=lambda p: p.as_posix(),
     )
     for yaml_file in yaml_files:
-        for name, item in loader(str(yaml_file)).items():
-            items[name] = item
+        for name, node in loader(str(yaml_file)).items():
+            items[name] = node
     return items
 
 def load_context(directory: str) -> KissContext:
@@ -178,8 +176,8 @@ def load_context(directory: str) -> KissContext:
     src_dir     = Path(__file__).parent
     data_dir    = src_dir.parent / "data"
 
-    #linkers       = load_dir(data_dir / "linkers", load_linkers)
-    # compilers     = load_dir(data_dir / "compilers", load_compilers)
+    linkers       = load_dir(data_dir / "linkers", load_linkers)
+    compilers     = load_dir(data_dir / "compilers", load_compilers)
     project_types = load_dir(data_dir / "project-types", load_project_types)
     # profiles      = load_dir(data_dir / "profiles", load_profiles)
     # targets       = load_dir(data_dir / "targets", load_targets)
@@ -216,13 +214,16 @@ def load_context(directory: str) -> KissContext:
     #         else:
     #             project_types[name] = user_project_type
     # project_types = resolve_extends(project_types)
+    linkers = ExtendResolver(linkers).resolve_extends(lambda node, parent: node.resolve_extends(parent))
+    compilers = ExtendResolver(compilers).resolve_extends(lambda node, parent: node.resolve_extends(parent))
+    project_types = ExtendResolver(project_types).resolve_extends(lambda node, parent: node.resolve_extends(parent, linkers, compilers))
 
     return KissContext(
         directory     = project_dir,
         kiss_data     = kiss_data,
-        #linkers       = resolve_extends(linkers),
-        #compilers     = resolve_extends(compilers),
-        project_types = resolve_extends(project_types),
+        linkers       = linkers,
+        compilers     = compilers,
+        #project_types = project_types,
         # profiles      = resolve_extends(profiles),
         
         # targets       = resolve_extends(targets),

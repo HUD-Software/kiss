@@ -84,9 +84,9 @@ def yaml_parse_project_type(data: dict) -> ProjectTypeNode:
                     raise ValueError(f"'extends' must be a string value ({name})")
                 node.extends = value
             case "compilers":
-                node.compilers = yaml_parse_compilers_overrides(value)
+                node.compilers_overrides = yaml_parse_compilers_overrides(value)
             case "linkers":
-                node.linkers = yaml_parse_linkers_overrides(value)
+                node.linkers_overrides = yaml_parse_linkers_overrides(value)
             case _:
                 raise ValueError(f"'{key}: {value}' is not a valid key ({name})")
     return node

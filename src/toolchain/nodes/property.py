@@ -106,14 +106,14 @@ def merge_str_list(child: StrList, parent: StrList) -> StrList :
     result.remove_modifiers.values.update(parent.remove_modifiers.values)
     return result
 
-def dispatch_str_list(top:StrList, bottom: StrList) -> StrList:
-    assert isinstance(top, StrList)
-    assert isinstance(bottom, StrList)
-    assert not top.has_modifiers()
-    assert not bottom.has_modifiers()
-    result = StrList()
-    result.values = bottom.values.update(top.values)
-    return result
+# def dispatch_str_list(top:StrList, bottom: StrList) -> StrList:
+#     assert isinstance(top, StrList)
+#     assert isinstance(bottom, StrList)
+#     assert not top.has_modifiers()
+#     assert not bottom.has_modifiers()
+#     result = StrList()
+#     result.values = bottom.values.update(top.values)
+#     return result
 
 # ── Base ──────────────────────────────────────────────────────────────────────
 

@@ -30,8 +30,8 @@ class ProjectTypeNode:
         self.icon = None
         self.description = ""
         self.extends = None
-        self.linkers: LinkersOverrideNode = None
-        self.compilers : CompilersOverrideNode = None
+        self.linkers_overrides: LinkersOverrideNode = None
+        self.compilers_overrides : CompilersOverrideNode = None
 
     def __eq__(self, other):
         if not isinstance(other, ProjectTypeNode):
@@ -41,21 +41,29 @@ class ProjectTypeNode:
     def __hash__(self):
         return hash(self.name)
     
-    def merge_with(self, parent: ProjectTypeNode):
+    def merge_with(self, parent: ProjectTypeNode, linkers: dict[str, LinkerNode], compilers: dict[str, CompilerNode]):
         if not parent:
             return copy.deepcopy(self)
         """Merge list without applying modifier or dispatching top to bottom hierarchy """
         assert type(parent) is type(self), "Type mismatch"
         result = ProjectTypeNode(self.name)
-        result.linkers = self.linkers.merge_with(parent.linkers, explicit_list_names) if self.linkers else None
-        result.compilers = self.compilers.merge_with(parent.compilers, explicit_list_names) if self.compilers else None
+        result.is_abstract = self.is_abstract
+        result.icon = self.icon
+        result.description = self.description
+        result.extends = self.extends
+        result.linkers_overrides = self.linkers_overrides.merge_with(parent.linkers_overrides, linkers) if self.linkers_overrides else None
+        result.compilers_overrides = self.compilers_overrides.merge_with(parent.compilers_overrides, compilers) if self.compilers_overrides else None
         return result
     
     def apply_modifiers(self) -> ProjectTypeNode:
         """Apply list modifier"""
         result  = ProjectTypeNode(self.name)
-        result.linkers = self.linkers.apply_modifiers() if self.linkers else None
-        result.compilers = self.compilers.apply_modifiers() if self.compilers else None
+        result.is_abstract = self.is_abstract
+        result.icon = self.icon
+        result.description = self.description
+        result.extends = self.extends
+        result.linkers_overrides = self.linkers_overrides.apply_modifiers() if self.linkers_overrides else None
+        result.compilers_overrides = self.compilers_overrides.apply_modifiers() if self.compilers_overrides else None
         return result
     
     def dispatch(self, linkers: dict[str, LinkerNode], compilers: dict[str, CompilerNode]) -> ProjectTypeNode:
@@ -63,14 +71,18 @@ class ProjectTypeNode:
         Dispatch properties from top to bottom hierarchy
         """
         result = ProjectTypeNode(self.name)
-        result.linkers = self.linkers.dispatch(linkers) if self.linkers else None
-        result.compilers = self.compilers.dispatch(compilers) if self.compilers else None
+        result.is_abstract = self.is_abstract
+        result.icon = self.icon
+        result.description = self.description
+        result.extends = self.extends
+        result.linkers_overrides = self.linkers_overrides.dispatch(linkers) if self.linkers_overrides else None
+        result.compilers_overrides = self.compilers_overrides.dispatch(compilers) if self.compilers_overrides else None
         return result
 
     def resolve_extends(self, parent: ProjectTypeNode, linkers: dict[str, LinkerNode], compilers: dict[str, CompilerNode]) -> ProjectTypeNode:
         if parent:
             assert parent.name == self.extends
-            node = self.merge_with(parent)
+            node = self.merge_with(parent, linkers, compilers)
         else:
             node = self
         node = node.dispatch(linkers, compilers)

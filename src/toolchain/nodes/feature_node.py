@@ -96,7 +96,7 @@ def merge_feature_list(child: FeatureStrList, parent: FeatureStrList, feature_ru
         # Filter the add modifiers
         # We conditionnaly add parent to the child 
         merged_add_modifiers_list = copy.deepcopy(child.add_modifiers)
-        for parent_value_to_add in parent.values:
+        for parent_value_to_add in parent.add_modifiers.values:
             add_in_merged = True
             # Ignore parent if we have a only-one feature rules that concerned the parent value and is also present in child values
             for onlyone_rule in feature_rules.feature_rules_only_one:

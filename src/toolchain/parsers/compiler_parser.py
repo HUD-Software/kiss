@@ -45,7 +45,9 @@ def yaml_parse_compilers_overrides(data: dict) -> CompilersOverrideNode:
     for key, value in data.items():
         if isinstance(value, dict):
             compiler = yaml_parse_compiler_specific_overrides(key, value)
-            node.compilers.add(compiler)
+            if compiler in node.compilers:
+                raise ValueError(f"'{key} compiler node already exists'");
+            node.compilers[compiler.name] = compiler
         else:
             if try_parse_list_modifier("flags", node.common_compiler.flags, key, value):
                 continue

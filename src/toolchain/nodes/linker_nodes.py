@@ -75,7 +75,7 @@ class LinkerNode:
             assert parent.name == self.extends
             node = self.merge_with(parent)
         else:
-            node = self
+            node = copy.deepcopy(self)
         node = node.dispatch()
         #node = node.apply_modifiers()
         return node
@@ -106,8 +106,11 @@ class LinkerSpecificOverrideNode:
     def __hash__(self):
         return hash(self.name)
    
-    def apply_modifiers(self) -> LinkerSpecificOverrideNode:
-        raise NotImplemented
+    def apply_modifiers(self, linker_feature_rules: FeatureRuleNodeList) -> LinkerSpecificOverrideNode:
+        result = LinkerSpecificOverrideNode(self.name)
+        result.flags = self.flags.apply_modifiers()
+        result.features = self.features.apply_modifiers(linker_feature_rules)
+        return result
     
     def merge_with(self, parent: LinkerSpecificOverrideNode, linker_feature_rules: FeatureRuleNodeList) -> LinkerSpecificOverrideNode:
         result = LinkerSpecificOverrideNode(self.name)
@@ -132,7 +135,7 @@ class LinkersOverrideNode:
     """
     def __init__(self):
         self.common_linker = LinkerSpecificOverrideNode("")
-        self.linkers_overrides = dict[str, LinkerSpecificOverrideNode]()
+        self.linker_overrides = dict[str, LinkerSpecificOverrideNode]()
 
     def merge_with(self, parent: LinkersOverrideNode, linkers : dict[str, LinkerNode]):
         result = LinkersOverrideNode()
@@ -154,25 +157,42 @@ class LinkersOverrideNode:
         # - Merge if present in parent and self
         # - If not present in parent, keep it
         # - Add parent that are not in self
-        for linker_override_name, linker_override in self.linkers_overrides.items():
-            if linker_override_name in parent.linkers_overrides:
-                result.linkers_overrides[linker_override_name] = linker_override.merge_with(parent.linkers_overrides[linker_override_name], linkers[linker_override_name].feature_rule_list)
+        for linker_override_name, linker_override in self.linker_overrides.items():
+            if linker_override_name in parent.linker_overrides:
+                result.linker_overrides[linker_override_name] = linker_override.merge_with(parent.linker_overrides[linker_override_name], linkers[linker_override_name].feature_rule_list)
             else:
-                result.linkers_overrides[linker_override_name] = copy.deepcopy(linker_override)
+                result.linker_overrides[linker_override_name] = copy.deepcopy(linker_override)
 
-        for parent_linker_override_name, parent_linker_override in parent.linkers_overrides.items():
-            if not parent_linker_override_name in self.linkers_overrides:
-                result.linkers_overrides[parent_linker_override_name] = copy.deepcopy(parent_linker_override)
+        for parent_linker_override_name, parent_linker_override in parent.linker_overrides.items():
+            if not parent_linker_override_name in self.linker_overrides:
+                result.linker_overrides[parent_linker_override_name] = copy.deepcopy(parent_linker_override)
                 
         return result
     
-    def apply_modifiers(self) -> LinkersOverrideNode:
-        raise NotImplemented
+    def apply_modifiers(self, linkers : dict[str, LinkerNode]) -> LinkersOverrideNode:
+        result = LinkersOverrideNode()
+        result.common_linker = self.common_linker.apply_modifiers(FeatureRuleNodeList())
+        for linker in linkers.values():
+            result.common_linker.apply_modifiers(linker.feature_rule_list)
+                
+        for linker_override_name, linker_override in self.linker_overrides.items():
+            result.linker_overrides[linker_override_name] = linker_override.apply_modifiers(linkers[linker_override_name].feature_rule_list)
+        return result
+        
 
     def dispatch(self, linkers : dict[str, LinkerNode]) -> LinkersOverrideNode:
         result = LinkersOverrideNode()
         result.common_linker = copy.deepcopy(self.common_linker)
-        for linker_override_name, linker_override in self.linkers_overrides.items():
+        for linker_override_name, linker_override in self.linker_overrides.items():
             if linker_override_name in linkers:
-                result.linkers_overrides[linker_override_name] = linker_override.merge_with(result.common_linker, linkers[linker_override_name].feature_rule_list)
+                result.linker_overrides[linker_override_name] = linker_override.merge_with(result.common_linker, linkers[linker_override_name].feature_rule_list)
         return result
+
+
+def merge_linkers_override_node(child: LinkersOverrideNode, parent: LinkersOverrideNode, linkers : dict[str, LinkerNode] ):
+    if child and parent:
+        return child.merge_with(parent, linkers)
+    elif child:
+        return copy.deepcopy(child)
+    elif parent:
+        return copy.deepcopy(parent)

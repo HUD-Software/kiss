@@ -4,8 +4,8 @@ from toolchain.nodes.linker_nodes import LinkersOverrideNode
 from toolchain.nodes.profile_nodes import ProfileNode, ProfileSpecificOverrideNode, ProfilesOverrideNode
 from toolchain.nodes.project_type_nodes import ProjectTypesOverrideNode
 from toolchain.nodes.property import PropertyDict
-from toolchain.parsers.compiler_parser import yaml_parse_compilers_overrides
-from toolchain.parsers.linker_parser import yaml_parse_linkers_overrides
+from toolchain.parsers.compiler_parser import yaml_parse_compiler_overrides
+from toolchain.parsers.linker_parser import yaml_parse_linker_overrides
 from toolchain.parsers.parse_utils import parse_property
 from toolchain.parsers.project_type_parser import yaml_parse_project_types_overrides
 
@@ -105,9 +105,9 @@ def yaml_parse_profiles_overrides(data: dict) -> ProfilesOverrideNode:
                     case "name":
                         continue
                     case CompilersOverrideNode.NAME:
-                        override.compilers = yaml_parse_compilers_overrides(value)
+                        override.compilers = yaml_parse_compiler_overrides(value)
                     case LinkersOverrideNode.NAME:
-                        override.linkers = yaml_parse_linkers_overrides(value)
+                        override.linkers = yaml_parse_linker_overrides(value)
                     case ProjectTypesOverrideNode.NAME:
                         override.project_types = yaml_parse_project_types_overrides(value)
                     case _:
@@ -128,12 +128,12 @@ def yaml_parse_profile(data: dict) -> ProfileNode:
       - name: release
         description: ...
         extends: ...
-        compilers:        # → yaml_parse_compilers_overrides()
+        compilers:        # → yaml_parse_compiler_overrides()
           enable-features: [...]
           defines: [...]
           msvc-compiler:
             enable-features: [...]
-        linkers:          # → yaml_parse_linkers_overrides()
+        linkers:          # → yaml_parse_linker_overrides()
           enable-features: [...]
           msvc-linker:
             enable-features: [...]
@@ -156,9 +156,9 @@ def yaml_parse_profile(data: dict) -> ProfileNode:
             case "name":
                 continue
             case CompilersOverrideNode.NAME:
-                node.compilers = yaml_parse_compilers_overrides(value)
+                node.compilers = yaml_parse_compiler_overrides(value)
             case LinkersOverrideNode.NAME:
-                node.linkers = yaml_parse_linkers_overrides(value)
+                node.linkers = yaml_parse_linker_overrides(value)
             case ProjectTypesOverrideNode.NAME:
                 node.project_types = yaml_parse_project_types_overrides(value)
             case _:

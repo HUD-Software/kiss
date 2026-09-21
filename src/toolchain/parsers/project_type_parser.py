@@ -3,8 +3,8 @@ from toolchain.nodes.compiler_nodes import CompilersOverrideNode
 from toolchain.nodes.linker_nodes import LinkersOverrideNode
 from toolchain.nodes.project_type_nodes import ProjectTypeNode, ProjectTypeSpecificOverrideNode, ProjectTypesOverrideNode
 from toolchain.nodes.property import PropertyDict
-from toolchain.parsers.compiler_parser import yaml_parse_compilers_overrides
-from toolchain.parsers.linker_parser import yaml_parse_linkers_overrides
+from toolchain.parsers.compiler_parser import yaml_parse_compiler_overrides
+from toolchain.parsers.linker_parser import yaml_parse_linker_overrides
 from toolchain.parsers.parse_utils import parse_property
 
 
@@ -37,9 +37,9 @@ def yaml_parse_project_types_overrides(data: dict) -> ProjectTypesOverrideNode:
             for key_p, value_p in value.items():
                 match key_p:
                     case CompilersOverrideNode.NAME:
-                        override.compilers = yaml_parse_compilers_overrides(value_p)
+                        override.compilers = yaml_parse_compiler_overrides(value_p)
                     case LinkersOverrideNode.NAME:
-                        override.linkers = yaml_parse_linkers_overrides(value_p)
+                        override.linkers = yaml_parse_linker_overrides(value_p)
                     case _:
                         prop = parse_property(key_p, value_p)
                         if prop:
@@ -84,9 +84,9 @@ def yaml_parse_project_type(data: dict) -> ProjectTypeNode:
                     raise ValueError(f"'extends' must be a string value ({name})")
                 node.extends = value
             case "compilers":
-                node.compilers_overrides = yaml_parse_compilers_overrides(value)
+                node.compiler_overrides = yaml_parse_compiler_overrides(value)
             case "linkers":
-                node.linkers_overrides = yaml_parse_linkers_overrides(value)
+                node.linker_overrides = yaml_parse_linker_overrides(value)
             case _:
                 raise ValueError(f"'{key}: {value}' is not a valid key ({name})")
     return node

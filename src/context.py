@@ -223,7 +223,7 @@ def load_context(directory: str) -> KissContext:
         kiss_data     = kiss_data,
         linkers       = linkers,
         compilers     = compilers,
-        #project_types = project_types,
+        project_types = project_types,
         # profiles      = resolve_extends(profiles),
         
         # targets       = resolve_extends(targets),

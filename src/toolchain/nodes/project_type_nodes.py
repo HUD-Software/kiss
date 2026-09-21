@@ -1,7 +1,7 @@
 from __future__ import annotations
 import copy
-from toolchain.nodes.compiler_nodes import CompilerNode, CompilersOverrideNode
-from toolchain.nodes.linker_nodes import LinkerNode, LinkersOverrideNode
+from toolchain.nodes.compiler_nodes import CompilerNode, CompilersOverrideNode, merge_compiler_overrides_node
+from toolchain.nodes.linker_nodes import LinkerNode, LinkersOverrideNode, merge_linkers_override_node
 from .property import Property, PropertyDict, PropertyBool, PropertyStr
 
 class ProjectTypeNode:
@@ -30,8 +30,8 @@ class ProjectTypeNode:
         self.icon = None
         self.description = ""
         self.extends = None
-        self.linkers_overrides: LinkersOverrideNode = None
-        self.compilers_overrides : CompilersOverrideNode = None
+        self.linker_overrides: LinkersOverrideNode = None
+        self.compiler_overrides : CompilersOverrideNode = None
 
     def __eq__(self, other):
         if not isinstance(other, ProjectTypeNode):
@@ -51,19 +51,19 @@ class ProjectTypeNode:
         result.icon = self.icon
         result.description = self.description
         result.extends = self.extends
-        result.linkers_overrides = self.linkers_overrides.merge_with(parent.linkers_overrides, linkers) if self.linkers_overrides else None
-        result.compilers_overrides = self.compilers_overrides.merge_with(parent.compilers_overrides, compilers) if self.compilers_overrides else None
+        result.linker_overrides = merge_linkers_override_node(self.linker_overrides, parent.linker_overrides, linkers)
+        result.compiler_overrides = merge_compiler_overrides_node(self.compiler_overrides, parent.compiler_overrides, linkers, compilers)
         return result
     
-    def apply_modifiers(self) -> ProjectTypeNode:
+    def apply_modifiers(self, linkers: dict[str, LinkerNode], compilers: dict[str, CompilerNode]) -> ProjectTypeNode:
         """Apply list modifier"""
         result  = ProjectTypeNode(self.name)
         result.is_abstract = self.is_abstract
         result.icon = self.icon
         result.description = self.description
         result.extends = self.extends
-        result.linkers_overrides = self.linkers_overrides.apply_modifiers() if self.linkers_overrides else None
-        result.compilers_overrides = self.compilers_overrides.apply_modifiers() if self.compilers_overrides else None
+        result.linker_overrides = self.linker_overrides.apply_modifiers(linkers) if self.linker_overrides else None
+        result.compiler_overrides = self.compiler_overrides.apply_modifiers(linkers, compilers) if self.compiler_overrides else None
         return result
     
     def dispatch(self, linkers: dict[str, LinkerNode], compilers: dict[str, CompilerNode]) -> ProjectTypeNode:
@@ -75,8 +75,8 @@ class ProjectTypeNode:
         result.icon = self.icon
         result.description = self.description
         result.extends = self.extends
-        result.linkers_overrides = self.linkers_overrides.dispatch(linkers) if self.linkers_overrides else None
-        result.compilers_overrides = self.compilers_overrides.dispatch(compilers) if self.compilers_overrides else None
+        result.linker_overrides = self.linker_overrides.dispatch(linkers) if self.linker_overrides else None
+        result.compiler_overrides = self.compiler_overrides.dispatch(linkers, compilers) if self.compiler_overrides else None
         return result
 
     def resolve_extends(self, parent: ProjectTypeNode, linkers: dict[str, LinkerNode], compilers: dict[str, CompilerNode]) -> ProjectTypeNode:
@@ -84,9 +84,9 @@ class ProjectTypeNode:
             assert parent.name == self.extends
             node = self.merge_with(parent, linkers, compilers)
         else:
-            node = self
+            node = copy.deepcopy(self)
         node = node.dispatch(linkers, compilers)
-        #node = node.apply_modifiers()
+        node = node.apply_modifiers(linkers, compilers)
         return node
 
 class ProjectTypeSpecificOverrideNode(Property):

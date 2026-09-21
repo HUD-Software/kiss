@@ -87,8 +87,8 @@ def _(box_name: str, linkers_node: LinkersOverrideNode, ignore_empty: bool, pare
     box = Box(box_name)
     box_str_list("flags",linkers_node.common_linker.flags, ignore_empty, box)
     box_str_list("features",linkers_node.common_linker.features, ignore_empty, box)
-    for linker in linkers_node.linkers:
-       box.inner_boxes.append(to_box(linker.name, linker, ignore_empty, box))
+    for linker_name, linker in linkers_node.linker_overrides.items():
+       box.inner_boxes.append(to_box(linker_name, linker, ignore_empty, box))
     return box
 
 @register_box(FeatureArgsNode)
@@ -195,27 +195,21 @@ def _(box_name: str, feature_rule_list_node: FeatureRuleNodeList, ignore_empty: 
 @register_box(CompilerSpecificOverrideNode)
 def _(box_name: str, compiler_specific_node: CompilerSpecificOverrideNode, ignore_empty: bool, parent_box: Box):
     box = Box(box_name)
-    for properties in compiler_specific_node.properties.values():
-        properties.append_to_lines_print(box.lines, ignore_empty)
-    if compiler_specific_node.linkers:
-        linker_overrides = to_box("linkers", compiler_specific_node.linkers, ignore_empty, box)
+    box_str_list("flags",compiler_specific_node.flags, ignore_empty, box)
+    box_str_list("features", compiler_specific_node.features, ignore_empty, box)
+    box_str_list("defines", compiler_specific_node.defines, ignore_empty, box)
+    if compiler_specific_node.linker_overrides:
+        linker_overrides = to_box("linkers", compiler_specific_node.linker_overrides, ignore_empty, box)
         box.inner_boxes.append(linker_overrides)
-    if compiler_specific_node.feature_list.features:
-        feature_list_overrides = to_box("features", compiler_specific_node.feature_list, ignore_empty, box)
-        box.inner_boxes.append(feature_list_overrides)
-    if compiler_specific_node.feature_rule_list.feature_rules:
-        feature_rule_list_overrides = to_box("feature rules", compiler_specific_node.feature_rule_list, ignore_empty, box)
-        box.inner_boxes.append(feature_rule_list_overrides)
     return box
 
 @register_box(CompilersOverrideNode)
 def _(box_name: str, compilers_override_node: CompilersOverrideNode, ignore_empty: bool, parent_box: Box):
     box = Box(box_name)
-    for properties in compilers_override_node.properties.values():
-        properties.append_to_lines_print(box.lines, ignore_empty)
-    for compiler in compilers_override_node._compilers.values():
-        compiler_box = to_box("compilers", compiler.name, compiler, ignore_empty, box)
-        box.inner_boxes.append(compiler_box)
+    box_str_list("flags",compilers_override_node.common_compiler.flags, ignore_empty, box)
+    box_str_list("features",compilers_override_node.common_compiler.features, ignore_empty, box)
+    for compiler_name, compiler in compilers_override_node.compiler_overrides.items():
+        box.inner_boxes.append(to_box(compiler_name, compiler, ignore_empty, box))
     return box
 
 @register_box(ProjectTypeSpecificOverrideNode)
@@ -244,9 +238,9 @@ def _(box_name: str, project_types_override_node: ProjectTypesOverrideNode, igno
 @register_box(CompilerNode)
 def _(box_name: str, compiler_node: CompilerNode, ignore_empty: bool, parent_box: Box):
     box = Box(box_name)
-    append_bool_to_lines_print("is_abstract", compiler_node.is_abstract, box.lines)
+    box.lines.append(f"is_abstract: {compiler_node.is_abstract}")
     if compiler_node.extends:
-        append_bool_to_lines_print("extends", compiler_node.extends, box.lines)
+        box.lines.append(f"extends: {compiler_node.extends}")
     if compiler_node.supported_linkers:
         append_list_str_to_lines_print("supported-linkers", compiler_node.supported_linkers, box.lines)
     if compiler_node.default_linker:
@@ -262,9 +256,9 @@ def _(box_name: str, compiler_node: CompilerNode, ignore_empty: bool, parent_box
 @register_box(LinkerNode)
 def _(box_name: str, linker_node: LinkerNode, ignore_empty: bool, parent_box: Box):
     box = Box(box_name)
-    append_bool_to_lines_print("is_abstract", linker_node.is_abstract, box.lines)
+    box.lines.append(f"is_abstract: {linker_node.is_abstract}")
     if linker_node.extends:
-        append_bool_to_lines_print("extends", linker_node.extends, box.lines) 
+        box.lines.append(f"extends: {linker_node.extends}")
     if linker_node.feature_list:
         feature_list_box = to_box("features", linker_node.feature_list, ignore_empty, box)
         box.inner_boxes.append(feature_list_box)
@@ -276,6 +270,7 @@ def _(box_name: str, linker_node: LinkerNode, ignore_empty: bool, parent_box: Bo
 @register_box(ProfileNode)
 def _(box_name: str, profile_node: ProfileNode, ignore_empty: bool, parent_box: Box):
     box = Box(box_name)
+    box.lines.append(f"is_abstract: {profile_node.is_abstract}")
     for properties in profile_node.properties.values():
         properties.append_to_lines_print(box.lines, ignore_empty)
     if profile_node.compilers:
@@ -292,14 +287,19 @@ def _(box_name: str, profile_node: ProfileNode, ignore_empty: bool, parent_box: 
 @register_box(ProjectTypeNode)
 def _(box_name: str, project_type_node: ProjectTypeNode, ignore_empty: bool, parent_box: Box):
     box = Box(box_name)
-    for properties in project_type_node.properties.values():
-        properties.append_to_lines_print(box.lines, ignore_empty)
-    if project_type_node.compilers:
-        compiler_overrides = to_box("compilers", project_type_node.compilers, ignore_empty, box)
-        box.inner_boxes.append(compiler_overrides)
-    if project_type_node.linkers:
-        linker_overrides = to_box("linkers", project_type_node.linkers, ignore_empty, box)
-        box.inner_boxes.append(linker_overrides)
+    box.lines.append(f"is_abstract: {project_type_node.is_abstract}")
+    if project_type_node.icon:
+        box.lines.append(f"icon: {project_type_node.icon}")
+    if project_type_node.description:
+        box.lines.append(f"description: {project_type_node.description}")
+    if project_type_node.extends:
+           box.lines.append(f"extends: {project_type_node.extends}")
+    if project_type_node.linker_overrides:
+        linker_overrides_box = to_box("linkers", project_type_node.linker_overrides, ignore_empty, box)
+        box.inner_boxes.append(linker_overrides_box)
+    if project_type_node.compiler_overrides:
+        compiler_overrides_box = to_box("compilers", project_type_node.compiler_overrides, ignore_empty, box)
+        box.inner_boxes.append(compiler_overrides_box)
     return box
 
 @register_box(TargetNode)

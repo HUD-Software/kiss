@@ -15,7 +15,7 @@ def yaml_parse_linker_specific_overrides(name: str, data: dict) -> LinkerSpecifi
             raise ValueError(f"'{key}:{value}' is not a valid key ({name})")
     return linker
 
-def yaml_parse_linkers_overrides(data: dict) -> LinkersOverrideNode:
+def yaml_parse_linker_overrides(data: dict) -> LinkersOverrideNode:
     """Parse the 'linkers:' block inside a compiler feature.
 
     linkers:
@@ -32,9 +32,9 @@ def yaml_parse_linkers_overrides(data: dict) -> LinkersOverrideNode:
     for key, value in data.items():
         if isinstance(value, dict):
             linker = yaml_parse_linker_specific_overrides(key, value)
-            if linker in node.linkers_overrides:
+            if linker in node.linker_overrides:
                 raise ValueError(f"'{key} linker override node alreayd exists'");
-            node.linkers_overrides[linker.name] = linker
+            node.linker_overrides[linker.name] = linker
         else:
             if try_parse_list_modifier("flags", node.common_linker.flags, key, value):
                 continue

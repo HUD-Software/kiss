@@ -3,7 +3,7 @@ from toolchain.nodes.compiler_nodes import CompilerFeatureNode, CompilerFeatureN
 from toolchain.nodes.feature_node import FeatureNodeList, FeatureRuleNodeList
 from toolchain.nodes.linker_nodes import LinkersOverrideNode
 from toolchain.parsers.feature_parser import yaml_parse_feature, yaml_parse_feature_args, yaml_parse_feature_rule_list
-from toolchain.parsers.linker_parser import yaml_parse_linkers_overrides
+from toolchain.parsers.linker_parser import yaml_parse_linker_overrides
 from toolchain.parsers.parse_utils import parse_property, try_parse_list_modifier
 
 def yaml_parse_compiler_specific_overrides(name: str, data: dict) -> CompilerSpecificOverrideNode:
@@ -11,7 +11,7 @@ def yaml_parse_compiler_specific_overrides(name: str, data: dict) -> CompilerSpe
     for key, value in data.items():
         if isinstance(value, dict):
             assert not compiler.linker_overrides
-            compiler.linker_overrides = yaml_parse_linkers_overrides(value)
+            compiler.linker_overrides = yaml_parse_linker_overrides(value)
         else:
             if try_parse_list_modifier("flags", compiler.flags, key, value):
                 continue
@@ -24,7 +24,7 @@ def yaml_parse_compiler_specific_overrides(name: str, data: dict) -> CompilerSpe
     return compiler
 
 
-def yaml_parse_compilers_overrides(data: dict) -> CompilersOverrideNode:
+def yaml_parse_compiler_overrides(data: dict) -> CompilersOverrideNode:
     """Parse the 'compilers:' block inside a compiler feature.
 
     compilers: # CompilersOverrideNode
@@ -45,9 +45,9 @@ def yaml_parse_compilers_overrides(data: dict) -> CompilersOverrideNode:
     for key, value in data.items():
         if isinstance(value, dict):
             compiler = yaml_parse_compiler_specific_overrides(key, value)
-            if compiler in node.compilers_overrides:
+            if compiler in node.compiler_overrides:
                 raise ValueError(f"'{key} compiler node already exists'");
-            node.compilers_overrides[compiler.name] = compiler
+            node.compiler_overrides[compiler.name] = compiler
         else:
             if try_parse_list_modifier("flags", node.common_compiler.flags, key, value):
                 continue
@@ -101,7 +101,7 @@ def yaml_parse_compiler_feature(data: dict) -> CompilerFeatureNode:
             case "linkers":
                 if not isinstance(value, dict):
                     raise ValueError(f"'linkers' must be a composed values -> {value} in ({name})")
-                node.linkers = yaml_parse_linkers_overrides(value)
+                node.linkers = yaml_parse_linker_overrides(value)
             case _:
                 if try_parse_list_modifier("flags", node.flags, key, value):
                     continue

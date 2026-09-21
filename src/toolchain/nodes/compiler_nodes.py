@@ -2,7 +2,7 @@
 from __future__ import annotations
 import copy
 from toolchain.nodes.feature_node import FeatureNode, FeatureNodeList, FeatureRuleNodeList, FeatureStrList, merge_feature_list
-from toolchain.nodes.linker_nodes import LinkersOverrideNode
+from toolchain.nodes.linker_nodes import LinkerNode, LinkersOverrideNode, merge_linkers_override_node
 from toolchain.nodes.property import PropertyDict, StrList, merge_str_list
 
 class CompilerNode:
@@ -85,7 +85,7 @@ class CompilerNode:
             assert parent.name == self.extends
             node = self.merge_with(parent)
         else:
-            node = self
+            node = copy.deepcopy(self)
         node = node.dispatch()
         #node = node.apply_modifiers()
         return node
@@ -117,18 +117,20 @@ class CompilerSpecificOverrideNode:
     def __hash__(self):
         return hash(self.name)
        
-    def apply_modifiers(self) -> CompilerSpecificOverrideNode:
+    def apply_modifiers(self, compiler_feature_rules: FeatureRuleNodeList, linkers : dict[str, LinkerNode]) -> CompilerSpecificOverrideNode:
         result = CompilerSpecificOverrideNode(self.name)
-        result.linker_overrides = self.linker_overrides.apply_modifiers() if self.linker_overrides else None
-        result.feature_list = self.feature_list.apply_modifiers()
-        result.feature_rule_list = self.feature_rule_list.apply_modifiers()
+        result.linker_overrides = self.linker_overrides.apply_modifiers(linkers) if self.linker_overrides else None
+        result.flags = self.flags.apply_modifiers()
+        result.features = self.features.apply_modifiers(compiler_feature_rules)
+        result.defines = self.defines.apply_modifiers()
         return result
     
-    def merge_with(self, parent: CompilerSpecificOverrideNode, compiler_feature_rules: FeatureRuleNodeList) -> CompilerSpecificOverrideNode:
+    def merge_with(self, parent: CompilerSpecificOverrideNode, compiler_feature_rules: FeatureRuleNodeList, linkers : dict[str, LinkerNode]) -> CompilerSpecificOverrideNode:
         result = CompilerSpecificOverrideNode(self.name)
         result.flags = merge_str_list(parent.flags, self.flags)
         result.defines = merge_str_list(parent.defines, self.defines)
         result.features = merge_feature_list(parent.features, self.features, compiler_feature_rules)
+        result.linker_overrides = merge_linkers_override_node(self.linker_overrides, parent.linker_overrides, linkers)
         return result
                 
 class CompilersOverrideNode:
@@ -143,16 +145,16 @@ class CompilersOverrideNode:
     """
     def __init__(self):
       self.common_compiler = CompilerSpecificOverrideNode("")
-      self.compilers_overrides = dict[str, CompilerSpecificOverrideNode]()
+      self.compiler_overrides = dict[str, CompilerSpecificOverrideNode]()
 
-    def merge_with(self, parent: CompilersOverrideNode, compilers : dict[str, CompilerNode]):
+    def merge_with(self, parent: CompilersOverrideNode, linkers: dict[str, LinkerNode], compilers: dict[str, CompilerNode]):
         result = CompilersOverrideNode()
         
-        # Merge common lincompilerer with the parent common lcompilerinker without feature rule list
+        # Merge common compiler with the parent common compiler without feature rule list
         # We can't use feature rule list because it is bound too the compiler itself.
         # We just merge with all know compiler after and validate the merge here
         # We could wait for the dispatch step, but if we do it now, we can have better understanding of where the bad merge appears
-        result.common_compiler = self.common_compiler.merge_with(parent.common_compiler, FeatureRuleNodeList())
+        result.common_compiler = self.common_compiler.merge_with(parent.common_compiler, FeatureRuleNodeList(), linkers)
         for compiler in compilers.values():
             features = merge_feature_list(
                 self.common_compiler.features,
@@ -165,34 +167,48 @@ class CompilersOverrideNode:
         # - Merge if present in parent and self
         # - If not present in parent, keep it
         # - Add parent that are not in self
-        for compiler_override_name, compiler_override in self.compilers_overrides.items():
-            if compiler_override_name in parent.compilers_overrides:
-                result.compilers_overrides[compiler_override_name] = compiler_override.merge_with(parent.compilers_overrides[compiler_override_name], linkers[linker_override_name].feature_rule_list)
+        for compiler_override_name, compiler_override in self.compiler_overrides.items():
+            if compiler_override_name in parent.compiler_overrides:
+                result.compiler_overrides[compiler_override_name] = compiler_override.merge_with(parent.compiler_overrides[compiler_override_name], compilers[compiler_override_name].feature_rule_list)
             else:
-                result.compilers_overrides[compiler_override_name] = copy.deepcopy(compiler_override)
+                result.compiler_overrides[compiler_override_name] = copy.deepcopy(compiler_override)
 
-        for parent_compiler_override_name, parent_compiler_override in parent.compilers_overrides.items():
-            if not parent_compiler_override_name in self.compilers_overrides:
-                result.compilers_overrides[parent_compiler_override_name] = copy.deepcopy(parent_compiler_override)
+        for parent_compiler_override_name, parent_compiler_override in parent.compiler_overrides.items():
+            if not parent_compiler_override_name in self.compiler_overrides:
+                result.compiler_overrides[parent_compiler_override_name] = copy.deepcopy(parent_compiler_override)
                 
         return result
     
-    def apply_modifiers(self) -> CompilersOverrideNode:
-        raise NotImplemented
-        # result = CompilersOverrideNode(self.name)
-        # result._properties = self.properties.apply_modifiers()
-        # for compiler in self._compilers.values():
-        #     result.add_compiler(compiler.apply_modifiers())
-        # return result
-
-    def dispatch(self, compilers: dict[str, CompilerNode]) -> CompilersOverrideNode:
+    def apply_modifiers(self, linkers: dict[str, LinkerNode], compilers: dict[str, CompilerNode]) -> CompilersOverrideNode:
         result = CompilersOverrideNode()
-        result.common_compiler = copy.deepcopy(self.common_compiler)
-        for compiler_override_name, linker_override in self.compilers_overrides.items():
-            if compiler_override_name in compilers:
-                result.compilers_overrides[compiler_override_name] = linker_override.merge_with(result.common_compiler, compilers[compiler_override_name].feature_rule_list)
+        # Apply modifier on common compiler without feature rule list
+        # We can't use feature rule list because it is bound too the compiler itself
+        # We just apply modifiers with all know compiler after and validate the apply modifiers
+        result.common_compiler = self.common_compiler.apply_modifiers(FeatureRuleNodeList(), linkers )
+        for compiler in compilers.values():
+            result.common_compiler.apply_modifiers(compiler.feature_rule_list, linkers)
+
+        # Apply modifiers for all compiler overrides
+        for compiler_override_name, compiler_override in self.compiler_overrides.items():
+            result.compiler_overrides[compiler_override_name] = compiler_override.apply_modifiers(compilers[compiler_override_name].feature_rule_list, linkers)
         return result
 
+    def dispatch(self, linkers: dict[str, LinkerNode], compilers: dict[str, CompilerNode]) -> CompilersOverrideNode:
+        result = CompilersOverrideNode()
+        result.common_compiler = copy.deepcopy(self.common_compiler)
+        for compiler_override_name, compiler_override in self.compiler_overrides.items():
+            if compiler_override_name in compilers:
+                result.compiler_overrides[compiler_override_name] = compiler_override.merge_with(result.common_compiler, compilers[compiler_override_name].feature_rule_list, linkers)
+        return result
+
+def merge_compiler_overrides_node(child: CompilersOverrideNode, parent: CompilersOverrideNode, linkers: dict[str, LinkerNode], compilers: dict[str, CompilerNode] ):
+    if child and parent:
+        return child.merge_with(parent, linkers, compilers)
+    elif child:
+        return copy.deepcopy(child)
+    elif parent:
+        return copy.deepcopy(parent)
+    
 class CompilerFeatureNodeList:
     """Represents the 'features:' block."""
     def __init__(self):
@@ -231,12 +247,6 @@ class CompilerFeatureNodeList:
             result.add_feature(feature.apply_modifiers(feature_rules))
         return result
 
-    # def dispatch(self, feature_rules: FeatureRuleNodeList) -> CompilerFeatureNodeList:
-    #     result = CompilerFeatureNodeList()
-    #     for feature in self.features:
-    #         result.add_feature(feature.dispatch(feature_rules))
-    #     return result
-
 class CompilerFeatureNode(FeatureNode):
     def __init__(self, name:str):
         super().__init__(name)
@@ -262,9 +272,3 @@ class CompilerFeatureNode(FeatureNode):
         result = CompilerFeatureNode.from_feature_node(s)
         result.linkers = copy.deepcopy(self.linkers)
         return result
-
-    # def dispatch(self, feature_rules: FeatureRuleNodeList) -> CompilerFeatureNode:
-    #     result = CompilerFeatureNode.from_feature_node(self)
-    #     result.linkers = self.linkers.dispatch(feature_rules)
-    #     return result
-      

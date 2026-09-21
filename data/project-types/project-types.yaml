@@ -25,6 +25,7 @@ project-types:
     linkers:
       add-features: [BIN_2]
       gold:
+        features: [T]
         add-features: [BIN_3]
     compilers:
       add-defines: [KISS_BIN] # Preprocessor definitions to add when compiling with this project
@@ -54,3 +55,5 @@ project-types:
       add-features: [TEST_1]
       ld:
         add-features: [TEST_2]
+      gold:
+        add-features: [TEST_3]

@@ -92,7 +92,7 @@ def merge_feature_list(child: FeatureStrList, parent: FeatureStrList, feature_ru
     assert isinstance(child, FeatureStrList)
     assert isinstance(parent, FeatureStrList)
 
-    # If child have values, ignore parents
+    # If child have user defined, ignore parents
     if child.is_user_defined_values():
         return copy.deepcopy(child)
     # Child have no values, merge with parent

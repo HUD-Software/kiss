@@ -4,8 +4,8 @@ from toolchain.nodes.linker_nodes import LinkersOverrideNode
 from toolchain.nodes.profile_nodes import ProfilesOverrideNode
 from toolchain.nodes.project_type_nodes import ProjectTypesOverrideNode
 from toolchain.nodes.target_nodes import TargetNode
-from toolchain.parsers.compiler_parser import yaml_parse_compilers_overrides
-from toolchain.parsers.linker_parser import yaml_parse_linkers_overrides
+from toolchain.parsers.compiler_parser import yaml_parse_compiler_overrides
+from toolchain.parsers.linker_parser import yaml_parse_linker_overrides
 from toolchain.parsers.parse_utils import parse_property
 from toolchain.parsers.profile_parser import yaml_parse_profiles_overrides
 from toolchain.parsers.project_type_parser import yaml_parse_project_types_overrides
@@ -25,9 +25,9 @@ def yaml_parse_target(data: dict) -> TargetNode:
             case "name":
                 continue
             case CompilersOverrideNode.NAME:
-                node.compilers = yaml_parse_compilers_overrides(value)
+                node.compilers = yaml_parse_compiler_overrides(value)
             case LinkersOverrideNode.NAME:
-                node.linkers = yaml_parse_linkers_overrides(value)
+                node.linkers = yaml_parse_linker_overrides(value)
             case ProjectTypesOverrideNode.NAME:
                 node.project_types = yaml_parse_project_types_overrides(value)
             case ProfilesOverrideNode.NAME:

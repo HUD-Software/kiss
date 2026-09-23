@@ -93,7 +93,7 @@ def merge_feature_list(child: FeatureStrList, parent: FeatureStrList, feature_ru
     assert isinstance(parent, FeatureStrList)
 
     # If child have user defined, ignore parents
-    if child.is_user_defined_values():
+    if child.has_values():
         return copy.deepcopy(child)
     # Child have no values, merge with parent
     else:
@@ -122,13 +122,6 @@ def merge_feature_list(child: FeatureStrList, parent: FeatureStrList, feature_ru
         feature_rules.validate(result.apply_modifiers(feature_rules).values)
         
         return result
-
-# def dispatch_feature_list(top: FeatureStrList, bottom: FeatureStrList, feature_rules: FeatureRuleNodeList):
-#     assert isinstance(top, StrList)
-#     assert isinstance(bottom, StrList)
-#     assert not top.has_modifiers()
-#     assert not bottom.has_modifiers()
-#     return merge_feature_list(bottom, top, feature_rules)
 
 class FeatureNode:
     """Represents a single compiler feature entry.

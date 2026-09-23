@@ -80,13 +80,23 @@ class ProjectTypeNode:
         return result
 
     def resolve_extends(self, parent: ProjectTypeNode, linkers: dict[str, LinkerNode], compilers: dict[str, CompilerNode]) -> ProjectTypeNode:
+        result  = ProjectTypeNode(self.name)
+        result.is_abstract = self.is_abstract
+        result.icon = self.icon
+        result.description = self.description
+        result.extends = self.extends
         if parent:
-            assert parent.name == self.extends
-            node = self.merge_with(parent, linkers, compilers)
+            result.linker_overrides = self.linker_overrides.resolve_extends(parent.linker_overrides, linkers)
         else:
-            node = copy.deepcopy(self)
-        node = node.dispatch(linkers, compilers)
-        node = node.apply_modifiers(linkers, compilers)
+            result.linker_overrides = self.linker_overrides.resolve_extends(None, linkers)
+        return result
+        # if parent:
+        #     assert parent.name == self.extends
+        #     node = self.merge_with(parent, linkers, compilers)
+        # else:
+        #     node = copy.deepcopy(self)
+        # node = node.dispatch(linkers, compilers)
+        # node = node.apply_modifiers(linkers, compilers)
         return node
 
 class ProjectTypeSpecificOverrideNode(Property):

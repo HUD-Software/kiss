@@ -87,7 +87,7 @@ class CompilerNode:
         else:
             node = copy.deepcopy(self)
         node = node.dispatch()
-        #node = node.apply_modifiers()
+        node = node.apply_modifiers()
         return node
 
 class CompilerSpecificOverrideNode:

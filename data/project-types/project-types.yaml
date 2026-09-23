@@ -23,18 +23,31 @@ project-types:
     description: Executable binary
     icon: 💾
     linkers:
-      add-features: [BIN_2]
+      add-flags: [P1]
+      ld:
+        add-flags: [P3]
       gold:
-        features: [T]
-        add-features: [BIN_3]
-    compilers:
-      add-defines: [KISS_BIN] # Preprocessor definitions to add when compiling with this project
-      clangcl:
-        add-defines: [BIN_1]
-        linkers:
-          add-features: [BIN_4]
-          ld:
-            add-features: [BIN_5]
+        flags: [T]
+        add-flags: [P2]
+      
+  - name: test
+    description: Test binary
+    icon: 🧪
+    extends: bin
+    linkers:
+      add-flags: [C1] # P1, C1
+      ld:
+        add-flags: [C2] # P3, P1, C1, C2
+      gold:
+        add-flags: [C3] # T P2, C1, C3
+    # compilers:
+    #   add-defines: [KISS_BIN] # Preprocessor definitions to add when compiling with this project
+    #   clangcl:
+    #     add-defines: [BIN_1]
+    #     linkers:
+    #       add-features: [BIN_4]
+    #       ld:
+    #         add-features: [BIN_5]
   # - name: lib
   #   description: Static library
   #   icon: 📦
@@ -45,15 +58,8 @@ project-types:
   #   icon: 🧩
   #   compilers:
   #     add-defines: [KISS_DYN_LIB] # Preprocessor definitions to add when compiling with this project
-  - name: test
-    description: Test binary
-    icon: 🧪
-    extends: bin
-    compilers:
-      add-defines: [KISS_TEST]
-    linkers:
-      add-features: [TEST_1]
-      ld:
-        add-features: [TEST_2]
-      gold:
-        add-features: [TEST_3]
+  
+
+  #   compilers:
+  #     add-defines: [KISS_TEST]
+  

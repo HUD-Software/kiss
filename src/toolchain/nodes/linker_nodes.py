@@ -77,7 +77,7 @@ class LinkerNode:
         else:
             node = copy.deepcopy(self)
         node = node.dispatch()
-        #node = node.apply_modifiers()
+        node = node.apply_modifiers()
         return node
         
 class LinkerSpecificOverrideNode:
@@ -186,6 +186,46 @@ class LinkersOverrideNode:
         for linker_override_name, linker_override in self.linker_overrides.items():
             if linker_override_name in linkers:
                 result.linker_overrides[linker_override_name] = linker_override.merge_with(result.common_linker, linkers[linker_override_name].feature_rule_list)
+        return result
+
+    def resolve_extends(self, parent: LinkersOverrideNode,  linkers : dict[str, LinkerNode]) -> LinkersOverrideNode:
+        result = LinkersOverrideNode()
+        if parent:
+            result.common_linker = self.common_linker.merge_with(parent.common_linker, FeatureRuleNodeList())
+
+            for linker_override_name, linker_override in self.linker_overrides.items():
+                result_override = LinkerSpecificOverrideNode(linker_override_name)
+                # Merge flags
+                if linker_override.flags.has_values():
+                    result_override.flags = merge_str_list(linker_override.flags, self.common_linker.flags)
+                else:
+                    result_override.flags = merge_str_list(linker_override.flags, result.common_linker.flags)
+                    if linker_override_name in parent.linker_overrides:
+                        result_override.flags = merge_str_list(result_override.flags, parent.linker_overrides[linker_override_name].flags)
+                result.linker_overrides[linker_override_name] = result_override
+                # Merge features
+                # parent_feature_list = parent.linker_overrides[linker_override_name].features
+                # # Find the common to merge
+                # if linker_override.features.has_values():
+                #     common_to_merge = None
+                # elif parent_feature_list.has_values():
+                #     common_to_merge = self.common_linker.features
+                # if common_to_merge:
+                #     result_override.features = merge_feature_list(linker_override.features, common_to_merge, FeatureRuleNodeList())
+
+
+                # if linker_override.features.has_values() or parent_feature_list.has_values():
+                #     result_override.features = merge_feature_list(linker_override.features, self.common_linker.features, FeatureRuleNodeList())
+                # else:
+                #     result_override.features = merge_feature_list(linker_override.features, result.common_linker.features, FeatureRuleNodeList())
+                #     if linker_override_name in parent.linker_overrides:
+                #         result_override.features = merge_feature_list(result_override.features, parent_feature_list, linkers[linker_override_name].feature_rule_list )
+                result.linker_overrides[linker_override_name] = result_override
+        else:
+            result.common_linker = copy.deepcopy(self.common_linker)
+            for linker_override_name, linker_override in self.linker_overrides.items():
+                result.linker_overrides[linker_override_name] = linker_override.merge_with(self.common_linker, linkers[linker_override_name].feature_rule_list)
+        
         return result
 
 

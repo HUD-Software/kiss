@@ -25,10 +25,9 @@ project-types:
     linkers:
       add-flags: [P1]
       ld:
-        add-flags: [P3]
+        add-flags: [P2] # P1 P2
       gold:
-        flags: [T]
-        add-flags: [P2]
+        add-flags: [P3] # P1 P3
       
   - name: test
     description: Test binary
@@ -37,9 +36,22 @@ project-types:
     linkers:
       add-flags: [C1] # P1, C1
       ld:
-        add-flags: [C2] # P3, P1, C1, C2
+        add-flags: [C2] # P2, P1, C1, C2
       gold:
-        add-flags: [C3] # T P2, C1, C3
+        #flags: [TT]
+        add-flags: [C3] # T P3 C1 C3
+
+  - name: test2
+    description: Test binary
+    icon: 🧪
+    extends: test
+    linkers:
+      add-flags: [D1] # P1, C1, D1
+      ld:
+        add-flags: [D2] # P2, P1, C1, C2, D1, D2
+      gold:
+        add-flags: [D3] # T, P3, C1, C3, D1, D3
+
     # compilers:
     #   add-defines: [KISS_BIN] # Preprocessor definitions to add when compiling with this project
     #   clangcl:

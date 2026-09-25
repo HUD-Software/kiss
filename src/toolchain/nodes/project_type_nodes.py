@@ -90,14 +90,6 @@ class ProjectTypeNode:
         else:
             result.linker_overrides = self.linker_overrides.resolve_extends(None, linkers)
         return result
-        # if parent:
-        #     assert parent.name == self.extends
-        #     node = self.merge_with(parent, linkers, compilers)
-        # else:
-        #     node = copy.deepcopy(self)
-        # node = node.dispatch(linkers, compilers)
-        # node = node.apply_modifiers(linkers, compilers)
-        return node
 
 class ProjectTypeSpecificOverrideNode(Property):
     """Represents a per-project-type override inside a 'project-types:' node.

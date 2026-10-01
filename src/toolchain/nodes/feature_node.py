@@ -48,6 +48,18 @@ class FeatureStrList:
     def is_empty(self):
         return not self.has_values() and not self.has_modifiers()
     
+    def apply_remove(self) : 
+            result = StrList()
+            if self.remove_modifiers.is_empty():
+                return copy.deepcopy(self)
+            else:
+                for value_to_remove in self.remove_modifiers.values:
+                    if value_to_remove not in result.values:
+                        result.values.add(value_to_remove)
+                    if value_to_remove not in result.add_modifiers.values:
+                        result.add_modifiers.values.add(value_to_remove)
+            return result
+    
     def apply_modifiers(self, feature_rules: FeatureRuleNodeList) -> FeatureStrList:
         # features : [A, B]
         # add-features: [B, C]
@@ -87,6 +99,7 @@ class FeatureStrList:
         result = FeatureStrList()
         result.str_list.values = values
         return result
+
 
 def merge_feature_list(child: FeatureStrList, parent: FeatureStrList, feature_rules: FeatureRuleNodeList) -> FeatureStrList :
     assert isinstance(child, FeatureStrList)

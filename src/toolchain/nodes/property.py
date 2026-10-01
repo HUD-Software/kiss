@@ -89,21 +89,34 @@ class StrList:
                 result.values.remove(value)
 
         return result
+
+    def apply_remove_modifiers(self, remove_modifiers : StrListModifierRemove):
+        result = copy.deepcopy(self)
+        for value_to_remove in remove_modifiers.values:
+            result.values.discard(value_to_remove)
+            result.add_modifiers.values.discard(value_to_remove)
+        return result
+    
+    def apply_remove(self) : 
+        return self.apply_remove_modifiers(self.remove_modifiers)
+   
+    
                 
 
 def merge_str_list(child: StrList, parent: StrList) -> StrList :
     assert isinstance(child, StrList)
     assert isinstance(parent, StrList)
     # If child has explicit values, ignore parents
-    if child.is_user_defined_values():
+    if child.has_values():
         return copy.deepcopy(child)
     # Else merge StrList
     result = StrList()
-    result.values = copy.deepcopy(parent.values)
+    #result.values = copy.deepcopy(parent.values)
     result.add_modifiers = copy.deepcopy(child.add_modifiers)
+    result.add_modifiers.values.update(parent.values)
     result.add_modifiers.values.update(parent.add_modifiers.values)
     result.remove_modifiers = copy.deepcopy(child.remove_modifiers)
-    result.remove_modifiers.values.update(parent.remove_modifiers.values)
+    #result.remove_modifiers.values.update(parent.remove_modifiers.values)
     return result
 
 # def dispatch_str_list(top:StrList, bottom: StrList) -> StrList:

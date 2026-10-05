@@ -1,3 +1,16 @@
+# NOTE:
+# remove-flags is applicable only in the same level, it does not propagate to child project-types
+# For exemple:
+#   add-flags: [P1]
+#   remove-flags: [P1, P2]
+#   ld:
+#    add-flags: [P2]
+# In this example, the final flags for ld will be [P2] because P1 is removed in the common level,
+# but P2 is not removed in the ld level.
+# Why? because add-flags in ld take precedence over remove-flags in the common level,
+# but remove-flags in ld does not take precedence over add-flags in the common level.
+# In general case, remove-flags is only applicable in the same level, it does not propagate to child project-types.
+
 # project-types:
 # - name:
 #   description:
@@ -23,14 +36,20 @@ project-types:
     description: Executable binary
     icon: 💾
     linkers:
-      add-flags: [P1]
-      remove-flags: [P1]
+      add-flags: [P1, P4]
+      remove-flags: [P1, P2]
       ld:
-        add-flags: [P2]
+        add-flags: [P2, P3] # P2, P3, P4
       gold:
         flags: [TT]
-        add-flags: [P3, P1]
-      
+        add-flags: [P3, P1] # TT, P1
+        remove-flags: [P3]
+
+  # TODO:
+  # resolve_extends
+  # For all linkers
+  #   we merge common with parent linker, then we merge with linker
+
   - name: test
     description: Test binary
     icon: 🧪
@@ -39,9 +58,10 @@ project-types:
       add-flags: [C1]
       remove-flags: [P2, C3]
       ld:
-        add-flags: [C2]
+        add-flags: [C2] # P3, P4, C1, C2
       gold:
-        add-flags: [C3]
+        add-flags: [C3] # TT P1 C1 C3
+
 
   # - name: test2
   #   description: Test binary
@@ -54,14 +74,14 @@ project-types:
   #     gold:
   #       add-flags: [D3]
 
-    # compilers:
-    #   add-defines: [KISS_BIN] # Preprocessor definitions to add when compiling with this project
-    #   clangcl:
-    #     add-defines: [BIN_1]
-    #     linkers:
-    #       add-features: [BIN_4]
-    #       ld:
-    #         add-features: [BIN_5]
+  # compilers:
+  #   add-defines: [KISS_BIN] # Preprocessor definitions to add when compiling with this project
+  #   clangcl:
+  #     add-defines: [BIN_1]
+  #     linkers:
+  #       add-features: [BIN_4]
+  #       ld:
+  #         add-features: [BIN_5]
   # - name: lib
   #   description: Static library
   #   icon: 📦
@@ -72,8 +92,6 @@ project-types:
   #   icon: 🧩
   #   compilers:
   #     add-defines: [KISS_DYN_LIB] # Preprocessor definitions to add when compiling with this project
-  
 
   #   compilers:
   #     add-defines: [KISS_TEST]
-  

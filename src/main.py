@@ -1,7 +1,9 @@
+from modulefinder import test
 import sys
 import os
 
-from toolchain.nodes.property import PropertyDict, PropertyStrList, PropertyStrListModifier, StrListModifierOperation
+from toolchain.nodes.linker_nodes import LinkerSpecificOverrideNode, LinkersOverrideNode
+from toolchain.nodes.property import PropertyDict, PropertyStrList, PropertyStrListModifier, StrList, StrListModifierOperation, resolve_extends_common_str_list, resolve_extends_str_list
 
 sys.path.insert(0, os.path.dirname(__file__))
 
@@ -287,9 +289,141 @@ def test_dispatch() :
     assert len(r_add.values) == 2 
     assert set(["12", "2"]) == set(r_add.values)
 
+def create_specific_linker_node(name: str, flags: StrList) -> LinkerSpecificOverrideNode:
+    linker_node = LinkerSpecificOverrideNode(name)
+    linker_node.flags = flags
+    return linker_node
+
+def create_test_linker_node(common_flag: StrList, specificflags: LinkerSpecificOverrideNode) -> LinkersOverrideNode:
+    linker_node = LinkersOverrideNode()
+    linker_node.common_linker.flags = common_flag
+    linker_node.linker_overrides[specificflags.name] = specificflags
+    return linker_node
+
+def create_str_list(values: list[str], add_modifiers: list[str], remove_modifiers: list[str]) -> StrList:
+    str_list = StrList()
+    for value in values:
+        str_list.add_value(value)
+    for modifier in add_modifiers:
+        str_list.add_modifier_add(modifier)
+    for modifier in remove_modifiers:
+        str_list.add_modifier_remove(modifier)
+    return str_list
+
+def test_1() :
+    #  linkers:
+    #   add-flags: [C1, C2]
+    #   remove-flags: [C1, C3]
+    #   ld:
+    #    add-flags: [LD1, C3, LD2]
+    #    remove-flags: [LD2]
+    common_flag = create_str_list([], ["C1", "C2"], ["C1", "C3"])
+    ld_flags = create_str_list([], ["LD1", "C3", "LD2"], ["LD2"])
+    ld_linker = create_specific_linker_node("ld", ld_flags)
+    linker_node = create_test_linker_node( common_flag, ld_linker)
+
+    # Extends 'linkers:' node
+    extended_linker_node = linker_node.resolve_extends(None, {})
+
+    # Common must remains the same
+    assert extended_linker_node.common_linker.flags.values == set([])
+    assert extended_linker_node.common_linker.flags.add_modifiers.values == set(["C1", "C2"])
+    assert extended_linker_node.common_linker.flags.remove_modifiers.values == set(["C1", "C3"])
+
+    ld = extended_linker_node.linker_overrides.get("ld")
+    assert ld.flags.values == set([])
+    assert ld.flags.add_modifiers.values == set(["C2", "LD1"])
+    assert ld.flags.remove_modifiers.values == set(["LD2"]) 
+
+def test_2() :
+    #  linkers:
+    #   flags: [C0]
+    #   add-flags: [C1, C2]
+    #   remove-flags: [C1, C3]
+    #   ld:
+    #    add-flags: [LD1, C3, LD2]
+    #    remove-flags: [LD2]
+    common_flag = create_str_list(["C0"], ["C1", "C2"], ["C1", "C3"])
+    ld_flags = create_str_list([], ["LD1", "C3", "LD2"], ["LD2"])
+    ld_linker = create_specific_linker_node("ld", ld_flags)
+    linker_node = create_test_linker_node( common_flag, ld_linker)
+
+    # Extends 'linkers:' node
+    extended_linker_node = linker_node.resolve_extends(None, {})
+
+    # Common must remains the same
+    assert extended_linker_node.common_linker.flags.values == set(["C0"])
+    assert extended_linker_node.common_linker.flags.add_modifiers.values == set(["C1", "C2"])
+    assert extended_linker_node.common_linker.flags.remove_modifiers.values == set(["C1", "C3"])
+
+    ld = extended_linker_node.linker_overrides.get("ld")
+    assert ld.flags.values == set([])
+    assert ld.flags.add_modifiers.values == set(["C0", "C2", "LD1"])
+    assert ld.flags.remove_modifiers.values == set(["LD2"]) 
+
+def test_3() :
+    #  linkers:
+    #   flags: []
+    #   add-flags: [C1, C2]
+    #   remove-flags: [C1, C3]
+    #   ld:
+    #    flags: [LD0]
+    #    add-flags: [LD1, C3, LD2]
+    #    remove-flags: [LD2]
+    common_flag = create_str_list([], ["C1", "C2"], ["C1", "C3"])
+    ld_flags = create_str_list(["LD0"], ["LD1", "C3", "LD2"], ["LD2"])
+    ld_linker = create_specific_linker_node("ld", ld_flags)
+    linker_node = create_test_linker_node( common_flag, ld_linker)
+
+    # Extends 'linkers:' node
+    extended_linker_node = linker_node.resolve_extends(None, {})
+
+    # Common must remains the same
+    assert extended_linker_node.common_linker.flags.values == set([])
+    assert extended_linker_node.common_linker.flags.add_modifiers.values == set(["C1", "C2"])
+    assert extended_linker_node.common_linker.flags.remove_modifiers.values == set(["C1", "C3"])
+
+    ld = extended_linker_node.linker_overrides.get("ld")
+    assert ld.flags.values == set(["LD0"])
+    assert ld.flags.add_modifiers.values == set(["C3", "LD1"])
+    assert ld.flags.remove_modifiers.values == set(["LD2"]) 
+
+def test_4() :
+    #  linkers:
+    #   flags: [C0]
+    #   add-flags: [C1, C2]
+    #   remove-flags: [C1, C3]
+    #   ld:
+    #    flags: [LD0]
+    #    add-flags: [LD1, C3, LD2]
+    #    remove-flags: [LD2]
+    common_flag = create_str_list(["C0"], ["C1", "C2"], ["C1", "C3"])
+    ld_flags = create_str_list(["LD0"], ["LD1", "C3", "LD2"], ["LD2"])
+    ld_linker = create_specific_linker_node("ld", ld_flags)
+    linker_node = create_test_linker_node( common_flag, ld_linker)
+
+    # Extends 'linkers:' node
+    extended_linker_node = linker_node.resolve_extends(None, {})
+
+    # Common must remains the same
+    assert extended_linker_node.common_linker.flags.values == set(["C0"])
+    assert extended_linker_node.common_linker.flags.add_modifiers.values == set(["C1", "C2"])
+    assert extended_linker_node.common_linker.flags.remove_modifiers.values == set(["C1", "C3"])
+
+    ld = extended_linker_node.linker_overrides.get("ld")
+    assert ld.flags.values == set(["LD0"])
+    assert ld.flags.add_modifiers.values == set(["C3", "LD1"])
+    assert ld.flags.remove_modifiers.values == set(["LD2"]) 
+
+def test_extends() :
+    test_1()
+    test_2()
+    test_3()
+    test_4()
+
+
 if __name__ == "__main__":
-
-    test_merge()
-    test_dispatch()
-
+    test_extends()
+    
     app()
+    

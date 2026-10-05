@@ -55,6 +55,15 @@ class StrList:
         self.remove_modifiers = StrListModifierRemove(set())
         self.user_defined_remove_modifiers = False
 
+    def add_value(self, value: str):
+        self.values.add(value)
+
+    def add_modifier_add(self, value: str):
+        self.add_modifiers.values.add(value)
+
+    def add_modifier_remove(self, value: str):
+        self.remove_modifiers.values.add(value)
+        
     def has_values(self) -> bool:
         return len(self.values) > 0
 
@@ -98,6 +107,7 @@ class StrList:
         for value_to_add in self.add_modifiers.values:
             if value_to_add not in remove_modifiers.values:
                 result.add_modifiers.values.add(value_to_add)
+        result.remove_modifiers = copy.deepcopy(self.remove_modifiers)
         return result
     
     def apply_remove(self) : 
@@ -129,8 +139,8 @@ def resolve_extends_str_list(child: StrList, parent: StrList) -> StrList:
         return child.apply_remove()
     # Child have no values, merge with parent
     else:
-        parent = parent.apply_remove()
         parent_remove_modifiers = copy.deepcopy(parent.remove_modifiers)
+        parent = parent.apply_remove()
         result = child.apply_remove_modifiers(parent_remove_modifiers).apply_remove()
         result.add_modifiers.values.update(parent.add_modifiers.values)
         result.add_modifiers.values.update(parent.values)

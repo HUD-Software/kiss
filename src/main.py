@@ -297,7 +297,8 @@ def create_specific_linker_node(name: str, flags: StrList) -> LinkerSpecificOver
 def create_test_linker_node(common_flag: StrList, specificflags: LinkerSpecificOverrideNode) -> LinkersOverrideNode:
     linker_node = LinkersOverrideNode()
     linker_node.common_linker.flags = common_flag
-    linker_node.linker_overrides[specificflags.name] = specificflags
+    if specificflags:
+        linker_node.linker_overrides[specificflags.name] = specificflags
     return linker_node
 
 def create_str_list(values: list[str], add_modifiers: list[str], remove_modifiers: list[str]) -> StrList:
@@ -415,12 +416,372 @@ def test_4() :
     assert ld.flags.add_modifiers.values == set(["C3", "LD1"])
     assert ld.flags.remove_modifiers.values == set(["LD2"]) 
 
+
+def test_empty_extends_1():
+    #  linkers:
+    #   add-flags: [C1, C2]
+    #   remove-flags: [C1, C3]
+    #   ld:
+    #    add-flags: [LD1, C3, LD2]
+    #    remove-flags: [LD2]
+    common_flag = create_str_list([], ["C1", "C2"], ["C1", "C3"])
+    ld_flags = create_str_list([], ["LD1", "C3", "LD2"], ["LD2"])
+    ld_linker = create_specific_linker_node("ld", ld_flags)
+    base_linker_node = create_test_linker_node( common_flag, ld_linker)
+
+    # Extends 'linkers:' node
+    extended_base_linker_node = base_linker_node.resolve_extends(None, {})
+
+    # child 'linkers:' extends extended_base_linker_node
+    result = LinkersOverrideNode().resolve_extends(extended_base_linker_node, {})
+
+    # Validate result
+    assert result.common_linker.flags.values == set([])
+    assert result.common_linker.flags.add_modifiers.values == set([])
+    assert result.common_linker.flags.remove_modifiers.values == set([])
+
+    # If the linker override is not specified in the child, it should be a copy of the parent
+    # NOTE: The parent must already be extended before the child extends it, so that the child can get the correct values from the parent
+    # Here the result must be the same as test_1
+    ld = result.linker_overrides.get("ld")
+    assert ld.flags.values == set([])
+    assert ld.flags.add_modifiers.values == set(["C2", "LD1"])
+    assert ld.flags.remove_modifiers.values == set(["LD2"]) 
+
+def test_empty_extends_2():
+    #  linkers:
+    #   flags: [C0]
+    #   add-flags: [C1, C2]
+    #   remove-flags: [C1, C3]
+    #   ld:
+    #    add-flags: [LD1, C3, LD2]
+    #    remove-flags: [LD2]
+    common_flag = create_str_list(["C0"], ["C1", "C2"], ["C1", "C3"])
+    ld_flags = create_str_list([], ["LD1", "C3", "LD2"], ["LD2"])
+    ld_linker = create_specific_linker_node("ld", ld_flags)
+    base_linker_node = create_test_linker_node( common_flag, ld_linker)
+
+    # Extends 'linkers:' node
+    extended_base_linker_node = base_linker_node.resolve_extends(None, {})
+
+    # child 'linkers:' extends extended_base_linker_node
+    result = LinkersOverrideNode().resolve_extends(extended_base_linker_node, {})
+
+    # Validate result
+
+    # The child linker do not inherit the common from the parent, so the common in the child should be empty
+    # NOTE: The parent must already be extended before the child extends it, so that the child can get the correct values from the parent
+    assert result.common_linker.flags.values == set([])
+    assert result.common_linker.flags.add_modifiers.values == set([])
+    assert result.common_linker.flags.remove_modifiers.values == set([])
+
+    # If the linker override is not specified in the child, it should be a copy of the parent
+    # NOTE: The parent must already be extended before the child extends it, so that the child can get the correct values from the parent
+    # Here the result must be the same as test_2
+    ld = result.linker_overrides.get("ld")
+    assert ld.flags.values == set([])
+    assert ld.flags.add_modifiers.values == set(["C0", "C2", "LD1"])
+    assert ld.flags.remove_modifiers.values == set(["LD2"]) 
+
+
+def test_empty_extends_3():
+    #  linkers:
+    #   flags: []
+    #   add-flags: [C1, C2]
+    #   remove-flags: [C1, C3]
+    #   ld:
+    #    flags: [LD0]
+    #    add-flags: [LD1, C3, LD2]
+    #    remove-flags: [LD2]
+    common_flag = create_str_list([], ["C1", "C2"], ["C1", "C3"])
+    ld_flags = create_str_list(["LD0"], ["LD1", "C3", "LD2"], ["LD2"])
+    ld_linker = create_specific_linker_node("ld", ld_flags)
+    base_linker_node = create_test_linker_node( common_flag, ld_linker)
+
+    # Extends 'linkers:' node
+    extended_base_linker_node = base_linker_node.resolve_extends(None, {})
+
+    # child 'linkers:' extends extended_base_linker_node
+    result = LinkersOverrideNode().resolve_extends(extended_base_linker_node, {})
+
+    # Validate result
+
+    # The child linker do not inherit the common from the parent, so the common in the child should be empty
+    # NOTE: The parent must already be extended before the child extends it, so that the child can get the correct values from the parent
+    assert result.common_linker.flags.values == set([])
+    assert result.common_linker.flags.add_modifiers.values == set([])
+    assert result.common_linker.flags.remove_modifiers.values == set([])
+
+    # If the linker override is not specified in the child, it should be a copy of the parent
+    # NOTE: The parent must already be extended before the child extends it, so that the child can get the correct values from the parent
+    # Here the result must be the same as test_3
+    ld = result.linker_overrides.get("ld")
+    assert ld.flags.values == set(["LD0"])
+    assert ld.flags.add_modifiers.values == set(["C3", "LD1"])
+    assert ld.flags.remove_modifiers.values == set(["LD2"]) 
+
+def test_empty_extends_4():
+    #  linkers:
+    #   flags: [C0]
+    #   add-flags: [C1, C2]
+    #   remove-flags: [C1, C3]
+    #   ld:
+    #    flags: [LD0]
+    #    add-flags: [LD1, C3, LD2]
+    #    remove-flags: [LD2]
+    common_flag = create_str_list(["C0"], ["C1", "C2"], ["C1", "C3"])
+    ld_flags = create_str_list(["LD0"], ["LD1", "C3", "LD2"], ["LD2"])
+    ld_linker = create_specific_linker_node("ld", ld_flags)
+    base_linker_node = create_test_linker_node( common_flag, ld_linker)
+
+    # Extends 'linkers:' node
+    extended_base_linker_node = base_linker_node.resolve_extends(None, {})
+
+    # child 'linkers:' extends extended_base_linker_node
+    result = LinkersOverrideNode().resolve_extends(extended_base_linker_node, {})
+
+    # Validate result
+    
+    # The child linker do not inherit the common from the parent, so the common in the child should be empty
+    # NOTE: The parent must already be extended before the child extends it, so that the child can get the correct values from the parent
+    assert result.common_linker.flags.values == set([])
+    assert result.common_linker.flags.add_modifiers.values == set([])
+    assert result.common_linker.flags.remove_modifiers.values == set([])
+
+    # If the linker override is not specified in the child, it should be a copy of the parent
+    # NOTE: The parent must already be extended before the child extends it, so that the child can get the correct values from the parent
+    # Here the result must be the same as test_3
+    ld = result.linker_overrides.get("ld")
+    assert ld.flags.values == set(["LD0"])
+    assert ld.flags.add_modifiers.values == set(["C3", "LD1"])
+    assert ld.flags.remove_modifiers.values == set(["LD2"]) 
+
+def test_common_only_extends_1():
+    #  linkers:
+    #   add-flags: [C1, C2]
+    #   remove-flags: [C1, C3]
+    #   ld:
+    #    add-flags: [LD1, C3, LD2]
+    #    remove-flags: [LD2]
+    common_base_flag = create_str_list([], ["C1", "C2"], ["C1", "C3"])
+    ld_base_flags = create_str_list([], ["LD1", "C3", "LD2"], ["LD2"])
+    ld_base_linker = create_specific_linker_node("ld", ld_base_flags)
+    base_linker_node = create_test_linker_node( common_base_flag, ld_base_linker)
+
+    # Extends 'linkers:' node
+    extended_base_linker_node = base_linker_node.resolve_extends(None, {})
+
+    # child 'linkers:' extends extended_base_linker_node
+    # linkers:
+    #   flags: [E0]
+    #   add-flags: [E1, E3]
+    #   remove-flags: [E1, E2]
+    extends_common_flag = create_str_list(["E0"], ["E1", "E3"], ["E1", "E2"])
+    child_linker_node = create_test_linker_node(extends_common_flag, None)
+    result = child_linker_node.resolve_extends(extended_base_linker_node, {})
+
+    # Validate result
+    assert result.common_linker.flags.values == set(["E0"])
+    assert result.common_linker.flags.add_modifiers.values == set(["E1", "E3"])
+    assert result.common_linker.flags.remove_modifiers.values == set(["E1", "E2"])
+
+    # If the linker override is not specified in the child, it should be a copy of the parent
+    # NOTE: The parent must already be extended before the child extends it, so that the child can get the correct values from the parent
+    # Here the result must be the same as test_1
+    ld = result.linker_overrides.get("ld")
+    assert ld.flags.values == set([])
+    assert ld.flags.add_modifiers.values == set(["C2", "LD1"])
+    assert ld.flags.remove_modifiers.values == set(["LD2"]) 
+
+
+def test_common_only_extends_2():
+    #  linkers:
+    #   flags: [C0]
+    #   add-flags: [C1, C2]
+    #   remove-flags: [C1, C3]
+    #   ld:
+    #    add-flags: [LD1, C3, LD2]
+    #    remove-flags: [LD2]
+    common_flag = create_str_list(["C0"], ["C1", "C2"], ["C1", "C3"])
+    ld_flags = create_str_list([], ["LD1", "C3", "LD2"], ["LD2"])
+    ld_linker = create_specific_linker_node("ld", ld_flags)
+    base_linker_node = create_test_linker_node( common_flag, ld_linker)
+
+    # Extends 'linkers:' node
+    extended_base_linker_node = base_linker_node.resolve_extends(None, {})
+
+    # child 'linkers:' extends extended_base_linker_node
+    # linkers:
+    #   flags: [E0]
+    #   add-flags: [E1, E3]
+    #   remove-flags: [E1, E2]
+    extends_common_flag = create_str_list(["E0"], ["E1", "E3"], ["E1", "E2"])
+    child_linker_node = create_test_linker_node(extends_common_flag, None)
+    result = child_linker_node.resolve_extends(extended_base_linker_node, {})
+    
+
+    # Validate result
+
+    # The child linker do not inherit the common from the parent, so the common in the child should be empty
+    # NOTE: The parent must already be extended before the child extends it, so that the child can get the correct values from the parent
+    assert result.common_linker.flags.values == set(["E0"])
+    assert result.common_linker.flags.add_modifiers.values == set(["E1", "E3"])
+    assert result.common_linker.flags.remove_modifiers.values == set(["E1", "E2"])
+
+    # If the linker override is not specified in the child, it should be a copy of the parent
+    # NOTE: The parent must already be extended before the child extends it, so that the child can get the correct values from the parent
+    # Here the result must be the same as test_2
+    ld = result.linker_overrides.get("ld")
+    assert ld.flags.values == set([])
+    assert ld.flags.add_modifiers.values == set(["C0", "C2", "LD1"])
+    assert ld.flags.remove_modifiers.values == set(["LD2"]) 
+
+
+def test_common_only_extends_3():
+    #  linkers:
+    #   flags: []
+    #   add-flags: [C1, C2]
+    #   remove-flags: [C1, C3]
+    #   ld:
+    #    flags: [LD0]
+    #    add-flags: [LD1, C3, LD2]
+    #    remove-flags: [LD2]
+    common_flag = create_str_list([], ["C1", "C2"], ["C1", "C3"])
+    ld_flags = create_str_list(["LD0"], ["LD1", "C3", "LD2"], ["LD2"])
+    ld_linker = create_specific_linker_node("ld", ld_flags)
+    base_linker_node = create_test_linker_node( common_flag, ld_linker)
+
+    # Extends 'linkers:' node
+    extended_base_linker_node = base_linker_node.resolve_extends(None, {})
+
+    # child 'linkers:' extends extended_base_linker_node
+    # linkers:
+    #   flags: [E0]
+    #   add-flags: [E1, E3]
+    #   remove-flags: [E1, E2]
+    extends_common_flag = create_str_list(["E0"], ["E1", "E3"], ["E1", "E2"])
+    child_linker_node = create_test_linker_node(extends_common_flag, None)
+    result = child_linker_node.resolve_extends(extended_base_linker_node, {})
+
+    # Validate result
+
+    # The child linker do not inherit the common from the parent, so the common in the child should be empty
+    # NOTE: The parent must already be extended before the child extends it, so that the child can get the correct values from the parent
+    assert result.common_linker.flags.values == set(["E0"])
+    assert result.common_linker.flags.add_modifiers.values == set(["E1", "E3"])
+    assert result.common_linker.flags.remove_modifiers.values == set(["E1", "E2"])
+
+    # If the linker override is not specified in the child, it should be a copy of the parent
+    # NOTE: The parent must already be extended before the child extends it, so that the child can get the correct values from the parent
+    # Here the result must be the same as test_3
+    ld = result.linker_overrides.get("ld")
+    assert ld.flags.values == set(["LD0"])
+    assert ld.flags.add_modifiers.values == set(["C3", "LD1"])
+    assert ld.flags.remove_modifiers.values == set(["LD2"]) 
+
+
+def test_common_only_extends_4():
+    #  linkers:
+    #   flags: [C0]
+    #   add-flags: [C1, C2]
+    #   remove-flags: [C1, C3]
+    #   ld:
+    #    flags: [LD0]
+    #    add-flags: [LD1, C3, LD2]
+    #    remove-flags: [LD2]
+    common_flag = create_str_list(["C0"], ["C1", "C2"], ["C1", "C3"])
+    ld_flags = create_str_list(["LD0"], ["LD1", "C3", "LD2"], ["LD2"])
+    ld_linker = create_specific_linker_node("ld", ld_flags)
+    base_linker_node = create_test_linker_node( common_flag, ld_linker)
+
+    # Extends 'linkers:' node
+    extended_base_linker_node = base_linker_node.resolve_extends(None, {})
+
+      # child 'linkers:' extends extended_base_linker_node
+    # linkers:
+    #   flags: [E0]
+    #   add-flags: [E1, E3]
+    #   remove-flags: [E1, E2]
+    extends_common_flag = create_str_list(["E0"], ["E1", "E3"], ["E1", "E2"])
+    child_linker_node = create_test_linker_node(extends_common_flag, None)
+    result = child_linker_node.resolve_extends(extended_base_linker_node, {})
+
+    # Validate result
+
+    # The child linker do not inherit the common from the parent, so the common in the child should be empty
+    # NOTE: The parent must already be extended before the child extends it, so that the child can get the correct values from the parent
+    assert result.common_linker.flags.values == set(["E0"])
+    assert result.common_linker.flags.add_modifiers.values == set(["E1", "E3"])
+    assert result.common_linker.flags.remove_modifiers.values == set(["E1", "E2"])
+
+    # If the linker override is not specified in the child, it should be a copy of the parent
+    # NOTE: The parent must already be extended before the child extends it, so that the child can get the correct values from the parent
+    # Here the result must be the same as test_3
+    ld = result.linker_overrides.get("ld")
+    assert ld.flags.values == set(["LD0"])
+    assert ld.flags.add_modifiers.values == set(["C3", "LD1"])
+    assert ld.flags.remove_modifiers.values == set(["LD2"]) 
+
+
+def test_common_a_extends_1():
+    #  linkers:
+    #   add-flags: [C1, C2]
+    #   remove-flags: [C1, C3]
+    #   ld:
+    #    add-flags: [LD1, C3, LD2]
+    #    remove-flags: [LD2]
+    common_base_flag = create_str_list([], ["C1", "C2"], ["C1", "C3"])
+    ld_base_flags = create_str_list([], ["LD1", "C3", "LD2"], ["LD2"])
+    ld_base_linker = create_specific_linker_node("ld", ld_base_flags)
+    base_linker_node = create_test_linker_node( common_base_flag, ld_base_linker)
+
+    # Extends 'linkers:' node
+    extended_base_linker_node = base_linker_node.resolve_extends(None, {})
+
+    # child 'linkers:' extends extended_base_linker_node
+    # linkers:
+    #   flags: [E0]
+    #   add-flags: [E1, E3]
+    #   remove-flags: [E1, E2]
+    #   ld:
+    #    add-flags: [ELD1, ELD2]
+    #    remove-flags: [ELD2, E2]
+    extends_common_flag = create_str_list(["E0"], ["E1", "E3"], ["E1", "E2"])
+    extends_ld_flags = create_str_list(["ELD1", "ELD2"], [], ["ELD2", "E2"])
+    ld_child_linker = create_specific_linker_node("ld", extends_ld_flags)
+    child_linker_node = create_test_linker_node(extends_common_flag, ld_child_linker)
+    result = child_linker_node.resolve_extends(extended_base_linker_node, {})
+
+    # Validate result
+    assert result.common_linker.flags.values == set(["E0"])
+    assert result.common_linker.flags.add_modifiers.values == set(["E1", "E3"])
+    assert result.common_linker.flags.remove_modifiers.values == set(["E1", "E2"])
+
+    # If the linker override is not specified in the child, it should be a copy of the parent
+    # NOTE: The parent must already be extended before the child extends it, so that the child can get the correct values from the parent
+    # Here the result must be the same as test_1
+    ld = result.linker_overrides.get("ld")
+    assert ld.flags.values == set([])
+    assert ld.flags.add_modifiers.values == set(["C2", "LD1"])
+    assert ld.flags.remove_modifiers.values == set(["LD2"]) 
+
+
 def test_extends() :
     test_1()
     test_2()
     test_3()
     test_4()
+    test_empty_extends_1()
+    test_empty_extends_2()
+    test_empty_extends_3()
+    test_empty_extends_4()
 
+    test_common_only_extends_1()
+    test_common_only_extends_2()
+    test_common_only_extends_3()
+    test_common_only_extends_4()
+
+    test_common_a_extends_1()
 
 if __name__ == "__main__":
     test_extends()

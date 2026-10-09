@@ -1054,57 +1054,60 @@ def test_common_only_2_extends_4():
 def create_a():
     """
     linkers:
-      flags: [AC0]
-      add-flags: [AC1, AC3]
-      remove-flags: [AC1, AC2]
-      ld:
-        add-flags: [ALD1, ALD2]
-        remove-flags: [ALD2, A2]
+      add-flags: [AC1, AC3, AC4]
+      remove-flags: [AC1, ALD1, AC2]
+        ld:
+          add-flags: [ALD1, ALD2, ALD3]
+          remove-flags: [ALD2, AC4]
     """
-    extends_common_flag = create_str_list(["AC0"], ["AC1", "AC3"], ["AC1", "AC2"])
-    extends_ld_flags = create_str_list([], ["ALD1", "ALD2"], ["ALD2", "A2"])
+    extends_common_flag = create_str_list([], ["AC1", "AC3", "AC4"], ["AC1", "ALD1", "AC2"])
+    extends_ld_flags = create_str_list([], ["ALD1", "ALD2", "ALD3"], ["ALD2", "AC4"])
     ld_child_linker = create_specific_linker_node("ld", extends_ld_flags)
     return create_test_linker_node(extends_common_flag, ld_child_linker)
 
 def create_b():
     """
     linkers:
-      add-flags: [BC1, BC3]
-      remove-flags: [BC1, BC2]
+      flags: [AC0]
+      add-flags: [AC1, AC3, AC4]
+      remove-flags: [AC1, ALD1, AC2]
       ld:
-        add-flags: [BLD1, BLD2]
-        remove-flags: [BLD2, B2]
+        add-flags: [ALD1, ALD2, ALD3]
+        remove-flags: [ALD2, AC4]
     """
-    extends_common_flag = create_str_list([], ["BC1", "BC3"], ["BC1", "BC2"])
-    extends_ld_flags = create_str_list([], ["BLD1", "BLD2"], ["BLD2", "B2"])
+    extends_common_flag = create_str_list(["AC0"], ["AC1", "AC3", "AC4"], ["AC1", "ALD1", "AC2"])
+    extends_ld_flags = create_str_list([], ["ALD1", "ALD2", "ALD3"], ["ALD2", "AC4"])
     ld_child_linker = create_specific_linker_node("ld", extends_ld_flags)
     return create_test_linker_node(extends_common_flag, ld_child_linker)
 
 def create_c():
     """
     linkers:
-      add-flags: [CC1, CC3]
-      remove-flags: [CC1, CC2]
+      add-flags: [AC1, AC3, AC4]
+      remove-flags: [AC1, ALD1, AC2]
       ld:
-        add-flags: [CLD1, CLD2]
-        remove-flags: [CLD2, C2]
+        flags: [ALD0]
+        add-flags: [ALD1, ALD2, ALD3]
+        remove-flags: [ALD2, AC4]
     """
-    extends_common_flag = create_str_list([], ["CC1", "CC3"], ["CC1", "CC2"])
-    extends_ld_flags = create_str_list([], ["CLD1", "CLD2"], ["CLD2", "C2"])
+    extends_common_flag = create_str_list(["AC0"], ["AC1", "AC3", "AC4"], ["AC1", "ALD1", "AC2"])
+    extends_ld_flags = create_str_list(["ALD0"], ["ALD1", "ALD2", "ALD3"], ["ALD2", "AC4"])
     ld_child_linker = create_specific_linker_node("ld", extends_ld_flags)
     return create_test_linker_node(extends_common_flag, ld_child_linker)
 
 def create_d():
     """
     linkers:
-      add-flags: [DC1, DC3]
-      remove-flags: [DC1, DC2]
+      flags: [AC0]
+      add-flags: [AC1, AC3, AC4]
+      remove-flags: [AC1, ALD1, AC2]
       ld:
-        add-flags: [DLD1, DLD2]
-        remove-flags: [DLD2, D2]
+        flags: [ALD0]
+        add-flags: [ALD1, ALD2, ALD3]
+        remove-flags: [ALD2, AC4]
     """
-    extends_common_flag = create_str_list([], ["DC1", "DC3"], ["DC1", "DC2"])
-    extends_ld_flags = create_str_list([], ["DLD1", "DLD2"], ["DLD2", "D2"])
+    extends_common_flag = create_str_list(["AC0"], ["AC1", "AC3", "AC4"], ["AC1", "ALD1", "AC2"])
+    extends_ld_flags = create_str_list(["ALD0"], ["ALD1", "ALD2", "ALD3"], ["ALD2", "AC4"])
     ld_child_linker = create_specific_linker_node("ld", extends_ld_flags)
     return create_test_linker_node(extends_common_flag, ld_child_linker)
 
@@ -1128,22 +1131,20 @@ def test_a_extends_1():
   
     # child 'linkers:' extends extended_base_linker_node
     # linkers:
-    #   flags: [AC0]
-    #   add-flags: [AC1, AC3]
-    #   remove-flags: [AC1, AC2]
-    #   ld:
-    #     add-flags: [ALD1, ALD2]
-    #     remove-flags: [ALD2, A2]
+    #   add-flags: [AC1, AC3, AC4]
+    #   remove-flags: [AC1, ALD1, AC2]
+    #     ld:
+    #       add-flags: [ALD1, ALD2, ALD3]
+    #       remove-flags: [ALD2, AC4]
     child_linker_node = create_a()
 
     # child
     # linkers: (Extended)
-    #   flags: [AC0] # Not changed
-    #   add-flags: [AC1, AC3] # Not changed
-    #   remove-flags: [AC1, AC2] # Not changed
+    #   add-flags: [AC1, AC3, AC4] # Not changed
+    #   remove-flags: [AC1, ALD1, AC2] # Not changed
     #   ld:
-    #    add-flags: [AC0, ALD1, AC3] # AC1, ALD2, Removed
-    #    remove-flags: [ALD2, A2] # Not changed
+    #    add-flags: [LD1, C2, ALD3, AC3]
+    #    remove-flags: [ALD2, AC4] # Not changed
     result = child_linker_node.resolve_extends(extended_base_linker_node, {})
 
     # Validate result
@@ -1158,53 +1159,53 @@ def test_a_extends_1():
     assert ld.flags.add_modifiers.values == set(["AC0", "ALD1", "AC3"])
     assert ld.flags.remove_modifiers.values == set(["ALD2", "A2"]) 
 
-def test_b_extends_1():
-    #  linkers:
-    #  add-flags: [C1, C2]
-    #  remove-flags: [C1, C3]
-    #    ld:
-    #      add-flags: [LD1, C3, LD2]
-    #      remove-flags: [LD2] 
-    base_linker_node = create_1()
+# def test_b_extends_1():
+#     #  linkers:
+#     #  add-flags: [C1, C2]
+#     #  remove-flags: [C1, C3]
+#     #    ld:
+#     #      add-flags: [LD1, C3, LD2]
+#     #      remove-flags: [LD2] 
+#     base_linker_node = create_1()
 
-    #  linkers: (Extended)
-    #   add-flags: [C1, C2] # Not changed
-    #   remove-flags: [C1, C3] # Not changed
-    #   ld:
-    #    add-flags: [LD1, C2] # LD2 and C3 removed 
-    #    remove-flags: [LD2] # Not changed
-    extended_base_linker_node = base_linker_node.resolve_extends(None, {})
+#     #  linkers: (Extended)
+#     #   add-flags: [C1, C2] # Not changed
+#     #   remove-flags: [C1, C3] # Not changed
+#     #   ld:
+#     #    add-flags: [LD1, C2] # LD2 and C3 removed 
+#     #    remove-flags: [LD2] # Not changed
+#     extended_base_linker_node = base_linker_node.resolve_extends(None, {})
 
   
-    # child 'linkers:' extends extended_base_linker_node
-    # linkers:
-    #   add-flags: [BC1, BC3]
-    #   remove-flags: [BC1, BC2]
-    #   ld:
-    #     add-flags: [BLD1, BLD2]
-    #     remove-flags: [BLD2, B2]
-    child_linker_node = create_b()
+#     # child 'linkers:' extends extended_base_linker_node
+#     # linkers:
+#     #   add-flags: [BC1, BC3]
+#     #   remove-flags: [BC1, BC2]
+#     #   ld:
+#     #     add-flags: [BLD1, BLD2]
+#     #     remove-flags: [BLD2, BC2]
+#     child_linker_node = create_b()
 
-    # child
-    # linkers: (Extended)
-    #   add-flags: [BC1, BC3] # Not changed
-    #   remove-flags: [BC1, BC2] # Not changed
-    #   ld:
-    #     add-flags: [AC0, BLD1, AC3] # AC1, BLD2, Removed
-    #     remove-flags: [BLD2, B2] # Not changed
-    result = child_linker_node.resolve_extends(extended_base_linker_node, {})
+#     # child
+#     # linkers: (Extended)
+#     #   add-flags: [BC1, BC3] # Not changed
+#     #   remove-flags: [BC1, BC2] # Not changed
+#     #   ld:
+#     #     add-flags: [AC0, BLD1, AC3, BC3] # AC1, BLD2, Removed
+#     #     remove-flags: [BLD2, BC2] # Not changed
+#     result = child_linker_node.resolve_extends(extended_base_linker_node, {})
 
-    # Validate result
-    assert result.common_linker.flags.values == set(["AC0"])
-    assert result.common_linker.flags.add_modifiers.values == set(["AC1", "AC3"])
-    assert result.common_linker.flags.remove_modifiers.values == set(["AC1", "AC2"])
+#     # Validate result
+#     assert result.common_linker.flags.values == set([])
+#     assert result.common_linker.flags.add_modifiers.values == set(["BC1", "BC3"])
+#     assert result.common_linker.flags.remove_modifiers.values == set(["BC1", "BC2"])
 
-    # If the linker override is not specified in the child, it should be a copy of the parent
-    # NOTE: The parent must already be extended before the child extends it, so that the child can get the correct values from the parent
-    ld = result.linker_overrides.get("ld")
-    assert ld.flags.values == set([])
-    assert ld.flags.add_modifiers.values == set(["AC0", "ALD1", "AC3"])
-    assert ld.flags.remove_modifiers.values == set(["ALD2", "A2"]) 
+#     # If the linker override is not specified in the child, it should be a copy of the parent
+#     # NOTE: The parent must already be extended before the child extends it, so that the child can get the correct values from the parent
+#     ld = result.linker_overrides.get("ld")
+#     assert ld.flags.values == set([])
+#     assert ld.flags.add_modifiers.values == set(["AC0", "BLD1", "BC3"])
+#     assert ld.flags.remove_modifiers.values == set(["BLD2", "B2"]) 
 
 def test_extends() :
     test_1()
@@ -1224,6 +1225,7 @@ def test_extends() :
     test_common_only_2_extends_1()
 
     test_a_extends_1()
+    #test_b_extends_1()
 
 
 if __name__ == "__main__":

@@ -202,7 +202,7 @@ class LinkersOverrideNode:
                 # If self common or self str list have values ignore parent
                 # Merge list the common
                 if self_common_str_list.has_values() or self_str_list.has_values():
-                    return merge_str_list(self_str_list, self_common_str_list)
+                    return resolve_extends_str_list(self_str_list, self_common_str_list)
                 # If common list don't have values we merge with parent
                 else:
                     common_merge_with_parent = resolve_extends_common_str_list(self_common_str_list, parent_str_list)
@@ -231,7 +231,7 @@ class LinkersOverrideNode:
             for linker_override_name, parent_linker_override in parent.linker_overrides.items():
                 if linker_override_name not in self.linker_overrides:
                     result_override = copy.deepcopy(parent_linker_override)
-                 #   result_override.flags = add_parent_str_list_not_in_self(self.common_linker, parent_linker_override.flags)
+                 #  result_override.flags = add_parent_str_list_not_in_self(self.common_linker, parent_linker_override.flags)
                     result.linker_overrides[linker_override_name] = result_override
         else:
             for linker_override_name, linker_override in self.linker_overrides.items():

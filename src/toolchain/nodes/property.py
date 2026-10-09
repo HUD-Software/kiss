@@ -113,22 +113,32 @@ class StrList:
     def apply_remove(self) : 
         return self.apply_remove_modifiers(self.remove_modifiers)
 
-
 def resolve_extends_common_str_list(child_common: StrList, parent_str_list: StrList) -> StrList:
     assert isinstance(child_common, StrList)
     assert isinstance(parent_str_list, StrList)
 
     # If child have user defined, ignore parents
     if child_common.has_values():
-        return copy.deepcopy(child_common)
+        return child_common.apply_remove()
     # Child have no values, merge with parent
     else:
-        parent = parent_str_list.apply_remove()
-        result = child_common.apply_remove()
-        result.add_modifiers.values.update(parent.add_modifiers.values)
-        result.add_modifiers.values.update(parent.values)
+        result = StrList()
+        # Conditionnally add values and add modifiers from parent and child if not removed by child remove modifiers
+        for value in parent_str_list.values:
+            if value not in child_common.remove_modifiers.values:
+                result.add_modifiers.values.add(value)
+        for value in parent_str_list.add_modifiers.values:
+            if value not in child_common.remove_modifiers.values:
+                result.add_modifiers.values.add(value)
+        for value in child_common.values:
+            if value not in child_common.remove_modifiers.values:
+                result.add_modifiers.values.add(value)
+        for value in child_common.add_modifiers.values:
+            if value not in child_common.remove_modifiers.values:
+                result.add_modifiers.values.add(value)
         result.remove_modifiers = copy.deepcopy(child_common.remove_modifiers)
         return result
+
     
 def resolve_extends_str_list(child: StrList, parent: StrList) -> StrList:
     assert isinstance(child, StrList)
@@ -139,12 +149,27 @@ def resolve_extends_str_list(child: StrList, parent: StrList) -> StrList:
         return child.apply_remove()
     # Child have no values, merge with parent
     else:
-        parent_remove_modifiers = copy.deepcopy(parent.remove_modifiers)
-        parent = parent.apply_remove()
-        result = child.apply_remove_modifiers(parent_remove_modifiers).apply_remove()
-        result.add_modifiers.values.update(parent.add_modifiers.values)
-        result.add_modifiers.values.update(parent.values)
+        result = StrList()
+        for value in parent.values:
+            if value not in child.remove_modifiers.values:
+                result.add_modifiers.values.add(value)
+        for value in parent.add_modifiers.values:
+            if value not in child.remove_modifiers.values:
+                result.add_modifiers.values.add(value)
+        for value in child.values:
+            if value not in child.remove_modifiers.values:
+                result.add_modifiers.values.add(value)
+        for value in child.add_modifiers.values:
+            if value not in child.remove_modifiers.values:
+                result.add_modifiers.values.add(value)
+        result.remove_modifiers = copy.deepcopy(child.remove_modifiers)
         return result
+        # parent_remove_modifiers = copy.deepcopy(parent.remove_modifiers)
+        # parent = parent.apply_remove()
+        # result = child.apply_remove_modifiers(parent_remove_modifiers).apply_remove()
+        # result.add_modifiers.values.update(parent.add_modifiers.values)
+        # result.add_modifiers.values.update(parent.values)
+        #return result
     
 def merge_str_list(child: StrList, parent: StrList) -> StrList :
     # If child has explicit values, ignore parents

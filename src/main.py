@@ -1886,7 +1886,6 @@ def test_c_extends_4():
     assert ld.flags.add_modifiers.values == set(["ALD1", "ALD3"])
     assert ld.flags.remove_modifiers.values == set(["ALD2", "AC4"]) 
 
-
 def test_d_extends_4():
     # linkers:
     #   flags: [C0]
@@ -1943,6 +1942,29 @@ def test_d_extends_4():
     assert ld.flags.add_modifiers.values == set(["ALD1", "ALD3"])
     assert ld.flags.remove_modifiers.values == set(["ALD2", "AC4"]) 
 
+def test_a_extends_common_only_1():
+    pass
+
+def test_b_extends_common_only_1():
+    pass
+
+def test_c_extends_common_only_1():
+    pass
+
+def test_d_extends_common_only_1():
+    pass
+
+def test_a_extends_common_only_2():
+    pass
+
+def test_b_extends_common_only_2():
+    pass
+
+def test_c_extends_common_only_2():
+    pass
+
+def test_d_extends_common_only_2():
+    pass
 
 def test_extends() :
 

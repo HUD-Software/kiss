@@ -1313,6 +1313,15 @@ def test_d_extends_1():
     assert ld.flags.remove_modifiers.values == set(["ALD2", "AC4"]) 
 
 def test_extends() :
+
+    # Test StrList Merge
+    # Rules:
+    # 1. If the child has a value, it overrides the parent value
+    # 2. If the child has no value, it inherits the parent value
+    # 3. Remove modifiers applied only on parent StrList and self StrList not in child StrList
+    #     - Common StrList remove modifiers applied to inherited parent StrList and common StrList not in child StrList
+    #     - Common StrList add modifiers applied to inherited parent StrList and common StrList
+    
     test_1()
     test_2()
     test_3()

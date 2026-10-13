@@ -164,12 +164,6 @@ def resolve_extends_str_list(child: StrList, parent: StrList) -> StrList:
                 result.add_modifiers.values.add(value)
         result.remove_modifiers = copy.deepcopy(child.remove_modifiers)
         return result
-        # parent_remove_modifiers = copy.deepcopy(parent.remove_modifiers)
-        # parent = parent.apply_remove()
-        # result = child.apply_remove_modifiers(parent_remove_modifiers).apply_remove()
-        # result.add_modifiers.values.update(parent.add_modifiers.values)
-        # result.add_modifiers.values.update(parent.values)
-        #return result
     
 def merge_str_list(child: StrList, parent: StrList) -> StrList :
     # If child has explicit values, ignore parents

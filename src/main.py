@@ -2068,7 +2068,51 @@ def test_c_extends_common_only_1():
     assert ld.flags.remove_modifiers.values == set(["ALD2", "AC4"]) 
 
 def test_d_extends_common_only_1():
-    pass
+    # linkers:
+    #   flags: [E0]
+    #   add-flags: [E1, E3]
+    #   remove-flags: [E1, E2]
+    base_linker_node = create_common_only_1()
+
+    # linkers:
+    #   flags: [E0] # Not changed
+    #   add-flags: [E3] # E1 removed
+    #   remove-flags: [E1, E2] # Not changed
+    extended_base_linker_node = base_linker_node.resolve_extends(None, {})
+
+    # child 'linkers:' extends extended_base_linker_node
+    # linkers:
+    #   flags: [AC0]
+    #   add-flags: [AC1, AC3, AC4]
+    #   remove-flags: [AC1, ALD1, AC2]
+    #   ld:
+    #     flags: [ALD0]
+    #     add-flags: [ALD1, ALD2, ALD3]
+    #     remove-flags: [ALD2, AC4]
+    child_linker_node = create_d()
+
+    # child
+    # linkers: (Extended)
+    #   flags: [AC0] # Not changed
+    #   add-flags: [AC3, AC4] # AC1 removed
+    #   remove-flags: [AC1, ALD1, AC2] # Not changed
+    #   ld:
+    #    flags: [ALD0] # Not changed
+    #    add-flags: [ALD1, ALD3] # ALD2 Removed
+    #    remove-flags: [ALD2, AC4] # Not changed
+    result = child_linker_node.resolve_extends(extended_base_linker_node, {})
+
+    # Validate result
+    assert result.common_linker.flags.values == set(["AC0"])
+    assert result.common_linker.flags.add_modifiers.values == set(["AC3", "AC4"])
+    assert result.common_linker.flags.remove_modifiers.values == set(["AC1", "ALD1","AC2"])
+
+    # If the linker override is not specified in the child, it should be a copy of the parent
+    # NOTE: The parent must already be extended before the child extends it, so that the child can get the correct values from the parent
+    ld = result.linker_overrides.get("ld")
+    assert ld.flags.values == set(["ALD0"])
+    assert ld.flags.add_modifiers.values == set(["ALD1", "ALD3"])
+    assert ld.flags.remove_modifiers.values == set(["ALD2", "AC4"]) 
 
 def test_a_extends_common_only_2():
     pass
@@ -2134,6 +2178,7 @@ def test_extends() :
     test_a_extends_common_only_1()
     test_b_extends_common_only_1()
     test_c_extends_common_only_1()
+    test_d_extends_common_only_1()
     
 if __name__ == "__main__":
     test_extends()

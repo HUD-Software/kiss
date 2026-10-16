@@ -87,7 +87,6 @@ class StrList:
 
     def apply_modifiers(self) -> StrList:
         result = StrList()
-        result.values = copy.deepcopy(self.values)
 
         for value in self.add_modifiers.values:
             if value not in result.values:
@@ -113,13 +112,23 @@ class StrList:
     def apply_remove(self) : 
         return self.apply_remove_modifiers(self.remove_modifiers)
 
+
 def resolve_extends_common_str_list(child_common: StrList, parent_str_list: StrList) -> StrList:
     assert isinstance(child_common, StrList)
     assert isinstance(parent_str_list, StrList)
 
     # If child have user defined, ignore parents
     if child_common.has_values():
-        return child_common.apply_remove()
+        result = StrList()
+        # Add all child values and add modifiers in add modifiers if not removed
+        for value in child_common.values:
+            if value not in child_common.remove_modifiers.values:
+                result.add_modifiers.values.add(value)
+        for value in child_common.add_modifiers.values:
+            if value not in child_common.remove_modifiers.values:
+                result.add_modifiers.values.add(value)
+        result.remove_modifiers = copy.deepcopy(child_common.remove_modifiers)
+        return result
     # Child have no values, merge with parent
     else:
         result = StrList()
@@ -146,7 +155,16 @@ def resolve_extends_str_list(child: StrList, parent: StrList) -> StrList:
 
     # If child have user defined, ignore parents
     if child.has_values():
-        return child.apply_remove()
+        result = StrList()
+        # Add all child values and add modifiers in add modifiers if not removed
+        for value in child.values:
+            if value not in child.remove_modifiers.values:
+                result.add_modifiers.values.add(value)
+        for value in child.add_modifiers.values:
+            if value not in child.remove_modifiers.values:
+                result.add_modifiers.values.add(value)
+        result.remove_modifiers = copy.deepcopy(child.remove_modifiers)
+        return result
     # Child have no values, merge with parent
     else:
         result = StrList()

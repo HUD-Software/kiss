@@ -196,13 +196,14 @@ class LinkersOverrideNode:
 
     def resolve_extends(self, parent: LinkersOverrideNode,  linkers : dict[str, LinkerNode]) -> LinkersOverrideNode:
         result = LinkersOverrideNode()
+        self_common_linker_remove_applied = self.common_linker.apply_remove()
 
         if parent:
             def merge_str_list_with_parent(self_str_list : StrList, self_common_str_list: StrList, parent_str_list: StrList):
                 # If self common or self str list have values ignore parent
                 # Merge list the common
                 if self_common_str_list.has_values() or self_str_list.has_values():
-                    return resolve_extends_str_list(self_str_list, self_common_str_list.apply_remove())
+                    return resolve_extends_str_list(self_str_list, self_common_linker_remove_applied.flags)
                 # If common list don't have values we merge with parent
                 else:
                     common_merge_with_parent = resolve_extends_common_str_list(self_common_str_list, parent_str_list)
@@ -216,37 +217,37 @@ class LinkersOverrideNode:
                 parent_linker_flags = (parent.linker_overrides.get(linker_override_name).flags if parent.linker_overrides.get(linker_override_name) else None)
                 # If the parent have a linker, merge with it
                 if parent_linker_flags:
-                    result_override.flags = merge_str_list_with_parent(linker_override.flags, self.common_linker.flags, parent_linker_flags)
+                    result_override.flags = merge_str_list_with_parent(linker_override.flags, self_common_linker_remove_applied.flags, parent_linker_flags)
                 # If the parent have no linker, merge with common
                 else:
-                    result_override.flags = merge_str_list_with_parent(linker_override.flags, self.common_linker.flags, parent.common_linker.flags)
+                    result_override.flags = merge_str_list_with_parent(linker_override.flags, self_common_linker_remove_applied.flags, parent.common_linker.flags)
                 result.linker_overrides[linker_override_name] = result_override
 
             
-            # def add_parent_str_list_not_in_self(self_common_str_list: StrList, parent_str_list: StrList):
-            #     # If self have common values and no linker override
-            #     if self_common_str_list.has_values():
-            #         # We don't keep parents, we keep common
-            #         return copy.deepcopy(self_common_str_list)
-            #     # If self don't have common values and no linker override
-            #     else:
-            #         return resolve_extends_str_list(parent_str_list, self_common_str_list)
+            def add_parent_str_list_not_in_self(self_common_str_list: StrList, parent_str_list: StrList):
+                # If self have common values and no linker override
+                if self_common_str_list.has_values():
+                    # We don't keep parents, we keep common
+                    return resolve_extends_str_list(self_common_str_list, StrList())
+                # If self don't have common values and no linker override
+                else:
+                    return resolve_extends_str_list(parent_str_list, self_common_str_list)
                 
             # Copy all parent linker override that are not in parent
             for linker_override_name, parent_linker_override in parent.linker_overrides.items():
                 if linker_override_name not in self.linker_overrides:
-                    result_override = copy.deepcopy(parent_linker_override)
-                 #  result_override.flags = add_parent_str_list_not_in_self(self.common_linker, parent_linker_override.flags)
+                    result_override = LinkerSpecificOverrideNode(linker_override_name)
+                    result_override.flags = add_parent_str_list_not_in_self(self_common_linker_remove_applied.flags, parent_linker_override.flags)
                     result.linker_overrides[linker_override_name] = result_override
         else:
             for linker_override_name, linker_override in self.linker_overrides.items():
                 result_override = LinkerSpecificOverrideNode(linker_override_name)
                 
                 # Remove flags specified in common if no value is specified in linker override
-                result_override.flags = resolve_extends_str_list(linker_override.flags, self.common_linker.flags.apply_remove())         
+                result_override.flags = resolve_extends_str_list(linker_override.flags, self_common_linker_remove_applied.flags)         
                 result.linker_overrides[linker_override_name] = result_override
 
-        result.common_linker = self.common_linker.apply_remove()
+        result.common_linker = self_common_linker_remove_applied
         return result
 
 

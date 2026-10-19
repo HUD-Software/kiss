@@ -49,139 +49,72 @@ class StrListModifierRemove(StrListModifier):
 class StrList:
     def __init__(self):
         self.values : set[str] = set()
-        self.user_defined_values = False
-        self.add_modifiers = StrListModifierAdd(set())
-        self.user_defined_add_modifiers = False
+        self.override = False
         self.remove_modifiers = StrListModifierRemove(set())
-        self.user_defined_remove_modifiers = False
 
     def add_value(self, value: str):
         self.values.add(value)
 
-    def add_modifier_add(self, value: str):
-        self.add_modifiers.values.add(value)
-
     def add_modifier_remove(self, value: str):
         self.remove_modifiers.values.add(value)
-        
-    def has_values(self) -> bool:
-        return len(self.values) > 0
-
-    def is_user_defined_values(self) -> bool:
-        return self.user_defined_values
-    
-    def is_user_defined_modifiers(self) -> bool:
-        return self.is_user_defined_add_modifiers() or self.is_user_defined_remove_modifiers()
-    
-    def is_user_defined_add_modifiers(self) -> bool:
-        return self.user_defined_add_modifiers
-
-    def is_user_defined_remove_modifiers(self) -> bool:
-        return self.user_defined_remove_modifiers
-    
-    def has_modifiers(self) -> bool:
-        return not self.add_modifiers.is_empty() or not self.remove_modifiers.is_empty()
     
     def is_empty(self):
-        return not (self.has_values() or self.has_modifiers())
+        return len(self.values) == 0
 
-    def apply_modifiers(self) -> StrList:
+    def apply_remove(self) -> StrList:
         result = StrList()
-
-        for value in self.add_modifiers.values:
-            if value not in result.values:
-                result.values.add(value)
-
-        for value in self.remove_modifiers.values:
-            if value in result.values:
-                result.values.remove(value)
-
-        return result
-
-    def apply_remove_modifiers(self, remove_modifiers : StrListModifierRemove):
-        result = StrList()
+        result.override = self.override
         for value in self.values:
-            if value not in remove_modifiers.values:
+            if value not in self.remove_modifiers.values:
                 result.values.add(value)
-        for value_to_add in self.add_modifiers.values:
-            if value_to_add not in remove_modifiers.values:
-                result.add_modifiers.values.add(value_to_add)
-        result.remove_modifiers = copy.deepcopy(self.remove_modifiers)
+        
         return result
     
-    def apply_remove(self) : 
-        return self.apply_remove_modifiers(self.remove_modifiers)
+    # def move_values_to_add_modifiers(self):
+    #     result = StrList()
+    #     for value in self.values:
+    #         if value not in self.remove_modifiers.values:
+    #             result.add_modifiers.values.add(value)
 
+    #     for value in self.add_modifiers.values:
+    #         if value not in self.remove_modifiers.values:
+    #             result.add_modifiers.values.add(value)
 
-def resolve_extends_common_str_list(child_common: StrList, parent_str_list: StrList) -> StrList:
-    assert isinstance(child_common, StrList)
-    assert isinstance(parent_str_list, StrList)
-
-    # If child have user defined, ignore parents
-    if child_common.has_values():
-        result = StrList()
-        # Add all child values and add modifiers in add modifiers if not removed
-        for value in child_common.values:
-            if value not in child_common.remove_modifiers.values:
-                result.add_modifiers.values.add(value)
-        for value in child_common.add_modifiers.values:
-            if value not in child_common.remove_modifiers.values:
-                result.add_modifiers.values.add(value)
-        result.remove_modifiers = copy.deepcopy(child_common.remove_modifiers)
-        return result
-    # Child have no values, merge with parent
-    else:
-        result = StrList()
-        # Conditionnally add values and add modifiers from parent and child if not removed by child remove modifiers
-        for value in parent_str_list.values:
-            if value not in child_common.remove_modifiers.values:
-                result.add_modifiers.values.add(value)
-        for value in parent_str_list.add_modifiers.values:
-            if value not in child_common.remove_modifiers.values:
-                result.add_modifiers.values.add(value)
-        for value in child_common.values:
-            if value not in child_common.remove_modifiers.values:
-                result.add_modifiers.values.add(value)
-        for value in child_common.add_modifiers.values:
-            if value not in child_common.remove_modifiers.values:
-                result.add_modifiers.values.add(value)
-        result.remove_modifiers = copy.deepcopy(child_common.remove_modifiers)
-        return result
-
+    #     result.remove_modifiers = copy.deepcopy(self.remove_modifiers)
+    #     return result
     
+    # def apply_remove_modifiers(self, remove_modifiers : StrListModifierRemove):
+    #     result = StrList()
+    #     for value in self.values:
+    #         if value not in remove_modifiers.values:
+    #             result.values.add(value)
+    #     for value_to_add in self.add_modifiers.values:
+    #         if value_to_add not in remove_modifiers.values:
+    #             result.add_modifiers.values.add(value_to_add)
+    #     result.remove_modifiers = copy.deepcopy(self.remove_modifiers)
+    #     return result
+    
+    # def apply_remove(self) : 
+    #     return self.apply_remove_modifiers(self.remove_modifiers)
+
 def resolve_extends_str_list(child: StrList, parent: StrList) -> StrList:
     assert isinstance(child, StrList)
     assert isinstance(parent, StrList)
 
-    # If child have user defined, ignore parents
-    if child.has_values():
-        result = StrList()
-        # Add all child values and add modifiers in add modifiers if not removed
-        for value in child.values:
-            if value not in child.remove_modifiers.values:
-                result.add_modifiers.values.add(value)
-        for value in child.add_modifiers.values:
-            if value not in child.remove_modifiers.values:
-                result.add_modifiers.values.add(value)
-        result.remove_modifiers = copy.deepcopy(child.remove_modifiers)
-        return result
-    # Child have no values, merge with parent
-    else:
-        result = StrList()
+    # Add all child values and add modifiers in add modifiers if not removed
+    result = StrList()
+    result.override = child.override
+    # Add child value if not removed
+    for value in child.values:
+        if value not in child.remove_modifiers.values:
+            result.values.add(value)
+    
+    # If Child have no values, add parent values if not removed
+    if not child.override:
         for value in parent.values:
             if value not in child.remove_modifiers.values:
-                result.add_modifiers.values.add(value)
-        for value in parent.add_modifiers.values:
-            if value not in child.remove_modifiers.values:
-                result.add_modifiers.values.add(value)
-        for value in child.values:
-            if value not in child.remove_modifiers.values:
-                result.add_modifiers.values.add(value)
-        for value in child.add_modifiers.values:
-            if value not in child.remove_modifiers.values:
-                result.add_modifiers.values.add(value)
-        result.remove_modifiers = copy.deepcopy(child.remove_modifiers)
-        return result
+                result.values.add(value)
+    return result
     
 def merge_str_list(child: StrList, parent: StrList) -> StrList :
     # If child has explicit values, ignore parents

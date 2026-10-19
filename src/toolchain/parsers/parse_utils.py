@@ -29,7 +29,7 @@ def try_parse_list_modifier(list_name:str, existing: StrList, key: str, value: l
         if existing.values:
             raise ValueError(f"{list_name!r} must appear only once. To add or remove use modifier by using 'add-{list_name}' or 'remove-{list_name}' -> {value}")
         else:
-            existing.user_defined_values = True
+            existing.override = True
             existing.values = set(value)
         return True
     
@@ -42,10 +42,8 @@ def try_parse_list_modifier(list_name:str, existing: StrList, key: str, value: l
         str_op, op_list_name = str_list
         if op_list_name == list_name:
             if str_op.is_add():
-                existing.user_defined_add_modifiers = True
-                existing.add_modifiers.values.update(value)
+                existing.values.update(value)
             elif str_op.is_remove():
-                existing.user_defined_remove_modifiers = True
                 existing.remove_modifiers.values.update(value)
             else:
                 raise ValueError(f"Unknown list modifier operation: {str_op} -> {key}:{value}")

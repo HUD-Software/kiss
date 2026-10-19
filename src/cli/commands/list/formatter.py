@@ -45,35 +45,31 @@ def append_list_str_to_lines_print(name:str, value:list[str], lines):
         lines.append(f"{name}: {value}")
 
 def box_str_list(name: str, str_list: StrList, ignore_empty: bool, parent_box: Box, max_line_length: int = 80):
-    if str_list.has_values() or str_list.has_modifiers() or not ignore_empty:
-        if str_list.has_modifiers():
-            flags_box = to_box(name, str_list, ignore_empty, parent_box)
-            parent_box.inner_boxes.append(flags_box)
-        else:
-            values = list(str_list.values)
-            prefix = f"{name}: ["
-            
-            if not values:
-                parent_box.lines.append(f"{name}: []")
-                return
+    if str_list.values or not ignore_empty:
+        values = list(str_list.values)
+        prefix = f"{name}: ["
+        
+        if not values:
+            parent_box.lines.append(f"{name}: []")
+            return
 
-            lines = []
-            current_line = prefix
-            current_is_first = True
-            indent = " " * len(prefix)
-            for i, item in enumerate(values):
-                is_last_item = (i == len(values) - 1)
-                piece = item + ("]" if is_last_item else ", ")
+        lines = []
+        current_line = prefix
+        current_is_first = True
+        indent = " " * len(prefix)
+        for i, item in enumerate(values):
+            is_last_item = (i == len(values) - 1)
+            piece = item + ("]" if is_last_item else ", ")
 
-                if current_line != (prefix if current_is_first else indent) and \
-                   len(current_line) + len(piece) > max_line_length:
-                    lines.append(current_line)
-                    current_line = indent
-                    current_is_first = False
+            if current_line != (prefix if current_is_first else indent) and \
+                len(current_line) + len(piece) > max_line_length:
+                lines.append(current_line)
+                current_line = indent
+                current_is_first = False
 
-                current_line += piece
-            lines.append(current_line)
-            parent_box.lines.extend(lines)
+            current_line += piece
+        lines.append(current_line)
+        parent_box.lines.extend(lines)
 
 @register_box(LinkerSpecificOverrideNode)
 def _(box_name: str, linker_node: LinkerSpecificOverrideNode, ignore_empty: bool, parent_box: Box):

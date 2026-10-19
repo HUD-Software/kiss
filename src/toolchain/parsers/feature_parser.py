@@ -110,8 +110,8 @@ def yaml_parse_feature_rule_only_one(data: dict) -> FeatureRuleNodeOnlyOne:
                 
     if not name:
         raise ValueError(f"Missing {FeatureRuleNodeOnlyOne.RULE_NAME!r} as string for feature rule")
-    if not feature_names.is_user_defined_values() and not feature_names.is_user_defined_modifiers():
-        raise ValueError(f"Missing 'features' or 'add/enable' modifier as list of string for feature rule {FeatureRuleNodeOnlyOne.RULE_NAME!r}")
+    # if not feature_names.is_user_defined_values() and not feature_names.is_user_defined_modifiers():
+    #     raise ValueError(f"Missing 'features' or 'add/enable' modifier as list of string for feature rule {FeatureRuleNodeOnlyOne.RULE_NAME!r}")
 
     return FeatureRuleNodeOnlyOne(name, description, feature_names)
 
@@ -144,7 +144,7 @@ def yaml_parse_feature_rule_incompatible(data: dict) -> FeatureRuleNodeIncompati
         raise ValueError(f"Missing {FeatureRuleNodeIncompatible.RULE_NAME!r} as string for feature rule")
     if not feature:
         raise ValueError(f"Missing 'feature' as string for feature rule {FeatureRuleNodeIncompatible.RULE_NAME!r}")
-    if not incompatible_with.is_user_defined_values() and not incompatible_with.is_user_defined_modifiers():
-        raise ValueError(f"Missing 'incompatible_with' as list of string for feature rule {FeatureRuleNodeIncompatible.RULE_NAME!r}")
+    # if not incompatible_with.is_user_defined_values() and not incompatible_with.is_user_defined_modifiers():
+    #     raise ValueError(f"Missing 'incompatible_with' as list of string for feature rule {FeatureRuleNodeIncompatible.RULE_NAME!r}")
     
     return FeatureRuleNodeIncompatible(name, description, feature, incompatible_with)

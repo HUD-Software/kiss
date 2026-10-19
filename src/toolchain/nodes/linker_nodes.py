@@ -1,7 +1,7 @@
 from __future__ import annotations
 import copy
 from toolchain.nodes.feature_node import FeatureNodeList, FeatureRuleNodeList, FeatureStrList, merge_feature_list
-from toolchain.nodes.property import  StrList, merge_str_list, resolve_extends_common_str_list, resolve_extends_str_list
+from toolchain.nodes.property import  StrList, merge_str_list,  resolve_extends_str_list
 
 class LinkerNode:
     """Represents a linker definition in linkers.yaml.
@@ -124,6 +124,8 @@ class LinkerSpecificOverrideNode:
         result.features = self.features.apply_remove()
         return result
     
+    
+    
 class LinkersOverrideNode:
     """Represents the 'linkers:' block.
     Contains global enable-features + per-linker overrides 'LinkerSpecificOverrideNode' nodes.
@@ -196,17 +198,18 @@ class LinkersOverrideNode:
 
     def resolve_extends(self, parent: LinkersOverrideNode,  linkers : dict[str, LinkerNode]) -> LinkersOverrideNode:
         result = LinkersOverrideNode()
+        # App
         self_common_linker_remove_applied = self.common_linker.apply_remove()
 
         if parent:
             def merge_str_list_with_parent(self_str_list : StrList, self_common_str_list: StrList, parent_str_list: StrList):
-                # If self common or self str list have values ignore parent
+                # If self common or self str list override ignore parent
                 # Merge list the common
-                if self_common_str_list.has_values() or self_str_list.has_values():
+                if self_common_str_list.override or self_str_list.override:
                     return resolve_extends_str_list(self_str_list, self_common_linker_remove_applied.flags)
                 # If common list don't have values we merge with parent
                 else:
-                    common_merge_with_parent = resolve_extends_common_str_list(self_common_str_list, parent_str_list)
+                    common_merge_with_parent = resolve_extends_str_list(self_common_str_list, parent_str_list)
                     return resolve_extends_str_list(self_str_list, common_merge_with_parent)
                 
             # Merge all self linker override with common and parent
@@ -226,18 +229,19 @@ class LinkersOverrideNode:
             
             def add_parent_str_list_not_in_self(self_common_str_list: StrList, parent_str_list: StrList):
                 # If self have common values and no linker override
-                if self_common_str_list.has_values():
-                    # We don't keep parents, we keep common
-                    return resolve_extends_str_list(self_common_str_list, StrList())
-                # If self don't have common values and no linker override
-                else:
+                # if self_common_str_list.override:
+                #     # We don't keep parents, we keep common
+                #     return resolve_extends_str_list(self_common_str_list, StrList())
+                # # If self don't have common values and no linker override
+                # else:
                     return resolve_extends_str_list(parent_str_list, self_common_str_list)
                 
             # Copy all parent linker override that are not in parent
             for linker_override_name, parent_linker_override in parent.linker_overrides.items():
                 if linker_override_name not in self.linker_overrides:
                     result_override = LinkerSpecificOverrideNode(linker_override_name)
-                    result_override.flags = add_parent_str_list_not_in_self(self_common_linker_remove_applied.flags, parent_linker_override.flags)
+                    result_override.flags = resolve_extends_str_list(self_common_linker_remove_applied.flags, parent_linker_override.flags)
+                   # result_override.flags = add_parent_str_list_not_in_self(self_common_linker_remove_applied.flags, parent_linker_override.flags)
                     result.linker_overrides[linker_override_name] = result_override
         else:
             for linker_override_name, linker_override in self.linker_overrides.items():

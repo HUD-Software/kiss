@@ -28,8 +28,6 @@ class ExtendResolver:
         for node in self.nodes:
             self._resolve_chain(node, set(), resolve_fn)
 
-        # for name, node in self.resolved.items():
-        #     self.resolved[name] = node.apply_modifiers()
         return self.resolved
 
     def _resolve_chain(self, node_name, visited, resolve_fn) -> PropertyDict:

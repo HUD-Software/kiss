@@ -2276,7 +2276,7 @@ def test_common_only_2_extends_linker_only_2():
     assert ld.flags.values == set(["LD3", "E3"])
     assert ld.flags.remove_modifiers.values == set([]) 
 
-def test_extends() :
+def test_extends_str_list() :
 
     test_1()
     test_2()

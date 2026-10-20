@@ -1,7 +1,7 @@
 from __future__ import annotations
 import copy
 from toolchain.nodes.feature_node import FeatureNodeList, FeatureRuleNodeList, FeatureStrList, merge_feature_list
-from toolchain.nodes.property import  StrList, merge_str_list,  resolve_extends_str_list
+from toolchain.nodes.property import  StrList, resolve_extends_str_list
 
 class LinkerNode:
     """Represents a linker definition in linkers.yaml.
@@ -71,14 +71,13 @@ class LinkerNode:
         return result
 
     def resolve_extends(self, parent: LinkerNode) -> LinkerNode:
-        if parent:
-            assert parent.name == self.extends
-            node = self.merge_with(parent)
-        else:
-            node = copy.deepcopy(self)
-        node = node.dispatch()
-        node = node.apply_modifiers()
-        return node
+        result = LinkerNode(self.name)
+        result.is_abstract = self.is_abstract
+        result.extends = self.extends
+        
+        if not parent:
+            result.feature_rule_list.resolve_extends(FeatureRuleNodeList())
+        return result
         
 class LinkerSpecificOverrideNode:
     """Represents a per-linker override inside a 'linkers:' node.

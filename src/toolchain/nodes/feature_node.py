@@ -1,6 +1,6 @@
 from __future__ import annotations
 import copy
-from toolchain.nodes.property import StrList, StrListModifierAdd, StrListModifierRemove, merge_str_list
+from toolchain.nodes.property import StrList, StrListModifierAdd, StrListModifierRemove, resolve_extends_str_list
 from typing import Self
 
 class FeatureArgsNode:
@@ -241,16 +241,24 @@ class FeatureRuleNodeOnlyOne(FeatureRuleNode):
     RULE_NAME = "only-one"
     def __init__(self, name: str, description: str, feature_names : StrList):
         super().__init__(name, description)
-        self._feature_names = feature_names
-
-    @property
-    def feature_names(self) -> StrList:
-        return self._feature_names
+        self.feature_names = feature_names
 
     def contains(self, feature_name: str) -> bool:
         if self.feature_names.has_modifiers():
             raise ValueError("Only one rules must have called apply_modifiers before checking if a feature name is present in the")
         return feature_name in self.feature_names.values
+
+    def resolve_extends(self, parent: FeatureRuleNodeOnlyOne) :
+        if parent:
+            assert parent.name == self.name
+            description = self.description if self.description else parent.description
+            return FeatureRuleNodeOnlyOne(self.name, 
+                                        description,
+                                        resolve_extends_str_list(self.feature_names, parent.feature_names))
+        else:
+            return FeatureRuleNodeOnlyOne(self.name, 
+                                          self.description,
+                                          resolve_extends_str_list(self.feature_names, StrList()))
     
     def merge_with(self, parent: FeatureRuleNodeOnlyOne) -> FeatureRuleNodeOnlyOne:
         return FeatureRuleNodeOnlyOne(self.name, 
@@ -268,17 +276,25 @@ class FeatureRuleNodeIncompatible(FeatureRuleNode):
     
     def __init__(self, name: str, description:str, feature: str, incompatible_with: StrList):
         super().__init__(name, description)
-        self._feature = feature
-        self._with = incompatible_with
-    
-    @property
-    def feature(self) -> str:
-        return self._feature
-    
-    @property
-    def incompatible_with(self) -> StrList:
-        return self._with
-    
+        self.feature = feature
+        self.incompatible_with = incompatible_with
+      
+    def resolve_extends(self, parent: FeatureRuleNodeIncompatible) :
+        if parent:
+            assert parent.name == self.name
+            if self.feature:
+                assert parent.feature == self.feature 
+            description = self.description if self.description else parent.description
+            return FeatureRuleNodeIncompatible(self.name, 
+                                               description,
+                                               self.feature,
+                                               resolve_extends_str_list(self.incompatible_with, parent.incompatible_with))
+        else:
+            return FeatureRuleNodeIncompatible(self.name, 
+                                               self.description,
+                                               self.feature,
+                                               resolve_extends_str_list(self.incompatible_with, StrList()))
+        
     def merge_with(self, parent: FeatureRuleNodeIncompatible) -> FeatureRuleNodeIncompatible:
         return FeatureRuleNodeIncompatible(self.name,
                                            self.feature,
@@ -352,7 +368,31 @@ class FeatureRuleNodeList:
                     f"Feature '{rule.feature}' is incompatible with {conflicts} "
                     f"(rule '{rule.name}')"
                 )
-            
+
+    def resolve_extends(self, parent: FeatureRuleNodeList):
+        result = FeatureRuleNodeList()
+        def merge_rules(self_rules: set, parent_rules: set):
+            self_by_name = {r.name: r for r in self_rules}
+            parent_by_name = {r.name: r for r in parent_rules}
+
+            for name in self_by_name.keys() | parent_by_name.keys():
+                self_rule = self_by_name.get(name)
+                parent_rule = parent_by_name.get(name)
+
+                if self_rule and parent_rule:
+                    result.add_feature_rule(self_rule.resolve_extends(parent_rule))
+                elif self_rule:
+                    result.add_feature_rule(self_rule.resolve_extends(None))
+                elif parent_rule:
+                    result.add_feature_rule(copy.deepcopy(parent_rule))
+        if parent:
+            merge_rules(self.feature_rules_only_one, parent.feature_rules_only_one)
+            merge_rules(self.feature_rules_incompatible, parent.feature_rules_incompatible)
+        else:
+            merge_rules(self.feature_rules_only_one, set())
+            merge_rules(self.feature_rules_incompatible, set())
+        return result
+    
     def merge_with(self, parent: FeatureRuleNodeList):
         result = FeatureRuleNodeList()
 

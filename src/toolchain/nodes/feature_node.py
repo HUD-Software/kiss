@@ -379,10 +379,8 @@ class FeatureRuleNodeList:
                 self_rule = self_by_name.get(name)
                 parent_rule = parent_by_name.get(name)
 
-                if self_rule and parent_rule:
+                if self_rule:
                     result.add_feature_rule(self_rule.resolve_extends(parent_rule))
-                elif self_rule:
-                    result.add_feature_rule(self_rule.resolve_extends(None))
                 elif parent_rule:
                     result.add_feature_rule(copy.deepcopy(parent_rule))
         if parent:

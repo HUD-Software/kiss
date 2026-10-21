@@ -212,8 +212,10 @@ class FeatureNodeList:
             result.add_feature(feature.apply_modifiers(feature_rules))
         return result
 
-    # def dispatch(self) -> FeatureNodeList:
-    #     return copy.deepcopy(self)
+    def resolve_extends(self, parent: FeatureNodeList, feature_rules: FeatureRuleNodeList):
+        result = FeatureNodeList()
+        raise NotImplemented
+        return result
     
 
 class FeatureRuleNode:
@@ -391,34 +393,34 @@ class FeatureRuleNodeList:
             merge_rules(self.feature_rules_incompatible, set())
         return result
     
-    def merge_with(self, parent: FeatureRuleNodeList):
-        result = FeatureRuleNodeList()
+    # def merge_with(self, parent: FeatureRuleNodeList):
+    #     result = FeatureRuleNodeList()
 
-        def merge_rules(self_rules: set, parent_rules: set):
-            self_by_name = {r.name: r for r in self_rules}
-            parent_by_name = {r.name: r for r in parent_rules}
+    #     def merge_rules(self_rules: set, parent_rules: set):
+    #         self_by_name = {r.name: r for r in self_rules}
+    #         parent_by_name = {r.name: r for r in parent_rules}
 
-            for name in self_by_name.keys() | parent_by_name.keys():
-                self_rule = self_by_name.get(name)
-                parent_rule = parent_by_name.get(name)
+    #         for name in self_by_name.keys() | parent_by_name.keys():
+    #             self_rule = self_by_name.get(name)
+    #             parent_rule = parent_by_name.get(name)
 
-                if self_rule and parent_rule:
-                    result.add_feature_rule(self_rule.merge_with(parent_rule))
-                else:
-                    result.add_feature_rule(copy.deepcopy(self_rule or parent_rule))
+    #             if self_rule and parent_rule:
+    #                 result.add_feature_rule(self_rule.merge_with(parent_rule))
+    #             else:
+    #                 result.add_feature_rule(copy.deepcopy(self_rule or parent_rule))
 
-        merge_rules(self.feature_rules_only_one, parent.feature_rules_only_one)
-        merge_rules(self.feature_rules_incompatible, parent.feature_rules_incompatible)
+    #     merge_rules(self.feature_rules_only_one, parent.feature_rules_only_one)
+    #     merge_rules(self.feature_rules_incompatible, parent.feature_rules_incompatible)
 
-        return result
+    #     return result
     
-    def apply_modifiers(self) -> FeatureRuleNodeList:
-        result = FeatureRuleNodeList()
-        for rule in self.feature_rules_only_one:
-            result.add_feature_rule(rule.apply_modifiers())
-        for rule in self.feature_rules_incompatible:
-            result.add_feature_rule(rule.apply_modifiers())
-        return result
+    # def apply_modifiers(self) -> FeatureRuleNodeList:
+    #     result = FeatureRuleNodeList()
+    #     for rule in self.feature_rules_only_one:
+    #         result.add_feature_rule(rule.apply_modifiers())
+    #     for rule in self.feature_rules_incompatible:
+    #         result.add_feature_rule(rule.apply_modifiers())
+    #     return result
 
     # def dispatch(self) -> FeatureRuleNodeList:
     #     return copy.deepcopy(self)

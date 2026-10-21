@@ -35,48 +35,52 @@ class LinkerNode:
     def __hash__(self):
         return hash(self.name)
     
-    def merge_with(self, parent: LinkerNode):
-        if not parent:
-            return copy.deepcopy(self)
-        """Merge list without applying modifier or dispatching top to bottom hierarchy """
-        assert type(parent) is type(self), "Type mismatch"
-        result = LinkerNode(self.name)
-        result.is_abstract = self.is_abstract
-        result.extends = self.extends
-        # Apply modifier during merge before merging the feature list
-        # We want to merge feature list according the rules, we must merge feature rule with parent 
-        # but also resolve modifier to validate
-        result.feature_rule_list = self.feature_rule_list.merge_with(parent.feature_rule_list).apply_modifiers()
-        result.feature_list = self.feature_list.merge_with(parent.feature_list, result.feature_rule_list)
-        return result
+    # def merge_with(self, parent: LinkerNode):
+    #     if not parent:
+    #         return copy.deepcopy(self)
+    #     """Merge list without applying modifier or dispatching top to bottom hierarchy """
+    #     assert type(parent) is type(self), "Type mismatch"
+    #     result = LinkerNode(self.name)
+    #     result.is_abstract = self.is_abstract
+    #     result.extends = self.extends
+    #     # Apply modifier during merge before merging the feature list
+    #     # We want to merge feature list according the rules, we must merge feature rule with parent 
+    #     # but also resolve modifier to validate
+    #     result.feature_rule_list = self.feature_rule_list.merge_with(parent.feature_rule_list).apply_modifiers()
+    #     result.feature_list = self.feature_list.merge_with(parent.feature_list, result.feature_rule_list)
+    #     return result
     
-    def apply_modifiers(self) -> LinkerNode:
-        """Apply list modifier"""
-        result  = LinkerNode(self.name)
-        result.is_abstract = self.is_abstract
-        result.extends = self.extends
-        result.feature_rule_list = copy.deepcopy(self.feature_rule_list)
-        result.feature_list = self.feature_list.apply_modifiers(result.feature_rule_list)
-        return result
+    # def apply_modifiers(self) -> LinkerNode:
+    #     """Apply list modifier"""
+    #     result  = LinkerNode(self.name)
+    #     result.is_abstract = self.is_abstract
+    #     result.extends = self.extends
+    #     result.feature_rule_list = copy.deepcopy(self.feature_rule_list)
+    #     result.feature_list = self.feature_list.apply_modifiers(result.feature_rule_list)
+    #     return result
         
-    def dispatch(self) -> LinkerNode:
-        """ 
-        Dispatch properties from top to bottom hierarchy
-        """
-        result = LinkerNode(self.name)
-        result.is_abstract = self.is_abstract
-        result.extends = self.extends
-        result.feature_list = copy.deepcopy(self.feature_list)
-        result.feature_rule_list = copy.deepcopy(self.feature_rule_list)
-        return result
+    # def dispatch(self) -> LinkerNode:
+    #     """ 
+    #     Dispatch properties from top to bottom hierarchy
+    #     """
+    #     result = LinkerNode(self.name)
+    #     result.is_abstract = self.is_abstract
+    #     result.extends = self.extends
+    #     result.feature_list = copy.deepcopy(self.feature_list)
+    #     result.feature_rule_list = copy.deepcopy(self.feature_rule_list)
+    #     return result
 
     def resolve_extends(self, parent: LinkerNode) -> LinkerNode:
         result = LinkerNode(self.name)
         result.is_abstract = self.is_abstract
-        result.extends = self.extends
+        result.extends = self.extends   
         
         if not parent:
             result.feature_rule_list.resolve_extends(FeatureRuleNodeList())
+            result.feature_list.resolve_extends(FeatureRuleNodeList(), result.feature_rule_list)
+        else:
+            result.feature_rule_list.resolve_extends(parent.feature_rule_list)
+            result.feature_rule_list.resolve_extends(parent.feature_rule_list, result.feature_rule_list)
         return result
         
 class LinkerSpecificOverrideNode:

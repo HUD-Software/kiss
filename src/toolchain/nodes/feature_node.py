@@ -23,83 +23,102 @@ class FeatureArgsNode:
 class FeatureStrList:
     def __init__(self):
         self.str_list = StrList()
-
-    @property
-    def add_modifiers(self) -> StrListModifierAdd:
-        return self.str_list.add_modifiers
-
-    @property
-    def remove_modifiers(self) -> StrListModifierRemove:
-        return self.str_list.remove_modifiers
-
-    @property
-    def values(self) -> set[str] :
-        return self.str_list.values
-
-    def is_user_defined_values(self) -> bool:
-        return self.str_list.is_user_defined_values()
     
-    def has_values(self) -> bool:
-        return self.str_list.has_values()
-    
-    def has_modifiers(self) -> bool:
-        return self.str_list.has_modifiers()
-    
-    def is_empty(self):
-        return not self.has_values() and not self.has_modifiers()
-    
-    def apply_remove(self) : 
-            result = StrList()
-            if self.remove_modifiers.is_empty():
-                return copy.deepcopy(self)
-            else:
-                for value_to_remove in self.remove_modifiers.values:
-                    if value_to_remove not in result.values:
-                        result.values.add(value_to_remove)
-                    if value_to_remove not in result.add_modifiers.values:
-                        result.add_modifiers.values.add(value_to_remove)
-            return result
-    
-    def apply_modifiers(self, feature_rules: FeatureRuleNodeList) -> FeatureStrList:
-        # features : [A, B]
-        # add-features: [B, C]
-        # remove-features: [B]
-        # become
-        # features : [A, C]
-        # add-features: []
-        # remove-features: []
-        # Ensure that only-one is respected
-        values = copy.deepcopy(self.values)
-        add_features = copy.deepcopy(self.add_modifiers)
-        
-        # Apply remove-features first to values and add-features
-        for value in self.remove_modifiers.values:
-            values.discard(value)
-            add_features.values.discard(value)
-            
-        # After removing features from values and add modifiers,
-        # Validate that values and add modifiers respect rules
-        feature_rules.validate(values)
-        feature_rules.validate(add_features.values)
-
-        # After validation, apply add-features to values
-        # Only one rule is validated for each feature to add to values
-        for value_to_add in add_features.values:
-            for onlyone_rule in feature_rules.feature_rules_only_one:
-                if(onlyone_rule.contains(value_to_add)):
-                    for value in list(values):
-                        if(onlyone_rule.contains(value)):
-                            values.discard(value)
-            values.add(value_to_add)
-
-        # Validate that adding don't break incompatible rules
-        feature_rules.validate_incompatible(values)
-
-        # Return the modified feature list
+    def apply_remove(self):
         result = FeatureStrList()
-        result.str_list.values = values
+        result.str_list = self.str_list.apply_remove()
         return result
 
+    # @property
+    # def remove_modifiers(self) -> StrListModifierRemove:
+    #     return self.str_list.remove_modifiers
+
+    # @property
+    # def values(self) -> set[str] :
+    #     return self.str_list.values
+
+    # def is_user_defined_values(self) -> bool:
+    #     return self.str_list.is_user_defined_values()
+    
+    # def has_values(self) -> bool:
+    #     return self.str_list.has_values()
+    
+    # def has_modifiers(self) -> bool:
+    #     return self.str_list.has_modifiers()
+    
+    # def is_empty(self):
+    #     return not self.has_values() and not self.has_modifiers()
+    
+    # def apply_remove(self) : 
+    #         result = StrList()
+    #         if self.remove_modifiers.is_empty():
+    #             return copy.deepcopy(self)
+    #         else:
+    #             for value_to_remove in self.remove_modifiers.values:
+    #                 if value_to_remove not in result.values:
+    #                     result.values.add(value_to_remove)
+    #                 if value_to_remove not in result.add_modifiers.values:
+    #                     result.add_modifiers.values.add(value_to_remove)
+    #         return result
+    
+    # def apply_modifiers(self, feature_rules: FeatureRuleNodeList) -> FeatureStrList:
+    #     # features : [A, B]
+    #     # add-features: [B, C]
+    #     # remove-features: [B]
+    #     # become
+    #     # features : [A, C]
+    #     # add-features: []
+    #     # remove-features: []
+    #     # Ensure that only-one is respected
+    #     values = copy.deepcopy(self.values)
+    #     add_features = copy.deepcopy(self.add_modifiers)
+        
+    #     # Apply remove-features first to values and add-features
+    #     for value in self.remove_modifiers.values:
+    #         values.discard(value)
+    #         add_features.values.discard(value)
+            
+    #     # After removing features from values and add modifiers,
+    #     # Validate that values and add modifiers respect rules
+    #     feature_rules.validate(values)
+    #     feature_rules.validate(add_features.values)
+
+    #     # After validation, apply add-features to values
+    #     # Only one rule is validated for each feature to add to values
+    #     for value_to_add in add_features.values:
+    #         for onlyone_rule in feature_rules.feature_rules_only_one:
+    #             if(onlyone_rule.contains(value_to_add)):
+    #                 for value in list(values):
+    #                     if(onlyone_rule.contains(value)):
+    #                         values.discard(value)
+    #         values.add(value_to_add)
+
+    #     # Validate that adding don't break incompatible rules
+    #     feature_rules.validate_incompatible(values)
+
+    #     # Return the modified feature list
+    #     result = FeatureStrList()
+    #     result.str_list.values = values
+    #     return result
+
+def resolve_extends_feature_list(child: FeatureStrList, parent: FeatureStrList, feature_rules: FeatureRuleNodeList):
+    assert isinstance(child, FeatureStrList)
+    assert isinstance(parent, FeatureStrList)
+
+    # Add all child values and add modifiers in add modifiers if not removed
+    result = FeatureStrList()
+    result.str_list.override = child.str_list.override
+    # Add child value if not removed
+    for value in child.str_list.values:
+        if value not in child.str_list.remove_modifiers.values:
+            result.str_list.values.add(value)
+    
+    # If Child have no values, add parent values if not removed
+    if not child.str_list.override:
+        for value in parent.str_list.values:
+            if value not in child.str_list.remove_modifiers.values:
+                result.str_list.values.add(value)
+    return result
 
 def merge_feature_list(child: FeatureStrList, parent: FeatureStrList, feature_rules: FeatureRuleNodeList) -> FeatureStrList :
     assert isinstance(child, FeatureStrList)
@@ -157,22 +176,29 @@ class FeatureNode:
 
     def __hash__(self):
         return hash(self.name)
-    
-    def merge_with(self, parent: FeatureNode, feature_rules: FeatureRuleNodeList):
+
+    def resolve_extends(self, parent: FeatureNode, feature_rules: FeatureRuleNodeList):
         result = FeatureNode(self.name)
-        result.flags = merge_str_list(self.flags, parent.flags)
-        result.features = merge_feature_list(self.features, parent.features, feature_rules)
-        result.args = copy.deepcopy(self.args if self.args else parent.args) 
-        result.description = copy.deepcopy(self.description if self.description else parent.description)
+        result.description = self.description
+        result.flags = resolve_extends_str_list(self.flags, parent.flags)
+        result.features = resolve_extends_feature_list(self.features, parent.features, feature_rules)
         return result
     
-    def apply_modifiers(self, feature_rules: FeatureRuleNodeList) -> FeatureNode:
-        result = FeatureNode(self.name)
-        result.flags = self.flags.apply_modifiers()
-        result.features = self.features.apply_modifiers(feature_rules)
-        result.args = copy.deepcopy(self.args)
-        result.description = copy.deepcopy(self.description)
-        return result
+    # def merge_with(self, parent: FeatureNode, feature_rules: FeatureRuleNodeList):
+    #     result = FeatureNode(self.name)
+    #     result.flags = merge_str_list(self.flags, parent.flags)
+    #     result.features = merge_feature_list(self.features, parent.features, feature_rules)
+    #     result.args = copy.deepcopy(self.args if self.args else parent.args) 
+    #     result.description = copy.deepcopy(self.description if self.description else parent.description)
+    #     return result
+    
+    # def apply_modifiers(self, feature_rules: FeatureRuleNodeList) -> FeatureNode:
+    #     result = FeatureNode(self.name)
+    #     result.flags = self.flags.apply_modifiers()
+    #     result.features = self.features.apply_modifiers(feature_rules)
+    #     result.args = copy.deepcopy(self.args)
+    #     result.description = copy.deepcopy(self.description)
+    #     return result
     
 class FeatureNodeList:
     """Represents the 'features:' block."""
@@ -195,25 +221,32 @@ class FeatureNodeList:
                 return rule
         return None
 
-    def merge_with(self, parent: FeatureNodeList, feature_rules: FeatureRuleNodeList):
-        result = FeatureNodeList()
-        if parent:
-            for parent_feature in parent.features:
-                self_feature = self.get_by_name(parent_feature.name)
-                if self_feature:
-                    result.add_feature(self_feature.merge_with(parent_feature, feature_rules))
-                else:
-                    result.add_feature(copy.deepcopy(parent_feature))
-        return result
+    # def merge_with(self, parent: FeatureNodeList, feature_rules: FeatureRuleNodeList):
+    #     result = FeatureNodeList()
+    #     if parent:
+    #         for parent_feature in parent.features:
+    #             self_feature = self.get_by_name(parent_feature.name)
+    #             if self_feature:
+    #                 result.add_feature(self_feature.merge_with(parent_feature, feature_rules))
+    #             else:
+    #                 result.add_feature(copy.deepcopy(parent_feature))
+    #     return result
     
-    def apply_modifiers(self, feature_rules: FeatureRuleNodeList) -> FeatureNodeList:
-        result = FeatureNodeList()
-        for feature in self.features:
-            result.add_feature(feature.apply_modifiers(feature_rules))
-        return result
+    # def apply_modifiers(self, feature_rules: FeatureRuleNodeList) -> FeatureNodeList:
+    #     result = FeatureNodeList()
+    #     for feature in self.features:
+    #         result.add_feature(feature.apply_modifiers(feature_rules))
+    #     return result
 
     def resolve_extends(self, parent: FeatureNodeList, feature_rules: FeatureRuleNodeList):
         result = FeatureNodeList()
+        # Merge all child 
+        for feature in self.features:
+            parent_feature = parent.get_by_name(feature.name)
+            if parent_feature:
+                result.add_feature(feature.resolve_extends(parent_feature, feature_rules))
+            else:
+                result.add_feature(feature.resolve_extends(parent_feature, feature_rules))
         raise NotImplemented
         return result
     
@@ -297,16 +330,16 @@ class FeatureRuleNodeIncompatible(FeatureRuleNode):
                                                self.feature,
                                                resolve_extends_str_list(self.incompatible_with, StrList()))
         
-    def merge_with(self, parent: FeatureRuleNodeIncompatible) -> FeatureRuleNodeIncompatible:
-        return FeatureRuleNodeIncompatible(self.name,
-                                           self.feature,
-                                           merge_str_list(self.incompatible_with, parent.incompatible_with))
+    # def merge_with(self, parent: FeatureRuleNodeIncompatible) -> FeatureRuleNodeIncompatible:
+    #     return FeatureRuleNodeIncompatible(self.name,
+    #                                        self.feature,
+    #                                        merge_str_list(self.incompatible_with, parent.incompatible_with))
 
-    def apply_modifiers(self) -> FeatureRuleNodeIncompatible:
-        return  FeatureRuleNodeIncompatible(self.name,
-                                            self.description,
-                                            self.feature,
-                                            self.incompatible_with.apply_modifiers())
+    # def apply_modifiers(self) -> FeatureRuleNodeIncompatible:
+    #     return  FeatureRuleNodeIncompatible(self.name,
+    #                                         self.description,
+    #                                         self.feature,
+    #                                         self.incompatible_with.apply_modifiers())
 
         
 class FeatureRuleNodeList:

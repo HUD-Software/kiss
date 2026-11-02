@@ -76,11 +76,11 @@ class LinkerNode:
         result.extends = self.extends   
         
         if not parent:
-            result.feature_rule_list.resolve_extends(FeatureRuleNodeList())
-            result.feature_list.resolve_extends(FeatureRuleNodeList(), result.feature_rule_list)
+            result.feature_rule_list = result.feature_rule_list.resolve_extends(FeatureRuleNodeList())
+            result.feature_list = result.feature_list.resolve_extends(FeatureNodeList(), result.feature_rule_list)
         else:
-            result.feature_rule_list.resolve_extends(parent.feature_rule_list)
-            result.feature_rule_list.resolve_extends(parent.feature_rule_list, result.feature_rule_list)
+            result.feature_rule_list = result.feature_rule_list.resolve_extends(parent.feature_rule_list)
+            result.feature_list = result.feature_list.resolve_extends(parent.feature_list, result.feature_rule_list)
         return result
         
 class LinkerSpecificOverrideNode:

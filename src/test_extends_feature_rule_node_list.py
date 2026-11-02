@@ -10,17 +10,8 @@
 #         feature: ASAN
 #         with: [LTO]
 
+from test_common import create_str_list
 from toolchain.nodes.feature_node import FeatureRuleNodeIncompatible, FeatureRuleNodeList, FeatureRuleNodeOnlyOne
-from toolchain.nodes.property import StrList
-
-def create_str_list(override : bool, values : list[str], removes: list[str]):
-    list = StrList()
-    list.override = override
-    for value in values:
-        list.add_value(value)
-    for remove in removes:
-        list.add_modifier_remove(remove)
-    return list
 
 def test_extends_empty():
     result = FeatureRuleNodeList().resolve_extends(FeatureRuleNodeList())
@@ -28,7 +19,7 @@ def test_extends_empty():
 
 def test_only_one_extends_empty():
     feature_rule_list = FeatureRuleNodeList()
-    onlyone_features = create_str_list(False,["A1", "A2"], ["A1", "A3"] )
+    onlyone_features = create_str_list(False, ["A1", "A2"], ["A1", "A3"] )
     onlyone_rule = FeatureRuleNodeOnlyOne("A", "desc a", onlyone_features)    
     feature_rule_list.add_feature_rule(onlyone_rule)
     result = feature_rule_list.resolve_extends(FeatureRuleNodeList())

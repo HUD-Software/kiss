@@ -33,10 +33,18 @@ class FeatureStrList:
     # def remove_modifiers(self) -> StrListModifierRemove:
     #     return self.str_list.remove_modifiers
 
-    # @property
-    # def values(self) -> set[str] :
-    #     return self.str_list.values
-
+    @property
+    def values(self) -> set[str] :
+        return self.str_list.values
+    
+    @property
+    def override(self) -> set[str] :
+        return self.str_list.override
+    
+    @property
+    def remove_modifiers(self) -> set[str] :
+        return self.str_list.remove_modifiers
+    
     # def is_user_defined_values(self) -> bool:
     #     return self.str_list.is_user_defined_values()
     
@@ -166,7 +174,7 @@ class FeatureNode:
         self.name = name
         self.description = ""
         self.flags = StrList()
-        self.features = FeatureStrList ()
+        self.features = FeatureStrList()
         self.args : FeatureArgsNode = None
     
     def __eq__(self, other):
@@ -240,15 +248,30 @@ class FeatureNodeList:
 
     def resolve_extends(self, parent: FeatureNodeList, feature_rules: FeatureRuleNodeList):
         result = FeatureNodeList()
-        # Merge all child 
-        for feature in self.features:
-            parent_feature = parent.get_by_name(feature.name)
-            if parent_feature:
-                result.add_feature(feature.resolve_extends(parent_feature, feature_rules))
-            else:
-                result.add_feature(feature.resolve_extends(parent_feature, feature_rules))
-        raise NotImplemented
+        parent_features = parent.features if parent else set()
+        self_by_name = {r.name: r for r in self.features}
+        parent_by_name = {r.name: r for r in parent_features}
+
+        for name in self_by_name.keys() | parent_by_name.keys():
+            self_feature = self_by_name.get(name)
+            parent_feature = parent_by_name.get(name)
+
+            if self_feature:
+                result.add_feature(self_feature.resolve_extends(parent_feature))
+            elif parent_feature:
+                result.add_feature(copy.deepcopy(parent_feature))
         return result
+    
+        # result = FeatureNodeList()
+        # # Merge all child 
+        # for feature in self.features:
+        #     parent_feature = parent.get_by_name(feature.name)
+        #     if parent_feature:
+        #         result.add_feature(feature.resolve_extends(parent_feature, feature_rules))
+        #     else:
+        #         result.add_feature(feature.resolve_extends(parent_feature, feature_rules))
+        # raise NotImplemented
+        # return result
     
 
 class FeatureRuleNode:
@@ -295,15 +318,15 @@ class FeatureRuleNodeOnlyOne(FeatureRuleNode):
                                           self.description,
                                           resolve_extends_str_list(self.feature_names, StrList()))
     
-    def merge_with(self, parent: FeatureRuleNodeOnlyOne) -> FeatureRuleNodeOnlyOne:
-        return FeatureRuleNodeOnlyOne(self.name, 
-                                      self.description,
-                                      merge_str_list(self.feature_names, parent.feature_names))
+    # def merge_with(self, parent: FeatureRuleNodeOnlyOne) -> FeatureRuleNodeOnlyOne:
+    #     return FeatureRuleNodeOnlyOne(self.name, 
+    #                                   self.description,
+    #                                   merge_str_list(self.feature_names, parent.feature_names))
 
-    def apply_modifiers(self) -> FeatureRuleNodeOnlyOne:
-            return  FeatureRuleNodeOnlyOne(self.name,
-                                           self.description,
-                                           self.feature_names.apply_modifiers())
+    # def apply_modifiers(self) -> FeatureRuleNodeOnlyOne:
+    #         return  FeatureRuleNodeOnlyOne(self.name,
+    #                                        self.description,
+    #                                        self.feature_names.apply_modifiers())
     
 
 class FeatureRuleNodeIncompatible(FeatureRuleNode):

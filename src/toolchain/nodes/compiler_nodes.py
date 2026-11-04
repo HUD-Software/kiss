@@ -1,7 +1,7 @@
 
 from __future__ import annotations
 import copy
-from toolchain.nodes.feature_node import FeatureNode, FeatureNodeList, FeatureRuleNodeList, FeatureStrList, merge_feature_list
+from toolchain.nodes.feature_node import FeatureNode, FeatureNodeList, FeatureRuleNodeList, FeatureStrList
 from toolchain.nodes.linker_nodes import LinkerNode, LinkersOverrideNode, merge_linkers_override_node
 from toolchain.nodes.property import StrList
 

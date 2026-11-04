@@ -1,7 +1,40 @@
 from __future__ import annotations
 import copy
+from dataclasses import dataclass
+from result import Err, Ok, Result
 from toolchain.nodes.property import StrList, StrListModifierAdd, StrListModifierRemove, resolve_extends_str_list
 from typing import Self
+
+
+@dataclass(frozen=True, slots=True)
+class OnlyOneViolation:
+    rule_name: str
+    allowed: list[str]
+    found: list[str]
+    list : list[str]
+
+    def __str__(self) -> str:
+        return (
+            f"Feature rule '{self.rule_name}' allows only one of {self.allowed}, "
+            f"but found ({len(self.found)}){self.found} in {self.list}"
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class IncompatibleViolation:
+    rule_name: str
+    feature: str
+    conflicts: list[str]
+
+    def __str__(self) -> str:
+        return (
+            f"Feature '{self.feature}' is incompatible with {self.conflicts} "
+            f"(rule '{self.rule_name}')"
+        )
+
+
+type ValidationError = OnlyOneViolation | IncompatibleViolation
+
 
 class FeatureArgsNode:
     """Represents the 'args' block inside a feature with arguments.
@@ -105,59 +138,95 @@ class FeatureStrList:
     #     result.str_list.values = values
     #     return result
 
-def resolve_extends_feature_list(child: FeatureStrList, parent: FeatureStrList, feature_rules: FeatureRuleNodeList):
+def resolve_extends_feature_list(child: FeatureStrList, parent: FeatureStrList, feature_rules: FeatureRuleNodeList) -> Result[FeatureStrList, ValidationError]:
     assert isinstance(child, FeatureStrList)
     assert isinstance(parent, FeatureStrList)
 
     # Add all child values and add modifiers in add modifiers if not removed
     result = FeatureStrList()
     result.str_list.override = child.str_list.override
+
     # Add child value if not removed
     for value in child.str_list.values:
         if value not in child.str_list.remove_modifiers.values:
+            # Add the value only if not already present
             result.str_list.values.add(value)
-    
-    # If Child have no values, add parent values if not removed
+            # Validate after the add instead of after all insertion to get more fine result
+            match feature_rules.validate(result.str_list.values):
+                case Err() as err:
+                    return err
+                        
+    # If the child do not override the value add parents values
     if not child.str_list.override:
-        for value in parent.str_list.values:
-            if value not in child.str_list.remove_modifiers.values:
-                result.str_list.values.add(value)
-    return result
 
-def merge_feature_list(child: FeatureStrList, parent: FeatureStrList, feature_rules: FeatureRuleNodeList) -> FeatureStrList :
-    assert isinstance(child, FeatureStrList)
-    assert isinstance(parent, FeatureStrList)
+        def can_add_parent_value(parent_value, child_list, only_one):
+            # Parent value is concerned by the rule
+            if only_one.contains(parent_value):
+                # Parent value is concerned by the rule
+                # If at least one value in this rule is in the child list
+                # don't add to the parent
+                for child_value in child_list:
+                    if only_one.contains(child_value):
+                        return False
 
-    # If child have user defined, ignore parents
-    if child.has_values():
-        return copy.deepcopy(child)
-    # Child have no values, merge with parent
-    else:
-        # Filter the add modifiers
-        # We conditionnaly add parent to the child 
-        merged_add_modifiers_list = copy.deepcopy(child.add_modifiers)
-        for parent_value_to_add in parent.add_modifiers.values:
-            add_in_merged = True
-            # Ignore parent if we have a only-one feature rules that concerned the parent value and is also present in child values
-            for onlyone_rule in feature_rules.feature_rules_only_one:
-                if(onlyone_rule.contains(parent_value_to_add)):
-                    for child_value in child.add_modifiers.values:
-                        if(onlyone_rule.contains(child_value)):
-                            add_in_merged = False
-                            continue
-            if add_in_merged:
-                merged_add_modifiers_list.values.add(parent_value_to_add)
+            # Parent value is not concerned by the rule
+            # or
+            # The child list does not contains any value in the only one rule
+            return True
+            
+            
+        # If Child do not override value, add parent values if not in only_one rule
+        for parent_value in parent.str_list.values:
+            if parent_value not in child.str_list.remove_modifiers.values:
+                can_add = True
+                for only_one in feature_rules.feature_rules_only_one:
+                    if not can_add_parent_value(parent_value, result.str_list.values, only_one):
+                        can_add = False
+                        break
+                if can_add:
+                    result.str_list.values.add(parent_value)
 
-        #  Return the merged feature list
-        result = FeatureStrList()
-        result.str_list.values = copy.deepcopy(parent.values)
-        result.str_list.add_modifiers = merged_add_modifiers_list
-        result.str_list.remove_modifiers.values.update(child.remove_modifiers.values)
+    # Validate incompatible values
+    match feature_rules.validate(result.str_list.values):
+        case Err() as err:
+            return err
+    
+    return Ok(result)
 
-        # Validate that the result respect feature rules
-        feature_rules.validate(result.apply_modifiers(feature_rules).values)
+# def merge_feature_list(child: FeatureStrList, parent: FeatureStrList, feature_rules: FeatureRuleNodeList) -> FeatureStrList :
+#     assert isinstance(child, FeatureStrList)
+#     assert isinstance(parent, FeatureStrList)
+
+#     # If child have user defined, ignore parents
+#     if child.has_values():
+#         return copy.deepcopy(child)
+#     # Child have no values, merge with parent
+#     else:
+#         # Filter the add modifiers
+#         # We conditionnaly add parent to the child 
+#         merged_add_modifiers_list = copy.deepcopy(child.add_modifiers)
+#         for parent_value_to_add in parent.add_modifiers.values:
+#             add_in_merged = True
+#             # Ignore parent if we have a only-one feature rules that concerned the parent value and is also present in child values
+#             for onlyone_rule in feature_rules.feature_rules_only_one:
+#                 if(onlyone_rule.contains(parent_value_to_add)):
+#                     for child_value in child.add_modifiers.values:
+#                         if(onlyone_rule.contains(child_value)):
+#                             add_in_merged = False
+#                             continue
+#             if add_in_merged:
+#                 merged_add_modifiers_list.values.add(parent_value_to_add)
+
+#         #  Return the merged feature list
+#         result = FeatureStrList()
+#         result.str_list.values = copy.deepcopy(parent.values)
+#         result.str_list.add_modifiers = merged_add_modifiers_list
+#         result.str_list.remove_modifiers.values.update(child.remove_modifiers.values)
+
+#         # Validate that the result respect feature rules
+#         feature_rules.validate(result.apply_modifiers(feature_rules).values)
         
-        return result
+#         return result
 
 class FeatureNode:
     """Represents a single compiler feature entry.
@@ -302,8 +371,6 @@ class FeatureRuleNodeOnlyOne(FeatureRuleNode):
         self.feature_names = feature_names
 
     def contains(self, feature_name: str) -> bool:
-        if self.feature_names.has_modifiers():
-            raise ValueError("Only one rules must have called apply_modifiers before checking if a feature name is present in the")
         return feature_name in self.feature_names.values
 
     def resolve_extends(self, parent: FeatureRuleNodeOnlyOne) :
@@ -364,7 +431,7 @@ class FeatureRuleNodeIncompatible(FeatureRuleNode):
     #                                         self.feature,
     #                                         self.incompatible_with.apply_modifiers())
 
-        
+
 class FeatureRuleNodeList:
     """Represents the 'feature-rules:' block."""
     def __init__(self):
@@ -402,30 +469,27 @@ class FeatureRuleNodeList:
                 return rule
         return None
     
-    def validate(self, list: set[str]):
-        self.validate_only_one(list)
-        self.validate_incompatible(list)
+    def validate(self, selected: set[str]) -> Result[None, ValidationError]:
+        match self.validate_only_one(selected):
+            case Err() as err:
+                return err
+        return self.validate_incompatible(selected)
 
-    def validate_only_one(self, list: set[str]):
+    def validate_only_one(self, selected: set[str]) -> Result[None, ValidationError]:
         for rule in self.feature_rules_only_one:
-            count = sum(1 for a in rule.feature_names.values if a in list)
-            if count > 1:
-                raise ValueError(
-                    f"Feature rule '{rule.name}' allows only one of {rule.feature_names.values}, "
-                    f"but found {count} in {list}"
-                )
+            found = [f for f in rule.feature_names.values if f in selected]
+            if len(found) > 1:
+                return Err(OnlyOneViolation(rule.name, list(rule.feature_names.values), found, list(selected)))
+        return Ok(None)
 
-    def validate_incompatible(self, list : set[str]):
+    def validate_incompatible(self, selected: set[str]) -> Result[None, ValidationError]:
         for rule in self.feature_rules_incompatible:
-            if rule.feature not in list:
+            if rule.feature not in selected:
                 continue
-
-            conflicts = [f for f in rule.incompatible_with.values if f in list]
+            conflicts = [f for f in rule.incompatible_with.values if f in selected]
             if conflicts:
-                raise ValueError(
-                    f"Feature '{rule.feature}' is incompatible with {conflicts} "
-                    f"(rule '{rule.name}')"
-                )
+                return Err(IncompatibleViolation(rule.name, rule.feature, conflicts))
+        return Ok(None)
 
     def resolve_extends(self, parent: FeatureRuleNodeList):
         result = FeatureRuleNodeList()

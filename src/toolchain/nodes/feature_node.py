@@ -187,7 +187,7 @@ def resolve_extends_feature_list(child: FeatureStrList, parent: FeatureStrList, 
                     result.str_list.values.add(parent_value)
 
     # Validate incompatible values
-    match feature_rules.validate(result.str_list.values):
+    match feature_rules.validate_incompatible(result.str_list.values):
         case Err() as err:
             return err
     

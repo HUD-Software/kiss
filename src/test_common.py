@@ -1,4 +1,4 @@
-from toolchain.nodes.feature_node import FeatureArgsNode, FeatureNode, FeatureNodeList, FeatureRuleNode, FeatureRuleNodeList, FeatureRuleNodeOnlyOne, FeatureStrList
+from toolchain.nodes.feature_node import FeatureArgsNode, FeatureNode, FeatureNodeList, FeatureRuleNode, FeatureRuleNodeIncompatible, FeatureRuleNodeList, FeatureRuleNodeOnlyOne, FeatureStrList
 from toolchain.nodes.linker_nodes import LinkerSpecificOverrideNode, LinkersOverrideNode
 from toolchain.nodes.property import StrList
 
@@ -50,7 +50,7 @@ def create_feature_node_list(features : list[FeatureNode]):
         feature_list.add_feature(feature)
     return feature_list
 
-def create_only_one_rule(name: str, description, feature_names):
+def create_only_one_rule(name: str, description: str, feature_names):
     if isinstance(feature_names, StrList):
         return FeatureRuleNodeOnlyOne(name, description, feature_names)
     elif isinstance(feature_names, list):
@@ -58,4 +58,14 @@ def create_only_one_rule(name: str, description, feature_names):
         for feature_name in feature_names:
             l.add_value(feature_name)
         return FeatureRuleNodeOnlyOne(name, description, l)
+    raise ValueError("Invalid feature_names type")
+
+def create_inccompatible_rule(name: str, description: str, feature: str, feature_names):
+    if isinstance(feature_names, StrList):
+        return FeatureRuleNodeIncompatible(name, description, feature, feature_names)
+    elif isinstance(feature_names, list):
+        l = StrList()
+        for feature_name in feature_names:
+            l.add_value(feature_name)
+        return FeatureRuleNodeIncompatible(name, description, feature, l)
     raise ValueError("Invalid feature_names type")

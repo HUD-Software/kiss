@@ -151,10 +151,10 @@ def resolve_extends_feature_list(child: FeatureStrList, parent: FeatureStrList, 
         if value not in child.str_list.remove_modifiers.values:
             # Add the value only if not already present
             result.str_list.values.add(value)
-            # Validate after the add instead of after all insertion to get more fine result
-            match feature_rules.validate(result.str_list.values):
-                case Err() as err:
-                    return err
+    # Validate after all insertion of childs
+    match feature_rules.validate_only_one(result.str_list.values):
+        case Err() as err:
+            return err
                         
     # If the child do not override the value add parents values
     if not child.str_list.override:

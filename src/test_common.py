@@ -60,7 +60,7 @@ def create_only_one_rule(name: str, description: str, feature_names):
         return FeatureRuleNodeOnlyOne(name, description, l)
     raise ValueError("Invalid feature_names type")
 
-def create_inccompatible_rule(name: str, description: str, feature: str, feature_names):
+def create_incompatible_rule(name: str, description: str, feature: str, feature_names):
     if isinstance(feature_names, StrList):
         return FeatureRuleNodeIncompatible(name, description, feature, feature_names)
     elif isinstance(feature_names, list):

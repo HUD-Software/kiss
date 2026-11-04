@@ -29,20 +29,16 @@ class FeatureStrList:
         result.str_list = self.str_list.apply_remove()
         return result
 
-    # @property
-    # def remove_modifiers(self) -> StrListModifierRemove:
-    #     return self.str_list.remove_modifiers
-
     @property
     def values(self) -> set[str] :
         return self.str_list.values
     
     @property
-    def override(self) -> set[str] :
+    def override(self) ->  bool:
         return self.str_list.override
     
     @property
-    def remove_modifiers(self) -> set[str] :
+    def remove_modifiers(self) -> StrListModifierRemove :
         return self.str_list.remove_modifiers
     
     # def is_user_defined_values(self) -> bool:
@@ -188,8 +184,12 @@ class FeatureNode:
     def resolve_extends(self, parent: FeatureNode, feature_rules: FeatureRuleNodeList):
         result = FeatureNode(self.name)
         result.description = self.description
-        result.flags = resolve_extends_str_list(self.flags, parent.flags)
-        result.features = resolve_extends_feature_list(self.features, parent.features, feature_rules)
+        if parent:
+            result.flags = resolve_extends_str_list(self.flags, parent.flags)
+            result.features = resolve_extends_feature_list(self.features, parent.features, feature_rules)
+        else:
+            result.flags = resolve_extends_str_list(self.flags, StrList())
+            result.features = resolve_extends_feature_list(self.features, FeatureStrList(), feature_rules)
         return result
     
     # def merge_with(self, parent: FeatureNode, feature_rules: FeatureRuleNodeList):
@@ -257,7 +257,7 @@ class FeatureNodeList:
             parent_feature = parent_by_name.get(name)
 
             if self_feature:
-                result.add_feature(self_feature.resolve_extends(parent_feature))
+                result.add_feature(self_feature.resolve_extends(parent_feature, feature_rules))
             elif parent_feature:
                 result.add_feature(copy.deepcopy(parent_feature))
         return result

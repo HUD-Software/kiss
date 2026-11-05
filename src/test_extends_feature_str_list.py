@@ -1097,6 +1097,26 @@ def test_extends_only_one_rule_4():
     assert result.values == set(["A1"])
     assert result.remove_modifiers.values == set()
 
+def test_extends_only_one_rule_failed_1():
+    feature_str_list_child = create_feature_str_list(False, ["A1", "A2", "A4"], ["A2", "A3"])
+    feature_str_list_parent = create_feature_str_list(False, ["B1", "B2", "B5"], ["B2", "B3"])
+
+    onlyone_rule = create_only_one_rule("OA", "OnlyOne A", ["A1", "A4"])
+    feature_rule_list = create_feature_rule_list([onlyone_rule])
+
+    feature_str_list_parent = resolve_extends_feature_list(feature_str_list_parent, FeatureStrList(),  feature_rule_list).unwrap()
+    assert resolve_extends_feature_list(feature_str_list_child, feature_str_list_parent, feature_rule_list).is_err()
+
+def test_extends_only_one_rule_failed_2():
+    # Child will never be merged because parent will fail
+    #feature_str_list_child = create_feature_str_list(False, ["A1", "A2", "A4"], ["A2", "A3"])
+    feature_str_list_parent = create_feature_str_list(False, ["B1", "B2", "B5"], ["B2", "B3"])
+
+    onlyone_rule = create_only_one_rule("OA", "OnlyOne A", ["B1", "B5"])
+    feature_rule_list = create_feature_rule_list([onlyone_rule])
+
+    assert resolve_extends_feature_list(feature_str_list_parent, FeatureStrList(),  feature_rule_list).is_err()
+
 def test_extends_incompatible_rule_1():
     feature_str_list_child = create_feature_str_list(False, ["A1", "A2"], ["A2", "A3"])
     feature_str_list_parent = create_feature_str_list(False, ["B1", "B2"], ["B2", "B3"])
@@ -1156,6 +1176,45 @@ def test_extends_incompatible_rule_4():
     assert result.override == True
     assert result.values == set(["A1"])
     assert result.remove_modifiers.values == set()
+
+
+def test_extends_incompatible_rule_failed_1():
+    feature_str_list_child = create_feature_str_list(False, ["A1", "A2", "A5"], ["A2", "A3"])
+    feature_str_list_parent = create_feature_str_list(False, ["B1", "B2"], ["B2", "B3"])
+
+    incompatible_rule = create_incompatible_rule("IA", "Incompatible A","A1", ["A2", "A5"])
+    feature_rule_list = create_feature_rule_list([incompatible_rule])
+
+    feature_str_list_parent = resolve_extends_feature_list(feature_str_list_parent, FeatureStrList(),  feature_rule_list).unwrap()
+    assert resolve_extends_feature_list(feature_str_list_child, feature_str_list_parent, feature_rule_list).is_err()
+
+def test_extends_incompatible_rule_failed_2():
+    # Child will never be merged because parent will fail
+    # feature_str_list_child = create_feature_str_list(False, ["A1", "A2", "A3"], ["A2", "A3"])
+    feature_str_list_parent = create_feature_str_list(False, ["B1", "B2", "B5"], ["B2", "B3"])
+
+    incompatible_rule = create_incompatible_rule("IA", "Incompatible A","B1", ["A2", "B5"])
+    feature_rule_list = create_feature_rule_list([incompatible_rule])
+
+    assert resolve_extends_feature_list(feature_str_list_parent, FeatureStrList(),  feature_rule_list).is_err()
+
+# def test_extends_multiple_rules_1():
+#     feature_str_list_child = create_feature_str_list(False, ["A1", "A2", "A4", "A5"], ["A2", "A3"])
+#     feature_str_list_parent = create_feature_str_list(False, ["A1", "A2", "A4", "A5"], ["A2", "A3"])
+
+#     onlyone_rule_a = create_only_one_rule("OA", "OnlyOne A", ["A1", "A3"])
+#     onlyone_rule_b = create_only_one_rule("OB", "OnlyOne B", ["A0", "A4"])
+#     incompatible_rule_a = create_incompatible_rule("IA", "Incompatible A", "A2", ["A1", "A3"])
+#     incompatible_rule_b = create_incompatible_rule("IB", "Incompatible B", "A4", ["A0", "A3"])
+#     feature_rule_list = create_feature_rule_list([onlyone_rule_a, onlyone_rule_b, incompatible_rule_a, incompatible_rule_b])
+
+#     feature_str_list_parent = resolve_extends_feature_list(feature_str_list_parent, FeatureStrList(),feature_rule_list).unwrap()
+#     result = resolve_extends_feature_list(feature_str_list_child, feature_str_list_parent, feature_rule_list).unwrap()
+
+#     # Validate result
+#     assert result.override == False
+#     assert result.values == set(["A1", "A4", "A5"])
+#     assert result.remove_modifiers.values == set()
 
 def test_extends_feature_str_list():
 
@@ -1260,9 +1319,15 @@ def test_extends_feature_str_list():
     test_extends_only_one_rule_3()
     test_extends_only_one_rule_4()
 
+    test_extends_only_one_rule_failed_1()
+    test_extends_only_one_rule_failed_2()
+
     test_extends_incompatible_rule_1()
     test_extends_incompatible_rule_2()
     test_extends_incompatible_rule_3()
     test_extends_incompatible_rule_4()
+
+    test_extends_incompatible_rule_failed_1()
+    test_extends_incompatible_rule_failed_2()
 
     pass

@@ -1278,16 +1278,20 @@ def test_extends_incompatible_rule_failed_6():
 
     assert resolve_extends_feature_list(feature_str_list_parent, FeatureStrList(),  feature_rule_list).is_err()
 
-def test_extends_multiple_rules_1_1():
-    # This test validates that the first one rule is applied
+def test_extends_multiple_rules_1():
+    # This test validates that rules are applied
     # A1 in the child must replace B1 in the parent because of the only one rule
+    # Also ensure the incompatible rule is valid:
+    #  - IA test that the replacement of only one rule is applied before checking incompatible rules
+    #  - IB test that after the replacement of only one rule, the incompatible rule is applied to the resulting list after only one rules are applied
+
     feature_str_list_child = create_feature_str_list(False, ["A1", "A2", "A4", "A5"], ["A2", "A3"])
     feature_str_list_parent = create_feature_str_list(False, ["B1", "B2", "B4", "B5"], ["B2", "B3"])
 
     onlyone_rule_a = create_only_one_rule("OA", "OnlyOne A", ["A1", "B1"])
-    onlyone_rule_b = create_only_one_rule("OB", "OnlyOne B", ["A0", "A4"])
-    incompatible_rule_a = create_incompatible_rule("IA", "Incompatible A", "A2", ["A1", "A3"])
-    incompatible_rule_b = create_incompatible_rule("IB", "Incompatible B", "A4", ["A0", "A3"])
+    onlyone_rule_b = create_only_one_rule("OB", "OnlyOne B", ["B5", "A4"])
+    incompatible_rule_a = create_incompatible_rule("IA", "Incompatible A", "A1", ["B1"])
+    incompatible_rule_b = create_incompatible_rule("IB", "Incompatible B", "B1", ["A4"])
     feature_rule_list = create_feature_rule_list([onlyone_rule_a, onlyone_rule_b, incompatible_rule_a, incompatible_rule_b])
 
     feature_str_list_parent = resolve_extends_feature_list(feature_str_list_parent, FeatureStrList(),feature_rule_list).unwrap()
@@ -1295,19 +1299,19 @@ def test_extends_multiple_rules_1_1():
 
     # Validate result
     assert result.override == False
-    assert result.values == set(["A1", "A4", "A5", "B4", "B5"])
+    assert result.values == set(["A1", "A4", "A5", "B4"])
     assert result.remove_modifiers.values == set()
 
-def test_extends_multiple_rules_1_2():
-    # This test validates that the first one rule is applied
+def test_extends_multiple_rules_2():
+    # This test validates that rules are applied
     # Parent is ignored because the child has override set to True
     feature_str_list_child = create_feature_str_list(True, ["A1", "A2", "A4", "A5"], ["A2", "A3"])
     feature_str_list_parent = create_feature_str_list(False, ["B1", "B2", "B4", "B5"], ["B2", "B3"])
 
     onlyone_rule_a = create_only_one_rule("OA", "OnlyOne A", ["A1", "B1"])
-    onlyone_rule_b = create_only_one_rule("OB", "OnlyOne B", ["A0", "A4"])
-    incompatible_rule_a = create_incompatible_rule("IA", "Incompatible A", "A2", ["A1", "A3"])
-    incompatible_rule_b = create_incompatible_rule("IB", "Incompatible B", "A4", ["A0", "A3"])
+    onlyone_rule_b = create_only_one_rule("OB", "OnlyOne B", ["B5", "A4"])
+    incompatible_rule_a = create_incompatible_rule("IA", "Incompatible A", "A1", ["B1"])
+    incompatible_rule_b = create_incompatible_rule("IB", "Incompatible B", "B1", ["A4"])
     feature_rule_list = create_feature_rule_list([onlyone_rule_a, onlyone_rule_b, incompatible_rule_a, incompatible_rule_b])
 
     feature_str_list_parent = resolve_extends_feature_list(feature_str_list_parent, FeatureStrList(),feature_rule_list).unwrap()
@@ -1318,16 +1322,19 @@ def test_extends_multiple_rules_1_2():
     assert result.values == set(["A1", "A4", "A5"])
     assert result.remove_modifiers.values == set()
 
-def test_extends_multiple_rules_1_3():
-    # This test validates that the first one rule is applied
+def test_extends_multiple_rules_3():
+    # This test validates that rules are applied
     # A1 in the child must replace B1 in the parent because of the only one rule
+    # Also ensure the incompatible rule is valid:
+    #  - IA test that the replacement of only one rule is applied before checking incompatible rules
+    #  - IB test that after the replacement of only one rule, the incompatible rule is applied to the resulting list after only one rules are applied
     feature_str_list_child = create_feature_str_list(False, ["A1", "A2", "A4", "A5"], ["A2", "A3"])
     feature_str_list_parent = create_feature_str_list(True, ["B1", "B2", "B4", "B5"], ["B2", "B3"])
 
     onlyone_rule_a = create_only_one_rule("OA", "OnlyOne A", ["A1", "B1"])
-    onlyone_rule_b = create_only_one_rule("OB", "OnlyOne B", ["A0", "A4"])
-    incompatible_rule_a = create_incompatible_rule("IA", "Incompatible A", "A2", ["A1", "A3"])
-    incompatible_rule_b = create_incompatible_rule("IB", "Incompatible B", "A4", ["A0", "A3"])
+    onlyone_rule_b = create_only_one_rule("OB", "OnlyOne B", ["B5", "A4"])
+    incompatible_rule_a = create_incompatible_rule("IA", "Incompatible A", "A1", ["B1"])
+    incompatible_rule_b = create_incompatible_rule("IB", "Incompatible B", "B1", ["A4"])
     feature_rule_list = create_feature_rule_list([onlyone_rule_a, onlyone_rule_b, incompatible_rule_a, incompatible_rule_b])
 
     feature_str_list_parent = resolve_extends_feature_list(feature_str_list_parent, FeatureStrList(),feature_rule_list).unwrap()
@@ -1335,19 +1342,19 @@ def test_extends_multiple_rules_1_3():
 
     # Validate result
     assert result.override == False
-    assert result.values == set(["A1", "A4", "A5", "B4", "B5"])
+    assert result.values == set(["A1", "A4", "A5", "B4"])
     assert result.remove_modifiers.values == set()
 
-def test_extends_multiple_rules_1_4():
-    # This test validates that the first one rule is applied
+def test_extends_multiple_rules_4():
+    # This test validates that rules are applied
     # Parent is ignored because the child has override set to True
     feature_str_list_child = create_feature_str_list(True, ["A1", "A2", "A4", "A5"], ["A2", "A3"])
     feature_str_list_parent = create_feature_str_list(True, ["B1", "B2", "B4", "B5"], ["B2", "B3"])
 
     onlyone_rule_a = create_only_one_rule("OA", "OnlyOne A", ["A1", "B1"])
-    onlyone_rule_b = create_only_one_rule("OB", "OnlyOne B", ["A0", "A4"])
-    incompatible_rule_a = create_incompatible_rule("IA", "Incompatible A", "A2", ["A1", "A3"])
-    incompatible_rule_b = create_incompatible_rule("IB", "Incompatible B", "A4", ["A0", "A3"])
+    onlyone_rule_b = create_only_one_rule("OB", "OnlyOne B", ["B5", "A4"])
+    incompatible_rule_a = create_incompatible_rule("IA", "Incompatible A", "A1", ["B1"])
+    incompatible_rule_b = create_incompatible_rule("IB", "Incompatible B", "B1", ["A4"])
     feature_rule_list = create_feature_rule_list([onlyone_rule_a, onlyone_rule_b, incompatible_rule_a, incompatible_rule_b])
 
     feature_str_list_parent = resolve_extends_feature_list(feature_str_list_parent, FeatureStrList(),feature_rule_list).unwrap()
@@ -1358,6 +1365,49 @@ def test_extends_multiple_rules_1_4():
     assert result.values == set(["A1", "A4", "A5"])
     assert result.remove_modifiers.values == set()
 
+def test_extends_multiple_rules_failed_1():
+    # This test validates that rules are applied
+    # A1 in the child must replace B1 in the parent because of the only one rule
+    # Also ensure the incompatible rule trigger the invalid result:
+    #  - B4 and A1 are incompatible, so the result should be an error
+    feature_str_list_child = create_feature_str_list(False, ["A1", "A2", "A4", "A5"], ["A2", "A3"])
+    feature_str_list_parent = create_feature_str_list(False, ["B1", "B2", "B4", "B5"], ["B2", "B3"])
+
+    onlyone_rule_a = create_only_one_rule("OA", "OnlyOne A", ["A1", "B1"])
+    onlyone_rule_b = create_only_one_rule("OB", "OnlyOne B", ["B5", "A4"])
+    incompatible_rule_a = create_incompatible_rule("IA", "Incompatible A", "B4", ["A1"])
+    incompatible_rule_b = create_incompatible_rule("IB", "Incompatible B", "B1", ["A4"])
+    feature_rule_list = create_feature_rule_list([onlyone_rule_a, onlyone_rule_b, incompatible_rule_a, incompatible_rule_b])
+
+    feature_str_list_parent = resolve_extends_feature_list(feature_str_list_parent, FeatureStrList(),feature_rule_list).unwrap()
+    assert resolve_extends_feature_list(feature_str_list_child, feature_str_list_parent, feature_rule_list).is_err()
+
+def test_extends_multiple_rules_failed_2():
+    # This test validates that rules are applied
+    # A1 in the child must replace B1 in the parent because of the only one rule
+    # Also ensure the incompatible rule trigger the invalid result:
+    #  - B4 and A1 are incompatible, so the result should be an error
+    feature_str_list_child = create_feature_str_list(False, ["A1", "A2", "A4", "A5"], ["A2", "A3"])
+    feature_str_list_parent = create_feature_str_list(True, ["B1", "B2", "B4", "B5"], ["B2", "B3"])
+
+    onlyone_rule_a = create_only_one_rule("OA", "OnlyOne A", ["A1", "B1"])
+    onlyone_rule_b = create_only_one_rule("OB", "OnlyOne B", ["B5", "A4"])
+    incompatible_rule_a = create_incompatible_rule("IA", "Incompatible A", "B4", ["A1"])
+    incompatible_rule_b = create_incompatible_rule("IB", "Incompatible B", "B1", ["A4"])
+    feature_rule_list = create_feature_rule_list([onlyone_rule_a, onlyone_rule_b, incompatible_rule_a, incompatible_rule_b])
+
+    feature_str_list_parent = resolve_extends_feature_list(feature_str_list_parent, FeatureStrList(),feature_rule_list).unwrap()
+    assert resolve_extends_feature_list(feature_str_list_child, feature_str_list_parent, feature_rule_list).is_err()
+
+
+def test_extends_multiple_levels_1():
+    # level 0
+    # features: A1, A2, A3
+    # level 1:
+    # features: B1, B2, B3
+    # level 2:
+    # features: C1, C2, C3
+    
 def test_extends_feature_str_list():
 
     # Empty child and parent
@@ -1480,9 +1530,12 @@ def test_extends_feature_str_list():
     test_extends_incompatible_rule_failed_5()
     test_extends_incompatible_rule_failed_6()
 
-    test_extends_multiple_rules_1_1()
-    test_extends_multiple_rules_1_2()
-    test_extends_multiple_rules_1_3()
-    test_extends_multiple_rules_1_4()
+    test_extends_multiple_rules_1()
+    test_extends_multiple_rules_2()
+    test_extends_multiple_rules_3()
+    test_extends_multiple_rules_4()
+
+    test_extends_multiple_rules_failed_1()
+    test_extends_multiple_rules_failed_2()
 
     pass

@@ -1402,12 +1402,48 @@ def test_extends_multiple_rules_failed_2():
 
 def test_extends_multiple_levels_1():
     # level 0
-    # features: A1, A2, A3
+    # features: A1, A2, A3, A4, A5
     # level 1:
-    # features: B1, B2, B3
+    # features: B1, B2, B3, B4, B5
     # level 2:
-    # features: C1, C2, C3
-    
+    # features: C1, C2, C3, C4, C5
+    feature_str_list_level_0 = create_feature_str_list(False, ["A1", "A2", "A3", "A4", "A5"], ["A2", "A3"])
+    feature_str_list_level_1 = create_feature_str_list(False, ["B1", "B2", "B3", "B4", "B5"], ["B2", "B3", "A5"])
+    feature_str_list_level_2 = create_feature_str_list(False, ["C1", "C2", "C3", "C4", "C5"], ["C2", "C3", "B5"])
+
+    onlyone_rule_level_0 = create_only_one_rule("O0", "OnlyOne level 0", ["A1", "C1"])
+    onlyone_rule_level_1 = create_only_one_rule("O1", "OnlyOne level 1", ["B5", "A4"])
+    onlyone_rule_level_2 = create_only_one_rule("O2", "OnlyOne level 2", ["C5", "B4"])
+
+    feature_rule_list_level_0 = create_feature_rule_list([onlyone_rule_level_0])
+    feature_rule_list_level_1 = create_feature_rule_list([onlyone_rule_level_0, onlyone_rule_level_1])
+    feature_rule_list_level_2 = create_feature_rule_list([onlyone_rule_level_0, onlyone_rule_level_1,onlyone_rule_level_2])
+
+    # Level 0 is like a root and extends to nothing
+    # Only remove modifiers are applied to the level 0 feature list
+    feature_str_list_level_0 = resolve_extends_feature_list(feature_str_list_level_0, FeatureStrList(),feature_rule_list_level_0).unwrap()
+    assert feature_str_list_level_0.override == False
+    assert feature_str_list_level_0.values == set(["A1", "A4", "A5"])
+    assert feature_str_list_level_0.remove_modifiers.values == set()
+
+    # Level 1 extends level 0, so the only one rule is applied to the level 1 feature list
+    # The only one rule will remove A4 from the level 0 feature list and add B5 to the level 1 feature list
+    feature_str_list_level_1 = resolve_extends_feature_list(feature_str_list_level_1, feature_str_list_level_0, feature_rule_list_level_1).unwrap()
+    assert feature_str_list_level_1.override == False
+    assert feature_str_list_level_1.values == set(["A1", "B1", "B4", "B5"])
+    assert feature_str_list_level_1.remove_modifiers.values == set()
+
+    # Level 2 extends level 1, so the only one rule is applied to the level 2 feature list
+    # Level 2 is 'C5', 'C3', 'C1', 'C2', 'C4'
+    # Level 1 is 'B5', 'A1', 'B1', 'B4'
+    # The only one rule at level 0 replace A1 with C1.
+    # The only one rule at level 2 replace B4 with C5.
+    # Result is 'C1', 'C4', 'B1', 'C5'
+    feature_str_list_level_2 = resolve_extends_feature_list(feature_str_list_level_2, feature_str_list_level_1, feature_rule_list_level_2).unwrap()
+    assert feature_str_list_level_2.override == False
+    assert feature_str_list_level_2.values == set(["C1", "C4", "B1", "C5"])
+    assert feature_str_list_level_2.remove_modifiers.values == set()
+
 def test_extends_feature_str_list():
 
     # Empty child and parent
@@ -1538,4 +1574,4 @@ def test_extends_feature_str_list():
     test_extends_multiple_rules_failed_1()
     test_extends_multiple_rules_failed_2()
 
-    pass
+    test_extends_multiple_levels_1()

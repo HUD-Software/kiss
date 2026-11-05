@@ -14,9 +14,7 @@ from cli.app import app
 
 if __name__ == "__main__":
     test_extends_feature_str_list()
-
     test_extends_feature_rule_node_list()
-
     test_extends_feature_node()
     test_extends_feature_node_list()
 

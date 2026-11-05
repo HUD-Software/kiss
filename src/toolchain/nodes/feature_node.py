@@ -255,10 +255,10 @@ class FeatureNode:
         result.description = self.description
         if parent:
             result.flags = resolve_extends_str_list(self.flags, parent.flags)
-            result.features = resolve_extends_feature_list(self.features, parent.features, feature_rules)
+            result.features = resolve_extends_feature_list(self.features, parent.features, feature_rules).unwrap()
         else:
             result.flags = resolve_extends_str_list(self.flags, StrList())
-            result.features = resolve_extends_feature_list(self.features, FeatureStrList(), feature_rules)
+            result.features = resolve_extends_feature_list(self.features, FeatureStrList(), feature_rules).unwrap()
         return result
     
     # def merge_with(self, parent: FeatureNode, feature_rules: FeatureRuleNodeList):

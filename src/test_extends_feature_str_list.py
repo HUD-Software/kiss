@@ -1,22 +1,6 @@
 
-from test_common import create_feature_rule_list, create_incompatible_rule, create_only_one_rule, create_str_list
-from toolchain.nodes.feature_node import FeatureRuleNodeOnlyOne, FeatureStrList, resolve_extends_feature_list
-from toolchain.nodes.property import StrListModifierRemove
-
-
-def create_feature_str_list(values, add_modifiers: list[str], remove_modifiers: list[str]):
-    feature_str_list = FeatureStrList()
-    if isinstance(values, bool):
-        feature_str_list.str_list.override = values
-    else:
-        for value in values:
-            feature_str_list.str_list.override = True
-            feature_str_list.str_list.add_value(value)
-    for modifier in add_modifiers:
-        feature_str_list.str_list.add_value(modifier)
-    for modifier in remove_modifiers:
-        feature_str_list.str_list.add_modifier_remove(modifier)
-    return feature_str_list
+from test_common import create_feature_rule_list, create_feature_str_list, create_incompatible_rule, create_only_one_rule, create_str_list
+from toolchain.nodes.feature_node import FeatureStrList, resolve_extends_feature_list
 
 def test_extends_empty_1():
     feature_str_list_child = create_feature_str_list(False, [], [])

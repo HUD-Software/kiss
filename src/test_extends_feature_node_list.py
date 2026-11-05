@@ -10,8 +10,7 @@
 #         pattern: "*.lib"
 
 from test_common import create_feature_node, create_str_list, create_feature_node_list
-from toolchain.nodes.feature_node import FeatureArgsNode, FeatureNode, FeatureNodeList, FeatureRuleNodeIncompatible, FeatureRuleNodeList, FeatureRuleNodeOnlyOne, FeatureStrList
-from toolchain.nodes.property import StrList
+from toolchain.nodes.feature_node import FeatureNodeList, FeatureRuleNodeIncompatible, FeatureRuleNodeList, FeatureRuleNodeOnlyOne
 
 
 def test_extends_empty():

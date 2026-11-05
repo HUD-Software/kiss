@@ -30,7 +30,9 @@ def test_extends_empty():
     assert result.features.values == set(["F2"])
     assert result.features.remove_modifiers.values == set([])
 
+def test_extends():
 
 def test_extends_feature_node() :
     test_extends_empty()
+    test_extends()
     

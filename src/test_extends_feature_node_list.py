@@ -615,3 +615,6 @@ def test_extends_feature_node_list() :
     test_extends_no_rules_merge_2()
     test_extends_no_rules_merge_3()
     test_extends_no_rules_merge_4()
+
+
+    test_extends_onlyone_rule_merge_1()

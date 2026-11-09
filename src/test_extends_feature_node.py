@@ -11,7 +11,7 @@
 
 from unittest import result
 
-from test_common import create_feature_rule_list, create_feature_str_list, create_only_one_rule, create_str_list
+from test_common import create_feature_rule_node_list, create_feature_str_list, create_only_one_rule, create_str_list
 from toolchain.nodes.feature_node import FeatureNode, FeatureRuleNodeList
 
 def test_extends_empty_1():
@@ -224,7 +224,7 @@ def test_extends_no_rules_4():
 
 def test_extends_1():
     onlyone_rule = create_only_one_rule("one rule F3", "OnlyOne F3", ["L0_F3", "L1_F3", "L2_F3"])
-    feature_rule_list = create_feature_rule_list([onlyone_rule])
+    feature_rule_list = create_feature_rule_node_list([onlyone_rule])
        
     # feature level 0
     feature_level_0 = FeatureNode("level 0")
@@ -267,7 +267,7 @@ def test_extends_1():
 
 def test_extends_2():
     onlyone_rule = create_only_one_rule("one rule F3", "OnlyOne F3", ["L0_F3", "L1_F3", "L2_F3"])
-    feature_rule_list = create_feature_rule_list([onlyone_rule])
+    feature_rule_list = create_feature_rule_node_list([onlyone_rule])
        
     # feature level 0
     feature_level_0 = FeatureNode("level 0")
@@ -310,7 +310,7 @@ def test_extends_2():
 
 def test_extends_3():
     onlyone_rule = create_only_one_rule("one rule F3", "OnlyOne F3", ["L0_F3", "L1_F3", "L2_F3"])
-    feature_rule_list = create_feature_rule_list([onlyone_rule])
+    feature_rule_list = create_feature_rule_node_list([onlyone_rule])
        
     # feature level 0
     feature_level_0 = FeatureNode("level 0")
@@ -353,7 +353,7 @@ def test_extends_3():
 
 def test_extends_4():
     onlyone_rule = create_only_one_rule("one rule F3", "OnlyOne F3", ["L0_F3", "L1_F3", "L2_F3"])
-    feature_rule_list = create_feature_rule_list([onlyone_rule])
+    feature_rule_list = create_feature_rule_node_list([onlyone_rule])
        
     # feature level 0
     feature_level_0 = FeatureNode("level 0")
@@ -396,7 +396,7 @@ def test_extends_4():
 
 def test_extends_5():
     onlyone_rule = create_only_one_rule("one rule F3", "OnlyOne F3", ["L0_F3", "L1_F3", "L2_F3"])
-    feature_rule_list = create_feature_rule_list([onlyone_rule])
+    feature_rule_list = create_feature_rule_node_list([onlyone_rule])
        
     # feature level 0
     feature_level_0 = FeatureNode("level 0")
@@ -439,7 +439,7 @@ def test_extends_5():
 
 def test_extends_6():
     onlyone_rule = create_only_one_rule("one rule F3", "OnlyOne F3", ["L0_F3", "L1_F3", "L2_F3"])
-    feature_rule_list = create_feature_rule_list([onlyone_rule])
+    feature_rule_list = create_feature_rule_node_list([onlyone_rule])
        
     # feature level 0
     feature_level_0 = FeatureNode("level 0")
@@ -483,7 +483,7 @@ def test_extends_6():
 
 def test_extends_7():
     onlyone_rule = create_only_one_rule("one rule F3", "OnlyOne F3", ["L0_F3", "L1_F3", "L2_F3"])
-    feature_rule_list = create_feature_rule_list([onlyone_rule])
+    feature_rule_list = create_feature_rule_node_list([onlyone_rule])
        
     # feature level 0
     feature_level_0 = FeatureNode("level 0")
@@ -526,7 +526,7 @@ def test_extends_7():
 
 def test_extends_8():
     onlyone_rule = create_only_one_rule("one rule F3", "OnlyOne F3", ["L0_F3", "L1_F3", "L2_F3"])
-    feature_rule_list = create_feature_rule_list([onlyone_rule])
+    feature_rule_list = create_feature_rule_node_list([onlyone_rule])
        
     # feature level 0
     feature_level_0 = FeatureNode("level 0")

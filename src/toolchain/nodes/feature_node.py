@@ -261,22 +261,6 @@ class FeatureNode:
             result.features = resolve_extends_feature_list(self.features, FeatureStrList(), feature_rules).unwrap()
         return result
     
-    # def merge_with(self, parent: FeatureNode, feature_rules: FeatureRuleNodeList):
-    #     result = FeatureNode(self.name)
-    #     result.flags = merge_str_list(self.flags, parent.flags)
-    #     result.features = merge_feature_list(self.features, parent.features, feature_rules)
-    #     result.args = copy.deepcopy(self.args if self.args else parent.args) 
-    #     result.description = copy.deepcopy(self.description if self.description else parent.description)
-    #     return result
-    
-    # def apply_modifiers(self, feature_rules: FeatureRuleNodeList) -> FeatureNode:
-    #     result = FeatureNode(self.name)
-    #     result.flags = self.flags.apply_modifiers()
-    #     result.features = self.features.apply_modifiers(feature_rules)
-    #     result.args = copy.deepcopy(self.args)
-    #     result.description = copy.deepcopy(self.description)
-    #     return result
-    
 class FeatureNodeList:
     """Represents the 'features:' block."""
     def __init__(self):
@@ -298,23 +282,6 @@ class FeatureNodeList:
                 return rule
         return None
 
-    # def merge_with(self, parent: FeatureNodeList, feature_rules: FeatureRuleNodeList):
-    #     result = FeatureNodeList()
-    #     if parent:
-    #         for parent_feature in parent.features:
-    #             self_feature = self.get_by_name(parent_feature.name)
-    #             if self_feature:
-    #                 result.add_feature(self_feature.merge_with(parent_feature, feature_rules))
-    #             else:
-    #                 result.add_feature(copy.deepcopy(parent_feature))
-    #     return result
-    
-    # def apply_modifiers(self, feature_rules: FeatureRuleNodeList) -> FeatureNodeList:
-    #     result = FeatureNodeList()
-    #     for feature in self.features:
-    #         result.add_feature(feature.apply_modifiers(feature_rules))
-    #     return result
-
     def resolve_extends(self, parent: FeatureNodeList, feature_rules: FeatureRuleNodeList):
         result = FeatureNodeList()
         parent_features = parent.features if parent else set()
@@ -326,22 +293,20 @@ class FeatureNodeList:
             parent_feature = parent_by_name.get(name)
 
             if self_feature:
+                # In the case the feature exist in child
+                # We extends the child with the parent feature
+                # if the parent feature doesn't exist, feature resolve_extends handle this case
                 result.add_feature(self_feature.resolve_extends(parent_feature, feature_rules))
             elif parent_feature:
-                result.add_feature(copy.deepcopy(parent_feature))
-        return result
-    
-        # result = FeatureNodeList()
-        # # Merge all child 
-        # for feature in self.features:
-        #     parent_feature = parent.get_by_name(feature.name)
-        #     if parent_feature:
-        #         result.add_feature(feature.resolve_extends(parent_feature, feature_rules))
-        #     else:
-        #         result.add_feature(feature.resolve_extends(parent_feature, feature_rules))
-        # raise NotImplemented
-        # return result
-    
+                # In the case the feature exist only in child
+                # We create a new FeatureNode with the same name and description as the parent feature
+                # Then we resolve the extends with the parent feature
+                # This is to ensure that the child feature inherits the name and description from the parent feature
+                # keeping same behavior as before, but without marking flags and features as override if not present in the childn the child
+                self_feature = FeatureNode(parent_feature.name)
+                self_feature.description = parent_feature.description
+                result.add_feature(self_feature.resolve_extends(parent_feature, feature_rules))
+        return result    
 
 class FeatureRuleNode:
     """Represents a feature rule (only-one or incompatible)."""

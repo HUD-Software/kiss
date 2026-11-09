@@ -30,7 +30,7 @@ def create_test_linker_node(common_flag: StrList, specificflags: LinkerSpecificO
         linker_node.linker_overrides[specificflags.name] = specificflags
     return linker_node
 
-def create_feature_rule_list(feature_rule_list : list[FeatureRuleNode]):
+def create_feature_rule_node_list(feature_rule_list : list[FeatureRuleNode]):
     feature_node_rule_list = FeatureRuleNodeList()
     for feature_rule in feature_rule_list:
         feature_node_rule_list.add_feature_rule(feature_rule)

@@ -58,10 +58,10 @@ def yaml_parse_feature(data: dict) -> FeatureNode:
     if not name or not isinstance(name, str):
         raise ValueError("Missing 'name' for feature as string")
 
-    # optional description
-    description = data.get("description", "")
-    if description and not isinstance(description, str):
-        raise ValueError("'description' for feature must be a string")
+    # # optional description
+    # description = data.get("description", "")
+    # if description and not isinstance(description, str):
+    #     raise ValueError("'description' for feature must be a string")
     
     # Create the feature and load informations
     node = FeatureNode(name)

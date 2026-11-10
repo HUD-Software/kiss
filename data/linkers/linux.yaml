@@ -19,8 +19,6 @@ linkers:
       - name: REMOVE_DEAD_CODE
         description: Remove dead code
         flags: ["-Wl,--gc-sections"]
-        features : [A, B]
-        add-features : [Add]
 
       # Optimisations
       - name: LTO

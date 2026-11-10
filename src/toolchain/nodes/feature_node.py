@@ -32,8 +32,15 @@ class IncompatibleViolation:
             f"(rule '{self.rule_name}')"
         )
 
+@dataclass(frozen=True, slots=True)
+class InvalidExtends:
+    child_name: str
+    parent_name: str
 
-type ValidationError = OnlyOneViolation | IncompatibleViolation
+    def __str__(self) -> str:
+        return (f"Extends '{self.child_name}' with '{self.parent_name}'")
+
+type ValidationError = OnlyOneViolation | IncompatibleViolation | InvalidExtends
 
 
 class FeatureArgsNode:
@@ -73,6 +80,9 @@ class FeatureStrList:
     @property
     def remove_modifiers(self) -> StrListModifierRemove :
         return self.str_list.remove_modifiers
+    
+    def is_empty(self):
+        return len(self.values) == 0
     
     # def is_user_defined_values(self) -> bool:
     #     return self.str_list.is_user_defined_values()

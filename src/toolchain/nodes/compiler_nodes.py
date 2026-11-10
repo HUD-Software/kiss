@@ -1,7 +1,8 @@
 
 from __future__ import annotations
 import copy
-from toolchain.nodes.feature_node import FeatureNode, FeatureNodeList, FeatureRuleNodeList, FeatureStrList
+from result import Result, Ok, Err
+from toolchain.nodes.feature_node import FeatureNode, FeatureNodeList, FeatureRuleNodeList, FeatureStrList, ValidationError
 from toolchain.nodes.linker_nodes import LinkerNode, LinkersOverrideNode, merge_linkers_override_node
 from toolchain.nodes.property import StrList
 
@@ -26,9 +27,9 @@ class CompilerNode:
         self.name = name
         self.is_abstract = False
         self.extends = None
-        self.supported_linkers = list[str]()
+        self.supported_linkers = StrList()
         self.default_linker = None
-        self.feature_list = FeatureNodeList()
+        self.feature_list = CompilerFeatureNodeList()
         self.feature_rule_list = FeatureRuleNodeList()
     
     def __eq__(self, other):
@@ -38,57 +39,78 @@ class CompilerNode:
 
     def __hash__(self):
         return hash(self.name)
-    
-    def merge_with(self, parent: CompilerNode):
-        if not parent:
-            return copy.deepcopy(self)
-        """Merge list without applying modifier or dispatching top to bottom hierarchy """
-        assert type(parent) is type(self), "Type mismatch"
-        result = CompilerNode(self.name)
-        result.is_abstract = self.is_abstract
-        result.extends = self.extends
-        result.supported_linkers = self.supported_linkers + parent.supported_linkers
-        result.default_linker = self.default_linker
-        # Apply modifier during merge before merging the feature list
-        # We want to merge feature list according the rules, we must merge feature rule with parent 
-        # but also resolve modifier to validate
-        result.feature_rule_list = self.feature_rule_list.merge_with(parent.feature_rule_list).apply_modifiers()
-        result.feature_list = self.feature_list.merge_with(parent.feature_list, result.feature_rule_list)
-        return result
-    
-    def apply_modifiers(self) -> CompilerNode:
-        """Apply list modifier"""
-        result  = CompilerNode(self.name)
-        result.is_abstract = self.is_abstract
-        result.extends = self.extends
-        result.supported_linkers = self.supported_linkers.copy()
-        result.default_linker = self.default_linker
-        result.feature_rule_list = self.feature_rule_list.apply_modifiers()
-        result.feature_list = self.feature_list.apply_modifiers(result.feature_rule_list)
-        return result
-        
-    def dispatch(self) -> CompilerNode:
-        """ 
-        Dispatch properties from top to bottom hierarchy
-        """
-        result = CompilerNode(self.name)
-        result.is_abstract = self.is_abstract
-        result.extends = self.extends
-        result.supported_linkers = self.supported_linkers.copy()
-        result.default_linker = self.default_linker
-        result.feature_rule_list = copy.deepcopy(self.feature_rule_list)
-        result.feature_list = copy.deepcopy(self.feature_list)
-        return result
 
-    def resolve_extends(self, parent: CompilerNode) -> CompilerNode:
-        if parent:
-            assert parent.name == self.extends
-            node = self.merge_with(parent)
+    def resolve_extends(self, parent: CompilerNode) -> Result[CompilerNode, ValidationError]:
+        result = CompilerNode(self.name)
+        result.is_abstract = self.is_abstract
+        result.extends = self.extends   
+        result.supported_linkers = self.supported_linkers
+        if not parent:
+            result.feature_rule_list = self.feature_rule_list.resolve_extends(FeatureRuleNodeList())
+            match self.feature_list.resolve_extends(FeatureNodeList(), result.feature_rule_list):
+                case Err() as err:
+                    return err
+                case Ok(feature_list):
+                    result.feature_list = feature_list
         else:
-            node = copy.deepcopy(self)
-        node = node.dispatch()
-        node = node.apply_modifiers()
-        return node
+            result.feature_rule_list = self.feature_rule_list.resolve_extends(parent.feature_rule_list)
+            match self.feature_list.resolve_extends(parent.feature_list, result.feature_rule_list):
+                case Err() as err:
+                    return err
+                case Ok(feature_list):
+                    result.feature_list = feature_list
+        return Ok(result)
+    
+    # def merge_with(self, parent: CompilerNode):
+    #     if not parent:
+    #         return copy.deepcopy(self)
+    #     """Merge list without applying modifier or dispatching top to bottom hierarchy """
+    #     assert type(parent) is type(self), "Type mismatch"
+    #     result = CompilerNode(self.name)
+    #     result.is_abstract = self.is_abstract
+    #     result.extends = self.extends
+    #     result.supported_linkers = self.supported_linkers + parent.supported_linkers
+    #     result.default_linker = self.default_linker
+    #     # Apply modifier during merge before merging the feature list
+    #     # We want to merge feature list according the rules, we must merge feature rule with parent 
+    #     # but also resolve modifier to validate
+    #     result.feature_rule_list = self.feature_rule_list.merge_with(parent.feature_rule_list).apply_modifiers()
+    #     result.feature_list = self.feature_list.merge_with(parent.feature_list, result.feature_rule_list)
+    #     return result
+    
+    # def apply_modifiers(self) -> CompilerNode:
+    #     """Apply list modifier"""
+    #     result  = CompilerNode(self.name)
+    #     result.is_abstract = self.is_abstract
+    #     result.extends = self.extends
+    #     result.supported_linkers = self.supported_linkers.copy()
+    #     result.default_linker = self.default_linker
+    #     result.feature_rule_list = self.feature_rule_list.apply_modifiers()
+    #     result.feature_list = self.feature_list.apply_modifiers(result.feature_rule_list)
+    #     return result
+        
+    # def dispatch(self) -> CompilerNode:
+    #     """ 
+    #     Dispatch properties from top to bottom hierarchy
+    #     """
+    #     result = CompilerNode(self.name)
+    #     result.is_abstract = self.is_abstract
+    #     result.extends = self.extends
+    #     result.supported_linkers = self.supported_linkers.copy()
+    #     result.default_linker = self.default_linker
+    #     result.feature_rule_list = copy.deepcopy(self.feature_rule_list)
+    #     result.feature_list = copy.deepcopy(self.feature_list)
+    #     return result
+
+    # def resolve_extends(self, parent: CompilerNode) -> CompilerNode:
+    #     if parent:
+    #         assert parent.name == self.extends
+    #         node = self.merge_with(parent)
+    #     else:
+    #         node = copy.deepcopy(self)
+    #     node = node.dispatch()
+    #     node = node.apply_modifiers()
+    #     return node
 
 class CompilerSpecificOverrideNode:
     """Represents a per-compiler override inside a 'compilers:' node.

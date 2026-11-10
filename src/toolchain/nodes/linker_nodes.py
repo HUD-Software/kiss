@@ -1,7 +1,7 @@
 from __future__ import annotations
 import copy
 from result import Err, Ok, Result
-from toolchain.nodes.feature_node import FeatureNodeList, FeatureRuleNodeList, FeatureStrList, ValidationError
+from toolchain.nodes.feature_node import FeatureNodeList, FeatureRuleNodeList, FeatureStrList, InvalidExtends, ValidationError, resolve_extends_feature_list
 from toolchain.nodes.property import  StrList, resolve_extends_str_list
 
 class LinkerNode:
@@ -82,18 +82,36 @@ class LinkerSpecificOverrideNode:
 
     def __hash__(self):
         return hash(self.name)
-   
-    def apply_modifiers(self, linker_feature_rules: FeatureRuleNodeList) -> LinkerSpecificOverrideNode:
+
+    def resolve_extends(self, parent: LinkerSpecificOverrideNode | None, linker_feature_rules: FeatureRuleNodeList) -> Result[LinkerSpecificOverrideNode, ValidationError]:
+
+        if parent:
+            if(self.name != parent.name):
+                return Err(InvalidExtends(self.name, parent.name))
+
+        parent_flags = parent.flags if parent else StrList()
+        parent_features = parent.features if parent else FeatureStrList()
+
         result = LinkerSpecificOverrideNode(self.name)
-        result.flags = self.flags.apply_modifiers()
-        result.features = self.features.apply_modifiers(linker_feature_rules)
-        return result
+        result.flags = resolve_extends_str_list(self.flags, parent_flags)
+        match resolve_extends_feature_list(self.features,parent_features, linker_feature_rules):
+            case Err() as err:
+                return err
+            case Ok(feature_list):
+                result.features = feature_list
+        return Ok(result)
     
-    def merge_with(self, parent: LinkerSpecificOverrideNode, linker_feature_rules: FeatureRuleNodeList) -> LinkerSpecificOverrideNode:
-        result = LinkerSpecificOverrideNode(self.name)
-        result.flags = merge_str_list(self.flags, parent.flags)
-        result.features = merge_feature_list(self.features, parent.features, linker_feature_rules)
-        return result
+    # def apply_modifiers(self, linker_feature_rules: FeatureRuleNodeList) -> LinkerSpecificOverrideNode:
+    #     result = LinkerSpecificOverrideNode(self.name)
+    #     result.flags = self.flags.apply_modifiers()
+    #     result.features = self.features.apply_modifiers(linker_feature_rules)
+    #     return result
+    
+    # def merge_with(self, parent: LinkerSpecificOverrideNode, linker_feature_rules: FeatureRuleNodeList) -> LinkerSpecificOverrideNode:
+    #     result = LinkerSpecificOverrideNode(self.name)
+    #     result.flags = merge_str_list(self.flags, parent.flags)
+    #     result.features = merge_feature_list(self.features, parent.features, linker_feature_rules)
+    #     return result
 
     def apply_remove(self):
         result = LinkerSpecificOverrideNode(self.name)

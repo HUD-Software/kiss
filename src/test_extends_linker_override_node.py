@@ -1,4 +1,4 @@
-from test_common import create_specific_linker_node, create_str_list, create_test_linker_node
+from test_common import create_specific_linker_override_node, create_str_list, create_test_linker_node
 from toolchain.nodes.linker_nodes import LinkersOverrideNode
 
 
@@ -13,7 +13,7 @@ def create_1() -> LinkersOverrideNode :
     """
     common_flag = create_str_list([], ["C1", "C2"], ["C1", "C3"])
     ld_flags = create_str_list([], ["LD1", "C3", "LD2"], ["LD2"])
-    ld_linker = create_specific_linker_node("ld", ld_flags)
+    ld_linker = create_specific_linker_override_node("ld", ld_flags)
     return create_test_linker_node( common_flag, ld_linker)
 
 def create_2() -> LinkersOverrideNode:
@@ -28,7 +28,7 @@ def create_2() -> LinkersOverrideNode:
     """
     common_flag = create_str_list(["C0"], ["C1", "C2"], ["C1", "C3"])
     ld_flags = create_str_list([], ["LD1", "C3", "LD2"], ["LD2"])
-    ld_linker = create_specific_linker_node("ld", ld_flags)
+    ld_linker = create_specific_linker_override_node("ld", ld_flags)
     return create_test_linker_node( common_flag, ld_linker)
 
 def create_3() -> LinkersOverrideNode:
@@ -43,7 +43,7 @@ def create_3() -> LinkersOverrideNode:
     """
     common_flag = create_str_list([], ["C1", "C2"], ["C1", "C3"])
     ld_flags = create_str_list(["LD0"], ["LD1", "C3", "LD2"], ["LD2"])
-    ld_linker = create_specific_linker_node("ld", ld_flags)
+    ld_linker = create_specific_linker_override_node("ld", ld_flags)
     return create_test_linker_node( common_flag, ld_linker)
 
 def create_4() -> LinkersOverrideNode:
@@ -59,7 +59,7 @@ def create_4() -> LinkersOverrideNode:
     """
     common_flag = create_str_list(["C0"], ["C1", "C2"], ["C1", "C3"])
     ld_flags = create_str_list(["LD0"], ["LD1", "C3", "LD2"], ["LD2"])
-    ld_linker = create_specific_linker_node("ld", ld_flags)
+    ld_linker = create_specific_linker_override_node("ld", ld_flags)
     return create_test_linker_node( common_flag, ld_linker)
 
 def test_1() :
@@ -733,7 +733,7 @@ def create_a():
     """
     extends_common_flag = create_str_list([], ["AC1", "AC3", "AC4"], ["AC1", "ALD1", "AC2"])
     extends_ld_flags = create_str_list([], ["ALD1", "ALD2", "ALD3"], ["ALD2", "AC4"])
-    ld_child_linker = create_specific_linker_node("ld", extends_ld_flags)
+    ld_child_linker = create_specific_linker_override_node("ld", extends_ld_flags)
     return create_test_linker_node(extends_common_flag, ld_child_linker)
 
 def create_b():
@@ -748,7 +748,7 @@ def create_b():
     """
     extends_common_flag = create_str_list(["AC0"], ["AC1", "AC3", "AC4"], ["AC1", "ALD1", "AC2"])
     extends_ld_flags = create_str_list([], ["ALD1", "ALD2", "ALD3"], ["ALD2", "AC4"])
-    ld_child_linker = create_specific_linker_node("ld", extends_ld_flags)
+    ld_child_linker = create_specific_linker_override_node("ld", extends_ld_flags)
     return create_test_linker_node(extends_common_flag, ld_child_linker)
 
 def create_c():
@@ -763,7 +763,7 @@ def create_c():
     """
     extends_common_flag = create_str_list([], ["AC1", "AC3", "AC4"], ["AC1", "ALD1", "AC2"])
     extends_ld_flags = create_str_list(["ALD0"], ["ALD1", "ALD2", "ALD3"], ["ALD2", "AC4"])
-    ld_child_linker = create_specific_linker_node("ld", extends_ld_flags)
+    ld_child_linker = create_specific_linker_override_node("ld", extends_ld_flags)
     return create_test_linker_node(extends_common_flag, ld_child_linker)
 
 def create_d():
@@ -779,7 +779,7 @@ def create_d():
     """
     extends_common_flag = create_str_list(["AC0"], ["AC1", "AC3", "AC4"], ["AC1", "ALD1", "AC2"])
     extends_ld_flags = create_str_list(["ALD0"], ["ALD1", "ALD2", "ALD3"], ["ALD2", "AC4"])
-    ld_child_linker = create_specific_linker_node("ld", extends_ld_flags)
+    ld_child_linker = create_specific_linker_override_node("ld", extends_ld_flags)
     return create_test_linker_node(extends_common_flag, ld_child_linker)
 
 def test_a_extends_1():
@@ -1915,7 +1915,7 @@ def create_linker_only_1() :
     #     add-flags: [LD1, LD3]
     #     remove-flags: [LD1, LD2]
     ld_flags = create_str_list(["LD0"], ["LD1", "LD3"], ["LD1", "LD2"])
-    ld_linker = create_specific_linker_node("ld", ld_flags)
+    ld_linker = create_specific_linker_override_node("ld", ld_flags)
     return create_test_linker_node(None, ld_linker)
 
 def create_linker_only_2() : 
@@ -1924,7 +1924,7 @@ def create_linker_only_2() :
     #     add-flags: [LD1, LD3]
     #     remove-flags: [LD1, LD2]
     ld_flags = create_str_list([], ["LD1", "LD3"], ["LD1", "LD2"])
-    ld_linker = create_specific_linker_node("ld", ld_flags)
+    ld_linker = create_specific_linker_override_node("ld", ld_flags)
     return create_test_linker_node(None, ld_linker)
 
 def test_linker_only_1():
@@ -2251,7 +2251,7 @@ def test_common_only_2_extends_linker_only_2():
     assert ld.flags.values == set(["LD3", "E3"])
     assert ld.flags.remove_modifiers.values == set([]) 
 
-def test_extends_linker_node() :
+def test_extends_linker_override_node() :
 
     test_1()
     test_2()

@@ -17,7 +17,7 @@ def test_extends_empty():
     result = FeatureRuleNodeList().resolve_extends(FeatureRuleNodeList())
     assert result.is_empty()
 
-def test_only_one_extends_empty():
+def test_only_one_extends_parent_empty():
     onlyone_features = create_str_list(False, ["A1", "A2"], ["A1", "A3"] )
     onlyone_rule = FeatureRuleNodeOnlyOne("A", "desc a", onlyone_features)    
     feature_rule_list = create_feature_rule_node_list([onlyone_rule])
@@ -37,7 +37,7 @@ def test_only_one_extends_empty():
     assert result_rule.feature_names.remove_modifiers.values == set()
     assert result_rule.feature_names.remove_modifiers.operation == onlyone_rule.feature_names.remove_modifiers.operation
 
-def test_only_one_extends_empty_override():
+def test_only_one_extends_parent_empty_override():
     onlyone_features = create_str_list(True,["A1", "A2"], ["A1", "A3"] )
     onlyone_rule = FeatureRuleNodeOnlyOne("A", "desc a", onlyone_features)    
     feature_rule_list = create_feature_rule_node_list([onlyone_rule])
@@ -57,7 +57,7 @@ def test_only_one_extends_empty_override():
     assert result_rule.feature_names.remove_modifiers.values == set()
     assert result_rule.feature_names.remove_modifiers.operation == onlyone_rule.feature_names.remove_modifiers.operation
 
-def test_incompatible_extends_empty():
+def test_incompatible_extends_parent_empty():
     incompatible_features = create_str_list(False,["A1", "A2"], ["A1", "A3"] )
     incompatible_rule = FeatureRuleNodeIncompatible("A", "desc a", "A0", incompatible_features)    
     feature_rule_list = create_feature_rule_node_list([incompatible_rule])
@@ -78,7 +78,7 @@ def test_incompatible_extends_empty():
     assert result_rule.incompatible_with.remove_modifiers.values == set()
     assert result_rule.incompatible_with.remove_modifiers.operation == incompatible_rule.incompatible_with.remove_modifiers.operation
 
-def test_incompatible_extends_empty_override():
+def test_incompatible_extends_parent_empty_override():
     incompatible_features = create_str_list(True,["A1", "A2"], ["A1", "A3"] )
     incompatible_rule = FeatureRuleNodeIncompatible("A", "desc a", "A0", incompatible_features)    
     feature_rule_list = create_feature_rule_node_list([incompatible_rule])
@@ -694,10 +694,10 @@ def test_extends_feature_rule_node_list():
 
     test_extends_empty()
 
-    test_only_one_extends_empty()
-    test_only_one_extends_empty_override()
-    test_incompatible_extends_empty()
-    test_incompatible_extends_empty_override()
+    test_only_one_extends_parent_empty()
+    test_only_one_extends_parent_empty_override()
+    test_incompatible_extends_parent_empty()
+    test_incompatible_extends_parent_empty_override()
 
     test_empty_extends_only_one_extends()
     test_empty_extends_only_one_extends_override()

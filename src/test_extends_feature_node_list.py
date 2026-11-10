@@ -35,7 +35,7 @@ def test_extends_empty():
     result = FeatureNodeList().resolve_extends(FeatureNodeList(), feature_rule_list).unwrap()
     assert result.is_empty()
 
-def test_extends_child_empty_no_rules_1():
+def test_extends_parent_empty_no_rules_1():
     # level 0 feature list
     level_0_feature_list = FeatureNodeList()
 
@@ -69,7 +69,7 @@ def test_extends_child_empty_no_rules_1():
     assert feature.features.override == False
     assert feature.features.values == set(["L1_B_F2", "L1_B_F3"])
 
-def test_extends_child_empty_no_rules_2():
+def test_extends_parent_empty_no_rules_2():
     # level 0 feature list
     level_0_feature_list = FeatureNodeList()
 
@@ -103,7 +103,7 @@ def test_extends_child_empty_no_rules_2():
     assert feature.features.override == True
     assert feature.features.values == set(["L1_B_F2", "L1_B_F3"])
 
-def test_extends_parent_empty_no_rules_1():
+def test_extends_child_empty_no_rules_1():
     # Level 0 feature list
     feature_level_0_a_flags = create_str_list(False, ["L0_A_1", "L0_A_2"], ["L0_A_1", "L0_A_3"] )
     feature_level_0_a_features = create_feature_str_list(False, ["L0_A_F1", "L0_A_F2", "L0_A_F3"], ["L0_A_F1"] )
@@ -138,7 +138,7 @@ def test_extends_parent_empty_no_rules_1():
     assert feature.features.override == False
     assert feature.features.values == set(["L0_B_F2", "L0_B_F3"])
 
-def test_extends_parent_empty_no_rules_2():
+def test_extends_child_empty_no_rules_2():
     # Level 0 feature list
     feature_level_0_a_flags = create_str_list(True, ["L0_A_1", "L0_A_2"], ["L0_A_1", "L0_A_3"] )
     feature_level_0_a_features = create_feature_str_list(True, ["L0_A_F1", "L0_A_F2", "L0_A_F3"], ["L0_A_F1"] )
@@ -1849,10 +1849,10 @@ def test_extends_rules_8():
 def test_extends_feature_node_list() :
     test_extends_empty()
 
-    test_extends_child_empty_no_rules_1()
-    test_extends_child_empty_no_rules_2()
     test_extends_parent_empty_no_rules_1()
     test_extends_parent_empty_no_rules_2()
+    test_extends_child_empty_no_rules_1()
+    test_extends_child_empty_no_rules_2()
 
     test_extends_no_rules_no_merge_1()
     test_extends_no_rules_no_merge_2()

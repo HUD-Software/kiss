@@ -10,7 +10,7 @@
 from test_common import create_feature_rule_node_list, create_feature_str_list, create_only_one_rule, create_str_list
 from toolchain.nodes.feature_node import FeatureNode, FeatureRuleNodeList
 
-def test_extends_empty_1():
+def test_extends_parent_empty_1():
     # feature level 0
     feature_level_0 = FeatureNode("level 0")
     feature_level_0.description = "feature level 0"
@@ -28,7 +28,7 @@ def test_extends_empty_1():
     assert result.features.values == set(["L0_F2", "L0_F3"])
     assert result.features.remove_modifiers.values == set([])
 
-def test_extends_empty_2():
+def test_extends_parent_empty_2():
     # feature level 0
     feature_level_0 = FeatureNode("level 0")
     feature_level_0.description = "feature level 0"
@@ -565,8 +565,8 @@ def test_extends_8():
 
 def test_extends_feature_node() :
     
-    test_extends_empty_1()
-    test_extends_empty_2()
+    test_extends_parent_empty_1()
+    test_extends_parent_empty_2()
 
     test_extends_no_rules_1()
     test_extends_no_rules_2()

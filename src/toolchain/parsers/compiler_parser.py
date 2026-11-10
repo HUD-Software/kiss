@@ -78,10 +78,10 @@ def yaml_parse_compiler_feature(data: dict) -> CompilerFeatureNode:
     if not name or not isinstance(name, str):
         raise ValueError("Missing 'name' for feature as string")
 
-    # optional description
-    description = data.get("description", "")
-    if description and not isinstance(description, str):
-        raise ValueError("'description' for feature must be a string")
+    # # optional description
+    # description = data.get("description", "")
+    # if description and not isinstance(description, str):
+    #     raise ValueError("'description' for feature must be a string")
 
     
     # Create the feature and load informations
@@ -133,13 +133,10 @@ def yaml_parse_compiler(data: dict) -> CompilerNode:
                 pass
             case "features":
                 node.feature_list = yaml_parse_compiler_feature_list(value)
-            # case FeatureNodeList.NAME:
-            #     feature_list = yaml_parse_compiler_feature_list(value)
-            #     if feature_list.features:
-            #         node.feature_list = feature_list    
             case "feature-rules":
                 feature_rule_list = yaml_parse_feature_rule_list(value)
-                node.feature_rule_list = feature_rule_list
+                if not feature_rule_list.is_empty():
+                    node.feature_rule_list = feature_rule_list
             case "is_abstract":
                 if not isinstance(value, bool):
                     raise ValueError(f"'is_abstract' must be a boolean value -> {value} in ({name})")
@@ -148,16 +145,19 @@ def yaml_parse_compiler(data: dict) -> CompilerNode:
                 if not isinstance(value, str):
                     raise ValueError(f"'extends' must be a string value -> {value} in ({name})")
                 node.extends = value
-            case "supported-linkers":
-                if not isinstance(value, list) or any(not isinstance(sl, str) for sl in value):
-                    raise ValueError(f"'supported-linkers' must be a list of string -> {value} in ({name})")
-                node.supported_linkers = value
+            # case "supported-linkers":
+            #     if not isinstance(value, list) or any(not isinstance(sl, str) for sl in value):
+            #         raise ValueError(f"'supported-linkers' must be a list of string -> {value} in ({name})")
+            #     node.supported_linkers = value
             case "default-linker":
                 if not isinstance(value, str):
                     raise ValueError(f"'default-linker' must be a string value -> {value} in ({name})")
                 node.default_linker = value
             case _:
-                raise ValueError(f"'{key}:{value}' is not a valid key ({name})")
+                if try_parse_list_modifier("supported-linkers", node.supported_linkers, key, value):
+                    continue
+                else:   
+                    raise ValueError(f"'{key}:{value}' is not a valid key ({name})")
     return node
 
 

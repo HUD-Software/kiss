@@ -17,9 +17,10 @@ def create_str_list(values, add_modifiers: list[str], remove_modifiers: list[str
         str_list.add_modifier_remove(modifier)
     return str_list
 
-def create_specific_linker_node(name: str, flags: StrList) -> LinkerSpecificOverrideNode:
+def create_specific_linker_override_node(name: str, flags: StrList, features: FeatureStrList) -> LinkerSpecificOverrideNode:
     linker_node = LinkerSpecificOverrideNode(name)
     linker_node.flags = flags
+    linker_node.features = features
     return linker_node
 
 def create_test_linker_node(common_flag: StrList, specificflags: LinkerSpecificOverrideNode) -> LinkersOverrideNode:

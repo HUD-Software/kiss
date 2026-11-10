@@ -213,8 +213,8 @@ def load_context(directory: str) -> KissContext:
     #             project_types[name] = user_project_type.resolve_extends(project_types[name])
     #         else:
     #             project_types[name] = user_project_type
-    # project_types = resolve_extends(project_types)
-    linkers = ExtendResolver(linkers).resolve_extends(lambda node, parent: node.resolve_extends(parent))
+    # project_types = resolve_extends(project_types)()
+    linkers = ExtendResolver(linkers).resolve_extends(lambda node, parent: node.resolve_extends(parent).unwrap())
     # compilers = ExtendResolver(compilers).resolve_extends(lambda node, parent: node.resolve_extends(parent))
     project_types = ExtendResolver(project_types).resolve_extends(lambda node, parent: node.resolve_extends(parent, linkers, compilers))
 

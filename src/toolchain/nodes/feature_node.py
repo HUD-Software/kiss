@@ -250,16 +250,24 @@ class FeatureNode:
     def __hash__(self):
         return hash(self.name)
 
-    def resolve_extends(self, parent: FeatureNode, feature_rules: FeatureRuleNodeList):
+    def resolve_extends(self, parent: FeatureNode, feature_rules: FeatureRuleNodeList) -> Result[FeatureNode, ValidationError]:
         result = FeatureNode(self.name)
         result.description = self.description
         if parent:
             result.flags = resolve_extends_str_list(self.flags, parent.flags)
-            result.features = resolve_extends_feature_list(self.features, parent.features, feature_rules).unwrap()
+            match resolve_extends_feature_list(self.features, parent.features, feature_rules):
+                case Err() as err:
+                    return err
+                case Ok(feature_list):
+                    result.features = feature_list
         else:
             result.flags = resolve_extends_str_list(self.flags, StrList())
-            result.features = resolve_extends_feature_list(self.features, FeatureStrList(), feature_rules).unwrap()
-        return result
+            match resolve_extends_feature_list(self.features, FeatureStrList(), feature_rules):
+                case Err() as err:
+                    return err
+                case Ok(feature_list):
+                    result.features = feature_list
+        return Ok(result)
     
 class FeatureNodeList:
     """Represents the 'features:' block."""
@@ -282,7 +290,7 @@ class FeatureNodeList:
                 return rule
         return None
 
-    def resolve_extends(self, parent: FeatureNodeList, feature_rules: FeatureRuleNodeList):
+    def resolve_extends(self, parent: FeatureNodeList, feature_rules: FeatureRuleNodeList) -> Result[FeatureNodeList, ValidationError]:
         result = FeatureNodeList()
         parent_features = parent.features if parent else set()
         self_by_name = {r.name: r for r in self.features}
@@ -296,7 +304,12 @@ class FeatureNodeList:
                 # In the case the feature exist in child
                 # We extends the child with the parent feature
                 # if the parent feature doesn't exist, feature resolve_extends handle this case
-                result.add_feature(self_feature.resolve_extends(parent_feature, feature_rules))
+                match self_feature.resolve_extends(parent_feature, feature_rules):
+                    case Err() as err:
+                        return err
+                    case Ok(feature):
+                       result.add_feature(feature)
+
             elif parent_feature:
                 # In the case the feature exist only in child
                 # We create a new FeatureNode with the same name and description as the parent feature
@@ -305,8 +318,12 @@ class FeatureNodeList:
                 # keeping same behavior as before, but without marking flags and features as override if not present in the childn the child
                 self_feature = FeatureNode(parent_feature.name)
                 self_feature.description = parent_feature.description
-                result.add_feature(self_feature.resolve_extends(parent_feature, feature_rules))
-        return result    
+                match self_feature.resolve_extends(parent_feature, feature_rules):
+                    case Err() as err:
+                        return err
+                    case Ok(feature):
+                        result.add_feature(feature)
+        return Ok(result)
 
 class FeatureRuleNode:
     """Represents a feature rule (only-one or incompatible)."""

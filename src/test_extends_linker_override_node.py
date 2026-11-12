@@ -16,9 +16,9 @@ def create_1() -> LinkersOverrideNode :
           remove-flags: [LDF2] 
     """
     common_flag = create_str_list([], ["C1", "C2"], ["C1", "C3"])
-    common_features = create_feature_str_list([], ["CF1", "CF2"], ["CF1", "CF3"])
+    common_features = create_feature_str_list(False, ["CF1", "CF2"], ["CF1", "CF3"])
     ld_flags = create_str_list([], ["LD1", "C3", "LD2"], ["LD2"])
-    ld_features = create_feature_str_list([], ["LDF1", "CF3", "LDF2"], ["LDF2"])
+    ld_features = create_feature_str_list(False, ["LDF1", "CF3", "LDF2"], ["LDF2"])
     ld_linker = create_specific_linker_override_node("ld", ld_flags, ld_features)
     return create_linker_override_node(common_flag, common_features, ld_linker)
 
@@ -38,9 +38,9 @@ def create_2() -> LinkersOverrideNode:
         remove-flags: [LDF2] 
     """
     common_flag = create_str_list(["C0"], ["C1", "C2"], ["C1", "C3"])
-    common_features = create_feature_str_list(["CF0"], ["CF1", "CF2"], ["CF1", "CF3"])
+    common_features = create_feature_str_list(True, ["CF0", "CF1", "CF2"], ["CF1", "CF3"])
     ld_flags = create_str_list([], ["LD1", "C3", "LD2"], ["LD2"])
-    ld_features = create_feature_str_list([], ["LDF1", "CF3", "LDF2"], ["LDF2"])
+    ld_features = create_feature_str_list(False, ["LDF1", "CF3", "LDF2"], ["LDF2"])
     ld_linker = create_specific_linker_override_node("ld", ld_flags, ld_features)
     return create_linker_override_node( common_flag, common_features, ld_linker)
 
@@ -60,9 +60,9 @@ def create_3() -> LinkersOverrideNode:
           remove-flags: [LDF2]
     """
     common_flag = create_str_list([], ["C1", "C2"], ["C1", "C3"])
-    common_features = create_feature_str_list([], ["CF1", "CF2"], ["CF1", "CF3"])
+    common_features = create_feature_str_list(False, ["CF1", "CF2"], ["CF1", "CF3"])
     ld_flags = create_str_list(["LD0"], ["LD1", "C3", "LD2"], ["LD2"])
-    ld_features = create_feature_str_list(["LDF0"], ["LDF1", "CF3", "LDF2"], ["LDF2"])
+    ld_features = create_feature_str_list(True, ["LDF0", "LDF1", "CF3", "LDF2"], ["LDF2"])
     ld_linker = create_specific_linker_override_node("ld", ld_flags, ld_features)
     return create_linker_override_node( common_flag, common_features, ld_linker)
 
@@ -84,9 +84,9 @@ def create_4() -> LinkersOverrideNode:
        remove-flags: [LDF2]
     """
     common_flag = create_str_list(["C0"], ["C1", "C2"], ["C1", "C3"])
-    common_features = create_feature_str_list(["CF0"], ["CF1", "CF2"], ["CF1", "CF3"])
+    common_features = create_feature_str_list(True, ["CF0", "CF1", "CF2"], ["CF1", "CF3"])
     ld_flags = create_str_list(["LD0"], ["LD1", "C3", "LD2"], ["LD2"])
-    ld_features = create_feature_str_list(["LDF0"], ["LDF1", "CF3", "LDF2"], ["LDF2"])
+    ld_features = create_feature_str_list(True, ["LDF0", "LDF1", "CF3", "LDF2"], ["LDF2"])
     ld_linker = create_specific_linker_override_node("ld", ld_flags, ld_features)
     return create_linker_override_node( common_flag, common_features, ld_linker)
 
@@ -94,50 +94,73 @@ def test_1() :
     #  linkers:
     #  add-flags: [C1, C2]
     #  remove-flags: [C1, C3]
-    #    ld:
-    #      add-flags: [LD1, C3, LD2]
-    #      remove-flags: [LD2] 
+    #  add-features: [CF1, CF2]
+    #  remove-features: [CF1, CF3]
+    #  ld:
+    #    add-flags: [LD1, C3, LD2]
+    #    remove-flags: [LD2] 
+    #    add-featres: [LDF1, CF3, LDF2]
+    #    remove-flags: [LDF2] 
     base_linker_node = create_1()
 
     #  linkers: (Extended)
     #   add-flags: [C2] # C1 removed
-    #   remove-flags: [C1, C3] # Not changed
+    #   remove-flags: [] # Emptied
+    #   add-features: [CF2] # CF1 removed
+    #   remove-features: [] # Emptied
     #   ld:
-    #    add-flags: [LD1, C3, C2] # LD2 removed 
-    #    remove-flags: [LD2] # Not changed
-    extended_base_linker_node = base_linker_node.resolve_extends(None, {})
+    #     add-flags: [LD1, C3, C2] # C2 added, LD2 removed 
+    #     remove-flags: [] # Emptied
+    #     add-features: [LDF1, CF3, CF2] # CF2 added, LDF2 removed 
+    #     remove-flags: [] # Emptied
+    extended_base_linker_node = base_linker_node.resolve_extends(None, {}).unwrap()
 
     # Validate result
     assert extended_base_linker_node.common_linker.flags.values == set(["C2"])
     assert extended_base_linker_node.common_linker.flags.remove_modifiers.values == set([])
+    assert extended_base_linker_node.common_linker.features.values == set(["CF2"])
+    assert extended_base_linker_node.common_linker.features.remove_modifiers.values == set([])
     ld = extended_base_linker_node.linker_overrides.get("ld")
     assert ld.flags.values == set(["C2", "C3", "LD1"])
     assert ld.flags.remove_modifiers.values == set([]) 
+    assert ld.features.values == set(["CF2", "CF3", "LDF1"])
+    assert ld.features.remove_modifiers.values == set([]) 
 
 def test_2() :
     #  linkers:
     #    flags: [C0]
     #    add-flags: [C1, C2]
     #    remove-flags: [C1, C3]
+    #    features : [CF0]
+    #    add-features: [CF1, CF2]
+    #    remove-features: [CF1, CF3]
     #    ld:
     #      add-flags: [LD1, C3, LD2]
     #      remove-flags: [LD2]
+    #      add-featres: [LDF1, CF3, LDF2]
+    #      remove-flags: [LDF2]
     base_linker_node = create_2()
 
     #  linkers: (Extended)
     #   add-flags: [C0, C2] # C1 removed, C0 added
-    #   remove-flags: [C1, C3] # Not changed
+    #   remove-flags: [] # Emptied
+    #   add-features: [CF1, CF2] # C1 removed, C0 added
+    #   remove-features: [CF1, CF3]
     #   ld:
     #    add-flags: [LD1, C3, C2, C0] # C1 and LD2 removed
     #    remove-flags: [LD2] # Not changed
-    extended_base_linker_node = base_linker_node.resolve_extends(None, {})
+    extended_base_linker_node = base_linker_node.resolve_extends(None, {}).unwrap()
 
     # Validate result
     assert extended_base_linker_node.common_linker.flags.values == set(["C0", "C2"])
     assert extended_base_linker_node.common_linker.flags.remove_modifiers.values == set([])
+    assert extended_base_linker_node.common_linker.features.values == set(["CF0", "CF2"])
+    assert extended_base_linker_node.common_linker.features.remove_modifiers.values == set([])
     ld = extended_base_linker_node.linker_overrides.get("ld")
     assert ld.flags.values == set(["C0", "C2", "C3", "LD1"])
     assert ld.flags.remove_modifiers.values == set([]) 
+    assert ld.features.values == set(["CF0", "CF2", "CF3", "LDF1"])
+    assert ld.features.remove_modifiers.values == set([]) 
 
 def test_3() :
     #  linkers:
@@ -354,15 +377,15 @@ def create_common_only_1():
     #   add-flags: [E1, E3]
     #   remove-flags: [E1, E2]
     extends_common_flags = create_str_list(["E0"], ["E1", "E3"], ["E1", "E2"])
-    extends_common_features = create_feature_str_list(["EF0"], ["EF1", "EF3"], ["EF1", "EF2"])
+    extends_common_features = create_feature_str_list(True, ["EF0", "EF1", "EF3"], ["EF1", "EF2"])
     return create_linker_override_node(extends_common_flags, extends_common_features, None)
 
 def create_common_only_2():
     # linkers:
     #   add-flags: [E1, E3]
     #   remove-flags: [E1, E2]
-    extends_common_flags = create_str_list([], ["E1", "E3"], ["E1", "E2"])
-    extends_common_features = create_feature_str_list([], ["EF1", "EF3"], ["EF1", "EF2"])
+    extends_common_flags = create_str_list(False, ["E1", "E3"], ["E1", "E2"])
+    extends_common_features = create_feature_str_list(False, ["EF1", "EF3"], ["EF1", "EF2"])
     return create_linker_override_node(extends_common_flags, extends_common_features,  None)
 
 def test_common_only_1():
@@ -762,9 +785,9 @@ def create_a():
           remove-flags: [ALD2, AC4]
     """
     extends_common_flags = create_str_list([], ["AC1", "AC3", "AC4"], ["AC1", "ALD1", "AC2"])
-    extends_common_features = create_feature_str_list([], ["ACF1", "ACF3", "ACF4"], ["ACF1", "ALDF1", "ACF2"])
+    extends_common_features = create_feature_str_list(False, ["ACF1", "ACF3", "ACF4"], ["ACF1", "ALDF1", "ACF2"])
     extends_ld_flags = create_str_list([], ["ALD1", "ALD2", "ALD3"], ["ALD2", "AC4"])
-    extends_ld_features = create_feature_str_list([], ["ALDF1", "ALDF2", "ALDF3"], ["ALDF2", "ACF4"])
+    extends_ld_features = create_feature_str_list(False, ["ALDF1", "ALDF2", "ALDF3"], ["ALDF2", "ACF4"])
     ld_child_linker = create_specific_linker_override_node("ld", extends_ld_flags, extends_ld_features)
     return create_linker_override_node(extends_common_flags, extends_common_features, ld_child_linker)
 
@@ -779,9 +802,9 @@ def create_b():
         remove-flags: [ALD2, AC4]
     """
     extends_common_flags = create_str_list(["AC0"], ["AC1", "AC3", "AC4"], ["AC1", "ALD1", "AC2"])
-    extends_common_features = create_feature_str_list(["ACF0"], ["ACF1", "ACF3", "ACF4"], ["ACF1", "ALDF1", "ACF2"])
+    extends_common_features = create_feature_str_list(True, ["ACF0", "ACF1", "ACF3", "ACF4"], ["ACF1", "ALDF1", "ACF2"])
     extends_ld_flags = create_str_list([], ["ALD1", "ALD2", "ALD3"], ["ALD2", "AC4"])
-    extends_ld_features = create_feature_str_list([], ["ALDF1", "ALDF2", "ALDF3"], ["ALDF2", "ACF4"])
+    extends_ld_features = create_feature_str_list(False, ["ALDF1", "ALDF2", "ALDF3"], ["ALDF2", "ACF4"])
     ld_child_linker = create_specific_linker_override_node("ld", extends_ld_flags, extends_ld_features)
     return create_linker_override_node(extends_common_flags, extends_common_features, ld_child_linker)
 
@@ -796,9 +819,9 @@ def create_c():
         remove-flags: [ALD2, AC4]
     """
     extends_common_flags = create_str_list([], ["AC1", "AC3", "AC4"], ["AC1", "ALD1", "AC2"])
-    extends_common_features = create_feature_str_list([], ["ACF1", "ACF3", "ACF4"], ["ACF1", "ALDF1", "ACF2"])
+    extends_common_features = create_feature_str_list(False, ["ACF1", "ACF3", "ACF4"], ["ACF1", "ALDF1", "ACF2"])
     extends_ld_flags = create_str_list(["ALD0"], ["ALD1", "ALD2", "ALD3"], ["ALD2", "AC4"])
-    extends_ld_features = create_feature_str_list(["ALDF0"], ["ALDF1", "ALDF2", "ALDF3"], ["ALDF2", "ACF4"])
+    extends_ld_features = create_feature_str_list(True, ["ALDF0" "ALDF1", "ALDF2", "ALDF3"], ["ALDF2", "ACF4"])
     ld_child_linker = create_specific_linker_override_node("ld", extends_ld_flags, extends_ld_features)
     return create_linker_override_node(extends_common_flags, extends_common_features, ld_child_linker)
 
@@ -814,9 +837,9 @@ def create_d():
         remove-flags: [ALD2, AC4]
     """
     extends_common_flags = create_str_list(["AC0"], ["AC1", "AC3", "AC4"], ["AC1", "ALD1", "AC2"])
-    extends_common_features = create_feature_str_list(["ACF0"], ["ACF1", "ACF3", "ACF4"], ["ACF1", "ALDF1", "ACF2"])
+    extends_common_features = create_feature_str_list(True, ["ACF0", "ACF1", "ACF3", "ACF4"], ["ACF1", "ALDF1", "ACF2"])
     extends_ld_flags = create_str_list(["ALD0"], ["ALD1", "ALD2", "ALD3"], ["ALD2", "AC4"])
-    extends_ld_features = create_feature_str_list(["ALDF0"], ["ALDF1", "ALDF2", "ALDF3"], ["ALDF2", "ACF4"])
+    extends_ld_features = create_feature_str_list(True, ["ALDF0", "ALDF1", "ALDF2", "ALDF3"], ["ALDF2", "ACF4"])
     ld_child_linker = create_specific_linker_override_node("ld", extends_ld_flags, extends_ld_features)
     return create_linker_override_node(extends_common_flags, extends_common_features, ld_child_linker)
 

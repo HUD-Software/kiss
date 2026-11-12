@@ -73,15 +73,10 @@ def create_incompatible_rule(name: str, description: str, feature: str, feature_
         return FeatureRuleNodeIncompatible(name, description, feature, l)
     raise ValueError("Invalid feature_names type")
 
-def create_feature_str_list(values, add_modifiers: list[str], remove_modifiers: list[str]):
+def create_feature_str_list(override: bool, values: list[str], remove_modifiers: list[str]):
     feature_str_list = FeatureStrList()
-    if isinstance(values, bool):
-        feature_str_list.str_list.override = values
-    else:
-        for value in values:
-            feature_str_list.str_list.override = True
-            feature_str_list.str_list.add_value(value)
-    for modifier in add_modifiers:
+    feature_str_list.str_list.override = override
+    for modifier in values:
         feature_str_list.str_list.add_value(modifier)
     for modifier in remove_modifiers:
         feature_str_list.str_list.add_modifier_remove(modifier)

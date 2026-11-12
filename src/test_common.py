@@ -23,12 +23,14 @@ def create_specific_linker_override_node(name: str, flags: StrList, features: Fe
     linker_node.features = features
     return linker_node
 
-def create_test_linker_node(common_flag: StrList, specificflags: LinkerSpecificOverrideNode) -> LinkersOverrideNode:
+def create_linker_override_node(common_flag: StrList, common_features: FeatureNodeList, specificlinker: LinkerSpecificOverrideNode) -> LinkersOverrideNode:
     linker_node = LinkersOverrideNode()
     if common_flag:
         linker_node.common_linker.flags = common_flag
-    if specificflags:
-        linker_node.linker_overrides[specificflags.name] = specificflags
+    if common_features:
+        linker_node.common_linker.features = common_features
+    if specificlinker:
+        linker_node.linker_overrides[specificlinker.name] = specificlinker
     return linker_node
 
 def create_feature_rule_node_list(feature_rule_list : list[FeatureRuleNode]):

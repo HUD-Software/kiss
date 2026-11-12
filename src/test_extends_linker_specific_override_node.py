@@ -1,8 +1,8 @@
 
 # linkers:
 #     lld-link : # LinkerSpecificOverrideNode
-#     enable-features: []
-#     add-flags: []
+#       enable-features: []
+#       add-flags: []
 
 from test_common import create_feature_rule_node_list, create_feature_str_list, create_only_one_rule, create_specific_linker_override_node, create_str_list
 from toolchain.nodes.feature_node import FeatureRuleNodeList, FeatureStrList
@@ -128,8 +128,8 @@ def test_extends_no_rules_1():
 
 def test_extends_rules_1():
     level_0_node = create_specific_linker_override_node("A",
-                                                            create_str_list(False, ["LV0_0", "LV0_1", "LV0_2"], ["LV0_1"]),
-                                                            create_feature_str_list(False, ["LV0_F0", "LV0_F1", "LV0_F2"], ["LV0_F1"]))
+                                                        create_str_list(False, ["LV0_0", "LV0_1", "LV0_2"], ["LV0_1"]),
+                                                        create_feature_str_list(False, ["LV0_F0", "LV0_F1", "LV0_F2"], ["LV0_F1"]))
     
     level_1_node = create_specific_linker_override_node("A",
                                                         create_str_list(False, ["LV1_0", "LV1_1", "LV1_2"], ["LV1_1"]),
@@ -173,12 +173,352 @@ def test_extends_rules_1():
     assert level_2_node.features.values == set(["LV2_F0", "LV2_F2", "LV1_F2", "LV0_F2"])
     assert level_2_node.features.remove_modifiers.values == set([])
 
+
+def test_extends_rules_2():
+    level_0_node = create_specific_linker_override_node("A",
+                                                        create_str_list(True, ["LV0_0", "LV0_1", "LV0_2"], ["LV0_1"]),
+                                                        create_feature_str_list(True, ["LV0_F0", "LV0_F1", "LV0_F2"], ["LV0_F1"]))
+    
+    level_1_node = create_specific_linker_override_node("A",
+                                                        create_str_list(False, ["LV1_0", "LV1_1", "LV1_2"], ["LV1_1"]),
+                                                        create_feature_str_list(False, ["LV1_F0", "LV1_F1", "LV1_F2"], ["LV1_F1"]))
+
+    level_2_node = create_specific_linker_override_node("A",
+                                                        create_str_list(False, ["LV2_0", "LV2_1", "LV2_2"], ["LV2_1"]),
+                                                        create_feature_str_list(False, ["LV2_F0", "LV2_F1", "LV2_F2"], ["LV2_F1"]))
+
+    # Rule only one 1 replace "LV0_0" in level_0 with 'LV1_0" in level_1
+    onlyone_rule_1 = create_only_one_rule("one rule 1", "one rule 1", ["LV0_F0", "LV1_F0"])
+    # Rule only one 2 replace "LV1_0" in level_0 with 'LV2_0" in level_2
+    onlyone_rule_2 = create_only_one_rule("one rule 2", "one rule 2", ["LV1_F0", "LV2_F0"])
+    feature_rule_list = create_feature_rule_node_list([onlyone_rule_1, onlyone_rule_2])
+
+    # Extends
+    level_0_node = level_0_node.resolve_extends(None, feature_rule_list).unwrap()
+    assert level_0_node.name == "A"
+    assert level_0_node.flags.override == True
+    assert level_0_node.flags.values == set(["LV0_0", "LV0_2"])
+    assert level_0_node.flags.remove_modifiers.values == set([])
+    assert level_0_node.features.override == True
+    assert level_0_node.features.values == set(["LV0_F0", "LV0_F2"])
+    assert level_0_node.features.remove_modifiers.values == set([])
+
+    level_1_node = level_1_node.resolve_extends(level_0_node, feature_rule_list).unwrap()
+    assert level_1_node.name == "A"
+    assert level_1_node.flags.override == False
+    assert level_1_node.flags.values == set(["LV1_0", "LV1_2", "LV0_0", "LV0_2"])
+    assert level_1_node.flags.remove_modifiers.values == set([])
+    assert level_1_node.features.override == False
+    assert level_1_node.features.values == set(["LV1_F0", "LV1_F2", "LV0_F2"])
+    assert level_1_node.features.remove_modifiers.values == set([])
+
+    level_2_node = level_2_node.resolve_extends(level_1_node, feature_rule_list).unwrap()
+    assert level_2_node.name == "A"
+    assert level_2_node.flags.override == False
+    assert level_2_node.flags.values == set(["LV2_0", "LV2_2", "LV1_0", "LV1_2", "LV0_0", "LV0_2"])
+    assert level_2_node.flags.remove_modifiers.values == set([])
+    assert level_2_node.features.override == False
+    assert level_2_node.features.values == set(["LV2_F0", "LV2_F2", "LV1_F2", "LV0_F2"])
+    assert level_2_node.features.remove_modifiers.values == set([])
+
+def test_extends_rules_3():
+    level_0_node = create_specific_linker_override_node("A",
+                                                        create_str_list(False, ["LV0_0", "LV0_1", "LV0_2"], ["LV0_1"]),
+                                                        create_feature_str_list(False, ["LV0_F0", "LV0_F1", "LV0_F2"], ["LV0_F1"]))
+    
+    level_1_node = create_specific_linker_override_node("A",
+                                                        create_str_list(True, ["LV1_0", "LV1_1", "LV1_2"], ["LV1_1"]),
+                                                        create_feature_str_list(True, ["LV1_F0", "LV1_F1", "LV1_F2"], ["LV1_F1"]))
+
+    level_2_node = create_specific_linker_override_node("A",
+                                                        create_str_list(False, ["LV2_0", "LV2_1", "LV2_2"], ["LV2_1"]),
+                                                        create_feature_str_list(False, ["LV2_F0", "LV2_F1", "LV2_F2"], ["LV2_F1"]))
+
+    # Rule only one 1 replace "LV0_0" in level_0 with 'LV1_0" in level_1
+    onlyone_rule_1 = create_only_one_rule("one rule 1", "one rule 1", ["LV0_F0", "LV1_F0"])
+    # Rule only one 2 replace "LV1_0" in level_0 with 'LV2_0" in level_2
+    onlyone_rule_2 = create_only_one_rule("one rule 2", "one rule 2", ["LV1_F0", "LV2_F0"])
+    feature_rule_list = create_feature_rule_node_list([onlyone_rule_1, onlyone_rule_2])
+
+    # Extends
+    level_0_node = level_0_node.resolve_extends(None, feature_rule_list).unwrap()
+    assert level_0_node.name == "A"
+    assert level_0_node.flags.override == False
+    assert level_0_node.flags.values == set(["LV0_0", "LV0_2"])
+    assert level_0_node.flags.remove_modifiers.values == set([])
+    assert level_0_node.features.override == False
+    assert level_0_node.features.values == set(["LV0_F0", "LV0_F2"])
+    assert level_0_node.features.remove_modifiers.values == set([])
+
+    level_1_node = level_1_node.resolve_extends(level_0_node, feature_rule_list).unwrap()
+    assert level_1_node.name == "A"
+    assert level_1_node.flags.override == True
+    assert level_1_node.flags.values == set(["LV1_0", "LV1_2"])
+    assert level_1_node.flags.remove_modifiers.values == set([])
+    assert level_1_node.features.override == True
+    assert level_1_node.features.values == set(["LV1_F0", "LV1_F2"])
+    assert level_1_node.features.remove_modifiers.values == set([])
+
+    level_2_node = level_2_node.resolve_extends(level_1_node, feature_rule_list).unwrap()
+    assert level_2_node.name == "A"
+    assert level_2_node.flags.override == False
+    assert level_2_node.flags.values == set(["LV2_0", "LV2_2", "LV1_0", "LV1_2",])
+    assert level_2_node.flags.remove_modifiers.values == set([])
+    assert level_2_node.features.override == False
+    assert level_2_node.features.values == set(["LV2_F0", "LV2_F2", "LV1_F2"])
+    assert level_2_node.features.remove_modifiers.values == set([])
+
+def test_extends_rules_4():
+    level_0_node = create_specific_linker_override_node("A",
+                                                        create_str_list(False, ["LV0_0", "LV0_1", "LV0_2"], ["LV0_1"]),
+                                                        create_feature_str_list(False, ["LV0_F0", "LV0_F1", "LV0_F2"], ["LV0_F1"]))
+    
+    level_1_node = create_specific_linker_override_node("A",
+                                                        create_str_list(False, ["LV1_0", "LV1_1", "LV1_2"], ["LV1_1"]),
+                                                        create_feature_str_list(False, ["LV1_F0", "LV1_F1", "LV1_F2"], ["LV1_F1"]))
+
+    level_2_node = create_specific_linker_override_node("A",
+                                                        create_str_list(True, ["LV2_0", "LV2_1", "LV2_2"], ["LV2_1"]),
+                                                        create_feature_str_list(True, ["LV2_F0", "LV2_F1", "LV2_F2"], ["LV2_F1"]))
+
+    # Rule only one 1 replace "LV0_0" in level_0 with 'LV1_0" in level_1
+    onlyone_rule_1 = create_only_one_rule("one rule 1", "one rule 1", ["LV0_F0", "LV1_F0"])
+    # Rule only one 2 replace "LV1_0" in level_0 with 'LV2_0" in level_2
+    onlyone_rule_2 = create_only_one_rule("one rule 2", "one rule 2", ["LV1_F0", "LV2_F0"])
+    feature_rule_list = create_feature_rule_node_list([onlyone_rule_1, onlyone_rule_2])
+
+    # Extends
+    level_0_node = level_0_node.resolve_extends(None, feature_rule_list).unwrap()
+    assert level_0_node.name == "A"
+    assert level_0_node.flags.override == False
+    assert level_0_node.flags.values == set(["LV0_0", "LV0_2"])
+    assert level_0_node.flags.remove_modifiers.values == set([])
+    assert level_0_node.features.override == False
+    assert level_0_node.features.values == set(["LV0_F0", "LV0_F2"])
+    assert level_0_node.features.remove_modifiers.values == set([])
+
+    level_1_node = level_1_node.resolve_extends(level_0_node, feature_rule_list).unwrap()
+    assert level_1_node.name == "A"
+    assert level_1_node.flags.override == False
+    assert level_1_node.flags.values == set(["LV1_0", "LV1_2", "LV0_0", "LV0_2"])
+    assert level_1_node.flags.remove_modifiers.values == set([])
+    assert level_1_node.features.override == False
+    assert level_1_node.features.values == set(["LV1_F0", "LV1_F2", "LV0_F2"])
+    assert level_1_node.features.remove_modifiers.values == set([])
+
+    level_2_node = level_2_node.resolve_extends(level_1_node, feature_rule_list).unwrap()
+    assert level_2_node.name == "A"
+    assert level_2_node.flags.override == True
+    assert level_2_node.flags.values == set(["LV2_0", "LV2_2"])
+    assert level_2_node.flags.remove_modifiers.values == set([])
+    assert level_2_node.features.override == True
+    assert level_2_node.features.values == set(["LV2_F0", "LV2_F2"])
+    assert level_2_node.features.remove_modifiers.values == set([])
+
+def test_extends_rules_5():
+    level_0_node = create_specific_linker_override_node("A",
+                                                        create_str_list(True, ["LV0_0", "LV0_1", "LV0_2"], ["LV0_1"]),
+                                                        create_feature_str_list(True, ["LV0_F0", "LV0_F1", "LV0_F2"], ["LV0_F1"]))
+    
+    level_1_node = create_specific_linker_override_node("A",
+                                                        create_str_list(True, ["LV1_0", "LV1_1", "LV1_2"], ["LV1_1"]),
+                                                        create_feature_str_list(True, ["LV1_F0", "LV1_F1", "LV1_F2"], ["LV1_F1"]))
+
+    level_2_node = create_specific_linker_override_node("A",
+                                                        create_str_list(False, ["LV2_0", "LV2_1", "LV2_2"], ["LV2_1"]),
+                                                        create_feature_str_list(False, ["LV2_F0", "LV2_F1", "LV2_F2"], ["LV2_F1"]))
+
+    # Rule only one 1 replace "LV0_0" in level_0 with 'LV1_0" in level_1
+    onlyone_rule_1 = create_only_one_rule("one rule 1", "one rule 1", ["LV0_F0", "LV1_F0"])
+    # Rule only one 2 replace "LV1_0" in level_0 with 'LV2_0" in level_2
+    onlyone_rule_2 = create_only_one_rule("one rule 2", "one rule 2", ["LV1_F0", "LV2_F0"])
+    feature_rule_list = create_feature_rule_node_list([onlyone_rule_1, onlyone_rule_2])
+
+    # Extends
+    level_0_node = level_0_node.resolve_extends(None, feature_rule_list).unwrap()
+    assert level_0_node.name == "A"
+    assert level_0_node.flags.override == True
+    assert level_0_node.flags.values == set(["LV0_0", "LV0_2"])
+    assert level_0_node.flags.remove_modifiers.values == set([])
+    assert level_0_node.features.override == True
+    assert level_0_node.features.values == set(["LV0_F0", "LV0_F2"])
+    assert level_0_node.features.remove_modifiers.values == set([])
+
+    level_1_node = level_1_node.resolve_extends(level_0_node, feature_rule_list).unwrap()
+    assert level_1_node.name == "A"
+    assert level_1_node.flags.override == True
+    assert level_1_node.flags.values == set(["LV1_0", "LV1_2"])
+    assert level_1_node.flags.remove_modifiers.values == set([])
+    assert level_1_node.features.override == True
+    assert level_1_node.features.values == set(["LV1_F0", "LV1_F2"])
+    assert level_1_node.features.remove_modifiers.values == set([])
+
+    level_2_node = level_2_node.resolve_extends(level_1_node, feature_rule_list).unwrap()
+    assert level_2_node.name == "A"
+    assert level_2_node.flags.override == False
+    assert level_2_node.flags.values == set(["LV2_0", "LV2_2", "LV1_0", "LV1_2"])
+    assert level_2_node.flags.remove_modifiers.values == set([])
+    assert level_2_node.features.override == False
+    assert level_2_node.features.values == set(["LV2_F0", "LV2_F2", "LV1_F2"])
+    assert level_2_node.features.remove_modifiers.values == set([])
+
+def test_extends_rules_6():
+    level_0_node = create_specific_linker_override_node("A",
+                                                        create_str_list(True, ["LV0_0", "LV0_1", "LV0_2"], ["LV0_1"]),
+                                                        create_feature_str_list(True, ["LV0_F0", "LV0_F1", "LV0_F2"], ["LV0_F1"]))
+    
+    level_1_node = create_specific_linker_override_node("A",
+                                                        create_str_list(False, ["LV1_0", "LV1_1", "LV1_2"], ["LV1_1"]),
+                                                        create_feature_str_list(False, ["LV1_F0", "LV1_F1", "LV1_F2"], ["LV1_F1"]))
+
+    level_2_node = create_specific_linker_override_node("A",
+                                                        create_str_list(True, ["LV2_0", "LV2_1", "LV2_2"], ["LV2_1"]),
+                                                        create_feature_str_list(True, ["LV2_F0", "LV2_F1", "LV2_F2"], ["LV2_F1"]))
+
+    # Rule only one 1 replace "LV0_0" in level_0 with 'LV1_0" in level_1
+    onlyone_rule_1 = create_only_one_rule("one rule 1", "one rule 1", ["LV0_F0", "LV1_F0"])
+    # Rule only one 2 replace "LV1_0" in level_0 with 'LV2_0" in level_2
+    onlyone_rule_2 = create_only_one_rule("one rule 2", "one rule 2", ["LV1_F0", "LV2_F0"])
+    feature_rule_list = create_feature_rule_node_list([onlyone_rule_1, onlyone_rule_2])
+
+    # Extends
+    level_0_node = level_0_node.resolve_extends(None, feature_rule_list).unwrap()
+    assert level_0_node.name == "A"
+    assert level_0_node.flags.override == True
+    assert level_0_node.flags.values == set(["LV0_0", "LV0_2"])
+    assert level_0_node.flags.remove_modifiers.values == set([])
+    assert level_0_node.features.override == True
+    assert level_0_node.features.values == set(["LV0_F0", "LV0_F2"])
+    assert level_0_node.features.remove_modifiers.values == set([])
+
+    level_1_node = level_1_node.resolve_extends(level_0_node, feature_rule_list).unwrap()
+    assert level_1_node.name == "A"
+    assert level_1_node.flags.override == False
+    assert level_1_node.flags.values == set(["LV1_0", "LV1_2", "LV0_0", "LV0_2"])
+    assert level_1_node.flags.remove_modifiers.values == set([])
+    assert level_1_node.features.override == False
+    assert level_1_node.features.values == set(["LV1_F0", "LV1_F2", "LV0_F2"])
+    assert level_1_node.features.remove_modifiers.values == set([])
+
+    level_2_node = level_2_node.resolve_extends(level_1_node, feature_rule_list).unwrap()
+    assert level_2_node.name == "A"
+    assert level_2_node.flags.override == True
+    assert level_2_node.flags.values == set(["LV2_0", "LV2_2"])
+    assert level_2_node.flags.remove_modifiers.values == set([])
+    assert level_2_node.features.override == True
+    assert level_2_node.features.values == set(["LV2_F0", "LV2_F2"])
+    assert level_2_node.features.remove_modifiers.values == set([])
+
+def test_extends_rules_7():
+    level_0_node = create_specific_linker_override_node("A",
+                                                        create_str_list(True, ["LV0_0", "LV0_1", "LV0_2"], ["LV0_1"]),
+                                                        create_feature_str_list(True, ["LV0_F0", "LV0_F1", "LV0_F2"], ["LV0_F1"]))
+    
+    level_1_node = create_specific_linker_override_node("A",
+                                                        create_str_list(True, ["LV1_0", "LV1_1", "LV1_2"], ["LV1_1"]),
+                                                        create_feature_str_list(True, ["LV1_F0", "LV1_F1", "LV1_F2"], ["LV1_F1"]))
+
+    level_2_node = create_specific_linker_override_node("A",
+                                                        create_str_list(False, ["LV2_0", "LV2_1", "LV2_2"], ["LV2_1"]),
+                                                        create_feature_str_list(False, ["LV2_F0", "LV2_F1", "LV2_F2"], ["LV2_F1"]))
+
+    # Rule only one 1 replace "LV0_0" in level_0 with 'LV1_0" in level_1
+    onlyone_rule_1 = create_only_one_rule("one rule 1", "one rule 1", ["LV0_F0", "LV1_F0"])
+    # Rule only one 2 replace "LV1_0" in level_0 with 'LV2_0" in level_2
+    onlyone_rule_2 = create_only_one_rule("one rule 2", "one rule 2", ["LV1_F0", "LV2_F0"])
+    feature_rule_list = create_feature_rule_node_list([onlyone_rule_1, onlyone_rule_2])
+
+    # Extends
+    level_0_node = level_0_node.resolve_extends(None, feature_rule_list).unwrap()
+    assert level_0_node.name == "A"
+    assert level_0_node.flags.override == True
+    assert level_0_node.flags.values == set(["LV0_0", "LV0_2"])
+    assert level_0_node.flags.remove_modifiers.values == set([])
+    assert level_0_node.features.override == True
+    assert level_0_node.features.values == set(["LV0_F0", "LV0_F2"])
+    assert level_0_node.features.remove_modifiers.values == set([])
+
+    level_1_node = level_1_node.resolve_extends(level_0_node, feature_rule_list).unwrap()
+    assert level_1_node.name == "A"
+    assert level_1_node.flags.override == True
+    assert level_1_node.flags.values == set(["LV1_0", "LV1_2",])
+    assert level_1_node.flags.remove_modifiers.values == set([])
+    assert level_1_node.features.override == True
+    assert level_1_node.features.values == set(["LV1_F0", "LV1_F2"])
+    assert level_1_node.features.remove_modifiers.values == set([])
+
+    level_2_node = level_2_node.resolve_extends(level_1_node, feature_rule_list).unwrap()
+    assert level_2_node.name == "A"
+    assert level_2_node.flags.override == False
+    assert level_2_node.flags.values == set(["LV2_0", "LV2_2", "LV1_0", "LV1_2"])
+    assert level_2_node.flags.remove_modifiers.values == set([])
+    assert level_2_node.features.override == False
+    assert level_2_node.features.values == set(["LV2_F0", "LV2_F2", "LV1_F2"])
+    assert level_2_node.features.remove_modifiers.values == set([])
+
+def test_extends_rules_8():
+    level_0_node = create_specific_linker_override_node("A",
+                                                        create_str_list(True, ["LV0_0", "LV0_1", "LV0_2"], ["LV0_1"]),
+                                                        create_feature_str_list(True, ["LV0_F0", "LV0_F1", "LV0_F2"], ["LV0_F1"]))
+    
+    level_1_node = create_specific_linker_override_node("A",
+                                                        create_str_list(True, ["LV1_0", "LV1_1", "LV1_2"], ["LV1_1"]),
+                                                        create_feature_str_list(True, ["LV1_F0", "LV1_F1", "LV1_F2"], ["LV1_F1"]))
+
+    level_2_node = create_specific_linker_override_node("A",
+                                                        create_str_list(True, ["LV2_0", "LV2_1", "LV2_2"], ["LV2_1"]),
+                                                        create_feature_str_list(True, ["LV2_F0", "LV2_F1", "LV2_F2"], ["LV2_F1"]))
+
+    # Rule only one 1 replace "LV0_0" in level_0 with 'LV1_0" in level_1
+    onlyone_rule_1 = create_only_one_rule("one rule 1", "one rule 1", ["LV0_F0", "LV1_F0"])
+    # Rule only one 2 replace "LV1_0" in level_0 with 'LV2_0" in level_2
+    onlyone_rule_2 = create_only_one_rule("one rule 2", "one rule 2", ["LV1_F0", "LV2_F0"])
+    feature_rule_list = create_feature_rule_node_list([onlyone_rule_1, onlyone_rule_2])
+
+    # Extends
+    level_0_node = level_0_node.resolve_extends(None, feature_rule_list).unwrap()
+    assert level_0_node.name == "A"
+    assert level_0_node.flags.override == True
+    assert level_0_node.flags.values == set(["LV0_0", "LV0_2"])
+    assert level_0_node.flags.remove_modifiers.values == set([])
+    assert level_0_node.features.override == True
+    assert level_0_node.features.values == set(["LV0_F0", "LV0_F2"])
+    assert level_0_node.features.remove_modifiers.values == set([])
+
+    level_1_node = level_1_node.resolve_extends(level_0_node, feature_rule_list).unwrap()
+    assert level_1_node.name == "A"
+    assert level_1_node.flags.override == True
+    assert level_1_node.flags.values == set(["LV1_0", "LV1_2"])
+    assert level_1_node.flags.remove_modifiers.values == set([])
+    assert level_1_node.features.override == True
+    assert level_1_node.features.values == set(["LV1_F0", "LV1_F2"])
+    assert level_1_node.features.remove_modifiers.values == set([])
+
+    level_2_node = level_2_node.resolve_extends(level_1_node, feature_rule_list).unwrap()
+    assert level_2_node.name == "A"
+    assert level_2_node.flags.override == True
+    assert level_2_node.flags.values == set(["LV2_0", "LV2_2"])
+    assert level_2_node.flags.remove_modifiers.values == set([])
+    assert level_2_node.features.override == True
+    assert level_2_node.features.values == set(["LV2_F0", "LV2_F2"])
+    assert level_2_node.features.remove_modifiers.values == set([])
+
 def test_extends_linker_specific_override_node() :
+
     test_extends_empty()
     test_extends_empty_failed()
+
     test_extends_no_parent_1()
     test_extends_no_parent_2()
     test_extends_no_child_1()
     test_extends_no_child_2()
     test_extends_no_rules_1()
+
     test_extends_rules_1()
+    test_extends_rules_2()
+    test_extends_rules_3()
+    test_extends_rules_4()
+    test_extends_rules_5()
+    test_extends_rules_6()
+    test_extends_rules_7()
+    test_extends_rules_8()

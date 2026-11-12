@@ -169,7 +169,7 @@ def resolve_extends_feature_list(child: FeatureStrList, parent: FeatureStrList, 
     # If the child do not override the value add parents values
     if not child.str_list.override:
 
-        def can_add_parent_value(parent_value, child_list, only_one):
+        def can_add_parent_value(parent_value, child_list, only_one: FeatureRuleNodeOnlyOne):
             # Parent value is concerned by the rule
             if only_one.contains(parent_value):
                 # Parent value is concerned by the rule

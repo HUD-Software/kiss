@@ -262,15 +262,21 @@ class LinkersOverrideNode:
             for linker_override_name, parent_linker_override in parent.linker_overrides.items():
                 if linker_override_name not in self.linker_overrides:
                     result_override = LinkerSpecificOverrideNode(linker_override_name)
+
                     # Extends flags
-                    result_override.flags = resolve_extends_str_list(self_common_linker_remove_applied.flags, parent_linker_override.flags)
+                    extended_common_flags = resolve_extends_str_list(self_common_linker_remove_applied.flags, parent_linker_override.flags)
+                    result_override.flags = resolve_extends_str_list(result_override.flags, extended_common_flags)
                     # Extends features
                     linker_feature_rules = rules.feature_rule_list if (rules := linkers.get(linker_override_name)) else FeatureRuleNodeList()
                     match resolve_extends_feature_list(self_common_linker_remove_applied.features, parent_linker_override.features, linker_feature_rules):
                         case Err() as err:
                             return err
                         case Ok(feature_list):
-                            result_override.features = feature_list
+                            match resolve_extends_feature_list(result_override.features, feature_list, linker_feature_rules):
+                                case Err() as err:
+                                    return err
+                                case Ok(feature_list):
+                                    result_override.features = feature_list
                     result.linker_overrides[linker_override_name] = result_override
         else:
             for linker_override_name, linker_override in self.linker_overrides.items():

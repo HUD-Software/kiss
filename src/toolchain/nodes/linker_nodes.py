@@ -84,7 +84,6 @@ class LinkerSpecificOverrideNode:
         return hash(self.name)
 
     def resolve_extends(self, parent: LinkerSpecificOverrideNode | None, linker_feature_rules: FeatureRuleNodeList) -> Result[LinkerSpecificOverrideNode, ValidationError]:
-
         if parent:
             if(self.name != parent.name):
                 return Err(InvalidExtends(self.name, parent.name))
@@ -193,7 +192,25 @@ class LinkersOverrideNode:
 
     def resolve_extends(self, parent: LinkersOverrideNode,  linkers : dict[str, LinkerNode]) -> Result[LinkersOverrideNode, ValidationError]:
         result = LinkersOverrideNode()
-        # App
+        
+        # Apply all `remove` modifiers of the common part first, so that the linker-specific
+        # overrides (LinkerSpecificOverrideNode) are then resolved against an already-cleaned base.
+        # We deliberately avoid `resolve_extends` here: it would consume the `remove` modifiers,
+        # which the extends resolution of the linker overrides still needs.
+
+        # TODO: We need the simplify the logic after that.
+        # Maybe we can't think like the following:
+        # If we have no parent LinkersOverrideNode we resolve with the follwing order:
+        # - for all linkers overrides
+        #   - extends common with nothing with the linker rules
+        #   - extends linker override with the common with linker rules
+        # If we have parent LinkersOverrideNode we resolve with the follwing order:
+        # - for all linkers overrides in self
+        #   - extends common with parent linker or none depending of presence in the parent with the linker rules
+        #   - extends linker override with the common with linker rules
+        # - for all linkers overrides in parent not in self
+        #   - extends common with parent linker with the linker rules, save it in self linker override with same as name as parent
+
         self_common_linker_remove_applied = self.common_linker.apply_remove()
 
         if parent:
@@ -241,7 +258,7 @@ class LinkersOverrideNode:
 
                 result.linker_overrides[linker_override_name] = result_override
                 
-            # Copy all parent linker override that are not in parent
+            # Copy all parent linker override that are not in self
             for linker_override_name, parent_linker_override in parent.linker_overrides.items():
                 if linker_override_name not in self.linker_overrides:
                     result_override = LinkerSpecificOverrideNode(linker_override_name)
@@ -253,7 +270,7 @@ class LinkersOverrideNode:
                         case Err() as err:
                             return err
                         case Ok(feature_list):
-                                result_override.features = feature_list
+                            result_override.features = feature_list
                     result.linker_overrides[linker_override_name] = result_override
         else:
             for linker_override_name, linker_override in self.linker_overrides.items():
@@ -266,7 +283,7 @@ class LinkersOverrideNode:
                     case Err() as err:
                         return err
                     case Ok(feature_list):
-                         result_override.features = feature_list
+                        result_override.features = feature_list
                 result.linker_overrides[linker_override_name] = result_override
 
         result.common_linker = self_common_linker_remove_applied

@@ -3,15 +3,10 @@ from toolchain.nodes.linker_nodes import LinkerSpecificOverrideNode, LinkersOver
 from toolchain.nodes.property import StrList
 
 
-def create_str_list(values, add_modifiers: list[str], remove_modifiers: list[str]) -> StrList:
+def create_str_list(override: bool, values: list[str], remove_modifiers: list[str]) -> StrList:
     str_list = StrList()
-    if isinstance(values, bool):
-        str_list.override = values
-    else:
-        for value in values:
-            str_list.override = True
-            str_list.add_value(value)
-    for modifier in add_modifiers:
+    str_list.override = override
+    for modifier in values:
         str_list.add_value(modifier)
     for modifier in remove_modifiers:
         str_list.add_modifier_remove(modifier)

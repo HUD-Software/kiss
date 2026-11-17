@@ -239,15 +239,15 @@ class LinkersOverrideNode:
             # Merge all self linker override with common and parent
             for linker_override_name, linker_override in self.linker_overrides.items():
                 result_override = LinkerSpecificOverrideNode(linker_override_name)
-                linker_override = parent.linker_overrides.get(linker_override_name)
+                parent_linker_override = parent.linker_overrides.get(linker_override_name)
 
                 # Merge flags
                 # If the parent have a specific linker, merge with it else merge with common
-                parent_linker_flags = (linker_override.flags if linker_override else None) or parent.common_linker.flags
+                parent_linker_flags = (parent_linker_override.flags if parent_linker_override else None) or parent.common_linker.flags
                 result_override.flags = merge_str_list_with_parent(linker_override.flags, self_common_linker_remove_applied.flags, parent_linker_flags)
 
                 # Merge features
-                parent_linker_features = (linker_override.features if linker_override else None) or parent.common_linker.features
+                parent_linker_features = (parent_linker_override.features if parent_linker_override else None) or parent.common_linker.features
                 linker_feature_rules = rules.feature_rule_list if (rules := linkers.get(linker_override_name)) else FeatureRuleNodeList()
                 result_override.features = merge_feature_str_list_with_parent(linker_override.features, self_common_linker_remove_applied.features, parent_linker_features, linker_feature_rules)
                 match merge_feature_str_list_with_parent(linker_override.features, self_common_linker_remove_applied.features, parent_linker_features, linker_feature_rules):

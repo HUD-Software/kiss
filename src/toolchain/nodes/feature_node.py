@@ -250,7 +250,7 @@ class FeatureNode:
         self.description = ""
         self.flags = StrList()
         self.features = FeatureStrList()
-        self.args : FeatureArgsNode = None
+        self.args : FeatureArgsNode | None = None
     
     def __eq__(self, other):
         if not isinstance(other, FeatureNode):
@@ -260,7 +260,7 @@ class FeatureNode:
     def __hash__(self):
         return hash(self.name)
 
-    def resolve_extends(self, parent: FeatureNode, feature_rules: FeatureRuleNodeList) -> Result[FeatureNode, ValidationError]:
+    def resolve_extends(self, parent: FeatureNode | None, feature_rules: FeatureRuleNodeList) -> Result[FeatureNode, ValidationError]:
         result = FeatureNode(self.name)
         result.description = self.description
         if parent:

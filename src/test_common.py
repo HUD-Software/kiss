@@ -18,7 +18,7 @@ def create_specific_linker_override_node(name: str, flags: StrList, features: Fe
     linker_node.features = features
     return linker_node
 
-def create_linker_override_node(common_flag: StrList, common_features: FeatureNodeList, specificlinker: LinkerSpecificOverrideNode) -> LinkersOverrideNode:
+def create_linker_override_node(common_flag: StrList | None, common_features: FeatureStrList | None, specificlinker: LinkerSpecificOverrideNode | None) -> LinkersOverrideNode:
     linker_node = LinkersOverrideNode()
     if common_flag:
         linker_node.common_linker.flags = common_flag
@@ -68,7 +68,7 @@ def create_incompatible_rule(name: str, description: str, feature: str, feature_
         return FeatureRuleNodeIncompatible(name, description, feature, l)
     raise ValueError("Invalid feature_names type")
 
-def create_feature_str_list(override: bool, values: list[str], remove_modifiers: list[str]):
+def create_feature_str_list(override: bool, values: list[str], remove_modifiers: list[str]) -> FeatureStrList:
     feature_str_list = FeatureStrList()
     feature_str_list.str_list.override = override
     for modifier in values:

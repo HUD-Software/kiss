@@ -190,7 +190,7 @@ class LinkersOverrideNode:
     #             result.linker_overrides[linker_override_name] = linker_override.merge_with(result.common_linker, linkers[linker_override_name].feature_rule_list)
     #     return result
 
-    def resolve_extends(self, parent: LinkersOverrideNode,  linkers : dict[str, LinkerNode]) -> Result[LinkersOverrideNode, ValidationError]:
+    def resolve_extends(self, parent: LinkersOverrideNode | None,  linkers : dict[str, LinkerNode]) -> Result[LinkersOverrideNode, ValidationError]:
         result = LinkersOverrideNode()
         
         # Apply all `remove` modifiers of the common part first, so that the linker-specific
@@ -222,7 +222,7 @@ class LinkersOverrideNode:
                 base = self_common_str_list if override else resolve_extends_str_list(self_common_str_list, parent_str_list)
                 return resolve_extends_str_list(self_str_list, base)
                 
-            def merge_feature_str_list_with_parent(self_feature_str_list: FeatureStrList, self_common_feature_str_list: FeatureStrList, parent_feature_str_list: FeatureStrList, feature_rules: FeatureRuleNodeList) -> Result[LinkersOverrideNode, ValidationError]:
+            def merge_feature_str_list_with_parent(self_feature_str_list: FeatureStrList, self_common_feature_str_list: FeatureStrList, parent_feature_str_list: FeatureStrList, feature_rules: FeatureRuleNodeList) -> Result[FeatureStrList, ValidationError]:
                 # If self common or self feature str list override ignore parent
                 # Merge list the common
                 if self_common_feature_str_list.override or self_feature_str_list.override:
@@ -249,7 +249,6 @@ class LinkersOverrideNode:
                 # Merge features
                 parent_linker_features = (parent_linker_override.features if parent_linker_override else None) or parent.common_linker.features
                 linker_feature_rules = rules.feature_rule_list if (rules := linkers.get(linker_override_name)) else FeatureRuleNodeList()
-                result_override.features = merge_feature_str_list_with_parent(linker_override.features, self_common_linker_remove_applied.features, parent_linker_features, linker_feature_rules)
                 match merge_feature_str_list_with_parent(linker_override.features, self_common_linker_remove_applied.features, parent_linker_features, linker_feature_rules):
                     case Err() as err:
                         return err

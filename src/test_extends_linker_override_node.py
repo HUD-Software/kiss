@@ -2372,637 +2372,890 @@ def test_b_extends_common_only_1():
     base_linker_node = create_common_only_1()
 
     # linkers:
-    #   flags: [E0] # Not changed
-    #   add-flags: [E3] # E1 removed
-    #   remove-flags: [E1, E2] # Not changed
-    extended_base_linker_node = base_linker_node.resolve_extends(None, {})
+    #   flags: [E0, E3] # Override = True
+    #   remove-flags: []
+    #   features: [EF0, EF3] # Override = True
+    #   remove-features: []
+    extended_base_linker_node = base_linker_node.resolve_extends(None, {}).unwrap()
 
     # child 'linkers:' extends extended_base_linker_node
     # linkers:
-    #   flags: [AC0]
-    #   add-flags: [AC1, AC3, AC4]
+    #   flags: [AC0, AC1, AC3, AC4] # Override = True
     #   remove-flags: [AC1, ALD1, AC2]
+    #   features: [ACF0, ACF1, ACF3, ACF4] # Override = True
+    #   remove-features: [ACF1, ALDF1, ACF2]
     #   ld:
-    #     add-flags: [ALD1, ALD2, ALD3]
+    #     flags: [ALD1, ALD2, ALD3] # Override = False
     #     remove-flags: [ALD2, AC4]
+    #     features: [ALDF1, ALDF2, ALDF3] # Override = False
+    #     remove-features: [ALDF2, ACF4]
     child_linker_node = create_b()
 
     # child
     # linkers: (Extended)
-    #   flags: [AC0] # Not changed 
-    #   add-flags: [AC3, AC4] # AC1 removed
-    #   remove-flags: [AC1, ALD1, AC2] # Not changed
+    #   flags: [AC0, AC3, AC4] # Override = True
+    #   remove-flags: []
+    #   features: [ACF0, ACF3, ACF4] # Override = True
+    #   remove-features: []
     #   ld:
-    #    add-flags: [ALD1, ALD3, AC3, AC0]
-    #    remove-flags: [ALD2, AC4] # Not changed
-    result = child_linker_node.resolve_extends(extended_base_linker_node, {})
+    #     flags: [ALD1, ALD3, AC0, AC3] # Override = False
+    #     remove-flags: []
+    #     features: [ALDF1, ALDF3, ACF0, ACF3] # Override = False
+    #     remove-features: []
+    result = child_linker_node.resolve_extends(extended_base_linker_node, {}).unwrap()
 
     # Validate result
+    assert result.common_linker.flags.override == True
     assert result.common_linker.flags.values == set(["AC0", "AC3", "AC4"])
     assert result.common_linker.flags.remove_modifiers.values == set([])
-
-    # If the linker override is not specified in the child, it should be a copy of the parent
-    # NOTE: The parent must already be extended before the child extends it, so that the child can get the correct values from the parent
+    assert result.common_linker.features.override == True
+    assert result.common_linker.features.values == set(["ACF0", "ACF3", "ACF4"])
+    assert result.common_linker.features.remove_modifiers.values == set([])
     ld = result.linker_overrides.get("ld")
-    assert ld.flags.values == set(["ALD1", "ALD3", "AC3", "AC0"])
+    assert ld
+    assert ld.flags.override == False
+    assert ld.flags.values == set(["ALD1", "ALD3", "AC0", "AC3"])
     assert ld.flags.remove_modifiers.values == set([]) 
+    assert ld.features.override == False
+    assert ld.features.values == set(["ALDF1", "ALDF3", "ACF0", "ACF3"])
+    assert ld.features.remove_modifiers.values == set([]) 
 
 def test_c_extends_common_only_1():
     # linkers:
-    #   flags: [E0]
-    #   add-flags: [E1, E3]
+    #   flags: [E0, E1, E3] # Override = True
     #   remove-flags: [E1, E2]
+    #   features: [EF0, EF1, EF3] # Override = True
+    #   remove-features: [EF1, EF2]
     base_linker_node = create_common_only_1()
 
     # linkers:
-    #   flags: [E0] # Not changed
-    #   add-flags: [E3] # E1 removed
-    #   remove-flags: [E1, E2] # Not changed
-    extended_base_linker_node = base_linker_node.resolve_extends(None, {})
+    #   flags: [E0, E3] # Override = True
+    #   remove-flags: []
+    #   features: [EF0, EF3] # Override = True
+    #   remove-features: []
+    extended_base_linker_node = base_linker_node.resolve_extends(None, {}).unwrap()
 
     # child 'linkers:' extends extended_base_linker_node
     # linkers:
-    #   add-flags: [AC1, AC3, AC4]
+    #   flags: [AC1, AC3, AC4]  # Override = False
     #   remove-flags: [AC1, ALD1, AC2]
+    #   features: [ACF1, ACF3, ACF4]  # Override = False
+    #   remove-features: [ACF1, ALDF1, ACF2]
     #   ld:
-    #     flags: [ALD0]
-    #     add-flags: [ALD1, ALD2, ALD3]
+    #     flags: [ALD0, ALD1, ALD2, ALD3]  # Override = True
     #     remove-flags: [ALD2, AC4]
+    #     features: [ALDF0, ALDF1, ALDF2, ALDF3]  # Override = True
+    #     remove-features: [ALDF2, ACF4]
     child_linker_node = create_c()
 
     # child
     # linkers: (Extended)
-    #   add-flags: [AC3, AC4] # AC1 removed
-    #   remove-flags: [AC1, ALD1, AC2] # Not changed
+    #   flags: [AC3, AC4]  # Override = False
+    #   remove-flags: [ALD1, AC2]
+    #   features: [ACF3, ACF4]  # Override = False
+    #   remove-features: [ALDF1, ACF2]
     #   ld:
-    #    flags: [ALD0] # Not changed
-    #    add-flags: [ALD1, ALD3] # ALD2 Removed
-    #    remove-flags: [ALD2, AC4] # Not changed
-    result = child_linker_node.resolve_extends(extended_base_linker_node, {})
+    #     flags: [ALD0, ALD1, ALD3]  # Override = True
+    #     remove-flags: []
+    #     features: [ALDF0, ALDF1, ALDF3]  # Override = True
+    #     remove-features: []
+    result = child_linker_node.resolve_extends(extended_base_linker_node, {}).unwrap()
 
     # Validate result
+    assert result.common_linker.flags.override == False
     assert result.common_linker.flags.values == set(["AC3", "AC4"])
     assert result.common_linker.flags.remove_modifiers.values == set([])
-
-    # If the linker override is not specified in the child, it should be a copy of the parent
-    # NOTE: The parent must already be extended before the child extends it, so that the child can get the correct values from the parent
+    assert result.common_linker.features.override == False
+    assert result.common_linker.features.values == set(["ACF3", "ACF4"])
+    assert result.common_linker.features.remove_modifiers.values == set([])
     ld = result.linker_overrides.get("ld")
+    assert ld
+    assert ld.flags.override == True
     assert ld.flags.values == set(["ALD0", "ALD1", "ALD3"])
     assert ld.flags.remove_modifiers.values == set([]) 
-
+    assert ld.features.override == True
+    assert ld.features.values == set(["ALDF0", "ALDF1", "ALDF3"])
+    assert ld.features.remove_modifiers.values == set([]) 
+    
 def test_d_extends_common_only_1():
     # linkers:
-    #   flags: [E0]
-    #   add-flags: [E1, E3]
+    #   flags: [E0, E1, E3] # Override = True
     #   remove-flags: [E1, E2]
+    #   features: [EF0, EF1, EF3] # Override = True
+    #   remove-features: [EF1, EF2]
     base_linker_node = create_common_only_1()
 
     # linkers:
-    #   flags: [E0] # Not changed
-    #   add-flags: [E3] # E1 removed
-    #   remove-flags: [E1, E2] # Not changed
-    extended_base_linker_node = base_linker_node.resolve_extends(None, {})
+    #   flags: [E0, E3] # Override = True
+    #   remove-flags: []
+    #   features: [EF0, EF3] # Override = True
+    #   remove-features: []
+    extended_base_linker_node = base_linker_node.resolve_extends(None, {}).unwrap()
 
     # child 'linkers:' extends extended_base_linker_node
     # linkers:
-    #   flags: [AC0]
-    #   add-flags: [AC1, AC3, AC4]
+    #   flags: [AC0, AC1, AC3, AC4]  # Override = True
     #   remove-flags: [AC1, ALD1, AC2]
+    #   features: [AC0, ACF1, ACF3, ACF4]  # Override = True
+    #   remove-features: [ACF1, ALDF1, ACF2]
     #   ld:
-    #     flags: [ALD0]
-    #     add-flags: [ALD1, ALD2, ALD3]
+    #     flags: [ALD0, ALD1, ALD2, ALD3]  # Override = True
     #     remove-flags: [ALD2, AC4]
+    #     features: [ALDF0, ALDF1, ALDF2, ALDF3]  # Override = True
+    #     remove-features: [ALDF2, ACF4]
     child_linker_node = create_d()
 
     # child
     # linkers: (Extended)
-    #   flags: [AC0] # Not changed
-    #   add-flags: [AC3, AC4] # AC1 removed
-    #   remove-flags: [AC1, ALD1, AC2] # Not changed
+    #   flags: [AC0, AC3, AC4]  # Override = True
+    #   remove-flags: []
+    #   features: [AC0, ACF3, ACF4]  # Override = True
+    #   remove-features: []
     #   ld:
-    #    flags: [ALD0] # Not changed
-    #    add-flags: [ALD1, ALD3] # ALD2 Removed
-    #    remove-flags: [ALD2, AC4] # Not changed
-    result = child_linker_node.resolve_extends(extended_base_linker_node, {})
+    #     flags: [ALD0, ALD1, ALD3]  # Override = True
+    #     remove-flags: []
+    #     features: [ALDF0, ALDF1, ALDF3]  # Override = True
+    #     remove-features: []
+    result = child_linker_node.resolve_extends(extended_base_linker_node, {}).unwrap()
 
     # Validate result
+    assert result.common_linker.flags.override == True
     assert result.common_linker.flags.values == set(["AC0", "AC3", "AC4"])
     assert result.common_linker.flags.remove_modifiers.values == set([])
-
-    # If the linker override is not specified in the child, it should be a copy of the parent
-    # NOTE: The parent must already be extended before the child extends it, so that the child can get the correct values from the parent
+    assert result.common_linker.features.override == True
+    assert result.common_linker.features.values == set(["ACF0", "ACF3", "ACF4"])
+    assert result.common_linker.features.remove_modifiers.values == set([])
     ld = result.linker_overrides.get("ld")
+    assert ld
+    assert ld.flags.override == True
     assert ld.flags.values == set(["ALD0", "ALD1", "ALD3"])
     assert ld.flags.remove_modifiers.values == set([]) 
+    assert ld.features.override == True
+    assert ld.features.values == set(["ALDF0", "ALDF1", "ALDF3"])
+    assert ld.features.remove_modifiers.values == set([]) 
 
 def test_a_extends_common_only_2():
     # linkers:
-    #   add-flags: [E1, E3]
+    #   flags: [E1, E3] # Override = False
     #   remove-flags: [E1, E2]
+    #   features: [EF1, EF3] # Override = False
+    #   remove-features: [EF1, EF2]
     base_linker_node = create_common_only_2()
 
     # linkers:
-    #   add-flags: [E3] # E1 removed
-    #   remove-flags: [E1, E2] # Not changed
-    extended_base_linker_node = base_linker_node.resolve_extends(None, {})
+    #   flags: [E3] # Override = False
+    #   remove-flags: []
+    #   features: [EF3] # Override = False
+    #   remove-features: []
+    extended_base_linker_node = base_linker_node.resolve_extends(None, {}).unwrap()
 
     # child 'linkers:' extends extended_base_linker_node
     # linkers:
-    #   add-flags: [AC1, AC3, AC4]
+    #   flags: [AC1, AC3, AC4]  # Override = False
     #   remove-flags: [AC1, ALD1, AC2]
-    #     ld:
-    #       add-flags: [ALD1, ALD2, ALD3]
-    #       remove-flags: [ALD2, AC4]
+    #   features: [ACF1, ACF3, ACF4]  # Override = False
+    #   remove-features: [ACF1, ALDF1, ACF2]
+    #   ld:
+    #     flags: [ALD1, ALD2, ALD3]  # Override = False
+    #     remove-flags: [ALD2, AC4]
+    #     features: [ALDF1, ALDF2, ALDF3]  # Override = False
+    #     remove-features: [ALDF2, ACF4]
     child_linker_node = create_a()
 
     # child
     # linkers: (Extended)
-    #   add-flags: [AC3, AC4] # AC1 removed
-    #   remove-flags: [AC1, ALD1, AC2] # Not changed
+    #   flags: [AC3, AC4]  # Override = False
+    #   remove-flags: []
+    #   features: [ACF3, ACF4]  # Override = False
+    #   remove-features: []
     #   ld:
-    #    add-flags: [E3, ALD1, ALD2, ALD3]
-    #    remove-flags: [ALD2, AC4] # Not changed
-    result = child_linker_node.resolve_extends(extended_base_linker_node, {})
+    #     flags: [ALD1, ALD3, AC3, E3]  # Override = False
+    #     remove-flags: []
+    #     features: [ALDF1, ALDF3, ACF3, EF3]  # Override = False
+    #     remove-features: []
+    result = child_linker_node.resolve_extends(extended_base_linker_node, {}).unwrap()
 
     # Validate result
+    assert result.common_linker.flags.override == False
     assert result.common_linker.flags.values == set(["AC3", "AC4"])
     assert result.common_linker.flags.remove_modifiers.values == set([])
-
-    # If the linker override is not specified in the child, it should be a copy of the parent
-    # NOTE: The parent must already be extended before the child extends it, so that the child can get the correct values from the parent
+    assert result.common_linker.features.override == False
+    assert result.common_linker.features.values == set(["ACF3", "ACF4"])
+    assert result.common_linker.features.remove_modifiers.values == set([])
     ld = result.linker_overrides.get("ld")
-    assert ld.flags.values == set(["E3", "AC3", "ALD1", "ALD3"])
+    assert ld
+    assert ld.flags.override == False
+    assert ld.flags.values == set(["ALD1", "ALD3", "AC3", "E3"])
     assert ld.flags.remove_modifiers.values == set([]) 
+    assert ld.features.override == False
+    assert ld.features.values == set(["ALDF1", "ALDF3", "ACF3", "EF3"])
+    assert ld.features.remove_modifiers.values == set([]) 
 
 def test_b_extends_common_only_2():
     # linkers:
-    #   add-flags: [E1, E3]
+    #   flags: [E1, E3] # Override = False
     #   remove-flags: [E1, E2]
+    #   features: [EF1, EF3] # Override = False
+    #   remove-features: [EF1, EF2]
     base_linker_node = create_common_only_2()
 
     # linkers:
-    #   add-flags: [E3] # E1 removed
-    #   remove-flags: [E1, E2] # Not changed
-    extended_base_linker_node = base_linker_node.resolve_extends(None, {})
+    #   flags: [E3] # Override = False
+    #   remove-flags: []
+    #   features: [EF3] # Override = False
+    #   remove-features: []
+    extended_base_linker_node = base_linker_node.resolve_extends(None, {}).unwrap()
 
     # child 'linkers:' extends extended_base_linker_node
     # linkers:
-    #   flags: [AC0]
-    #   add-flags: [AC1, AC3, AC4]
+    #   flags: [AC0, AC1, AC3, AC4] # Override = True
     #   remove-flags: [AC1, ALD1, AC2]
+    #   features: [ACF0, ACF1, ACF3, ACF4] # Override = True
+    #   remove-features: [ACF1, ALDF1, ACF2]
     #   ld:
-    #     add-flags: [ALD1, ALD2, ALD3]
+    #     flags: [ALD1, ALD2, ALD3] # Override = False
     #     remove-flags: [ALD2, AC4]
+    #     features: [ALDF1, ALDF2, ALDF3] # Override = False
+    #     remove-features: [ALDF2, ACF4]
     child_linker_node = create_b()
 
     # child
     # linkers: (Extended)
-    #   flags: [AC0] # Not changed 
-    #   add-flags: [AC3, AC4] # AC1 removed
-    #   remove-flags: [AC1, ALD1, AC2] # Not changed
+    #   flags: [AC0, AC3, AC4] # Override = True
+    #   remove-flags: []
+    #   features: [ACF0, ACF3, ACF4] # Override = True
+    #   remove-features: []
     #   ld:
-    #    add-flags: [ALD1, ALD3, AC3, AC0]
-    #    remove-flags: [ALD2, AC4] # Not changed
-    result = child_linker_node.resolve_extends(extended_base_linker_node, {})
+    #     flags: [ALD1, ALD3, AC0, AC3] # Override = False
+    #     remove-flags: []
+    #     features: [ALDF1, ALDF3, ACF0, ACF3] # Override = False
+    #     remove-features: []
+    result = child_linker_node.resolve_extends(extended_base_linker_node, {}).unwrap()
 
     # Validate result
+    assert result.common_linker.flags.override == True
     assert result.common_linker.flags.values == set(["AC0", "AC3", "AC4"])
     assert result.common_linker.flags.remove_modifiers.values == set([])
-
-    # If the linker override is not specified in the child, it should be a copy of the parent
-    # NOTE: The parent must already be extended before the child extends it, so that the child can get the correct values from the parent
+    assert result.common_linker.features.override == True
+    assert result.common_linker.features.values == set(["ACF0", "ACF3", "ACF4"])
+    assert result.common_linker.features.remove_modifiers.values == set([])
     ld = result.linker_overrides.get("ld")
-    assert ld.flags.values == set(["ALD1", "ALD3", "AC3", "AC0"])
+    assert ld
+    assert ld.flags.override == False
+    assert ld.flags.values == set(["ALD1", "ALD3", "AC0", "AC3"])
     assert ld.flags.remove_modifiers.values == set([]) 
+    assert ld.features.override == False
+    assert ld.features.values == set(["ALDF1", "ALDF3", "ACF0", "ACF3"])
+    assert ld.features.remove_modifiers.values == set([]) 
 
 def test_c_extends_common_only_2():
-    # linkers:
-    #   add-flags: [E1, E3]
+   # linkers:
+    #   flags: [E1, E3] # Override = False
     #   remove-flags: [E1, E2]
+    #   features: [EF1, EF3] # Override = False
+    #   remove-features: [EF1, EF2]
     base_linker_node = create_common_only_2()
 
     # linkers:
-    #   add-flags: [E3] # E1 removed
-    #   remove-flags: [E1, E2] # Not changed
-    extended_base_linker_node = base_linker_node.resolve_extends(None, {})
+    #   flags: [E3] # Override = False
+    #   remove-flags: []
+    #   features: [EF3] # Override = False
+    #   remove-features: []
+    extended_base_linker_node = base_linker_node.resolve_extends(None, {}).unwrap()
 
     # child 'linkers:' extends extended_base_linker_node
     # linkers:
-    #   add-flags: [AC1, AC3, AC4]
+    #   flags: [AC1, AC3, AC4]  # Override = False
     #   remove-flags: [AC1, ALD1, AC2]
+    #   features: [ACF1, ACF3, ACF4]  # Override = False
+    #   remove-features: [ACF1, ALDF1, ACF2]
     #   ld:
-    #     flags: [ALD0]
-    #     add-flags: [ALD1, ALD2, ALD3]
+    #     flags: [ALD0, ALD1, ALD2, ALD3]  # Override = True
     #     remove-flags: [ALD2, AC4]
+    #     features: [ALDF0, ALDF1, ALDF2, ALDF3]  # Override = True
+    #     remove-features: [ALDF2, ACF4]
     child_linker_node = create_c()
 
     # child
     # linkers: (Extended)
-    #   add-flags: [AC3, AC4] # AC1 removed
-    #   remove-flags: [AC1, ALD1, AC2] # Not changed
+    #   flags: [AC3, AC4]  # Override = False
+    #   remove-flags: []
+    #   features: [ACF3, ACF4]  # Override = False
+    #   remove-features: []
     #   ld:
-    #    flags: [ALD0] # Not changed
-    #    add-flags: [ALD1, ALD3] # ALD2 Removed
-    #    remove-flags: [ALD2, AC4] # Not changed
-    result = child_linker_node.resolve_extends(extended_base_linker_node, {})
+    #     flags: [ALD0, ALD1, ALD3]  # Override = True
+    #     remove-flags: []
+    #     features: [ALDF0, ALDF1, ALDF3]  # Override = True
+    #     remove-features: []
+    result = child_linker_node.resolve_extends(extended_base_linker_node, {}).unwrap()
 
     # Validate result
+    assert result.common_linker.flags.override == False
     assert result.common_linker.flags.values == set(["AC3", "AC4"])
     assert result.common_linker.flags.remove_modifiers.values == set([])
-
-    # If the linker override is not specified in the child, it should be a copy of the parent
-    # NOTE: The parent must already be extended before the child extends it, so that the child can get the correct values from the parent
+    assert result.common_linker.features.override == False
+    assert result.common_linker.features.values == set(["ACF3", "ACF4"])
+    assert result.common_linker.features.remove_modifiers.values == set([])
     ld = result.linker_overrides.get("ld")
+    assert ld
+    assert ld.flags.override == True
     assert ld.flags.values == set(["ALD0", "ALD1", "ALD3"])
     assert ld.flags.remove_modifiers.values == set([]) 
+    assert ld.features.override == True
+    assert ld.features.values == set(["ALDF0", "ALDF1", "ALDF3"])
+    assert ld.features.remove_modifiers.values == set([]) 
 
 def test_d_extends_common_only_2():
     # linkers:
-    #   add-flags: [E1, E3]
+    #   flags: [E1, E3] # Override = False
     #   remove-flags: [E1, E2]
+    #   features: [EF1, EF3] # Override = False
+    #   remove-features: [EF1, EF2]
     base_linker_node = create_common_only_2()
 
     # linkers:
-    #   add-flags: [E3] # E1 removed
-    #   remove-flags: [E1, E2] # Not changed
-    extended_base_linker_node = base_linker_node.resolve_extends(None, {})
+    #   flags: [E3] # Override = False
+    #   remove-flags: []
+    #   features: [EF3] # Override = False
+    #   remove-features: []
+    extended_base_linker_node = base_linker_node.resolve_extends(None, {}).unwrap()
 
     # child 'linkers:' extends extended_base_linker_node
     # linkers:
-    #   flags: [AC0]
-    #   add-flags: [AC1, AC3, AC4]
+    #   flags: [AC0, AC1, AC3, AC4]  # Override = True
     #   remove-flags: [AC1, ALD1, AC2]
+    #   features: [AC0, ACF1, ACF3, ACF4]  # Override = True
+    #   remove-features: [ACF1, ALDF1, ACF2]
     #   ld:
-    #     flags: [ALD0]
-    #     add-flags: [ALD1, ALD2, ALD3]
+    #     flags: [ALD0, ALD1, ALD2, ALD3]  # Override = True
     #     remove-flags: [ALD2, AC4]
+    #     features: [ALDF0, ALDF1, ALDF2, ALDF3]  # Override = True
+    #     remove-features: [ALDF2, ACF4]
     child_linker_node = create_d()
 
     # child
     # linkers: (Extended)
-    #   flags: [AC0] # Not changed
-    #   add-flags: [AC3, AC4] # AC1 removed
-    #   remove-flags: [AC1, ALD1, AC2] # Not changed
+    #   flags: [AC0, AC3, AC4]  # Override = True
+    #   remove-flags: []
+    #   features: [AC0, ACF3, ACF4]  # Override = True
+    #   remove-features: []
     #   ld:
-    #    flags: [ALD0] # Not changed
-    #    add-flags: [ALD1, ALD3] # ALD2 Removed
-    #    remove-flags: [ALD2, AC4] # Not changed
-    result = child_linker_node.resolve_extends(extended_base_linker_node, {})
+    #     flags: [ALD0, ALD1, ALD3]  # Override = True
+    #     remove-flags: []
+    #     features: [ALDF0, ALDF1, ALDF3]  # Override = True
+    #     remove-features: []
+    result = child_linker_node.resolve_extends(extended_base_linker_node, {}).unwrap()
 
     # Validate result
+    assert result.common_linker.flags.override == True
     assert result.common_linker.flags.values == set(["AC0", "AC3", "AC4"])
     assert result.common_linker.flags.remove_modifiers.values == set([])
-
-    # If the linker override is not specified in the child, it should be a copy of the parent
-    # NOTE: The parent must already be extended before the child extends it, so that the child can get the correct values from the parent
+    assert result.common_linker.features.override == True
+    assert result.common_linker.features.values == set(["ACF0", "ACF3", "ACF4"])
+    assert result.common_linker.features.remove_modifiers.values == set([])
     ld = result.linker_overrides.get("ld")
+    assert ld
+    assert ld.flags.override == True
     assert ld.flags.values == set(["ALD0", "ALD1", "ALD3"])
     assert ld.flags.remove_modifiers.values == set([]) 
+    assert ld.features.override == True
+    assert ld.features.values == set(["ALDF0", "ALDF1", "ALDF3"])
+    assert ld.features.remove_modifiers.values == set([]) 
 
 def create_linker_only_1() : 
-    # linkers:
-    #   ld:
-    #     flags: [LD0]
-    #     add-flags: [LD1, LD3]
-    #     remove-flags: [LD1, LD2]
-    ld_flags = create_str_list(["LD0"], ["LD1", "LD3"], ["LD1", "LD2"])
-    ld_features = create_str_list(["LDF0"], ["LDF1", "LDF3"], ["LDF1", "LDF2"])
+    """  
+    linkers:
+      ld:
+        flags: [LD0, LD1, LD3] # Override = True
+        remove-flags: [LD1, LD2] 
+        features: [LDF0, LDF1, LDF3] # Override = True
+        remove-features: [LDF1, LDF2] 
+    """
+    ld_flags = create_str_list(True, ["LD0", "LD1", "LD3"], ["LD1", "LD2"])
+    ld_features = create_feature_str_list(True, ["LDF0", "LDF1", "LDF3"], ["LDF1", "LDF2"])
     ld_linker = create_specific_linker_override_node("ld", ld_flags, ld_features)
-    return create_linker_override_node(None, None, ld_linker)
+    linker_override_node = create_linker_override_node(None, None, ld_linker)
+    assert linker_override_node.common_linker.flags.override == False
+    assert linker_override_node.common_linker.flags.values == set([])
+    assert linker_override_node.common_linker.flags.remove_modifiers.values == set([])
+    assert linker_override_node.common_linker.features.override == False
+    assert linker_override_node.common_linker.features.values == set([])
+    assert linker_override_node.common_linker.features.remove_modifiers.values == set([])
+    ld = linker_override_node.linker_overrides.get("ld")
+    assert ld
+    assert ld.flags.override == True
+    assert ld.flags.values == set(["LD0", "LD1", "LD3"])
+    assert ld.flags.remove_modifiers.values == set(["LD1", "LD2"]) 
+    assert ld.features.override == True
+    assert ld.features.values == set(["LDF0", "LDF1", "LDF3"])
+    assert ld.features.remove_modifiers.values == set(["LDF1", "LDF2"]) 
+    return linker_override_node
 
 def create_linker_only_2() : 
-    # linkers:
-    #   ld:
-    #     add-flags: [LD1, LD3]
-    #     remove-flags: [LD1, LD2]
-    ld_flags = create_str_list([], ["LD1", "LD3"], ["LD1", "LD2"])
-    ld_features = create_str_list([], ["LDF1", "LDF3"], ["LDF1", "LDF2"])
+    """  
+    linkers:
+        ld:
+        flags: [LD1, LD3] # Override = False
+        remove-flags: [LD1, LD2] 
+        features: [LDF1, LDF3] # Override = False
+        remove-features: [LDF1, LDF2] 
+    """
+    ld_flags = create_str_list(False, ["LD1", "LD3"], ["LD1", "LD2"])
+    ld_features = create_feature_str_list(False, ["LDF1", "LDF3"], ["LDF1", "LDF2"])
     ld_linker = create_specific_linker_override_node("ld", ld_flags, ld_features)
-    return create_linker_override_node(None, None, ld_linker)
+    linker_override_node = create_linker_override_node(None, None, ld_linker)
+    assert linker_override_node.common_linker.flags.override == False
+    assert linker_override_node.common_linker.flags.values == set([])
+    assert linker_override_node.common_linker.flags.remove_modifiers.values == set([])
+    assert linker_override_node.common_linker.features.override == False
+    assert linker_override_node.common_linker.features.values == set([])
+    assert linker_override_node.common_linker.features.remove_modifiers.values == set([])
+    ld = linker_override_node.linker_overrides.get("ld")
+    assert ld
+    assert ld.flags.override == False
+    assert ld.flags.values == set(["LD1", "LD3"])
+    assert ld.flags.remove_modifiers.values == set(["LD1", "LD2"]) 
+    assert ld.features.override == False
+    assert ld.features.values == set(["LDF1", "LDF3"])
+    assert ld.features.remove_modifiers.values == set(["LDF1", "LDF2"]) 
+    return linker_override_node
+    
 
 def test_linker_only_1():
     # linkers:
     #   ld:
-    #     flags: [LD0]
-    #     add-flags: [LD1, LD3]
-    #     remove-flags: [LD1, LD2]
+    #     flags: [LD0, LD1, LD3] # Override = True
+    #     remove-flags: [LD1, LD2] 
+    #     features: [LDF0, LDF1, LDF3] # Override = True
+    #     remove-features: [LDF1, LDF2]
     base_linker_node = create_linker_only_1()
 
     # linkers:
     #   ld:
-    #     flags: [LD0] # Not changed
-    #     add-flags: [LD3] # LD1 removed
-    #     remove-flags: [LD1, LD2] # Not changed
-    extended_base_linker_node = base_linker_node.resolve_extends(None, {})
+    #     flags: [LD0, LD3] # Override = True
+    #     remove-flags: [] 
+    #     features: [LDF0, LDF3] # Override = True
+    #     remove-features: []
+    result = base_linker_node.resolve_extends(None, {}).unwrap()
 
     # Validate result
-    assert extended_base_linker_node.common_linker.flags.values == set([])
-    assert extended_base_linker_node.common_linker.flags.remove_modifiers.values == set([])
-    ld = extended_base_linker_node.linker_overrides.get("ld")
+    assert result.common_linker.flags.override == False
+    assert result.common_linker.flags.values == set([])
+    assert result.common_linker.flags.remove_modifiers.values == set([])
+    assert result.common_linker.features.override == False
+    assert result.common_linker.features.values == set([])
+    assert result.common_linker.features.remove_modifiers.values == set([])
+    ld = result.linker_overrides.get("ld")
+    assert ld
+    assert ld.flags.override == True
     assert ld.flags.values == set(["LD0", "LD3"])
     assert ld.flags.remove_modifiers.values == set([]) 
+    assert ld.features.override == True
+    assert ld.features.values == set(["LDF0", "LDF3"])
+    assert ld.features.remove_modifiers.values == set([]) 
 
 def test_linker_only_2():
     # linkers:
     #   ld:
-    #     add-flags: [LD1, LD3]
-    #     remove-flags: [LD1, LD2]
+    #     flags: [LD1, LD3] # Override = False
+    #     remove-flags: [LD1, LD2] 
+    #     features: [LDF1, LDF3] # Override = False
+    #     remove-features: [LDF1, LDF2]
     base_linker_node = create_linker_only_2()
 
     # linkers:
     #   ld:
-    #     add-flags: [LD3] # LD1 removed
-    #     remove-flags: [LD1, LD2] # Not changed
-    extended_base_linker_node = base_linker_node.resolve_extends(None, {})
+    #     flags: [LD3] # Override = False
+    #     remove-flags: [] 
+    #     features: [LDF3] # Override = False
+    #     remove-features: []
+    result = base_linker_node.resolve_extends(None, {}).unwrap()
 
     # Validate result
-    assert extended_base_linker_node.common_linker.flags.values == set([])
-    assert extended_base_linker_node.common_linker.flags.remove_modifiers.values == set([])
-    ld = extended_base_linker_node.linker_overrides.get("ld")
+    assert result.common_linker.flags.override == False
+    assert result.common_linker.flags.values == set([])
+    assert result.common_linker.flags.remove_modifiers.values == set([])
+    assert result.common_linker.features.override == False
+    assert result.common_linker.features.values == set([])
+    assert result.common_linker.features.remove_modifiers.values == set([])
+    ld = result.linker_overrides.get("ld")
+    assert ld
+    assert ld.flags.override == False
     assert ld.flags.values == set(["LD3"])
     assert ld.flags.remove_modifiers.values == set([]) 
+    assert ld.features.override == False
+    assert ld.features.values == set(["LDF3"])
+    assert ld.features.remove_modifiers.values == set([]) 
 
 def test_linker_only_1_extends_common_only_1():
     # linkers:
-    #   flags: [E0]
-    #   add-flags: [E1, E3]
+    #   flags: [E0, E1, E3] # Override = True
     #   remove-flags: [E1, E2]
+    #   features: [EF0, EF1, EF3] # Override = True
+    #   remove-features: [EF1, EF2]
     base_linker_node = create_common_only_1()
 
     # linkers:
-    #   flags: [E0]
-    #   add-flags: [E3] # E1 removed
-    #   remove-flags: [E1, E2] # Not changed
-    extended_base_linker_node = base_linker_node.resolve_extends(None, {})
+    #   flags: [E0, E3] # Override = True
+    #   remove-flags: []
+    #   features: [EF0, EF3] # Override = True
+    #   remove-features: []
+    extended_base_linker_node = base_linker_node.resolve_extends(None, {}).unwrap()
     
     # child 'linkers:' extends extended_base_linker_node
     # linkers:
     #   ld:
-    #     flags: [LD0]
-    #     add-flags: [LD1, LD3]
-    #     remove-flags: [LD1, LD2]
+    #     flags: [LD0, LD1, LD3] # Override = True
+    #     remove-flags: [LD1, LD2] 
+    #     features: [LDF0, LDF1, LDF3] # Override = True
+    #     remove-features: [LDF1, LDF2]
     child_linker_node = create_linker_only_1()
 
     # child
     # linkers: (Extended)
     #   ld:
-    #     flags: [LD0] # Not changed
-    #     add-flags: [LD3] # LD1 removed
-    #     remove-flags: [LD1, LD2] # Not changed
-    result = child_linker_node.resolve_extends(extended_base_linker_node, {})
+    #     flags: [LD0, LD3] # Override = True
+    #     remove-flags: [LD2] 
+    #     features: [LDF0, LDF3] # Override = True
+    #     remove-features: [LDF2]
+    result = child_linker_node.resolve_extends(extended_base_linker_node, {}).unwrap()
 
     # Validate result
+    assert result.common_linker.flags.override == False
     assert result.common_linker.flags.values == set([])
     assert result.common_linker.flags.remove_modifiers.values == set([])
+    assert result.common_linker.features.override == False
+    assert result.common_linker.features.values == set([])
+    assert result.common_linker.features.remove_modifiers.values == set([])
     ld = result.linker_overrides.get("ld")
+    assert ld
+    assert ld.flags.override == True
     assert ld.flags.values == set(["LD0", "LD3"])
     assert ld.flags.remove_modifiers.values == set([]) 
+    assert ld.features.override == True
+    assert ld.features.values == set(["LDF0", "LDF3"])
+    assert ld.features.remove_modifiers.values == set([])  
 
 def test_linker_only_1_extends_common_only_2():
     # linkers:
-    #   add-flags: [E1, E3]
+    #   flags: [E1, E3] # Override = False
     #   remove-flags: [E1, E2]
+    #   features: [EF1, EF3] # Override = False
+    #   remove-features: [EF1, EF2]
     base_linker_node = create_common_only_2()
 
     # linkers:
-    #   add-flags: [E3] # E1 removed
-    #   remove-flags: [E1, E2] # Not changed
-    extended_base_linker_node = base_linker_node.resolve_extends(None, {})
+    #   flags: [E3] # Override = False
+    #   remove-flags: []
+    #   features: [EF3] # Override = False
+    #   remove-features: []
+    extended_base_linker_node = base_linker_node.resolve_extends(None, {}).unwrap()
     
     # child 'linkers:' extends extended_base_linker_node
     # linkers:
     #   ld:
-    #     flags: [LD0]
-    #     add-flags: [LD1, LD3]
-    #     remove-flags: [LD1, LD2]
+    #     flags: [LD0, LD1, LD3] # Override = True
+    #     remove-flags: [LD1, LD2] 
+    #     features: [LDF0, LDF1, LDF3] # Override = True
+    #     remove-features: [LDF1, LDF2]
     child_linker_node = create_linker_only_1()
 
     # child
     # linkers: (Extended)
     #   ld:
-    #     flags: [LD0] # Not changed
-    #     add-flags: [LD3] # LD1 removed
-    #     remove-flags: [LD1, LD2] # Not changed
-    result = child_linker_node.resolve_extends(extended_base_linker_node, {})
+    #     flags: [LD0, LD3] # Override = True
+    #     remove-flags: [LD2] 
+    #     features: [LDF0, LDF3] # Override = True
+    #     remove-features: [LDF2]
+    result = child_linker_node.resolve_extends(extended_base_linker_node, {}).unwrap()
 
     # Validate result
+    assert result.common_linker.flags.override == False
     assert result.common_linker.flags.values == set([])
     assert result.common_linker.flags.remove_modifiers.values == set([])
+    assert result.common_linker.features.override == False
+    assert result.common_linker.features.values == set([])
+    assert result.common_linker.features.remove_modifiers.values == set([])
     ld = result.linker_overrides.get("ld")
+    assert ld
+    assert ld.flags.override == True
     assert ld.flags.values == set(["LD0", "LD3"])
     assert ld.flags.remove_modifiers.values == set([]) 
+    assert ld.features.override == True
+    assert ld.features.values == set(["LDF0", "LDF3"])
+    assert ld.features.remove_modifiers.values == set([])  
 
 def test_linker_only_2_extends_common_only_1():
     # linkers:
-    #   flags: [E0]
-    #   add-flags: [E1, E3]
+    #   flags: [E0, E1, E3] # Override = True
     #   remove-flags: [E1, E2]
+    #   features: [EF0, EF1, EF3] # Override = True
+    #   remove-features: [EF1, EF2]
     base_linker_node = create_common_only_1()
 
     # linkers:
-    #   flags: [E0]
-    #   add-flags: [E3] # E1 removed
-    #   remove-flags: [E1, E2] # Not changed
-    extended_base_linker_node = base_linker_node.resolve_extends(None, {})
+    #   flags: [E0, E3] # Override = True
+    #   remove-flags: []
+    #   features: [EF0, EF3] # Override = True
+    #   remove-features: []
+    extended_base_linker_node = base_linker_node.resolve_extends(None, {}).unwrap()
     
     # child 'linkers:' extends extended_base_linker_node
-    # linkers:
     #   ld:
-    #     add-flags: [LD1, LD3]
-    #     remove-flags: [LD1, LD2]
+    #     flags: [LD1, LD3] # Override = False
+    #     remove-flags: [LD1, LD2] 
+    #     features: [LDF1, LDF3] # Override = False
+    #     remove-features: [LDF1, LDF2]
     child_linker_node = create_linker_only_2()
 
     # child
     # linkers: (Extended)
     #   ld:
-    #     add-flags: [E0, E3, LD3] # LD1 removed, E0 E3 added
-    #     remove-flags: [LD1, LD2] # Not changed
-    result = child_linker_node.resolve_extends(extended_base_linker_node, {})
+    #     flags: [E0, E3, LD3] # Override = False
+    #     remove-flags: [] 
+    #     features: [EF0, EF3, LDF3] # Override = False
+    #     remove-features: []
+    result = child_linker_node.resolve_extends(extended_base_linker_node, {}).unwrap()
 
     # Validate result
+    assert result.common_linker.flags.override == False
     assert result.common_linker.flags.values == set([])
     assert result.common_linker.flags.remove_modifiers.values == set([])
+    assert result.common_linker.features.override == False
+    assert result.common_linker.features.values == set([])
+    assert result.common_linker.features.remove_modifiers.values == set([])
     ld = result.linker_overrides.get("ld")
+    assert ld
+    assert ld.flags.override == False
     assert ld.flags.values == set(["E0", "E3", "LD3"])
     assert ld.flags.remove_modifiers.values == set([]) 
+    assert ld.features.override == False
+    assert ld.features.values == set(["EF0", "EF3", "LDF3"])
+    assert ld.features.remove_modifiers.values == set([])  
 
 def test_linker_only_2_extends_common_only_2():
     # linkers:
-    #   add-flags: [E1, E3]
+    #   flags: [E1, E3] # Override = False
     #   remove-flags: [E1, E2]
+    #   features: [EF1, EF3] # Override = False
+    #   remove-features: [EF1, EF2]
     base_linker_node = create_common_only_2()
 
     # linkers:
-    #   add-flags: [E3] # E1 removed
-    #   remove-flags: [E1, E2] # Not changed
-    extended_base_linker_node = base_linker_node.resolve_extends(None, {})
+    #   flags: [E3] # Override = False
+    #   remove-flags: []
+    #   features: [EF3] # Override = False
+    #   remove-features: []
+    extended_base_linker_node = base_linker_node.resolve_extends(None, {}).unwrap()
     
     # child 'linkers:' extends extended_base_linker_node
-    # linkers:
     #   ld:
-    #     add-flags: [LD1, LD3]
-    #     remove-flags: [LD1, LD2]
+    #     flags: [LD1, LD3] # Override = False
+    #     remove-flags: [LD1, LD2] 
+    #     features: [LDF1, LDF3] # Override = False
+    #     remove-features: [LDF1, LDF2]
     child_linker_node = create_linker_only_2()
 
     # child
     # linkers: (Extended)
     #   ld:
-    #     add-flags: [E3, LD3] # LD1 removed, E3 added
-    #     remove-flags: [LD1, LD2] # Not changed
-    result = child_linker_node.resolve_extends(extended_base_linker_node, {})
+    #     flags: [E3, LD3] # Override = False
+    #     remove-flags: [] 
+    #     features: [EF3, LDF3] # Override = False
+    #     remove-features: []
+    result = child_linker_node.resolve_extends(extended_base_linker_node, {}).unwrap()
 
     # Validate result
+    assert result.common_linker.flags.override == False
     assert result.common_linker.flags.values == set([])
     assert result.common_linker.flags.remove_modifiers.values == set([])
+    assert result.common_linker.features.override == False
+    assert result.common_linker.features.values == set([])
+    assert result.common_linker.features.remove_modifiers.values == set([])
     ld = result.linker_overrides.get("ld")
+    assert ld
+    assert ld.flags.override == False
     assert ld.flags.values == set(["E3", "LD3"])
     assert ld.flags.remove_modifiers.values == set([]) 
+    assert ld.features.override == False
+    assert ld.features.values == set(["EF3", "LDF3"])
+    assert ld.features.remove_modifiers.values == set([])  
 
 def test_common_only_1_extends_linker_only_1():
     # linkers:
-    #   ld:
-    #     flags: [LD0]
-    #     add-flags: [LD1, LD3]
-    #     remove-flags: [LD1, LD2]
-    base_linker_node = create_linker_only_1()
+    #   flags: [E0, E1, E3] # Override = True
+    #   remove-flags: [E1, E2]
+    #   features: [EF0, EF1, EF3] # Override = True
+    #   remove-features: [EF1, EF2]
+    base_linker_node = create_common_only_1()
 
     # linkers:
-    #   ld:
-    #     flags: [LD0] # Not changed
-    #     add-flags: [LD3] # LD1 removed
-    #     remove-flags: [LD1, LD2] # Not changed
-    extended_base_linker_node = base_linker_node.resolve_extends(None, {})
+    #   flags: [E0, E3] # Override = True
+    #   remove-flags: []
+    #   features: [EF0, EF3] # Override = True
+    #   remove-features: []
+    extended_base_linker_node = base_linker_node.resolve_extends(None, {}).unwrap()
     
     # child 'linkers:' extends extended_base_linker_node
     # linkers:
-    #   flags: [E0]
-    #   add-flags: [E1, E3]
-    #   remove-flags: [E1, E2]
-    child_linker_node = create_common_only_1()
+    #   ld:
+    #     flags: [LD0, LD1, LD3] # Override = True
+    #     remove-flags: [LD1, LD2] 
+    #     features: [LDF0, LDF1, LDF3] # Override = True
+    #     remove-features: [LDF1, LDF2]
+    child_linker_node = create_linker_only_1()
 
     # child
     # linkers: (Extended)
-    #   flags: [E0] # Not changed
-    #   add-flags: [E3] # E1 removed
-    #   remove-flags: [E1, E2] # Not changed
     #   ld:
-    #     flags: [E0] # Not changed
-    #     add-flags: [E3] # Not changed
-    #     remove-flags: [E1, E2] # Not changed
-    result = child_linker_node.resolve_extends(extended_base_linker_node, {})
+    #     flags: [LD0, LD3] # Override = True
+    #     remove-flags: [LD2] 
+    #     features: [LDF0, LDF3] # Override = True
+    #     remove-features: [LDF2]
+    result = child_linker_node.resolve_extends(extended_base_linker_node, {}).unwrap()
 
     # Validate result
-    assert result.common_linker.flags.values == set(["E0", "E3"])
+    assert result.common_linker.flags.override == False
+    assert result.common_linker.flags.values == set([])
     assert result.common_linker.flags.remove_modifiers.values == set([])
+    assert result.common_linker.features.override == False
+    assert result.common_linker.features.values == set([])
+    assert result.common_linker.features.remove_modifiers.values == set([])
     ld = result.linker_overrides.get("ld")
-    assert ld.flags.values == set(["E0", "E3"])
+    assert ld
+    assert ld.flags.override == True
+    assert ld.flags.values == set(["LD0", "LD3"])
     assert ld.flags.remove_modifiers.values == set([]) 
+    assert ld.features.override == True
+    assert ld.features.values == set(["LDF0", "LDF3"])
+    assert ld.features.remove_modifiers.values == set([]) 
 
 def test_common_only_1_extends_linker_only_2():
     # linkers:
-    #   ld:
-    #     add-flags: [LD1, LD3]
-    #     remove-flags: [LD1, LD2]
-    base_linker_node = create_linker_only_2()
+    #   flags: [E1, E3] # Override = False
+    #   remove-flags: [E1, E2]
+    #   features: [EF1, EF3] # Override = False
+    #   remove-features: [EF1, EF2]
+    base_linker_node = create_common_only_2()
 
     # linkers:
-    #   ld:
-    #     add-flags: [LD3] # LD1 removed
-    #     remove-flags: [LD1, LD2] # Not changed
-    extended_base_linker_node = base_linker_node.resolve_extends(None, {})
+    #   flags: [E3] # Override = False
+    #   remove-flags: []
+    #   features: [EF3] # Override = False
+    #   remove-features: []
+    extended_base_linker_node = base_linker_node.resolve_extends(None, {}).unwrap()
     
     # child 'linkers:' extends extended_base_linker_node
     # linkers:
-    #   flags: [E0]
-    #   add-flags: [E1, E3]
-    #   remove-flags: [E1, E2]
-    child_linker_node = create_common_only_1()
+    #   ld:
+    #     flags: [LD0, LD1, LD3] # Override = True
+    #     remove-flags: [LD1, LD2] 
+    #     features: [LDF0, LDF1, LDF3] # Override = True
+    #     remove-features: [LDF1, LDF2]
+    child_linker_node = create_linker_only_1()
 
     # child
     # linkers: (Extended)
-    #   flags: [E0] # Not changed
-    #   add-flags: [E3] # E1 removed
-    #   remove-flags: [E1, E2] # Not changed
     #   ld:
-    #     flags: [E0] # Not changed
-    #     add-flags: [E3] # Not changed
-    #     remove-flags: [E1, E2] # Not changed
-    result = child_linker_node.resolve_extends(extended_base_linker_node, {})
+    #     flags: [LD0, LD3] # Override = True
+    #     remove-flags: [LD2] 
+    #     features: [LDF0, LDF3] # Override = True
+    #     remove-features: [LDF2]
+    result = child_linker_node.resolve_extends(extended_base_linker_node, {}).unwrap()
 
     # Validate result
-    assert result.common_linker.flags.values == set(["E0", "E3"])
+    assert result.common_linker.flags.override == False
+    assert result.common_linker.flags.values == set([])
     assert result.common_linker.flags.remove_modifiers.values == set([])
+    assert result.common_linker.features.override == False
+    assert result.common_linker.features.values == set([])
+    assert result.common_linker.features.remove_modifiers.values == set([])
     ld = result.linker_overrides.get("ld")
-    assert ld.flags.values == set(["E0", "E3"])
+    assert ld
+    assert ld.flags.override == True
+    assert ld.flags.values == set(["LD0", "LD3"])
     assert ld.flags.remove_modifiers.values == set([]) 
+    assert ld.features.override == True
+    assert ld.features.values == set(["LDF0", "LDF3"])
+    assert ld.features.remove_modifiers.values == set([]) 
 
 def test_common_only_2_extends_linker_only_1():
     # linkers:
-    #   ld:
-    #     flags: [LD0]
-    #     add-flags: [LD1, LD3]
-    #     remove-flags: [LD1, LD2]
-    base_linker_node = create_linker_only_1()
+    #   flags: [E0, E1, E3] # Override = True
+    #   remove-flags: [E1, E2]
+    #   features: [EF0, EF1, EF3] # Override = True
+    #   remove-features: [EF1, EF2]
+    base_linker_node = create_common_only_1()
 
     # linkers:
-    #   ld:
-    #     flags: [LD0, LD3] # LD1 removed
-    #     remove-flags: []
-    extended_base_linker_node = base_linker_node.resolve_extends(None, {})
+    #   flags: [E0, E3] # Override = True
+    #   remove-flags: []
+    #   features: [EF0, EF3] # Override = True
+    #   remove-features: []
+    extended_base_linker_node = base_linker_node.resolve_extends(None, {}).unwrap()
     
     # child 'linkers:' extends extended_base_linker_node
-    # linkers:
-    #   add-flags: [E1, E3]
+    #   flags: [E1, E3] # Override = False
     #   remove-flags: [E1, E2]
+    #   features: [EF1, EF3] # Override = False
+    #   remove-features: [EF1, EF2]
     child_linker_node = create_common_only_2()
 
     # child
     # linkers: (Extended)
-    #   flags: [E3] # E1 removed
+    #   flags: [E3] # Override = False
     #   remove-flags: []
-    #   ld:
-    #     flags: [LD0, LD3, E3] # Not changed
-    #     remove-flags: []
-    result = child_linker_node.resolve_extends(extended_base_linker_node, {})
+    #   features: [EF3] # Override = False
+    #   remove-features: []
+    result = child_linker_node.resolve_extends(extended_base_linker_node, {}).unwrap()
 
     # Validate result
+    assert result.common_linker.flags.override == False
     assert result.common_linker.flags.values == set(["E3"])
     assert result.common_linker.flags.remove_modifiers.values == set([])
-    ld = result.linker_overrides.get("ld")
-    assert ld.flags.values == set(["LD0", "LD3", "E3"])
-    assert ld.flags.remove_modifiers.values == set([]) 
+    assert result.common_linker.features.override == False
+    assert result.common_linker.features.values == set(["EF3"])
+    assert result.common_linker.features.remove_modifiers.values == set([])
+    assert len(result.linker_overrides) == 0
 
 def test_common_only_2_extends_linker_only_2():
     # linkers:
-    #   ld:
-    #     flags: [LD1, LD3]
-    #     remove-flags: [LD1, LD2]
-    base_linker_node = create_linker_only_2()
+    #   flags: [E1, E3] # Override = False
+    #   remove-flags: [E1, E2]
+    #   features: [EF1, EF3] # Override = False
+    #   remove-features: [EF1, EF2]
+    base_linker_node = create_common_only_2()
 
     # linkers:
-    #   ld:
-    #     flags: [LD3] # LD1 removed
-    extended_base_linker_node = base_linker_node.resolve_extends(None, {})
+    #   flags: [E3] # Override = False
+    #   remove-flags: []
+    #   features: [EF3] # Override = False
+    #   remove-features: []
+    extended_base_linker_node = base_linker_node.resolve_extends(None, {}).unwrap()
     
     # child 'linkers:' extends extended_base_linker_node
-    # linkers:
-    #   add-flags: [E1, E3]
+    #   flags: [E1, E3] # Override = False
     #   remove-flags: [E1, E2]
+    #   features: [EF1, EF3] # Override = False
+    #   remove-features: [EF1, EF2]
     child_linker_node = create_common_only_2()
 
     # child
     # linkers: (Extended)
-    #   flags: [E3]
-    #   ld:
-    #     add-flags: [LD3, E3]
-    result = child_linker_node.resolve_extends(extended_base_linker_node, {})
+    #   flags: [E3] # Override = False
+    #   remove-flags: []
+    #   features: [EF3] # Override = False
+    #   remove-features: []
+    result = child_linker_node.resolve_extends(extended_base_linker_node, {}).unwrap()
 
     # Validate result
+    assert result.common_linker.flags.override == False
     assert result.common_linker.flags.values == set(["E3"])
     assert result.common_linker.flags.remove_modifiers.values == set([])
-    ld = result.linker_overrides.get("ld")
-    assert ld.flags.values == set(["LD3", "E3"])
-    assert ld.flags.remove_modifiers.values == set([]) 
+    assert result.common_linker.features.override == False
+    assert result.common_linker.features.values == set(["EF3"])
+    assert result.common_linker.features.remove_modifiers.values == set([])
+    assert len(result.linker_overrides) == 0
 
 def test_extends_linker_override_node() :
 

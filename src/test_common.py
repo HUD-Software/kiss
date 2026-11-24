@@ -1,3 +1,4 @@
+from toolchain.nodes.compiler_nodes import CompilerFeatureNode, CompilerFeatureNodeList
 from toolchain.nodes.feature_node import FeatureArgsNode, FeatureNode, FeatureNodeList, FeatureRuleNode, FeatureRuleNodeIncompatible, FeatureRuleNodeList, FeatureRuleNodeOnlyOne, FeatureStrList
 from toolchain.nodes.linker_nodes import LinkerSpecificOverrideNode, LinkersOverrideNode
 from toolchain.nodes.property import StrList
@@ -76,3 +77,21 @@ def create_feature_str_list(override: bool, values: list[str], remove_modifiers:
     for modifier in remove_modifiers:
         feature_str_list.str_list.add_modifier_remove(modifier)
     return feature_str_list
+
+
+def create_compiler_feature_node(name: str, description = "", flags = StrList(), features = FeatureStrList(), linkers = LinkersOverrideNode(), args = FeatureArgsNode()):
+    feature = CompilerFeatureNode(name)
+    feature.description = description
+    feature.flags = flags
+    feature.features = features
+    feature.args = args
+    feature.linkers = linkers
+    return feature
+
+
+
+def create_compiler_feature_node_list(features : list[CompilerFeatureNode]):
+    feature_list = CompilerFeatureNodeList()
+    for feature in features:
+        feature_list.add_feature(feature)
+    return feature_list

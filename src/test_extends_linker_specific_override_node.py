@@ -33,10 +33,10 @@ def test_extends_no_parent_1():
     assert result.name == "A"
     assert result.flags.override == False
     assert result.flags.values == set(["C_0", "C_2"])
-    assert result.flags.remove_modifiers.values == set([])
+    assert result.flags.remove_modifiers.values == set(["C_1"])
     assert result.features.override == False
     assert result.features.values == set(["C_F0", "C_F2"])
-    assert result.features.remove_modifiers.values == set([])
+    assert result.features.remove_modifiers.values == set(["C_F1"])
 
 def test_extends_no_parent_2():
     child_specific_node = create_specific_linker_override_node("A",
@@ -48,10 +48,10 @@ def test_extends_no_parent_2():
     assert result.name == "A"
     assert result.flags.override == True
     assert result.flags.values == set(["C_0", "C_2"])
-    assert result.flags.remove_modifiers.values == set([])
+    assert result.flags.remove_modifiers.values == set(["C_1"])
     assert result.features.override == True
     assert result.features.values == set(["C_F0", "C_F2"])
-    assert result.features.remove_modifiers.values == set([])
+    assert result.features.remove_modifiers.values == set(["C_F1"])
 
 def test_extends_no_child_1():
     parent_specific_node = create_specific_linker_override_node("A",
@@ -64,10 +64,10 @@ def test_extends_no_child_1():
     assert result.name == "A"
     assert result.flags.override == False
     assert result.flags.values == set(["P_0", "P_2"])
-    assert result.flags.remove_modifiers.values == set([])
+    assert result.flags.remove_modifiers.values == set()
     assert result.features.override == False
     assert result.features.values == set(["P_F0", "P_F2"])
-    assert result.features.remove_modifiers.values == set([])
+    assert result.features.remove_modifiers.values == set()
 
 def test_extends_no_child_2():
     parent_specific_node = create_specific_linker_override_node("A",
@@ -80,10 +80,10 @@ def test_extends_no_child_2():
     assert result.name == "A"
     assert result.flags.override == False
     assert result.flags.values == set(["P_0", "P_2"])
-    assert result.flags.remove_modifiers.values == set([])
+    assert result.flags.remove_modifiers.values == set()
     assert result.features.override == False
     assert result.features.values == set(["P_F0", "P_F2"])
-    assert result.features.remove_modifiers.values == set([])
+    assert result.features.remove_modifiers.values == set()
 
 def test_extends_no_rules_1():
     level_0_node = create_specific_linker_override_node("A",
@@ -102,28 +102,28 @@ def test_extends_no_rules_1():
     assert level_0_node.name == "A"
     assert level_0_node.flags.override == False
     assert level_0_node.flags.values == set(["LV0_0", "LV0_2"])
-    assert level_0_node.flags.remove_modifiers.values == set([])
+    assert level_0_node.flags.remove_modifiers.values == set(["LV0_1"])
     assert level_0_node.features.override == False
     assert level_0_node.features.values == set(["LV0_F0", "LV0_F2"])
-    assert level_0_node.features.remove_modifiers.values == set([])
+    assert level_0_node.features.remove_modifiers.values == set(["LV0_F1"])
 
     level_1_node = level_1_node.resolve_extends(level_0_node, FeatureRuleNodeList()).unwrap()
     assert level_1_node.name == "A"
     assert level_1_node.flags.override == False
     assert level_1_node.flags.values == set(["LV1_0", "LV1_2", "LV0_0", "LV0_2"])
-    assert level_1_node.flags.remove_modifiers.values == set([])
+    assert level_1_node.flags.remove_modifiers.values == set(["LV1_1"])
     assert level_1_node.features.override == False
     assert level_1_node.features.values == set(["LV1_F0", "LV1_F2", "LV0_F0", "LV0_F2"])
-    assert level_1_node.features.remove_modifiers.values == set([])
+    assert level_1_node.features.remove_modifiers.values == set(["LV1_F1"])
 
     level_2_node = level_2_node.resolve_extends(level_1_node, FeatureRuleNodeList()).unwrap()
     assert level_2_node.name == "A"
     assert level_2_node.flags.override == False
     assert level_2_node.flags.values == set(["LV2_0", "LV2_2", "LV1_0", "LV1_2", "LV0_0", "LV0_2"])
-    assert level_2_node.flags.remove_modifiers.values == set([])
+    assert level_2_node.flags.remove_modifiers.values == set(["LV2_1"])
     assert level_2_node.features.override == False
     assert level_2_node.features.values == set(["LV2_F0", "LV2_F2", "LV1_F0", "LV1_F2", "LV0_F0", "LV0_F2"])
-    assert level_2_node.features.remove_modifiers.values == set([])
+    assert level_2_node.features.remove_modifiers.values == set(["LV2_F1"])
 
 
 def test_extends_rules_1():
@@ -150,28 +150,28 @@ def test_extends_rules_1():
     assert level_0_node.name == "A"
     assert level_0_node.flags.override == False
     assert level_0_node.flags.values == set(["LV0_0", "LV0_2"])
-    assert level_0_node.flags.remove_modifiers.values == set([])
+    assert level_0_node.flags.remove_modifiers.values == set(["LV0_1"])
     assert level_0_node.features.override == False
     assert level_0_node.features.values == set(["LV0_F0", "LV0_F2"])
-    assert level_0_node.features.remove_modifiers.values == set([])
+    assert level_0_node.features.remove_modifiers.values == set(["LV0_F1"])
 
     level_1_node = level_1_node.resolve_extends(level_0_node, feature_rule_list).unwrap()
     assert level_1_node.name == "A"
     assert level_1_node.flags.override == False
     assert level_1_node.flags.values == set(["LV1_0", "LV1_2", "LV0_0", "LV0_2"])
-    assert level_1_node.flags.remove_modifiers.values == set([])
+    assert level_1_node.flags.remove_modifiers.values == set(["LV1_1"])
     assert level_1_node.features.override == False
     assert level_1_node.features.values == set(["LV1_F0", "LV1_F2", "LV0_F2"])
-    assert level_1_node.features.remove_modifiers.values == set([])
+    assert level_1_node.features.remove_modifiers.values == set(["LV1_F1"])
 
     level_2_node = level_2_node.resolve_extends(level_1_node, feature_rule_list).unwrap()
     assert level_2_node.name == "A"
     assert level_2_node.flags.override == False
     assert level_2_node.flags.values == set(["LV2_0", "LV2_2", "LV1_0", "LV1_2", "LV0_0", "LV0_2"])
-    assert level_2_node.flags.remove_modifiers.values == set([])
+    assert level_2_node.flags.remove_modifiers.values == set(["LV2_1"])
     assert level_2_node.features.override == False
     assert level_2_node.features.values == set(["LV2_F0", "LV2_F2", "LV1_F2", "LV0_F2"])
-    assert level_2_node.features.remove_modifiers.values == set([])
+    assert level_2_node.features.remove_modifiers.values == set(["LV2_F1"])
 
 
 def test_extends_rules_2():
@@ -198,28 +198,28 @@ def test_extends_rules_2():
     assert level_0_node.name == "A"
     assert level_0_node.flags.override == True
     assert level_0_node.flags.values == set(["LV0_0", "LV0_2"])
-    assert level_0_node.flags.remove_modifiers.values == set([])
+    assert level_0_node.flags.remove_modifiers.values == set(["LV0_1"])
     assert level_0_node.features.override == True
     assert level_0_node.features.values == set(["LV0_F0", "LV0_F2"])
-    assert level_0_node.features.remove_modifiers.values == set([])
+    assert level_0_node.features.remove_modifiers.values == set(["LV0_F1"])
 
     level_1_node = level_1_node.resolve_extends(level_0_node, feature_rule_list).unwrap()
     assert level_1_node.name == "A"
     assert level_1_node.flags.override == False
     assert level_1_node.flags.values == set(["LV1_0", "LV1_2", "LV0_0", "LV0_2"])
-    assert level_1_node.flags.remove_modifiers.values == set([])
+    assert level_1_node.flags.remove_modifiers.values == set(["LV1_1"])
     assert level_1_node.features.override == False
     assert level_1_node.features.values == set(["LV1_F0", "LV1_F2", "LV0_F2"])
-    assert level_1_node.features.remove_modifiers.values == set([])
+    assert level_1_node.features.remove_modifiers.values == set(["LV1_F1"])
 
     level_2_node = level_2_node.resolve_extends(level_1_node, feature_rule_list).unwrap()
     assert level_2_node.name == "A"
     assert level_2_node.flags.override == False
     assert level_2_node.flags.values == set(["LV2_0", "LV2_2", "LV1_0", "LV1_2", "LV0_0", "LV0_2"])
-    assert level_2_node.flags.remove_modifiers.values == set([])
+    assert level_2_node.flags.remove_modifiers.values == set(["LV2_1"])
     assert level_2_node.features.override == False
     assert level_2_node.features.values == set(["LV2_F0", "LV2_F2", "LV1_F2", "LV0_F2"])
-    assert level_2_node.features.remove_modifiers.values == set([])
+    assert level_2_node.features.remove_modifiers.values == set(["LV2_F1"])
 
 def test_extends_rules_3():
     level_0_node = create_specific_linker_override_node("A",
@@ -245,28 +245,28 @@ def test_extends_rules_3():
     assert level_0_node.name == "A"
     assert level_0_node.flags.override == False
     assert level_0_node.flags.values == set(["LV0_0", "LV0_2"])
-    assert level_0_node.flags.remove_modifiers.values == set([])
+    assert level_0_node.flags.remove_modifiers.values == set(["LV0_1"])
     assert level_0_node.features.override == False
     assert level_0_node.features.values == set(["LV0_F0", "LV0_F2"])
-    assert level_0_node.features.remove_modifiers.values == set([])
+    assert level_0_node.features.remove_modifiers.values == set(["LV0_F1"])
 
     level_1_node = level_1_node.resolve_extends(level_0_node, feature_rule_list).unwrap()
     assert level_1_node.name == "A"
     assert level_1_node.flags.override == True
     assert level_1_node.flags.values == set(["LV1_0", "LV1_2"])
-    assert level_1_node.flags.remove_modifiers.values == set([])
+    assert level_1_node.flags.remove_modifiers.values == set(["LV1_1"])
     assert level_1_node.features.override == True
     assert level_1_node.features.values == set(["LV1_F0", "LV1_F2"])
-    assert level_1_node.features.remove_modifiers.values == set([])
+    assert level_1_node.features.remove_modifiers.values == set(["LV1_F1"])
 
     level_2_node = level_2_node.resolve_extends(level_1_node, feature_rule_list).unwrap()
     assert level_2_node.name == "A"
     assert level_2_node.flags.override == False
     assert level_2_node.flags.values == set(["LV2_0", "LV2_2", "LV1_0", "LV1_2",])
-    assert level_2_node.flags.remove_modifiers.values == set([])
+    assert level_2_node.flags.remove_modifiers.values == set(["LV2_1"])
     assert level_2_node.features.override == False
     assert level_2_node.features.values == set(["LV2_F0", "LV2_F2", "LV1_F2"])
-    assert level_2_node.features.remove_modifiers.values == set([])
+    assert level_2_node.features.remove_modifiers.values == set(["LV2_F1"])
 
 def test_extends_rules_4():
     level_0_node = create_specific_linker_override_node("A",
@@ -292,28 +292,28 @@ def test_extends_rules_4():
     assert level_0_node.name == "A"
     assert level_0_node.flags.override == False
     assert level_0_node.flags.values == set(["LV0_0", "LV0_2"])
-    assert level_0_node.flags.remove_modifiers.values == set([])
+    assert level_0_node.flags.remove_modifiers.values == set(["LV0_1"])
     assert level_0_node.features.override == False
     assert level_0_node.features.values == set(["LV0_F0", "LV0_F2"])
-    assert level_0_node.features.remove_modifiers.values == set([])
+    assert level_0_node.features.remove_modifiers.values == set(["LV0_F1"])
 
     level_1_node = level_1_node.resolve_extends(level_0_node, feature_rule_list).unwrap()
     assert level_1_node.name == "A"
     assert level_1_node.flags.override == False
     assert level_1_node.flags.values == set(["LV1_0", "LV1_2", "LV0_0", "LV0_2"])
-    assert level_1_node.flags.remove_modifiers.values == set([])
+    assert level_1_node.flags.remove_modifiers.values == set(["LV1_1"])
     assert level_1_node.features.override == False
     assert level_1_node.features.values == set(["LV1_F0", "LV1_F2", "LV0_F2"])
-    assert level_1_node.features.remove_modifiers.values == set([])
+    assert level_1_node.features.remove_modifiers.values == set(["LV1_F1"])
 
     level_2_node = level_2_node.resolve_extends(level_1_node, feature_rule_list).unwrap()
     assert level_2_node.name == "A"
     assert level_2_node.flags.override == True
     assert level_2_node.flags.values == set(["LV2_0", "LV2_2"])
-    assert level_2_node.flags.remove_modifiers.values == set([])
+    assert level_2_node.flags.remove_modifiers.values == set(["LV2_1"])
     assert level_2_node.features.override == True
     assert level_2_node.features.values == set(["LV2_F0", "LV2_F2"])
-    assert level_2_node.features.remove_modifiers.values == set([])
+    assert level_2_node.features.remove_modifiers.values == set(["LV2_F1"])
 
 def test_extends_rules_5():
     level_0_node = create_specific_linker_override_node("A",
@@ -339,28 +339,28 @@ def test_extends_rules_5():
     assert level_0_node.name == "A"
     assert level_0_node.flags.override == True
     assert level_0_node.flags.values == set(["LV0_0", "LV0_2"])
-    assert level_0_node.flags.remove_modifiers.values == set([])
+    assert level_0_node.flags.remove_modifiers.values == set(["LV0_1"])
     assert level_0_node.features.override == True
     assert level_0_node.features.values == set(["LV0_F0", "LV0_F2"])
-    assert level_0_node.features.remove_modifiers.values == set([])
+    assert level_0_node.features.remove_modifiers.values == set(["LV0_F1"])
 
     level_1_node = level_1_node.resolve_extends(level_0_node, feature_rule_list).unwrap()
     assert level_1_node.name == "A"
     assert level_1_node.flags.override == True
     assert level_1_node.flags.values == set(["LV1_0", "LV1_2"])
-    assert level_1_node.flags.remove_modifiers.values == set([])
+    assert level_1_node.flags.remove_modifiers.values == set(["LV1_1"])
     assert level_1_node.features.override == True
     assert level_1_node.features.values == set(["LV1_F0", "LV1_F2"])
-    assert level_1_node.features.remove_modifiers.values == set([])
+    assert level_1_node.features.remove_modifiers.values == set(["LV1_F1"])
 
     level_2_node = level_2_node.resolve_extends(level_1_node, feature_rule_list).unwrap()
     assert level_2_node.name == "A"
     assert level_2_node.flags.override == False
     assert level_2_node.flags.values == set(["LV2_0", "LV2_2", "LV1_0", "LV1_2"])
-    assert level_2_node.flags.remove_modifiers.values == set([])
+    assert level_2_node.flags.remove_modifiers.values == set(["LV2_1"])
     assert level_2_node.features.override == False
     assert level_2_node.features.values == set(["LV2_F0", "LV2_F2", "LV1_F2"])
-    assert level_2_node.features.remove_modifiers.values == set([])
+    assert level_2_node.features.remove_modifiers.values == set(["LV2_F1"])
 
 def test_extends_rules_6():
     level_0_node = create_specific_linker_override_node("A",
@@ -386,28 +386,28 @@ def test_extends_rules_6():
     assert level_0_node.name == "A"
     assert level_0_node.flags.override == True
     assert level_0_node.flags.values == set(["LV0_0", "LV0_2"])
-    assert level_0_node.flags.remove_modifiers.values == set([])
+    assert level_0_node.flags.remove_modifiers.values == set(["LV0_1"])
     assert level_0_node.features.override == True
     assert level_0_node.features.values == set(["LV0_F0", "LV0_F2"])
-    assert level_0_node.features.remove_modifiers.values == set([])
+    assert level_0_node.features.remove_modifiers.values == set(["LV0_F1"])
 
     level_1_node = level_1_node.resolve_extends(level_0_node, feature_rule_list).unwrap()
     assert level_1_node.name == "A"
     assert level_1_node.flags.override == False
     assert level_1_node.flags.values == set(["LV1_0", "LV1_2", "LV0_0", "LV0_2"])
-    assert level_1_node.flags.remove_modifiers.values == set([])
+    assert level_1_node.flags.remove_modifiers.values == set(["LV1_1"])
     assert level_1_node.features.override == False
     assert level_1_node.features.values == set(["LV1_F0", "LV1_F2", "LV0_F2"])
-    assert level_1_node.features.remove_modifiers.values == set([])
+    assert level_1_node.features.remove_modifiers.values == set(["LV1_F1"])
 
     level_2_node = level_2_node.resolve_extends(level_1_node, feature_rule_list).unwrap()
     assert level_2_node.name == "A"
     assert level_2_node.flags.override == True
     assert level_2_node.flags.values == set(["LV2_0", "LV2_2"])
-    assert level_2_node.flags.remove_modifiers.values == set([])
+    assert level_2_node.flags.remove_modifiers.values == set(["LV2_1"])
     assert level_2_node.features.override == True
     assert level_2_node.features.values == set(["LV2_F0", "LV2_F2"])
-    assert level_2_node.features.remove_modifiers.values == set([])
+    assert level_2_node.features.remove_modifiers.values == set(["LV2_F1"])
 
 def test_extends_rules_7():
     level_0_node = create_specific_linker_override_node("A",
@@ -433,28 +433,28 @@ def test_extends_rules_7():
     assert level_0_node.name == "A"
     assert level_0_node.flags.override == True
     assert level_0_node.flags.values == set(["LV0_0", "LV0_2"])
-    assert level_0_node.flags.remove_modifiers.values == set([])
+    assert level_0_node.flags.remove_modifiers.values == set(["LV0_1"])
     assert level_0_node.features.override == True
     assert level_0_node.features.values == set(["LV0_F0", "LV0_F2"])
-    assert level_0_node.features.remove_modifiers.values == set([])
+    assert level_0_node.features.remove_modifiers.values == set(["LV0_F1"])
 
     level_1_node = level_1_node.resolve_extends(level_0_node, feature_rule_list).unwrap()
     assert level_1_node.name == "A"
     assert level_1_node.flags.override == True
     assert level_1_node.flags.values == set(["LV1_0", "LV1_2",])
-    assert level_1_node.flags.remove_modifiers.values == set([])
+    assert level_1_node.flags.remove_modifiers.values == set(["LV1_1"])
     assert level_1_node.features.override == True
     assert level_1_node.features.values == set(["LV1_F0", "LV1_F2"])
-    assert level_1_node.features.remove_modifiers.values == set([])
+    assert level_1_node.features.remove_modifiers.values == set(["LV1_F1"])
 
     level_2_node = level_2_node.resolve_extends(level_1_node, feature_rule_list).unwrap()
     assert level_2_node.name == "A"
     assert level_2_node.flags.override == False
     assert level_2_node.flags.values == set(["LV2_0", "LV2_2", "LV1_0", "LV1_2"])
-    assert level_2_node.flags.remove_modifiers.values == set([])
+    assert level_2_node.flags.remove_modifiers.values == set(["LV2_1"])
     assert level_2_node.features.override == False
     assert level_2_node.features.values == set(["LV2_F0", "LV2_F2", "LV1_F2"])
-    assert level_2_node.features.remove_modifiers.values == set([])
+    assert level_2_node.features.remove_modifiers.values == set(["LV2_F1"])
 
 def test_extends_rules_8():
     level_0_node = create_specific_linker_override_node("A",
@@ -480,28 +480,28 @@ def test_extends_rules_8():
     assert level_0_node.name == "A"
     assert level_0_node.flags.override == True
     assert level_0_node.flags.values == set(["LV0_0", "LV0_2"])
-    assert level_0_node.flags.remove_modifiers.values == set([])
+    assert level_0_node.flags.remove_modifiers.values == set(["LV0_1"])
     assert level_0_node.features.override == True
     assert level_0_node.features.values == set(["LV0_F0", "LV0_F2"])
-    assert level_0_node.features.remove_modifiers.values == set([])
+    assert level_0_node.features.remove_modifiers.values == set(["LV0_F1"])
 
     level_1_node = level_1_node.resolve_extends(level_0_node, feature_rule_list).unwrap()
     assert level_1_node.name == "A"
     assert level_1_node.flags.override == True
     assert level_1_node.flags.values == set(["LV1_0", "LV1_2"])
-    assert level_1_node.flags.remove_modifiers.values == set([])
+    assert level_1_node.flags.remove_modifiers.values == set(["LV1_1"])
     assert level_1_node.features.override == True
     assert level_1_node.features.values == set(["LV1_F0", "LV1_F2"])
-    assert level_1_node.features.remove_modifiers.values == set([])
+    assert level_1_node.features.remove_modifiers.values == set(["LV1_F1"])
 
     level_2_node = level_2_node.resolve_extends(level_1_node, feature_rule_list).unwrap()
     assert level_2_node.name == "A"
     assert level_2_node.flags.override == True
     assert level_2_node.flags.values == set(["LV2_0", "LV2_2"])
-    assert level_2_node.flags.remove_modifiers.values == set([])
+    assert level_2_node.flags.remove_modifiers.values == set(["LV2_1"])
     assert level_2_node.features.override == True
     assert level_2_node.features.values == set(["LV2_F0", "LV2_F2"])
-    assert level_2_node.features.remove_modifiers.values == set([])
+    assert level_2_node.features.remove_modifiers.values == set(["LV2_F1"])
 
 def test_extends_linker_specific_override_node() :
 

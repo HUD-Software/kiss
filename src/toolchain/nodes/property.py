@@ -67,7 +67,7 @@ class StrList:
         for value in self.values:
             if value not in self.remove_modifiers.values:
                 result.values.add(value)
-        
+        result.remove_modifiers = copy.deepcopy(self.remove_modifiers)
         return result
 
 def resolve_extends_str_list(child: StrList, parent: StrList) -> StrList:
@@ -77,6 +77,7 @@ def resolve_extends_str_list(child: StrList, parent: StrList) -> StrList:
     # Add all child values and add modifiers in add modifiers if not removed
     result = StrList()
     result.override = child.override
+    result.remove_modifiers = copy.deepcopy(child.remove_modifiers)
     # Add child value if not removed
     for value in child.values:
         if value not in child.remove_modifiers.values:
@@ -87,20 +88,9 @@ def resolve_extends_str_list(child: StrList, parent: StrList) -> StrList:
         for value in parent.values:
             if value not in child.remove_modifiers.values:
                 result.values.add(value)
-    return result
     
-# def merge_str_list(child: StrList, parent: StrList) -> StrList :
-#     # If child has explicit values, ignore parents
-#     if child.has_values():
-#         return copy.deepcopy(child)
-#     # Else merge StrList
-#     result = StrList()
-#     result.add_modifiers = copy.deepcopy(child.add_modifiers)
-#     result.add_modifiers.values.update(parent.values)
-#     result.add_modifiers.values.update(parent.add_modifiers.values)
-#     result.remove_modifiers = copy.deepcopy(child.remove_modifiers)
-#     result.remove_modifiers.values.update(parent.remove_modifiers.values)
-#     return result
+    
+    return result
 
 # ── Base ──────────────────────────────────────────────────────────────────────
 

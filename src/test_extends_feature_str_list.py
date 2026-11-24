@@ -60,7 +60,7 @@ def test_extends_empty_parent_no_rule_1():
      # Validate result
     assert result.override == False
     assert result.values == set(["A1"])
-    assert result.remove_modifiers.values == set()
+    assert result.remove_modifiers.values == set(["A2", "A3"])
 
 def test_extends_empty_parent_no_rule_2():
     feature_str_list_child = create_feature_str_list(True, ["A1", "A2"], ["A2", "A3"])
@@ -72,7 +72,7 @@ def test_extends_empty_parent_no_rule_2():
      # Validate result
     assert result.override == True
     assert result.values == set(["A1"])
-    assert result.remove_modifiers.values == set()
+    assert result.remove_modifiers.values == set(["A2", "A3"])
 
 def test_extends_empty_parent_no_rule_3():
     feature_str_list_child = create_feature_str_list(False, ["A1", "A2"], ["A2", "A3"])
@@ -84,7 +84,7 @@ def test_extends_empty_parent_no_rule_3():
      # Validate result
     assert result.override == False
     assert result.values == set(["A1"])
-    assert result.remove_modifiers.values == set()
+    assert result.remove_modifiers.values == set(["A2", "A3"])
 
 def test_extends_empty_parent_no_rule_4():
     feature_str_list_child = create_feature_str_list(True, ["A1", "A2"], ["A2", "A3"])
@@ -96,7 +96,7 @@ def test_extends_empty_parent_no_rule_4():
      # Validate result
     assert result.override == True
     assert result.values == set(["A1"])
-    assert result.remove_modifiers.values == set()
+    assert result.remove_modifiers.values == set(["A2", "A3"])
 
 def test_extends_empty_parent_only_one_rule_1():
     feature_str_list_child = create_feature_str_list(False, ["A1", "A2", "A4", "A5"], ["A2", "A3"])
@@ -111,7 +111,7 @@ def test_extends_empty_parent_only_one_rule_1():
      # Validate result
     assert result.override == False
     assert result.values == set(["A1", "A4", "A5"])
-    assert result.remove_modifiers.values == set()
+    assert result.remove_modifiers.values == set(["A2", "A3"])
 
 def test_extends_empty_parent_only_one_rule_2():
     feature_str_list_child = create_feature_str_list(True, ["A1", "A2", "A4", "A5"], ["A2", "A3"])
@@ -126,7 +126,7 @@ def test_extends_empty_parent_only_one_rule_2():
      # Validate result
     assert result.override == True
     assert result.values == set(["A1", "A4", "A5"])
-    assert result.remove_modifiers.values == set()
+    assert result.remove_modifiers.values == set(["A2", "A3"])
 
 def test_extends_empty_parent_only_one_rule_3():
     feature_str_list_child = create_feature_str_list(False, ["A1", "A2", "A4", "A5"], ["A2", "A3"])
@@ -141,7 +141,7 @@ def test_extends_empty_parent_only_one_rule_3():
      # Validate result
     assert result.override == False
     assert result.values == set(["A1", "A4", "A5"])
-    assert result.remove_modifiers.values == set()
+    assert result.remove_modifiers.values == set(["A2", "A3"])
 
 def test_extends_empty_parent_only_one_rule_4():
     feature_str_list_child = create_feature_str_list(True, ["A1", "A2", "A4", "A5"], ["A2", "A3"])
@@ -156,7 +156,7 @@ def test_extends_empty_parent_only_one_rule_4():
      # Validate result
     assert result.override == True
     assert result.values == set(["A1", "A4", "A5"])
-    assert result.remove_modifiers.values == set()
+    assert result.remove_modifiers.values == set(["A2", "A3"])
 
 def test_extends_empty_parent_only_one_rule_failed_1():
     feature_str_list_child = create_feature_str_list(False, ["A1", "A2", "A4", "A5"], ["A2", "A3"])
@@ -213,7 +213,7 @@ def test_extends_empty_parent_incompatible_rule_1():
     # Validate result
     assert result.override == False
     assert result.values == set(["A1", "A4", "A5"])
-    assert result.remove_modifiers.values == set()
+    assert result.remove_modifiers.values == set(["A2", "A3"])
 
 def test_extends_empty_parent_incompatible_rule_2():
     feature_str_list_child = create_feature_str_list(True, ["A1", "A2", "A4", "A5"], ["A2", "A3"])
@@ -228,7 +228,7 @@ def test_extends_empty_parent_incompatible_rule_2():
     # Validate result
     assert result.override == True
     assert result.values == set(["A1", "A4", "A5"])
-    assert result.remove_modifiers.values == set()
+    assert result.remove_modifiers.values == set(["A2", "A3"])
 
 def test_extends_empty_parent_incompatible_rule_3():
     feature_str_list_child = create_feature_str_list(False, ["A1", "A2", "A4", "A5"], ["A2", "A3"])
@@ -243,7 +243,7 @@ def test_extends_empty_parent_incompatible_rule_3():
     # Validate result
     assert result.override == False
     assert result.values == set(["A1", "A4", "A5"])
-    assert result.remove_modifiers.values == set()
+    assert result.remove_modifiers.values == set(["A2", "A3"])
 
 def test_extends_empty_parent_incompatible_rule_4():
     feature_str_list_child = create_feature_str_list(True, ["A1", "A2", "A4", "A5"], ["A2", "A3"])
@@ -258,7 +258,7 @@ def test_extends_empty_parent_incompatible_rule_4():
     # Validate result
     assert result.override == True
     assert result.values == set(["A1", "A4", "A5"])
-    assert result.remove_modifiers.values == set()
+    assert result.remove_modifiers.values == set(["A2", "A3"])
 
 def test_extends_empty_parent_incompatible_rule_failed_1():
     feature_str_list_child = create_feature_str_list(False, ["A1", "A2", "A4", "A5"], ["A2", "A3"])
@@ -316,7 +316,7 @@ def test_extends_empty_parent_multiple_rules_1():
     # Validate result
     assert result.override == False
     assert result.values == set(["A1", "A4", "A5"])
-    assert result.remove_modifiers.values == set()
+    assert result.remove_modifiers.values == set(["A2", "A3"])
 
 def test_extends_empty_parent_multiple_rules_2():
     feature_str_list_child = create_feature_str_list(True, ["A1", "A2", "A4", "A5"], ["A2", "A3"])
@@ -334,7 +334,7 @@ def test_extends_empty_parent_multiple_rules_2():
     # Validate result
     assert result.override == True
     assert result.values == set(["A1", "A4", "A5"])
-    assert result.remove_modifiers.values == set()
+    assert result.remove_modifiers.values == set(["A2", "A3"])
 
 def test_extends_empty_parent_multiple_rules_3():
     feature_str_list_child = create_feature_str_list(False, ["A1", "A2", "A4", "A5"], ["A2", "A3"])
@@ -352,7 +352,7 @@ def test_extends_empty_parent_multiple_rules_3():
     # Validate result
     assert result.override == False
     assert result.values == set(["A1", "A4", "A5"])
-    assert result.remove_modifiers.values == set()
+    assert result.remove_modifiers.values == set(["A2", "A3"])
 
 def test_extends_empty_parent_multiple_rules_4():
     feature_str_list_child = create_feature_str_list(True, ["A1", "A2", "A4", "A5"], ["A2", "A3"])
@@ -370,7 +370,7 @@ def test_extends_empty_parent_multiple_rules_4():
     # Validate result
     assert result.override == True
     assert result.values == set(["A1", "A4", "A5"])
-    assert result.remove_modifiers.values == set()
+    assert result.remove_modifiers.values == set(["A2", "A3"])
 
 
 def test_extends_empty_parent_multiple_rules_failed_1_1():
@@ -982,7 +982,7 @@ def test_extends_no_rule_1():
     # Validate result
     assert result.override == False
     assert result.values == set(["B1", "A1"])
-    assert result.remove_modifiers.values == set()
+    assert result.remove_modifiers.values == set(["A2", "A3"])
 
 def test_extends_no_rule_2():
     feature_str_list_child = create_feature_str_list(True, ["A1", "A2"], ["A2", "A3"])
@@ -994,7 +994,7 @@ def test_extends_no_rule_2():
     # Validate result
     assert result.override == True
     assert result.values == set(["A1"])
-    assert result.remove_modifiers.values == set()
+    assert result.remove_modifiers.values == set(["A2", "A3"])
 
 def test_extends_no_rule_3():
     feature_str_list_child = create_feature_str_list(False, ["A1", "A2"], ["A2", "A3"])
@@ -1006,7 +1006,7 @@ def test_extends_no_rule_3():
     # Validate result
     assert result.override == False
     assert result.values == set(["B1", "A1"])
-    assert result.remove_modifiers.values == set()
+    assert result.remove_modifiers.values == set(["A2", "A3"])
 
 
 def test_extends_no_rule_4():
@@ -1019,7 +1019,7 @@ def test_extends_no_rule_4():
     # Validate result
     assert result.override == True
     assert result.values == set(["A1"])
-    assert result.remove_modifiers.values == set()
+    assert result.remove_modifiers.values == set(["A2", "A3"])
 
 def test_extends_only_one_rule_1():
     feature_str_list_child = create_feature_str_list(False, ["A1", "A2"], ["A2", "A3"])
@@ -1034,7 +1034,7 @@ def test_extends_only_one_rule_1():
     # Validate result
     assert result.override == False
     assert result.values == set(["B1", "A1"])
-    assert result.remove_modifiers.values == set()
+    assert result.remove_modifiers.values == set(["A2", "A3"])
 
 def test_extends_only_one_rule_2():
     feature_str_list_child = create_feature_str_list(True, ["A1", "A2"], ["A2", "A3"])
@@ -1049,7 +1049,7 @@ def test_extends_only_one_rule_2():
     # Validate result
     assert result.override == True
     assert result.values == set(["A1"])
-    assert result.remove_modifiers.values == set()
+    assert result.remove_modifiers.values == set(["A2", "A3"])
 
 def test_extends_only_one_rule_3():
     feature_str_list_child = create_feature_str_list(False, ["A1", "A2"], ["A2", "A3"])
@@ -1064,7 +1064,7 @@ def test_extends_only_one_rule_3():
     # Validate result
     assert result.override == False
     assert result.values == set(["B1", "A1"])
-    assert result.remove_modifiers.values == set()
+    assert result.remove_modifiers.values == set(["A2", "A3"])
 
 def test_extends_only_one_rule_4():
     feature_str_list_child = create_feature_str_list(True, ["A1", "A2"], ["A2", "A3"])
@@ -1079,7 +1079,7 @@ def test_extends_only_one_rule_4():
     # Validate result
     assert result.override == True
     assert result.values == set(["A1"])
-    assert result.remove_modifiers.values == set()
+    assert result.remove_modifiers.values == set(["A2", "A3"])
 
 def test_extends_only_one_rule_failed_1():
     feature_str_list_child = create_feature_str_list(False, ["A1", "A2", "A4"], ["A2", "A3"])
@@ -1153,7 +1153,7 @@ def test_extends_incompatible_rule_1():
     # Validate result
     assert result.override == False
     assert result.values == set(["B1", "A1"])
-    assert result.remove_modifiers.values == set()
+    assert result.remove_modifiers.values == set(["A2", "A3"])
 
 def test_extends_incompatible_rule_2():
     feature_str_list_child = create_feature_str_list(True, ["A1", "A2"], ["A2", "A3"])
@@ -1168,7 +1168,7 @@ def test_extends_incompatible_rule_2():
     # Validate result
     assert result.override == True
     assert result.values == set(["A1"])
-    assert result.remove_modifiers.values == set()
+    assert result.remove_modifiers.values == set(["A2", "A3"])
 
 def test_extends_incompatible_rule_3():
     feature_str_list_child = create_feature_str_list(False, ["A1", "A2"], ["A2", "A3"])
@@ -1183,7 +1183,7 @@ def test_extends_incompatible_rule_3():
     # Validate result
     assert result.override == False
     assert result.values == set(["B1", "A1"])
-    assert result.remove_modifiers.values == set()
+    assert result.remove_modifiers.values == set(["A2", "A3"])
 
 def test_extends_incompatible_rule_4():
     feature_str_list_child = create_feature_str_list(True, ["A1", "A2"], ["A2", "A3"])
@@ -1198,7 +1198,7 @@ def test_extends_incompatible_rule_4():
     # Validate result
     assert result.override == True
     assert result.values == set(["A1"])
-    assert result.remove_modifiers.values == set()
+    assert result.remove_modifiers.values == set(["A2", "A3"])
 
 
 def test_extends_incompatible_rule_failed_1():
@@ -1284,7 +1284,7 @@ def test_extends_multiple_rules_1():
     # Validate result
     assert result.override == False
     assert result.values == set(["A1", "A4", "A5", "B4"])
-    assert result.remove_modifiers.values == set()
+    assert result.remove_modifiers.values == set(["A2", "A3"])
 
 def test_extends_multiple_rules_2():
     # This test validates that rules are applied
@@ -1304,7 +1304,7 @@ def test_extends_multiple_rules_2():
     # Validate result
     assert result.override == True
     assert result.values == set(["A1", "A4", "A5"])
-    assert result.remove_modifiers.values == set()
+    assert result.remove_modifiers.values == set(["A2", "A3"])
 
 def test_extends_multiple_rules_3():
     # This test validates that rules are applied
@@ -1327,7 +1327,7 @@ def test_extends_multiple_rules_3():
     # Validate result
     assert result.override == False
     assert result.values == set(["A1", "A4", "A5", "B4"])
-    assert result.remove_modifiers.values == set()
+    assert result.remove_modifiers.values == set(["A2", "A3"])
 
 def test_extends_multiple_rules_4():
     # This test validates that rules are applied
@@ -1347,7 +1347,7 @@ def test_extends_multiple_rules_4():
     # Validate result
     assert result.override == True
     assert result.values == set(["A1", "A4", "A5"])
-    assert result.remove_modifiers.values == set()
+    assert result.remove_modifiers.values == set(["A2", "A3"])
 
 def test_extends_multiple_rules_failed_1():
     # This test validates that rules are applied
@@ -1408,14 +1408,14 @@ def test_extends_multiple_levels_1():
     feature_str_list_level_0 = resolve_extends_feature_list(feature_str_list_level_0, FeatureStrList(),feature_rule_list_level_0).unwrap()
     assert feature_str_list_level_0.override == False
     assert feature_str_list_level_0.values == set(["A1", "A4", "A5"])
-    assert feature_str_list_level_0.remove_modifiers.values == set()
+    assert feature_str_list_level_0.remove_modifiers.values == set(["A2", "A3"])
 
     # Level 1 extends level 0, so the only one rule is applied to the level 1 feature list
     # The only one rule will remove A4 from the level 0 feature list and add B5 to the level 1 feature list
     feature_str_list_level_1 = resolve_extends_feature_list(feature_str_list_level_1, feature_str_list_level_0, feature_rule_list_level_1).unwrap()
     assert feature_str_list_level_1.override == False
     assert feature_str_list_level_1.values == set(["A1", "B1", "B4", "B5"])
-    assert feature_str_list_level_1.remove_modifiers.values == set()
+    assert feature_str_list_level_1.remove_modifiers.values == set(["B2", "B3", "A5"])
 
     # Level 2 extends level 1, so the only one rule is applied to the level 2 feature list
     # Level 2 is 'C5', 'C3', 'C1', 'C2', 'C4'
@@ -1426,7 +1426,7 @@ def test_extends_multiple_levels_1():
     feature_str_list_level_2 = resolve_extends_feature_list(feature_str_list_level_2, feature_str_list_level_1, feature_rule_list_level_2).unwrap()
     assert feature_str_list_level_2.override == False
     assert feature_str_list_level_2.values == set(["C1", "C4", "B1", "C5"])
-    assert feature_str_list_level_2.remove_modifiers.values == set()
+    assert feature_str_list_level_2.remove_modifiers.values == set(["C2", "C3", "B5"])
 
 def test_extends_multiple_levels_2():
     # level 0
@@ -1452,14 +1452,14 @@ def test_extends_multiple_levels_2():
     feature_str_list_level_0 = resolve_extends_feature_list(feature_str_list_level_0, FeatureStrList(),feature_rule_list_level_0).unwrap()
     assert feature_str_list_level_0.override == True
     assert feature_str_list_level_0.values == set(["A1", "A4", "A5"])
-    assert feature_str_list_level_0.remove_modifiers.values == set()
+    assert feature_str_list_level_0.remove_modifiers.values == set(["A2", "A3"])
 
     # Level 1 extends level 0, so the only one rule is applied to the level 1 feature list
     # The only one rule will remove A4 from the level 0 feature list and add B5 to the level 1 feature list
     feature_str_list_level_1 = resolve_extends_feature_list(feature_str_list_level_1, feature_str_list_level_0, feature_rule_list_level_1).unwrap()
     assert feature_str_list_level_1.override == False
     assert feature_str_list_level_1.values == set(["A1", "B1", "B4", "B5"])
-    assert feature_str_list_level_1.remove_modifiers.values == set()
+    assert feature_str_list_level_1.remove_modifiers.values == set(["B2", "B3", "A5"])
 
     # Level 2 extends level 1, so the only one rule is applied to the level 2 feature list
     # Level 2 is 'C5', 'C3', 'C1', 'C2', 'C4'
@@ -1470,7 +1470,7 @@ def test_extends_multiple_levels_2():
     feature_str_list_level_2 = resolve_extends_feature_list(feature_str_list_level_2, feature_str_list_level_1, feature_rule_list_level_2).unwrap()
     assert feature_str_list_level_2.override == False
     assert feature_str_list_level_2.values == set(["C1", "C4", "B1", "C5"])
-    assert feature_str_list_level_2.remove_modifiers.values == set()
+    assert feature_str_list_level_2.remove_modifiers.values == set(["C2", "C3", "B5"])
 
 
 def test_extends_multiple_levels_3():
@@ -1497,14 +1497,14 @@ def test_extends_multiple_levels_3():
     feature_str_list_level_0 = resolve_extends_feature_list(feature_str_list_level_0, FeatureStrList(),feature_rule_list_level_0).unwrap()
     assert feature_str_list_level_0.override == False
     assert feature_str_list_level_0.values == set(["A1", "A4", "A5"])
-    assert feature_str_list_level_0.remove_modifiers.values == set()
+    assert feature_str_list_level_0.remove_modifiers.values == set(["A2", "A3"])
 
     # Level 1 extends level 0, so the only one rule is applied to the level 1 feature list
     # Level 0 is ignored, only one rule is applied on level 1 only
     feature_str_list_level_1 = resolve_extends_feature_list(feature_str_list_level_1, feature_str_list_level_0, feature_rule_list_level_1).unwrap()
     assert feature_str_list_level_1.override == True
     assert feature_str_list_level_1.values == set(["B1", "B4", "B5"])
-    assert feature_str_list_level_1.remove_modifiers.values == set()
+    assert feature_str_list_level_1.remove_modifiers.values == set(["B2", "B3", "A5"])
 
     # Level 2 extends level 1, so the only one rule is applied to the level 2 feature list
     # Level 2 is 'C5', 'C3', 'C1', 'C2', 'C4'
@@ -1515,7 +1515,7 @@ def test_extends_multiple_levels_3():
     feature_str_list_level_2 = resolve_extends_feature_list(feature_str_list_level_2, feature_str_list_level_1, feature_rule_list_level_2).unwrap()
     assert feature_str_list_level_2.override == False
     assert feature_str_list_level_2.values == set(["C1", "C4", "B1", "C5"])
-    assert feature_str_list_level_2.remove_modifiers.values == set()
+    assert feature_str_list_level_2.remove_modifiers.values == set(["C2", "C3", "B5"])
 
 
 def test_extends_multiple_levels_4():
@@ -1542,14 +1542,14 @@ def test_extends_multiple_levels_4():
     feature_str_list_level_0 = resolve_extends_feature_list(feature_str_list_level_0, FeatureStrList(),feature_rule_list_level_0).unwrap()
     assert feature_str_list_level_0.override == False
     assert feature_str_list_level_0.values == set(["A1", "A4", "A5"])
-    assert feature_str_list_level_0.remove_modifiers.values == set()
+    assert feature_str_list_level_0.remove_modifiers.values == set(["A2", "A3"])
 
     # Level 1 extends level 0, so the only one rule is applied to the level 1 feature list
     # The only one rule will remove A4 from the level 0 feature list and add B5 to the level 1 feature list
     feature_str_list_level_1 = resolve_extends_feature_list(feature_str_list_level_1, feature_str_list_level_0, feature_rule_list_level_1).unwrap()
     assert feature_str_list_level_1.override == False
     assert feature_str_list_level_1.values == set(["A1", "B1", "B4", "B5"])
-    assert feature_str_list_level_1.remove_modifiers.values == set()
+    assert feature_str_list_level_1.remove_modifiers.values == set(["B2", "B3", "A5"])
 
     # Level 2 extends level 1, so the only one rule is applied to the level 2 feature list
     # Level 2 is 'C5', 'C3', 'C1', 'C2', 'C4'
@@ -1559,7 +1559,7 @@ def test_extends_multiple_levels_4():
     feature_str_list_level_2 = resolve_extends_feature_list(feature_str_list_level_2, feature_str_list_level_1, feature_rule_list_level_2).unwrap()
     assert feature_str_list_level_2.override == True
     assert feature_str_list_level_2.values == set(["C1", "C4", "C5"])
-    assert feature_str_list_level_2.remove_modifiers.values == set()
+    assert feature_str_list_level_2.remove_modifiers.values == set(["C2", "C3", "B5"])
 
 def test_extends_multiple_levels_5():
     # level 0
@@ -1585,14 +1585,14 @@ def test_extends_multiple_levels_5():
     feature_str_list_level_0 = resolve_extends_feature_list(feature_str_list_level_0, FeatureStrList(),feature_rule_list_level_0).unwrap()
     assert feature_str_list_level_0.override == True
     assert feature_str_list_level_0.values == set(["A1", "A4", "A5"])
-    assert feature_str_list_level_0.remove_modifiers.values == set()
+    assert feature_str_list_level_0.remove_modifiers.values == set(["A2", "A3"])
 
     # Level 1 extends level 0, so the only one rule is applied to the level 1 feature list
     # Level 0 is ignored, only one rule is applied on level 1 only
     feature_str_list_level_1 = resolve_extends_feature_list(feature_str_list_level_1, feature_str_list_level_0, feature_rule_list_level_1).unwrap()
     assert feature_str_list_level_1.override == True
     assert feature_str_list_level_1.values == set(["B1", "B4", "B5"])
-    assert feature_str_list_level_1.remove_modifiers.values == set()
+    assert feature_str_list_level_1.remove_modifiers.values == set(["B2", "B3", "A5"])
 
     # Level 2 extends level 1, so the only one rule is applied to the level 2 feature list
     # Level 2 is 'C5', 'C3', 'C1', 'C2', 'C4'
@@ -1601,7 +1601,7 @@ def test_extends_multiple_levels_5():
     feature_str_list_level_2 = resolve_extends_feature_list(feature_str_list_level_2, feature_str_list_level_1, feature_rule_list_level_2).unwrap()
     assert feature_str_list_level_2.override == True
     assert feature_str_list_level_2.values == set(["C1", "C4", "C5"])
-    assert feature_str_list_level_2.remove_modifiers.values == set()
+    assert feature_str_list_level_2.remove_modifiers.values == set(["C2", "C3", "B5"])
 
 def test_extends_feature_str_list():
 

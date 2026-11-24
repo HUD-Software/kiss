@@ -34,7 +34,7 @@ def test_only_one_extends_parent_empty():
     assert result_rule.description == onlyone_rule.description
     assert result_rule.feature_names.values == set(["A2"])
     assert result_rule.feature_names.override == False
-    assert result_rule.feature_names.remove_modifiers.values == set()
+    assert result_rule.feature_names.remove_modifiers.values == set(["A1", "A3"])
     assert result_rule.feature_names.remove_modifiers.operation == onlyone_rule.feature_names.remove_modifiers.operation
 
 def test_only_one_extends_parent_empty_override():
@@ -54,7 +54,7 @@ def test_only_one_extends_parent_empty_override():
     assert result_rule.description == onlyone_rule.description
     assert result_rule.feature_names.values == set(["A2"])
     assert result_rule.feature_names.override == True
-    assert result_rule.feature_names.remove_modifiers.values == set()
+    assert result_rule.feature_names.remove_modifiers.values == set(["A1", "A3"])
     assert result_rule.feature_names.remove_modifiers.operation == onlyone_rule.feature_names.remove_modifiers.operation
 
 def test_incompatible_extends_parent_empty():
@@ -75,7 +75,7 @@ def test_incompatible_extends_parent_empty():
     assert result_rule.feature == "A0"
     assert result_rule.incompatible_with.override == False
     assert result_rule.incompatible_with.values == set(["A2"])
-    assert result_rule.incompatible_with.remove_modifiers.values == set()
+    assert result_rule.incompatible_with.remove_modifiers.values == set(["A1", "A3"])
     assert result_rule.incompatible_with.remove_modifiers.operation == incompatible_rule.incompatible_with.remove_modifiers.operation
 
 def test_incompatible_extends_parent_empty_override():
@@ -96,7 +96,7 @@ def test_incompatible_extends_parent_empty_override():
     assert result_rule.feature == "A0"
     assert result_rule.incompatible_with.override == True
     assert result_rule.incompatible_with.values == set(["A2"])
-    assert result_rule.incompatible_with.remove_modifiers.values == set()
+    assert result_rule.incompatible_with.remove_modifiers.values == set(["A1", "A3"])
     assert result_rule.incompatible_with.remove_modifiers.operation == incompatible_rule.incompatible_with.remove_modifiers.operation
 
 def test_empty_extends_only_one_extends():
@@ -117,7 +117,7 @@ def test_empty_extends_only_one_extends():
     assert result_rule.description == onlyone_rule.description
     assert result_rule.feature_names.values == set(["A2"])
     assert result_rule.feature_names.override == False
-    assert result_rule.feature_names.remove_modifiers.values == set()
+    assert result_rule.feature_names.remove_modifiers.values == set(["A1", "A3"])
     assert result_rule.feature_names.remove_modifiers.operation == onlyone_rule.feature_names.remove_modifiers.operation
 
 def test_empty_extends_only_one_extends_override():
@@ -139,7 +139,7 @@ def test_empty_extends_only_one_extends_override():
     assert result_rule.description == onlyone_rule.description
     assert result_rule.feature_names.values == set(["A2"])
     assert result_rule.feature_names.override == True
-    assert result_rule.feature_names.remove_modifiers.values == set()
+    assert result_rule.feature_names.remove_modifiers.values == set(["A1", "A3"])
     assert result_rule.feature_names.remove_modifiers.operation == onlyone_rule.feature_names.remove_modifiers.operation
 
 def test_empty_extends_incompatible():
@@ -162,7 +162,7 @@ def test_empty_extends_incompatible():
     assert result_rule.feature == "A0"
     assert result_rule.incompatible_with.override == False
     assert result_rule.incompatible_with.values == set(["A2"])
-    assert result_rule.incompatible_with.remove_modifiers.values == set()
+    assert result_rule.incompatible_with.remove_modifiers.values == set(["A1", "A3"])
     assert result_rule.incompatible_with.remove_modifiers.operation == incompatible_rule.incompatible_with.remove_modifiers.operation
 
 def test_empty_extends_incompatible_override():
@@ -184,7 +184,7 @@ def test_empty_extends_incompatible_override():
     assert result_rule.feature == "A0"
     assert result_rule.incompatible_with.override == True
     assert result_rule.incompatible_with.values == set(["A2"])
-    assert result_rule.incompatible_with.remove_modifiers.values == set()
+    assert result_rule.incompatible_with.remove_modifiers.values == set(["A1", "A3"])
     assert result_rule.incompatible_with.remove_modifiers.operation == incompatible_rule.incompatible_with.remove_modifiers.operation
     
 def test_only_one_extends_diff_only_one_1():
@@ -210,7 +210,7 @@ def test_only_one_extends_diff_only_one_1():
     assert result_rule.description == base_onlyone_rule.description
     assert result_rule.feature_names.values == set(["A2"])
     assert result_rule.feature_names.override == False
-    assert result_rule.feature_names.remove_modifiers.values == set()
+    assert result_rule.feature_names.remove_modifiers.values == set(["A1", "A3"])
     assert result_rule.feature_names.remove_modifiers.operation == base_onlyone_rule.feature_names.remove_modifiers.operation
 
     result_rule = next((o for o in result.feature_rules_only_one if o.name == "B"), None)
@@ -219,7 +219,7 @@ def test_only_one_extends_diff_only_one_1():
     assert result_rule.description == child_onlyone_rule.description
     assert result_rule.feature_names.values == set(["B2"])
     assert result_rule.feature_names.override == False
-    assert result_rule.feature_names.remove_modifiers.values == set()
+    assert result_rule.feature_names.remove_modifiers.values == set(["B1", "B3"])
     assert result_rule.feature_names.remove_modifiers.operation == child_onlyone_rule.feature_names.remove_modifiers.operation
 
 def test_only_one_extends_diff_only_one_2():
@@ -245,7 +245,7 @@ def test_only_one_extends_diff_only_one_2():
     assert result_rule.description == base_onlyone_rule.description
     assert result_rule.feature_names.values == set(["A2"])
     assert result_rule.feature_names.override == True
-    assert result_rule.feature_names.remove_modifiers.values == set()
+    assert result_rule.feature_names.remove_modifiers.values == set(["A1", "A3"] )
     assert result_rule.feature_names.remove_modifiers.operation == base_onlyone_rule.feature_names.remove_modifiers.operation
 
     result_rule = next((o for o in result.feature_rules_only_one if o.name == "B"), None)
@@ -254,7 +254,7 @@ def test_only_one_extends_diff_only_one_2():
     assert result_rule.description == child_onlyone_rule.description
     assert result_rule.feature_names.values == set(["B2"])
     assert result_rule.feature_names.override == False
-    assert result_rule.feature_names.remove_modifiers.values == set()
+    assert result_rule.feature_names.remove_modifiers.values == set(["B1", "B3"] )
     assert result_rule.feature_names.remove_modifiers.operation == child_onlyone_rule.feature_names.remove_modifiers.operation
 
 def test_only_one_extends_diff_only_one_3():
@@ -280,7 +280,7 @@ def test_only_one_extends_diff_only_one_3():
     assert result_rule.description == base_onlyone_rule.description
     assert result_rule.feature_names.values == set(["A2"])
     assert result_rule.feature_names.override == False
-    assert result_rule.feature_names.remove_modifiers.values == set()
+    assert result_rule.feature_names.remove_modifiers.values == set(["A1", "A3"])
     assert result_rule.feature_names.remove_modifiers.operation == base_onlyone_rule.feature_names.remove_modifiers.operation
 
     result_rule = next((o for o in result.feature_rules_only_one if o.name == "B"), None)
@@ -289,7 +289,7 @@ def test_only_one_extends_diff_only_one_3():
     assert result_rule.description == child_onlyone_rule.description
     assert result_rule.feature_names.values == set(["B2"])
     assert result_rule.feature_names.override == True
-    assert result_rule.feature_names.remove_modifiers.values == set()
+    assert result_rule.feature_names.remove_modifiers.values == set(["B1", "B3"] )
     assert result_rule.feature_names.remove_modifiers.operation == child_onlyone_rule.feature_names.remove_modifiers.operation
 
 def test_only_one_extends_diff_only_one_4():
@@ -315,7 +315,7 @@ def test_only_one_extends_diff_only_one_4():
     assert result_rule.description == base_onlyone_rule.description
     assert result_rule.feature_names.values == set(["A2"])
     assert result_rule.feature_names.override == True
-    assert result_rule.feature_names.remove_modifiers.values == set()
+    assert result_rule.feature_names.remove_modifiers.values == set(["A1", "A3"])
     assert result_rule.feature_names.remove_modifiers.operation == base_onlyone_rule.feature_names.remove_modifiers.operation
 
     result_rule = next((o for o in result.feature_rules_only_one if o.name == "B"), None)
@@ -324,7 +324,7 @@ def test_only_one_extends_diff_only_one_4():
     assert result_rule.description == child_onlyone_rule.description
     assert result_rule.feature_names.values == set(["B2"])
     assert result_rule.feature_names.override == True
-    assert result_rule.feature_names.remove_modifiers.values == set()
+    assert result_rule.feature_names.remove_modifiers.values == set(["B1", "B3"])
     assert result_rule.feature_names.remove_modifiers.operation == child_onlyone_rule.feature_names.remove_modifiers.operation
 
 def test_incompatible_extends_diff_incompatible_1():
@@ -351,7 +351,7 @@ def test_incompatible_extends_diff_incompatible_1():
     assert result_rule.feature == "A0"
     assert result_rule.incompatible_with.override == False
     assert result_rule.incompatible_with.values == set(["A2"])
-    assert result_rule.incompatible_with.remove_modifiers.values == set()
+    assert result_rule.incompatible_with.remove_modifiers.values == set(["A1", "A3"])
     assert result_rule.incompatible_with.remove_modifiers.operation == base_incompatible_rule.incompatible_with.remove_modifiers.operation
 
     result_rule = next((o for o in result.feature_rules_incompatible if o.name == "B"), None)
@@ -361,7 +361,7 @@ def test_incompatible_extends_diff_incompatible_1():
     assert result_rule.feature == "B0"
     assert result_rule.incompatible_with.override == False
     assert result_rule.incompatible_with.values == set(["B2"])
-    assert result_rule.incompatible_with.remove_modifiers.values == set()
+    assert result_rule.incompatible_with.remove_modifiers.values == set(["B1", "B3"])
     assert result_rule.incompatible_with.remove_modifiers.operation == base_incompatible_rule.incompatible_with.remove_modifiers.operation
 
 def test_incompatible_extends_diff_incompatible_2():
@@ -388,7 +388,7 @@ def test_incompatible_extends_diff_incompatible_2():
     assert result_rule.feature == "A0"
     assert result_rule.incompatible_with.override == True
     assert result_rule.incompatible_with.values == set(["A2"])
-    assert result_rule.incompatible_with.remove_modifiers.values == set()
+    assert result_rule.incompatible_with.remove_modifiers.values == set(["A1", "A3"] )
     assert result_rule.incompatible_with.remove_modifiers.operation == base_incompatible_rule.incompatible_with.remove_modifiers.operation
 
     result_rule = next((o for o in result.feature_rules_incompatible if o.name == "B"), None)
@@ -398,7 +398,7 @@ def test_incompatible_extends_diff_incompatible_2():
     assert result_rule.feature == "B0"
     assert result_rule.incompatible_with.override == False
     assert result_rule.incompatible_with.values == set(["B2"])
-    assert result_rule.incompatible_with.remove_modifiers.values == set()
+    assert result_rule.incompatible_with.remove_modifiers.values == set(["B1", "B3"])
     assert result_rule.incompatible_with.remove_modifiers.operation == base_incompatible_rule.incompatible_with.remove_modifiers.operation
     
 def test_incompatible_extends_diff_incompatible_3():
@@ -425,7 +425,7 @@ def test_incompatible_extends_diff_incompatible_3():
     assert result_rule.feature == "A0"
     assert result_rule.incompatible_with.override == False
     assert result_rule.incompatible_with.values == set(["A2"])
-    assert result_rule.incompatible_with.remove_modifiers.values == set()
+    assert result_rule.incompatible_with.remove_modifiers.values == set(["A1", "A3"] )
     assert result_rule.incompatible_with.remove_modifiers.operation == base_incompatible_rule.incompatible_with.remove_modifiers.operation
 
     result_rule = next((o for o in result.feature_rules_incompatible if o.name == "B"), None)
@@ -435,7 +435,7 @@ def test_incompatible_extends_diff_incompatible_3():
     assert result_rule.feature == "B0"
     assert result_rule.incompatible_with.override == True
     assert result_rule.incompatible_with.values == set(["B2"])
-    assert result_rule.incompatible_with.remove_modifiers.values == set()
+    assert result_rule.incompatible_with.remove_modifiers.values == set(["B1", "B3"])
     assert result_rule.incompatible_with.remove_modifiers.operation == base_incompatible_rule.incompatible_with.remove_modifiers.operation
     
 def test_incompatible_extends_diff_incompatible_4():
@@ -462,7 +462,7 @@ def test_incompatible_extends_diff_incompatible_4():
     assert result_rule.feature == "A0"
     assert result_rule.incompatible_with.override == True
     assert result_rule.incompatible_with.values == set(["A2"])
-    assert result_rule.incompatible_with.remove_modifiers.values == set()
+    assert result_rule.incompatible_with.remove_modifiers.values == set(["A1", "A3"])
     assert result_rule.incompatible_with.remove_modifiers.operation == base_incompatible_rule.incompatible_with.remove_modifiers.operation
 
     result_rule = next((o for o in result.feature_rules_incompatible if o.name == "B"), None)
@@ -472,7 +472,7 @@ def test_incompatible_extends_diff_incompatible_4():
     assert result_rule.feature == "B0"
     assert result_rule.incompatible_with.override == True
     assert result_rule.incompatible_with.values == set(["B2"])
-    assert result_rule.incompatible_with.remove_modifiers.values == set()
+    assert result_rule.incompatible_with.remove_modifiers.values == set(["B1", "B3"])
     assert result_rule.incompatible_with.remove_modifiers.operation == base_incompatible_rule.incompatible_with.remove_modifiers.operation
     
 
@@ -500,7 +500,7 @@ def test_only_one_extends_same_only_one_1():
     assert result_rule.description == base_onlyone_rule.description
     assert result_rule.feature_names.values == set(["A1", "A2", "A4", "A3"])
     assert result_rule.feature_names.override == False
-    assert result_rule.feature_names.remove_modifiers.values == set()
+    assert result_rule.feature_names.remove_modifiers.values == set(["A5"])
     assert result_rule.feature_names.remove_modifiers.operation == base_onlyone_rule.feature_names.remove_modifiers.operation
 
 def test_only_one_extends_same_only_one_2():
@@ -526,7 +526,7 @@ def test_only_one_extends_same_only_one_2():
     assert result_rule.description == base_onlyone_rule.description
     assert result_rule.feature_names.values == set(["A1", "A2", "A4", "A3"])
     assert result_rule.feature_names.override == False
-    assert result_rule.feature_names.remove_modifiers.values == set()
+    assert result_rule.feature_names.remove_modifiers.values == set(["A5"])
     assert result_rule.feature_names.remove_modifiers.operation == base_onlyone_rule.feature_names.remove_modifiers.operation
 
 def test_only_one_extends_same_only_one_3():
@@ -552,7 +552,7 @@ def test_only_one_extends_same_only_one_3():
     assert result_rule.description == base_onlyone_rule.description
     assert result_rule.feature_names.values == set(["A1", "A4", "A3"])
     assert result_rule.feature_names.override == True
-    assert result_rule.feature_names.remove_modifiers.values == set()
+    assert result_rule.feature_names.remove_modifiers.values == set(["A5"])
     assert result_rule.feature_names.remove_modifiers.operation == base_onlyone_rule.feature_names.remove_modifiers.operation
 
 def test_only_one_extends_same_only_one_4():
@@ -578,7 +578,7 @@ def test_only_one_extends_same_only_one_4():
     assert result_rule.description == base_onlyone_rule.description
     assert result_rule.feature_names.values == set(["A1", "A4", "A3"])
     assert result_rule.feature_names.override == True
-    assert result_rule.feature_names.remove_modifiers.values == set()
+    assert result_rule.feature_names.remove_modifiers.values == set(["A5"])
     assert result_rule.feature_names.remove_modifiers.operation == base_onlyone_rule.feature_names.remove_modifiers.operation
 
 
@@ -606,7 +606,7 @@ def test_incompatible_extends_same_incompatible_1():
     assert result_rule.feature == "A0"
     assert result_rule.incompatible_with.values == set(["A1", "A2", "A4", "A3"])
     assert result_rule.incompatible_with.override == False
-    assert result_rule.incompatible_with.remove_modifiers.values == set()
+    assert result_rule.incompatible_with.remove_modifiers.values == set(["A5"])
     assert result_rule.incompatible_with.remove_modifiers.operation == base_incompatible_rule.incompatible_with.remove_modifiers.operation
 
 def test_incompatible_extends_same_incompatible_2():
@@ -633,7 +633,7 @@ def test_incompatible_extends_same_incompatible_2():
     assert result_rule.feature == "A0"
     assert result_rule.incompatible_with.values == set(["A1", "A2", "A4", "A3"])
     assert result_rule.incompatible_with.override == False
-    assert result_rule.incompatible_with.remove_modifiers.values == set()
+    assert result_rule.incompatible_with.remove_modifiers.values == set(["A5"])
     assert result_rule.incompatible_with.remove_modifiers.operation == base_incompatible_rule.incompatible_with.remove_modifiers.operation
 
 def test_incompatible_extends_same_incompatible_3():
@@ -660,7 +660,7 @@ def test_incompatible_extends_same_incompatible_3():
     assert result_rule.feature == "A0"
     assert result_rule.incompatible_with.values == set(["A1", "A4", "A3"])
     assert result_rule.incompatible_with.override == True
-    assert result_rule.incompatible_with.remove_modifiers.values == set()
+    assert result_rule.incompatible_with.remove_modifiers.values == set(["A5"])
     assert result_rule.incompatible_with.remove_modifiers.operation == base_incompatible_rule.incompatible_with.remove_modifiers.operation
 
 def test_incompatible_extends_same_incompatible_4():
@@ -687,7 +687,7 @@ def test_incompatible_extends_same_incompatible_4():
     assert result_rule.feature == "A0"
     assert result_rule.incompatible_with.values == set(["A1", "A4", "A3"])
     assert result_rule.incompatible_with.override == True
-    assert result_rule.incompatible_with.remove_modifiers.values == set()
+    assert result_rule.incompatible_with.remove_modifiers.values == set(["A5"])
     assert result_rule.incompatible_with.remove_modifiers.operation == base_incompatible_rule.incompatible_with.remove_modifiers.operation
 
 def test_extends_feature_rule_node_list():

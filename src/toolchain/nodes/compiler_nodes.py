@@ -2,8 +2,8 @@
 from __future__ import annotations
 import copy
 from result import Result, Ok, Err
-from toolchain.nodes.feature_node import FeatureNode, FeatureNodeList, FeatureRuleNodeList, FeatureStrList, ValidationError
-from toolchain.nodes.linker_nodes import LinkerNode, LinkersOverrideNode, merge_linkers_override_node
+from toolchain.nodes.feature_node import FeatureArgsNode, FeatureNode, FeatureNodeList, FeatureRuleNodeList, FeatureStrList, ValidationError
+from toolchain.nodes.linker_nodes import LinkerNode, LinkersOverrideNode
 from toolchain.nodes.property import StrList
 
 class CompilerNode:
@@ -40,14 +40,16 @@ class CompilerNode:
     def __hash__(self):
         return hash(self.name)
 
-    def resolve_extends(self, parent: CompilerNode) -> Result[CompilerNode, ValidationError]:
+    def resolve_extends(self, parent: CompilerNode, linkers: dict[str, LinkerNode]) -> Result[CompilerNode, ValidationError]:
         result = CompilerNode(self.name)
         result.is_abstract = self.is_abstract
         result.extends = self.extends   
         result.supported_linkers = self.supported_linkers
+        result.default_linker = self.default_linker
+
         if not parent:
             result.feature_rule_list = self.feature_rule_list.resolve_extends(FeatureRuleNodeList())
-            match self.feature_list.resolve_extends(FeatureNodeList(), result.feature_rule_list):
+            match self.feature_list.resolve_extends(FeatureNodeList(), linkers, result.feature_rule_list):
                 case Err() as err:
                     return err
                 case Ok(feature_list):
@@ -139,21 +141,21 @@ class CompilerSpecificOverrideNode:
     def __hash__(self):
         return hash(self.name)
        
-    def apply_modifiers(self, compiler_feature_rules: FeatureRuleNodeList, linkers : dict[str, LinkerNode]) -> CompilerSpecificOverrideNode:
-        result = CompilerSpecificOverrideNode(self.name)
-        result.linker_overrides = self.linker_overrides.apply_modifiers(linkers) if self.linker_overrides else None
-        result.flags = self.flags.apply_modifiers()
-        result.features = self.features.apply_modifiers(compiler_feature_rules)
-        result.defines = self.defines.apply_modifiers()
-        return result
+    # def apply_modifiers(self, compiler_feature_rules: FeatureRuleNodeList, linkers : dict[str, LinkerNode]) -> CompilerSpecificOverrideNode:
+    #     result = CompilerSpecificOverrideNode(self.name)
+    #     result.linker_overrides = self.linker_overrides.apply_modifiers(linkers) if self.linker_overrides else None
+    #     result.flags = self.flags.apply_modifiers()
+    #     result.features = self.features.apply_modifiers(compiler_feature_rules)
+    #     result.defines = self.defines.apply_modifiers()
+    #     return result
     
-    def merge_with(self, parent: CompilerSpecificOverrideNode, compiler_feature_rules: FeatureRuleNodeList, linkers : dict[str, LinkerNode]) -> CompilerSpecificOverrideNode:
-        result = CompilerSpecificOverrideNode(self.name)
-        result.flags = merge_str_list(parent.flags, self.flags)
-        result.defines = merge_str_list(parent.defines, self.defines)
-        result.features = merge_feature_list(parent.features, self.features, compiler_feature_rules)
-        result.linker_overrides = merge_linkers_override_node(self.linker_overrides, parent.linker_overrides, linkers)
-        return result
+    # def merge_with(self, parent: CompilerSpecificOverrideNode, compiler_feature_rules: FeatureRuleNodeList, linkers : dict[str, LinkerNode]) -> CompilerSpecificOverrideNode:
+    #     result = CompilerSpecificOverrideNode(self.name)
+    #     result.flags = merge_str_list(parent.flags, self.flags)
+    #     result.defines = merge_str_list(parent.defines, self.defines)
+    #     result.features = merge_feature_list(parent.features, self.features, compiler_feature_rules)
+    #     result.linker_overrides = merge_linkers_override_node(self.linker_overrides, parent.linker_overrides, linkers)
+    #     return result
                 
 class CompilersOverrideNode:
     """Represents the 'compilers:' block.
@@ -252,45 +254,109 @@ class CompilerFeatureNodeList:
                 return rule
         return None
 
-    def merge_with(self, parent: CompilerFeatureNodeList, feature_rules: FeatureRuleNodeList):
+    def resolve_extends(self, parent: CompilerFeatureNodeList, linkers: dict[str, LinkerNode], feature_rules: FeatureRuleNodeList) -> Result[CompilerFeatureNodeList, ValidationError]:
         result = CompilerFeatureNodeList()
-        if parent:
-            for parent_feature in parent.features:
-                self_feature = self.get_by_name(parent_feature.name)
-                if self_feature:
-                    result.add_feature(self_feature.merge_with(parent_feature, feature_rules))
-                else:
-                    result.add_feature(copy.deepcopy(parent_feature))
-        return result
-    
-    def apply_modifiers(self, feature_rules: FeatureRuleNodeList) -> CompilerFeatureNodeList:
-        result = CompilerFeatureNodeList()
-        for feature in self.features:
-            result.add_feature(feature.apply_modifiers(feature_rules))
-        return result
+        parent_features = parent.features if parent else set()
+        self_by_name = {r.name: r for r in self.features}
+        parent_by_name = {r.name: r for r in parent_features}
 
-class CompilerFeatureNode(FeatureNode):
-    def __init__(self, name:str):
-        super().__init__(name)
+        for name in self_by_name.keys() | parent_by_name.keys():
+            self_feature = self_by_name.get(name)
+            parent_feature = parent_by_name.get(name)
+
+            if self_feature:
+                # In the case the feature exist in child
+                # We extends the child with the parent feature
+                # if the parent feature doesn't exist, feature resolve_extends handle this case
+                match self_feature.resolve_extends(parent_feature, linkers, feature_rules):
+                    case Err() as err:
+                        return err
+                    case Ok(feature):
+                       result.add_feature(feature)
+
+            elif parent_feature:
+                # In the case the feature exist only in child
+                # We create a new FeatureNode with the same name and description as the parent feature
+                # Then we resolve the extends with the parent feature
+                # This is to ensure that the child feature inherits the name and description from the parent feature
+                # keeping same behavior as before, but without marking flags and features as override if not present in the childn the child
+                self_feature = CompilerFeatureNode(parent_feature.name)
+                self_feature.description = parent_feature.description
+                match self_feature.resolve_extends(parent_feature, linkers, feature_rules):
+                    case Err() as err:
+                        return err
+                    case Ok(feature):
+                        result.add_feature(feature)
+        return Ok(result)
+    
+
+class CompilerFeatureNode:
+    def __init__(self, name: str):
+        self.feature_node = FeatureNode(name)
         self.linkers = LinkersOverrideNode()
 
-    @classmethod
-    def from_feature_node(cls, feature: FeatureNode) -> CompilerFeatureNode:
-        obj = cls(feature.name)
-        obj.flags = copy.deepcopy(feature.flags)
-        obj.features = copy.deepcopy(feature.features)
-        obj.args = copy.deepcopy(feature.args)
-        obj.description = copy.deepcopy(feature.description)
-        return obj
-    
-    def merge_with(self, other: CompilerFeatureNode, feature_rules: FeatureRuleNodeList):
-        s : FeatureNode = super().apply_modifiers(feature_rules)
-        result = CompilerFeatureNode.from_feature_node(s)
-        result.linkers = self.linkers.merge_with(other.linkers)
-        return result
-    
-    def apply_modifiers(self, feature_rules: FeatureRuleNodeList) -> CompilerFeatureNode:
-        s : FeatureNode = super().apply_modifiers(feature_rules)
-        result = CompilerFeatureNode.from_feature_node(s)
-        result.linkers = copy.deepcopy(self.linkers)
-        return result
+    # --- Accesseurs délégués à FeatureNode ---
+    @property
+    def name(self) -> str:
+        return self.feature_node.name
+
+    @name.setter
+    def name(self, value: str) -> None:
+        self.feature_node.name = value
+
+    @property
+    def description(self) -> str:
+        return self.feature_node.description
+
+    @description.setter
+    def description(self, value: str) -> None:
+        self.feature_node.description = value
+
+    @property
+    def flags(self) -> StrList:
+        return self.feature_node.flags
+
+    @flags.setter
+    def flags(self, value: StrList) -> None:
+        self.feature_node.flags = value
+
+    @property
+    def features(self) -> FeatureStrList:
+        return self.feature_node.features
+
+    @features.setter
+    def features(self, value: FeatureStrList) -> None:
+        self.feature_node.features = value
+
+    @property
+    def args(self) -> FeatureArgsNode | None:
+        return self.feature_node.args
+
+    @args.setter
+    def args(self, value: FeatureArgsNode | None) -> None:
+        self.feature_node.args = value
+
+    def resolve_extends(
+        self,
+        parent: "CompilerFeatureNode | None",
+        linkers : dict[str, LinkerNode],
+        feature_rules: FeatureRuleNodeList,
+    ) -> Result["CompilerFeatureNode", ValidationError]:
+        parent_feature = parent.feature_node if parent is not None else None
+        match self.feature_node.resolve_extends(parent_feature, feature_rules):
+            case Err() as err:
+                return err
+            case Ok(resolved_feature):
+                pass
+
+        parent_linkers = parent.linkers if parent is not None else None
+        match self.linkers.resolve_extends(parent_linkers, linkers): 
+            case Err() as err:
+                return err
+            case Ok(resolved_linkers):
+                pass
+
+        result = CompilerFeatureNode(self.name)
+        result.feature_node = resolved_feature
+        result.linkers = resolved_linkers
+        return Ok(result)

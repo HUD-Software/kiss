@@ -23,10 +23,10 @@ def test_extends_parent_empty_1():
     assert result.description == "feature level 0"
     assert result.flags.override == False
     assert result.flags.values == set(["L0_2"])
-    assert result.flags.remove_modifiers.values == set([])
+    assert result.flags.remove_modifiers.values == set(["L0_1", "L0_3"])
     assert result.features.override == False
     assert result.features.values == set(["L0_F2", "L0_F3"])
-    assert result.features.remove_modifiers.values == set([])
+    assert result.features.remove_modifiers.values == set( ["L0_F1"])
 
 def test_extends_parent_empty_2():
     # feature level 0
@@ -41,10 +41,10 @@ def test_extends_parent_empty_2():
     assert result.description == "feature level 0"
     assert result.flags.override == True
     assert result.flags.values == set(["L0_2"])
-    assert result.flags.remove_modifiers.values == set([])
+    assert result.flags.remove_modifiers.values == set(["L0_1", "L0_3"] )
     assert result.features.override == True
     assert result.features.values == set(["L0_F2", "L0_F3"])
-    assert result.features.remove_modifiers.values == set([])
+    assert result.features.remove_modifiers.values == set( ["L0_F1"])
 
 def test_extends_no_rules_1():
     # feature level 0
@@ -67,10 +67,10 @@ def test_extends_no_rules_1():
     assert feature_level_1.description == "feature level 1"
     assert feature_level_1.flags.override == False
     assert feature_level_1.flags.values == set(["L0_2", "L1_2"])
-    assert feature_level_1.flags.remove_modifiers.values == set([])
+    assert feature_level_1.flags.remove_modifiers.values == set(["L1_1", "L1_3"] )
     assert feature_level_1.features.override == False
     assert feature_level_1.features.values == set(["L0_F2", "L0_F3", "L1_F2", "L1_F3"])
-    assert feature_level_1.features.remove_modifiers.values == set([])
+    assert feature_level_1.features.remove_modifiers.values == set(["L1_F1"] )
 
     # feature level 2
     feature_level_2 = FeatureNode("level_2")
@@ -84,10 +84,10 @@ def test_extends_no_rules_1():
     assert feature_level_2.description == "feature level 2"
     assert feature_level_2.flags.override == False
     assert feature_level_2.flags.values == set(["L0_2", "L1_2", "L2_2"])
-    assert feature_level_2.flags.remove_modifiers.values == set([])
+    assert feature_level_2.flags.remove_modifiers.values == set( ["L2_1", "L2_3"] )
     assert feature_level_2.features.override == False
     assert feature_level_2.features.values == set(["L0_F2", "L0_F3", "L1_F2", "L1_F3", "L2_F2", "L2_F3"])
-    assert feature_level_2.features.remove_modifiers.values == set([])
+    assert feature_level_2.features.remove_modifiers.values == set( ["L2_F1"])
 
 def test_extends_no_rules_2():
     # feature level 0
@@ -110,10 +110,10 @@ def test_extends_no_rules_2():
     assert feature_level_1.description == "feature level 1"
     assert feature_level_1.flags.override == True
     assert feature_level_1.flags.values == set(["L1_2"])
-    assert feature_level_1.flags.remove_modifiers.values == set([])
+    assert feature_level_1.flags.remove_modifiers.values == set(["L1_1", "L1_3"] )
     assert feature_level_1.features.override == True
     assert feature_level_1.features.values == set(["L1_F2", "L1_F3"])
-    assert feature_level_1.features.remove_modifiers.values == set([])
+    assert feature_level_1.features.remove_modifiers.values == set(["L1_F1"])
 
     # feature level 2
     feature_level_2 = FeatureNode("level_2")
@@ -127,10 +127,10 @@ def test_extends_no_rules_2():
     assert feature_level_2.description == "feature level 2"
     assert feature_level_2.flags.override == False
     assert feature_level_2.flags.values == set(["L1_2", "L2_2"])
-    assert feature_level_2.flags.remove_modifiers.values == set([])
+    assert feature_level_2.flags.remove_modifiers.values == set(["L2_1", "L2_3"])
     assert feature_level_2.features.override == False
     assert feature_level_2.features.values == set(["L1_F2", "L1_F3", "L2_F2", "L2_F3"])
-    assert feature_level_2.features.remove_modifiers.values == set([])
+    assert feature_level_2.features.remove_modifiers.values == set(["L2_F1"])
 
 def test_extends_no_rules_3():
     # feature level 0
@@ -153,10 +153,10 @@ def test_extends_no_rules_3():
     assert feature_level_1.description == "feature level 1"
     assert feature_level_1.flags.override == False
     assert feature_level_1.flags.values == set(["L0_2", "L1_2"])
-    assert feature_level_1.flags.remove_modifiers.values == set([])
+    assert feature_level_1.flags.remove_modifiers.values == set(["L1_1", "L1_3"])
     assert feature_level_1.features.override == False
     assert feature_level_1.features.values == set(["L0_F2", "L0_F3", "L1_F2", "L1_F3"])
-    assert feature_level_1.features.remove_modifiers.values == set([])
+    assert feature_level_1.features.remove_modifiers.values == set(["L1_F1"])
 
     # feature level 2
     feature_level_2 = FeatureNode("level_2")
@@ -170,10 +170,10 @@ def test_extends_no_rules_3():
     assert feature_level_2.description == "feature level 2"
     assert feature_level_2.flags.override == True
     assert feature_level_2.flags.values == set(["L2_2"])
-    assert feature_level_2.flags.remove_modifiers.values == set([])
+    assert feature_level_2.flags.remove_modifiers.values == set( ["L2_1", "L2_3"] )
     assert feature_level_2.features.override == True
     assert feature_level_2.features.values == set(["L2_F2", "L2_F3"])
-    assert feature_level_2.features.remove_modifiers.values == set([])
+    assert feature_level_2.features.remove_modifiers.values == set(["L2_F1"])
 
 def test_extends_no_rules_4():
     # feature level 0
@@ -196,10 +196,10 @@ def test_extends_no_rules_4():
     assert feature_level_1.description == "feature level 1"
     assert feature_level_1.flags.override == True
     assert feature_level_1.flags.values == set(["L1_2"])
-    assert feature_level_1.flags.remove_modifiers.values == set([])
+    assert feature_level_1.flags.remove_modifiers.values == set( ["L1_1", "L1_3"])
     assert feature_level_1.features.override == True
     assert feature_level_1.features.values == set(["L1_F2", "L1_F3"])
-    assert feature_level_1.features.remove_modifiers.values == set([])
+    assert feature_level_1.features.remove_modifiers.values == set(["L1_F1"] )
 
     # feature level 2
     feature_level_2 = FeatureNode("level_2")
@@ -213,10 +213,10 @@ def test_extends_no_rules_4():
     assert feature_level_2.description == "feature level 2"
     assert feature_level_2.flags.override == True
     assert feature_level_2.flags.values == set(["L2_2"])
-    assert feature_level_2.flags.remove_modifiers.values == set([])
+    assert feature_level_2.flags.remove_modifiers.values == set(["L2_1", "L2_3"])
     assert feature_level_2.features.override == True
     assert feature_level_2.features.values == set(["L2_F2", "L2_F3"])
-    assert feature_level_2.features.remove_modifiers.values == set([])
+    assert feature_level_2.features.remove_modifiers.values == set(["L2_F1"])
 
 def test_extends_1():
     onlyone_rule = create_only_one_rule("one rule F3", "OnlyOne F3", ["L0_F3", "L1_F3", "L2_F3"])
@@ -240,10 +240,10 @@ def test_extends_1():
     assert feature_level_1.description == "feature level 1"
     assert feature_level_1.flags.override == False
     assert feature_level_1.flags.values == set(["L0_2", "L1_2"])
-    assert feature_level_1.flags.remove_modifiers.values == set([])
+    assert feature_level_1.flags.remove_modifiers.values == set(["L1_1", "L1_3"])
     assert feature_level_1.features.override == False
     assert feature_level_1.features.values == set(["L0_F2", "L1_F2", "L1_F3"])
-    assert feature_level_1.features.remove_modifiers.values == set([])
+    assert feature_level_1.features.remove_modifiers.values == set(["L1_F1"])
 
     # feature level 2
     feature_level_2 = FeatureNode("level_2")
@@ -256,10 +256,10 @@ def test_extends_1():
     assert feature_level_2.description == "feature level 2"
     assert feature_level_2.flags.override == False
     assert feature_level_2.flags.values == set(["L0_2", "L1_2", "L2_2"])
-    assert feature_level_2.flags.remove_modifiers.values == set([])
+    assert feature_level_2.flags.remove_modifiers.values == set(["L2_1", "L2_3"])
     assert feature_level_2.features.override == False
     assert feature_level_2.features.values == set(["L0_F2", "L1_F2", "L2_F2", "L2_F3"])
-    assert feature_level_2.features.remove_modifiers.values == set([])
+    assert feature_level_2.features.remove_modifiers.values == set(["L2_F1"])
 
 def test_extends_2():
     onlyone_rule = create_only_one_rule("one rule F3", "OnlyOne F3", ["L0_F3", "L1_F3", "L2_F3"])
@@ -283,10 +283,10 @@ def test_extends_2():
     assert feature_level_1.description == "feature level 1"
     assert feature_level_1.flags.override == False
     assert feature_level_1.flags.values == set(["L0_2", "L1_2"])
-    assert feature_level_1.flags.remove_modifiers.values == set([])
+    assert feature_level_1.flags.remove_modifiers.values == set(["L1_1", "L1_3"])
     assert feature_level_1.features.override == False
     assert feature_level_1.features.values == set(["L0_F2", "L1_F2", "L1_F3"])
-    assert feature_level_1.features.remove_modifiers.values == set([])
+    assert feature_level_1.features.remove_modifiers.values == set(["L1_F1"])
 
     # feature level 2
     feature_level_2 = FeatureNode("level_2")
@@ -299,10 +299,10 @@ def test_extends_2():
     assert feature_level_2.description == "feature level 2"
     assert feature_level_2.flags.override == False
     assert feature_level_2.flags.values == set(["L0_2", "L1_2", "L2_2"])
-    assert feature_level_2.flags.remove_modifiers.values == set([])
+    assert feature_level_2.flags.remove_modifiers.values == set(["L2_1", "L2_3"] )
     assert feature_level_2.features.override == False
     assert feature_level_2.features.values == set(["L0_F2", "L1_F2", "L2_F2", "L2_F3"])
-    assert feature_level_2.features.remove_modifiers.values == set([])
+    assert feature_level_2.features.remove_modifiers.values == set(["L2_F1"])
 
 def test_extends_3():
     onlyone_rule = create_only_one_rule("one rule F3", "OnlyOne F3", ["L0_F3", "L1_F3", "L2_F3"])
@@ -326,10 +326,10 @@ def test_extends_3():
     assert feature_level_1.description == "feature level 1"
     assert feature_level_1.flags.override == True
     assert feature_level_1.flags.values == set(["L1_2"])
-    assert feature_level_1.flags.remove_modifiers.values == set([])
+    assert feature_level_1.flags.remove_modifiers.values == set(["L1_1", "L1_3"])
     assert feature_level_1.features.override == True
     assert feature_level_1.features.values == set(["L1_F2", "L1_F3"])
-    assert feature_level_1.features.remove_modifiers.values == set([])
+    assert feature_level_1.features.remove_modifiers.values == set(["L1_F1"])
 
     # feature level 2
     feature_level_2 = FeatureNode("level_2")
@@ -342,10 +342,10 @@ def test_extends_3():
     assert feature_level_2.description == "feature level 2"
     assert feature_level_2.flags.override == False
     assert feature_level_2.flags.values == set(["L1_2", "L2_2"])
-    assert feature_level_2.flags.remove_modifiers.values == set([])
+    assert feature_level_2.flags.remove_modifiers.values == set(["L2_1", "L2_3"])
     assert feature_level_2.features.override == False
     assert feature_level_2.features.values == set(["L1_F2", "L2_F2", "L2_F3"])
-    assert feature_level_2.features.remove_modifiers.values == set([])
+    assert feature_level_2.features.remove_modifiers.values == set(["L2_F1"])
 
 def test_extends_4():
     onlyone_rule = create_only_one_rule("one rule F3", "OnlyOne F3", ["L0_F3", "L1_F3", "L2_F3"])
@@ -369,10 +369,10 @@ def test_extends_4():
     assert feature_level_1.description == "feature level 1"
     assert feature_level_1.flags.override == False
     assert feature_level_1.flags.values == set(["L0_2", "L1_2"])
-    assert feature_level_1.flags.remove_modifiers.values == set([])
+    assert feature_level_1.flags.remove_modifiers.values == set(["L1_1", "L1_3"])
     assert feature_level_1.features.override == False
     assert feature_level_1.features.values == set(["L0_F2", "L1_F2", "L1_F3"])
-    assert feature_level_1.features.remove_modifiers.values == set([])
+    assert feature_level_1.features.remove_modifiers.values == set(["L1_F1"])
 
     # feature level 2
     feature_level_2 = FeatureNode("level_2")
@@ -385,10 +385,10 @@ def test_extends_4():
     assert feature_level_2.description == "feature level 2"
     assert feature_level_2.flags.override == True
     assert feature_level_2.flags.values == set(["L2_2"])
-    assert feature_level_2.flags.remove_modifiers.values == set([])
+    assert feature_level_2.flags.remove_modifiers.values == set(["L2_1", "L2_3"])
     assert feature_level_2.features.override == True
     assert feature_level_2.features.values == set(["L2_F2", "L2_F3"])
-    assert feature_level_2.features.remove_modifiers.values == set([])
+    assert feature_level_2.features.remove_modifiers.values == set(["L2_F1"])
 
 def test_extends_5():
     onlyone_rule = create_only_one_rule("one rule F3", "OnlyOne F3", ["L0_F3", "L1_F3", "L2_F3"])
@@ -412,10 +412,10 @@ def test_extends_5():
     assert feature_level_1.description == "feature level 1"
     assert feature_level_1.flags.override == True
     assert feature_level_1.flags.values == set(["L1_2"])
-    assert feature_level_1.flags.remove_modifiers.values == set([])
+    assert feature_level_1.flags.remove_modifiers.values == set(["L1_1", "L1_3"])
     assert feature_level_1.features.override == True
     assert feature_level_1.features.values == set(["L1_F2", "L1_F3"])
-    assert feature_level_1.features.remove_modifiers.values == set([])
+    assert feature_level_1.features.remove_modifiers.values == set(["L1_F1"])
 
     # feature level 2
     feature_level_2 = FeatureNode("level_2")
@@ -428,10 +428,10 @@ def test_extends_5():
     assert feature_level_2.description == "feature level 2"
     assert feature_level_2.flags.override == False
     assert feature_level_2.flags.values == set(["L1_2", "L2_2"])
-    assert feature_level_2.flags.remove_modifiers.values == set([])
+    assert feature_level_2.flags.remove_modifiers.values == set(["L2_1", "L2_3"])
     assert feature_level_2.features.override == False
     assert feature_level_2.features.values == set(["L1_F2", "L2_F2", "L2_F3"])
-    assert feature_level_2.features.remove_modifiers.values == set([])
+    assert feature_level_2.features.remove_modifiers.values == set( ["L2_F1"] )
 
 def test_extends_6():
     onlyone_rule = create_only_one_rule("one rule F3", "OnlyOne F3", ["L0_F3", "L1_F3", "L2_F3"])
@@ -455,10 +455,10 @@ def test_extends_6():
     assert feature_level_1.description == "feature level 1"
     assert feature_level_1.flags.override == False
     assert feature_level_1.flags.values == set(["L0_2", "L1_2"])
-    assert feature_level_1.flags.remove_modifiers.values == set([])
+    assert feature_level_1.flags.remove_modifiers.values == set(["L1_1", "L1_3"])
     assert feature_level_1.features.override == False
     assert feature_level_1.features.values == set(["L0_F2", "L1_F2", "L1_F3"])
-    assert feature_level_1.features.remove_modifiers.values == set([])
+    assert feature_level_1.features.remove_modifiers.values == set(["L1_F1"])
 
     # feature level 2
     feature_level_2 = FeatureNode("level_2")
@@ -471,10 +471,10 @@ def test_extends_6():
     assert feature_level_2.description == "feature level 2"
     assert feature_level_2.flags.override == True
     assert feature_level_2.flags.values == set(["L2_2"])
-    assert feature_level_2.flags.remove_modifiers.values == set([])
+    assert feature_level_2.flags.remove_modifiers.values == set(["L2_1", "L2_3"])
     assert feature_level_2.features.override == True
     assert feature_level_2.features.values == set(["L2_F2", "L2_F3"])
-    assert feature_level_2.features.remove_modifiers.values == set([])
+    assert feature_level_2.features.remove_modifiers.values == set(["L2_F1"])
 
 
 def test_extends_7():
@@ -499,10 +499,10 @@ def test_extends_7():
     assert feature_level_1.description == "feature level 1"
     assert feature_level_1.flags.override == True
     assert feature_level_1.flags.values == set(["L1_2"])
-    assert feature_level_1.flags.remove_modifiers.values == set([])
+    assert feature_level_1.flags.remove_modifiers.values == set(["L1_1", "L1_3"])
     assert feature_level_1.features.override == True
     assert feature_level_1.features.values == set(["L1_F2", "L1_F3"])
-    assert feature_level_1.features.remove_modifiers.values == set([])
+    assert feature_level_1.features.remove_modifiers.values == set(["L1_F1"])
 
     # feature level 2
     feature_level_2 = FeatureNode("level_2")
@@ -515,10 +515,10 @@ def test_extends_7():
     assert feature_level_2.description == "feature level 2"
     assert feature_level_2.flags.override == True
     assert feature_level_2.flags.values == set(["L2_2"])
-    assert feature_level_2.flags.remove_modifiers.values == set([])
+    assert feature_level_2.flags.remove_modifiers.values == set(["L2_1", "L2_3"] )
     assert feature_level_2.features.override == True
     assert feature_level_2.features.values == set(["L2_F2", "L2_F3"])
-    assert feature_level_2.features.remove_modifiers.values == set([])
+    assert feature_level_2.features.remove_modifiers.values == set(["L2_F1"])
 
 def test_extends_8():
     onlyone_rule = create_only_one_rule("one rule F3", "OnlyOne F3", ["L0_F3", "L1_F3", "L2_F3"])
@@ -542,10 +542,10 @@ def test_extends_8():
     assert feature_level_1.description == "feature level 1"
     assert feature_level_1.flags.override == True
     assert feature_level_1.flags.values == set(["L1_2"])
-    assert feature_level_1.flags.remove_modifiers.values == set([])
+    assert feature_level_1.flags.remove_modifiers.values == set(["L1_1", "L1_3"])
     assert feature_level_1.features.override == True
     assert feature_level_1.features.values == set(["L1_F2", "L1_F3"])
-    assert feature_level_1.features.remove_modifiers.values == set([])
+    assert feature_level_1.features.remove_modifiers.values == set(["L1_F1"])
 
     # feature level 2
     feature_level_2 = FeatureNode("level_2")
@@ -558,10 +558,10 @@ def test_extends_8():
     assert feature_level_2.description == "feature level 2"
     assert feature_level_2.flags.override == True
     assert feature_level_2.flags.values == set(["L2_2"])
-    assert feature_level_2.flags.remove_modifiers.values == set([])
+    assert feature_level_2.flags.remove_modifiers.values == set(["L2_1", "L2_3"])
     assert feature_level_2.features.override == True
     assert feature_level_2.features.values == set(["L2_F2", "L2_F3"])
-    assert feature_level_2.features.remove_modifiers.values == set([])
+    assert feature_level_2.features.remove_modifiers.values == set(["L2_F1"])
 
 def test_extends_feature_node() :
     

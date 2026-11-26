@@ -4,7 +4,7 @@ import copy
 from result import Result, Ok, Err
 from toolchain.nodes.feature_node import FeatureArgsNode, FeatureNode, FeatureNodeList, FeatureRuleNodeList, FeatureStrList, ValidationError
 from toolchain.nodes.linker_nodes import LinkerNode, LinkersOverrideNode
-from toolchain.nodes.property import StrList
+from toolchain.nodes.property import StrList, resolve_extends_str_list
 
 class CompilerNode:
     """Represents a compiler definition in compilers.yaml.
@@ -44,7 +44,7 @@ class CompilerNode:
         result = CompilerNode(self.name)
         result.is_abstract = self.is_abstract
         result.extends = self.extends   
-        result.supported_linkers = self.supported_linkers
+        result.supported_linkers = resolve_extends_str_list(self.supported_linkers, parent.supported_linkers if parent else StrList())
         result.default_linker = self.default_linker
 
         if not parent:

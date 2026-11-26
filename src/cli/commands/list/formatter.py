@@ -238,7 +238,7 @@ def _(box_name: str, compiler_node: CompilerNode, ignore_empty: bool, parent_box
     if compiler_node.extends:
         box.lines.append(f"extends: {compiler_node.extends}")
     if compiler_node.supported_linkers:
-        append_list_str_to_lines_print("supported-linkers", compiler_node.supported_linkers, box.lines)
+        box_str_list("supported-linkers", compiler_node.supported_linkers, ignore_empty, box)
     if compiler_node.default_linker:
         append_list_str_to_lines_print("default-linker", compiler_node.default_linker, box.lines)
     if compiler_node.feature_list:

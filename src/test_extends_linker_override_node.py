@@ -1,42 +1,6 @@
-from test_common import create_feature_str_list, create_specific_linker_override_node, create_str_list, create_linker_override_node
+from test_common import create_feature_str_list, create_specific_linker_override_node, create_str_list, create_linker_override_node, create_linker_override_node_1
 from toolchain.nodes.linker_nodes import LinkersOverrideNode
 
-
-def create_1() -> LinkersOverrideNode :
-    """  
-    linkers:
-      flags: [C1, C2] # Override = False
-      remove-flags: [C1, C3]
-      features: [CF1, CF2] # Override = False
-      remove-features: [CF1, CF3]
-        ld:
-          flags: [LD1, C3, LD2] # Override = False
-          remove-flags: [LD2] 
-          features: [LDF1, CF3, LDF2] # Override = False
-          remove-features: [LDF2] 
-    """
-    common_flag = create_str_list(False, ["C1", "C2"], ["C1", "C3"])
-    common_features = create_feature_str_list(False, ["CF1", "CF2"], ["CF1", "CF3"])
-    ld_flags = create_str_list(False, ["LD1", "C3", "LD2"], ["LD2"])
-    ld_features = create_feature_str_list(False, ["LDF1", "CF3", "LDF2"], ["LDF2"])
-    ld_linker = create_specific_linker_override_node("ld", ld_flags, ld_features)
-    linker_override_node = create_linker_override_node(common_flag, common_features, ld_linker)
-
-    assert linker_override_node.common_linker.flags.override == False
-    assert linker_override_node.common_linker.flags.values == set(["C1", "C2"])
-    assert linker_override_node.common_linker.flags.remove_modifiers.values == set(["C1", "C3"])
-    assert linker_override_node.common_linker.features.override == False
-    assert linker_override_node.common_linker.features.values == set(["CF1", "CF2"])
-    assert linker_override_node.common_linker.features.remove_modifiers.values == set(["CF1", "CF3"])
-    ld = linker_override_node.linker_overrides.get("ld")
-    assert ld
-    assert ld.flags.override == False
-    assert ld.flags.values == set(["LD1", "C3", "LD2"])
-    assert ld.flags.remove_modifiers.values == set(["LD2"]) 
-    assert ld.features.override == False
-    assert ld.features.values == set(["LDF1", "CF3", "LDF2"])
-    assert ld.features.remove_modifiers.values == set(["LDF2"]) 
-    return linker_override_node
 
 def create_2() -> LinkersOverrideNode:
     """
@@ -157,7 +121,7 @@ def test_1() :
     #     remove-flags: [LD2]
     #     features: [LDF1, CF3, LDF2] # Override = False
     #     remove-features: [LDF2]
-    base_linker_node = create_1()
+    base_linker_node = create_linker_override_node_1()
 
     #  linkers: (Extended)
     #   flags: [C2] # Override = False
@@ -321,7 +285,7 @@ def test_empty_extends_1():
     #     remove-flags: [LD2]
     #     features: [LDF1, CF3, LDF2] # Override = False
     #     remove-features: [LDF2]
-    base_linker_node = create_1()
+    base_linker_node = create_linker_override_node_1()
 
     #  linkers: (Extended)
     #   flags: [C2] # Override = False
@@ -621,7 +585,7 @@ def test_common_only_1_extends_1():
     #     remove-flags: [LD2]
     #     features: [LDF1, CF3, LDF2] # Override = False
     #     remove-features: [LDF2]
-    base_linker_node = create_1()
+    base_linker_node = create_linker_override_node_1()
 
     #  linkers: (Extended)
     #   flags: [C2] # Override = False
@@ -865,7 +829,7 @@ def test_common_only_2_extends_1():
     #     remove-flags: [LD2]
     #     features: [LDF1, CF3, LDF2] # Override = False
     #     remove-features: [LDF2]
-    base_linker_node = create_1()
+    base_linker_node = create_linker_override_node_1()
 
     #  linkers: (Extended)
     #   flags: [C2] # Override = False
@@ -1249,7 +1213,7 @@ def test_a_extends_1():
     #     remove-flags: [LD2]
     #     features: [LDF1, CF3, LDF2] # Override = False
     #     remove-features: [LDF2]
-    base_linker_node = create_1()
+    base_linker_node = create_linker_override_node_1()
 
     #  linkers: (Extended)
     #   flags: [C2] # Override = False
@@ -1317,7 +1281,7 @@ def test_b_extends_1():
     #     remove-flags: [LD2]
     #     features: [LDF1, CF3, LDF2] # Override = False
     #     remove-features: [LDF2]
-    base_linker_node = create_1()
+    base_linker_node = create_linker_override_node_1()
 
     #  linkers: (Extended)
     #   flags: [C2] # Override = False
@@ -1385,7 +1349,7 @@ def test_c_extends_1():
     #     remove-flags: [LD2]
     #     features: [LDF1, CF3, LDF2] # Override = False
     #     remove-features: [LDF2]
-    base_linker_node = create_1()
+    base_linker_node = create_linker_override_node_1()
 
     #  linkers: (Extended)
     #   flags: [C2] # Override = False
@@ -1453,7 +1417,7 @@ def test_d_extends_1():
     #     remove-flags: [LD2]
     #     features: [LDF1, CF3, LDF2] # Override = False
     #     remove-features: [LDF2]
-    base_linker_node = create_1()
+    base_linker_node = create_linker_override_node_1()
 
     #  linkers: (Extended)
     #   flags: [C2] # Override = False

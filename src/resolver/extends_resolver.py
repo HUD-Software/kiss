@@ -38,7 +38,7 @@ class ExtendResolver:
 
     def _resolve_chain(self, node_name, visited, resolve_fn) -> Result[Any, ValidationError]:
         if node_name in self.resolved:
-            return self.resolved[node_name]
+            return Ok(self.resolved[node_name])
 
         if node_name in visited:
             raise ValueError(f"extends_resolver: circular dependency detected for '{node_name}'")
@@ -56,15 +56,15 @@ class ExtendResolver:
             match self._resolve_chain(parent_name, visited, resolve_fn):
                 case Err() as err:
                     return err
-                case Ok(parent):
-                    pass
+                case Ok(value):
+                    parent = value
 
         # Resolve node with parent
         match resolve_fn(node, parent):
             case Err() as err:
                 return err
-            case Ok(node):
-                pass
+            case Ok(value):
+                node = value
 
         visited.discard(node_name)
         self.resolved[node.name] = node

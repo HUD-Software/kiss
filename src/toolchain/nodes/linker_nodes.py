@@ -155,8 +155,8 @@ class LinkersOverrideNode:
                     match resolve_extends_feature_list(self_common_feature_str_list, parent_feature_str_list, feature_rules):
                         case Err() as err:
                             return err
-                        case Ok(base):
-                            pass
+                        case Ok(value):
+                            base = value
                 return resolve_extends_feature_list(self_feature_str_list, base, feature_rules)
                         
             # Merge all self linker override with common and parent

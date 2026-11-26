@@ -176,6 +176,7 @@ class FeatureNode:
                     return err
                 case Ok(feature_list):
                     result.features = feature_list
+                   
         else:
             result.flags = resolve_extends_str_list(self.flags, StrList())
             match resolve_extends_feature_list(self.features, FeatureStrList(), feature_rules):
@@ -183,6 +184,10 @@ class FeatureNode:
                     return err
                 case Ok(feature_list):
                     result.features = feature_list
+
+        match feature_rules.validate({*result.features.values, self.name}):
+            case Err() as err:
+                return err
         return Ok(result)
     
 class FeatureNodeList:

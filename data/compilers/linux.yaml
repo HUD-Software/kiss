@@ -83,7 +83,7 @@ compilers:
       - name: DISABLE_EXCEPTION
         description: Disable C++ exception
         flags: [-fno-exceptions]
-        
+
       # ASAN
       - name: ASAN
         description: Enable ASAN Sanitizer
@@ -126,6 +126,3 @@ compilers:
   # clang compiler
   - name: clang
     extends: gnu-generic-compiler
-
-
-  
